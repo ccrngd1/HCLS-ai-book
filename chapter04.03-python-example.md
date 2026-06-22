@@ -1413,16 +1413,29 @@ def fairness_rerank(sorted_rows: list) -> list:
 
 def _batch_get_exposure(provider_ids: list) -> dict:
     """
-    Batch lookup of rolling exposure aggregates.
+    Batch lookup of rolling exposure aggregates using bucketed counters.
 
     Returns {provider_id: {"impressions_at_top_3_24h": int, ...}}.
     Missing providers default to empty dict.
+
+    The exposure-aggregates table stores hourly buckets in maps
+    (impressions_map, top3_map, clicks_map). This function sums the
+    last 24 hour-buckets to produce the rolling window value. Results
+    are cached in a per-container LRU (not shown here) with a TTL of
+    60-120 seconds. One-to-two minute lag is acceptable since the cap
+    is a fairness lever, not a correctness boundary.
     """
     if not provider_ids:
         return {}
 
+    # Build the list of hour-bucket keys for the last 24 hours.
+    now = datetime.datetime.now(timezone.utc)
+    hour_keys = []
+    for h in range(24):
+        bucket_time = now - datetime.timedelta(hours=h)
+        hour_keys.append(bucket_time.strftime("%Y-%m-%dT%H"))
+
     table = dynamodb.Table(EXPOSURE_TABLE)
-    # DynamoDB BatchGetItem caps at 100 keys per request; chunk if needed.
     out = {}
     chunk_size = 100
     for i in range(0, len(provider_ids), chunk_size):
@@ -1434,11 +1447,18 @@ def _batch_get_exposure(provider_ids: list) -> dict:
                 }
             })
             for item in response.get("Responses", {}).get(EXPOSURE_TABLE, []):
-                out[item["provider_id"]] = item
+                pid = item["provider_id"]
+                # Sum hourly buckets across the 24-hour window.
+                top3_map = item.get("top3_map", {}) or {}
+                impressions_map = item.get("impressions_map", {}) or {}
+                top3_sum = sum(int(top3_map.get(k, 0)) for k in hour_keys)
+                impressions_sum = sum(int(impressions_map.get(k, 0)) for k in hour_keys)
+                out[pid] = {
+                    "impressions_at_top_3_24h": top3_sum,
+                    "impressions_total_24h": impressions_sum,
+                }
         except Exception as exc:
             logger.warning("Exposure batch lookup failed: %s", exc)
-            # Safe default: no exposure data, no caps fire. The cohort
-            # dashboard should alarm if this is happening at meaningful rates.
             continue
     return out
 
@@ -1756,36 +1776,44 @@ def process_engagement_event(event: dict) -> None:
     )
 
     # ---- Update rolling exposure aggregates ----
-    # Increment counters atomically so concurrent events don't trample
-    # each other.
+    # Bucketed-counter approach: write to an hourly bucket so counts age
+    # out naturally. DynamoDB TTL removes items older than 48 hours. The
+    # fairness re-ranker (Step 6) sums the most recent 24 hour-buckets
+    # at read time. Use if_not_exists for cold-start initialization.
     exposure_table = dynamodb.Table(EXPOSURE_TABLE)
+    hour_bucket = datetime.datetime.now(timezone.utc).strftime("%Y-%m-%dT%H")
     if event_type == "search_impression":
-        update_expr = "ADD impressions_total_24h :one"
-        expr_values = {":one": Decimal("1")}
+        update_expr = "SET impressions_map.#bucket = if_not_exists(impressions_map.#bucket, :zero) + :one"
+        expr_names = {"#bucket": hour_bucket}
+        expr_values = {":one": Decimal("1"), ":zero": Decimal("0")}
         if position_in_results <= 3:
-            update_expr += ", impressions_at_top_3_24h :one"
+            update_expr += ", top3_map.#bucket = if_not_exists(top3_map.#bucket, :zero) + :one"
         exposure_table.update_item(
             Key={"provider_id": provider_id},
             UpdateExpression=update_expr,
+            ExpressionAttributeNames=expr_names,
             ExpressionAttributeValues=expr_values,
         )
     elif event_type == "search_click":
         exposure_table.update_item(
             Key={"provider_id": provider_id},
-            UpdateExpression="ADD clicks_total_24h :one",
-            ExpressionAttributeValues={":one": Decimal("1")},
+            UpdateExpression="SET clicks_map.#bucket = if_not_exists(clicks_map.#bucket, :zero) + :one",
+            ExpressionAttributeNames={"#bucket": hour_bucket},
+            ExpressionAttributeValues={":one": Decimal("1"), ":zero": Decimal("0")},
         )
     elif event_type == "provider_call_initiated":
         exposure_table.update_item(
             Key={"provider_id": provider_id},
-            UpdateExpression="ADD calls_initiated_24h :one",
-            ExpressionAttributeValues={":one": Decimal("1")},
+            UpdateExpression="SET calls_map.#bucket = if_not_exists(calls_map.#bucket, :zero) + :one",
+            ExpressionAttributeNames={"#bucket": hour_bucket},
+            ExpressionAttributeValues={":one": Decimal("1"), ":zero": Decimal("0")},
         )
     elif event_type == "appointment_booked":
         exposure_table.update_item(
             Key={"provider_id": provider_id},
-            UpdateExpression="ADD appointments_booked_24h :one",
-            ExpressionAttributeValues={":one": Decimal("1")},
+            UpdateExpression="SET bookings_map.#bucket = if_not_exists(bookings_map.#bucket, :zero) + :one",
+            ExpressionAttributeNames={"#bucket": hour_bucket},
+            ExpressionAttributeValues={":one": Decimal("1"), ":zero": Decimal("0")},
         )
 
     # ---- Special handling: directory complaints ----
@@ -2256,6 +2284,8 @@ if __name__ == "__main__":
 Run this end-to-end against a populated OpenSearch index, a seeded DynamoDB pair, and a Location Service place index and you'll see the pattern: providers indexed, patient context assembled, query parsed, candidates retrieved, features joined, ranked, re-ranked, results returned with explanations, and engagement events flowing back. The distance between this and a real health-plan deployment is significant. Here's where it lives.
 
 **Provider data ingestion is its own engineering project.** The example treats the provider event as a clean dict with an `npi` field. In reality, provider data arrives from credentialing systems on a multi-week cycle (in proprietary formats), claims feeds daily (in 837/835 EDI formats), self-attestation portals on demand, and third-party network rosters periodically. Each source has its own data model, its own update cadence, and its own quality issues. Build the ingestion as a Step Functions workflow with explicit Lambdas for match, validate, annotate, embed, and index, each routing failures to a DLQ keyed on `(provider_id, stage, failure_reason)`. Underinvest here and the catalog accumulates ghost providers faster than the search ranker can compensate.
+
+**Multi-location providers.** The example indexes one location per provider. Multi-location is the common case in primary care, pediatrics, and most specialty groups: a family-medicine doc with three offices needs to be findable from any of them. Production indexes at `(provider_id, location_id)` granularity (one OpenSearch doc per location) and deduplicates in result assembly to the closest location per provider. The architecture companion describes this pattern in full.
 
 **NPPES verification is a recurring task, not a one-time check.** The example checks `validation["specialty_known"]` against an in-memory dict. Production verifies NPI status against the [NPPES Public API](https://npiregistry.cms.hhs.gov/), and does so on a schedule (nightly for high-priority providers, weekly for the rest). When NPPES reports a deactivated NPI, the catalog must demote or remove the provider. This is the one external API the ingestion pipeline reliably calls, and it's worth wiring up with proper error handling and rate limiting; NPPES is a public service and not designed to absorb burst traffic from every health plan in the country.
 

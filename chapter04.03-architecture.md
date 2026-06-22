@@ -20,7 +20,11 @@
 
 **AWS Lambda for the query path orchestration.** The seven-stage query pipeline lives in a Lambda function (or a small set of Lambdas, depending on how you decompose). Lambda's burst-scaling fits the bursty traffic pattern of a public-facing "Find a Doctor" page. Reserved concurrency on the search Lambda protects the patient-facing path from noisy-neighbor effects.
 
-**Amazon API Gateway for the search endpoint.** The "Find a Doctor" page on the member portal calls the search endpoint. Other consumers include member services tooling (the call-center rep searching on behalf of a member) and the appointment-reminder pipeline (Recipe 4.1) when it's checking in-network alternatives. API Gateway gives you authenticated entry, throttling, WAF integration, and the ability to differentiate public-portal callers (Cognito or Lambda authorizer) from service-to-service callers (IAM SigV4). The search Lambda must validate that the caller is allowed to act on the requested patient_id; do not rely on the upstream service.
+**Amazon API Gateway for the search endpoint.** Three caller classes reach this endpoint with different network postures. Portal callers (the "Find a Doctor" page) reach a public regional REST API with WAF and a Cognito authorizer. Service-to-service callers (the Recipe 4.1 reminder pipeline, the Recipe 2.5 post-visit summary generator) should reach a private REST API exposed via a VPC interface endpoint; they authenticate with IAM SigV4 and never touch the public internet. Member-services tooling (the call-center rep searching on behalf of a member) lands on either the public or the private endpoint depending on whether the agent desktop is inside the corporate VPC. The Lambda code is the same; the request paths and authn mechanisms are not.
+
+WAF sits in front of the public endpoint with rate-limit rules keyed on the resolved patient identifier from the Lambda authorizer (populated as a custom request header by the authorizer). Starter values: 10 requests per patient per minute and 100 per patient per hour. This protects shared backend quotas (Bedrock for query parsing, Location Service for geocoding, OpenSearch read capacity) from a single misbehaving caller and is cheaper than discovering the issue via a Bedrock or Location Service throttling exception in production.
+
+The agent-on-behalf-of-member pattern needs its own authorization mechanism: the request carries both the agent's identity (for audit and rate-limit dimensions) and the member's identity (for the recommendation context). Verify at request time that the agent is authorized to act on behalf of the requested member, typically via a short-lived delegation token issued by the member-services platform. Do not let an agent enumerate patients by reusing patient session tokens. The search Lambda must validate that the caller is allowed to act on the requested patient_id; do not rely on the upstream service.
 
 **AWS Step Functions for the catalog ingestion pipeline.** The match/merge/validate/annotate/embed/index DAG is a natural fit for Step Functions. Each stage is a Lambda. Failed records get routed to a DLQ with a `(provider_id, stage, failure_reason)` envelope so the data quality team can triage.
 
@@ -30,7 +34,9 @@
 
 **Amazon SageMaker for LTR training and (optional) hosting.** The ranker is an XGBoost-Ranker or LightGBM `lambdarank` model. SageMaker Training Jobs handle the periodic retraining; for a starter implementation, you can host the trained model as a Lambda layer and skip the endpoint. The Lambda-layer approach hits the 250 MB ceiling once you add XGBoost with numpy/scipy dependencies, so plan to graduate to a SageMaker Endpoint when the layer approach starts feeling cramped.
 
-**Amazon Location Service for geocoding and distance.** Patient location strings ("123 Main St, Springfield") need to become coordinates for distance calculation. Provider addresses need the same. Amazon Location Service handles both, with HIPAA eligibility under BAA. The distance feature for the ranker comes from Location Service; the search-radius filter in OpenSearch uses Location-derived coordinates. 
+**Amazon Location Service for geocoding and distance.** Patient location strings ("123 Main St, Springfield") need to become coordinates for distance calculation. Provider addresses need the same. Amazon Location Service handles both, with HIPAA eligibility under BAA. The distance feature for the ranker comes from Location Service; the search-radius filter in OpenSearch uses Location-derived coordinates.
+
+Geocoding must be cached, not called on every search. Provider addresses are geocoded once at ingestion (Step 1) and the coordinates are persisted to the provider catalog. Patient home addresses are geocoded once at profile creation or address-update events and the lat/lon is stored in the patient-profile table. The search-orchestrator Lambda reads cached coordinates on every search. The only search-time geocoding calls happen when a patient types a location override ("show me providers near 123 Other St") that differs from their address on file; cache these by address string so a patient who searches the same off-profile address repeatedly does not re-incur the cost. With this pattern the Location Service traffic at the illustrative volumes (400,000 members, 12,000 providers) is initial profile geocoding plus a small fraction of off-profile overrides, not 500,000 per-search calls.
 
 **AWS Glue / Amazon Athena for the offline analytics and exposure dashboards.** Engagement data lands in S3 (via Kinesis Firehose) in Parquet. Glue crawlers maintain the schema, Athena queries power the cohort dashboards (NDCG by language, exposure distribution, ghost-provider rate). QuickSight or a custom dashboard fronts Athena for the operations team.
 
@@ -101,14 +107,14 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon OpenSearch Service, Amazon DynamoDB, Amazon Bedrock, AWS Lambda, Amazon API Gateway, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, Amazon S3, AWS Glue, Amazon Athena, Amazon SageMaker, Amazon Location Service, AWS Step Functions, Amazon EventBridge, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem`/`UpdateItem` scoped to specific tables; `bedrock:InvokeModel` on specific model ARNs; `aoss:APIAccessAll` or `es:ESHttpPost`/`es:ESHttpGet` scoped to the OpenSearch domain ARN; `geo:SearchPlaceIndex*` and `geo:CalculateRoute*` scoped to the Location Service resource; `kinesis:PutRecord` on the engagement stream. Never `*`.  |
+| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem`/`UpdateItem` scoped to specific tables (e.g., `arn:aws:dynamodb:{region}:{account}:table/provider-catalog`); `bedrock:InvokeModel` on specific model ARNs (e.g., `arn:aws:bedrock:{region}::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0`); `es:ESHttpPost`/`es:ESHttpGet` scoped to the OpenSearch domain ARN (e.g., `arn:aws:es:{region}:{account}:domain/provider-directory/*`); `geo:SearchPlaceIndex*` scoped to the Location Service resource (e.g., `arn:aws:geo:{region}:{account}:place-index/Healthcare-Geocoder`); `kinesis:PutRecord` on the engagement stream ARN. Never `Resource: *`.  |
 | **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: OpenSearch Service, DynamoDB, Bedrock, Lambda, API Gateway, Kinesis, Firehose, S3, SageMaker, Step Functions, EventBridge, Location Service, KMS are all on the HIPAA Eligible Services list.  |
 | **Encryption** | DynamoDB: customer-managed KMS at rest. OpenSearch: encryption at rest, node-to-node encryption, HTTPS-only. Kinesis and Firehose: server-side encryption. S3: SSE-KMS with bucket-level keys. All Lambda log groups KMS-encrypted. Search-log table contains patient queries which may include PHI (a patient's name in a "find Dr. X" search, an NPI tied to a known patient relationship); treat it as PHI from the outset. |
-| **VPC** | Production: Lambdas in VPC, OpenSearch domain in VPC (not public), VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), EventBridge (`events`), Location Service, STS. NAT Gateway only if calling external services without VPC endpoints (e.g., NPPES public API for provider verification); restrict egress security groups. VPC Flow Logs enabled. Provider data feeds from external SaaS credentialing systems may need a Direct Connect tunnel or PrivateLink connection rather than NAT egress.  |
+| **VPC** | Production: Lambdas in VPC, OpenSearch domain in VPC (not public), VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), EventBridge (`events`), Location Service, STS. NAT Gateway only if calling external services without VPC endpoints (e.g., NPPES public API for provider verification); restrict egress security groups so there is no `0.0.0.0/0` egress on any Lambda subnet. NAT egress is restricted by security group to specific hostnames or IP ranges (NPPES public registry, the SaaS credentialing system if applicable); all other outbound traffic flows through VPC endpoints. VPC Flow Logs enabled. Provider data feeds from external SaaS credentialing systems may need a Direct Connect tunnel or PrivateLink connection rather than NAT egress. NPPES public API note: NPPES has no formal SLA and is observed to throttle large polling clients. Batch queries (5-10 NPIs per request), schedule them off-peak (overnight), and back off aggressively on 5xx responses. The provider-validation Lambda must never call NPPES synchronously from the patient-facing search path. NPPES traffic is by NPI (provider identifier, not PHI), so NAT egress to NPPES is a reliability and rate-limiting concern, not an exfiltration risk.  |
 | **CloudTrail** | Enabled with data events on the patient-profile table, search-log table, and the engagement-event table. Provider-catalog table data events are recommended once it contains attributes derived from PHI (e.g., patient-overlap counts). |
 | **Network and Compliance** | Provider directory accuracy requirements vary by line of business: Medicare Advantage and Medicaid managed care have CMS and state requirements respectively, ACA marketplace plans have separate requirements, commercial plans have state DOI requirements. The recipe assumes the architecture supports the strictest requirement applicable to the implementing plan; verify with compliance before scoping.  |
 | **Sample Data** | A starter provider catalog (a few hundred providers across multiple specialties) with realistic-but-synthetic addresses, languages, and tier assignments. The [NPPES NPI Registry](https://npiregistry.cms.hhs.gov/) is public and can seed an NPI/specialty/address index for development; never use real claims-derived attributes for non-production environments. [Synthea](https://github.com/synthetichealth/synthea) for synthetic patient encounters that produce realistic prior-provider relationships. |
-| **Cost Estimate** | At a 400,000-member health plan with 12,000 providers and (illustratively) 500,000 searches per month: OpenSearch Service: a `m6g.large.search` 2-node domain runs in the $200-300/month range, scaling up with usage. DynamoDB on-demand: $50-150/month. Lambda + API Gateway: $50-150/month at this volume. Bedrock query parsing (typical Haiku-class request): roughly $0.0005-0.001 per search, so $250-500/month at 500K searches. Bedrock embedding for ingestion: a few dollars/month. Location Service: $0.50 per 1000 geocoding requests, so under $300/month at typical volumes. Kinesis + Firehose + S3 + Athena: $100-300/month. Estimated total: $1,000-2,500/month range for a regional plan, before SageMaker hosting costs.  |
+| **Cost Estimate** | At a 400,000-member health plan with 12,000 providers and (illustratively) 500,000 searches per month: OpenSearch Service: a `m6g.large.search` 2-node domain runs in the $200-300/month range, scaling up with usage. DynamoDB on-demand: $50-150/month. Lambda + API Gateway: $50-150/month at this volume. Bedrock query parsing (typical Haiku-class request): roughly $0.0005-0.001 per search, so $250-500/month at 500K searches. Bedrock embedding for ingestion: a few dollars/month. Location Service: $0.50 per 1000 geocoding requests; with the cached-at-profile pattern, the only traffic is initial profile geocoding plus a small fraction of off-profile overrides, so $30-50/month at typical volumes. Kinesis + Firehose + S3 + Athena: $100-300/month. Estimated total: $800-2,000/month range for a regional plan, before SageMaker hosting costs.  |
 
 ### Ingredients
 
@@ -182,11 +188,19 @@ FUNCTION on_provider_event(event):
         gender:           candidate_record.gender,
         accepts_new_patients: candidate_record.accepts_new_patients,
         network_tier:     network_tier_lookup(provider_id, candidate_record.contracting),
-        location:         {
-            address:   candidate_record.address,
-            lat_lon:   validation_results.address_geocoded.coordinates,
-            location_id: hash(candidate_record.address)   // a provider may have multiple
-        },
+        age_groups_served: derive_age_groups(candidate_record.specialty, candidate_record.credentialing),
+            // Defaults from specialty when credentialing data is absent:
+            //   Pediatrics: [0, 21]
+            //   Internal Medicine: [18, null]  (null = no upper bound)
+            //   Family Medicine: [0, null]
+            // Credentialing data overrides when explicit min/max ages are attested.
+            // err on inclusivity for ambiguous cases (pediatricians often retain
+            // patients into early 20s; Family Medicine handles all ages).
+        locations:        build_locations_array(candidate_record),
+            // Multi-location is the common case in primary care, pediatrics,
+            // and most specialty groups. Each entry:
+            //   { location_id, address, lat_lon, is_primary, last_verified_at }
+            // A primary-care doc with three offices produces three entries.
         contact:          {
             phone:        candidate_record.phone,
             phone_status: validation_results.phone_reachable
@@ -215,29 +229,36 @@ FUNCTION on_provider_event(event):
     // a ranking signal: stale fields demote the provider in candidate retrieval.
     update_freshness_table(provider_id, validation_results, current UTC timestamp)
 
-    // Index into OpenSearch. The hybrid index has BM25-scored text fields
-    // (name, specialty, services), filter fields (network_tier, languages,
-    // accepts_new_patients, location.lat_lon), and a vector field (embedding).
-    OpenSearch.IndexDocument(
-        index = "provider-directory",
-        id    = provider_id,
-        body  = {
-            provider_id:          provider_id,
-            name:                 annotated.name,
-            canonical_specialty:  annotated.canonical_specialty,
-            sub_specialties:      annotated.sub_specialties,
-            languages:            annotated.languages,
-            gender:               annotated.gender,
-            accepts_new_patients: annotated.accepts_new_patients,
-            network_tier:         annotated.network_tier,
-            location:             annotated.location.lat_lon,
-            services_text:        annotated.services,
-            bio_text:             annotated.bio,
-            embedding:            embedding,
-            last_verified_at:     annotated.last_verified_at,
-            freshness_score:      compute_freshness_score(provider_id),
-            status:               "active" IF len(failed_validations) == 0 ELSE "demoted"
-        })
+    // Index into OpenSearch. Multi-location providers are indexed at
+    // (provider_id, location_id) granularity: each location is its own
+    // document. Result assembly (Step 7) deduplicates to the closest
+    // location per provider for display. This is the common case in
+    // primary care, pediatrics, and most specialty groups.
+    FOR loc in annotated.locations:
+        OpenSearch.IndexDocument(
+            index = "provider-directory",
+            id    = provider_id + ":" + loc.location_id,
+            body  = {
+                provider_id:          provider_id,
+                location_id:          loc.location_id,
+                name:                 annotated.name,
+                canonical_specialty:  annotated.canonical_specialty,
+                sub_specialties:      annotated.sub_specialties,
+                languages:            annotated.languages,
+                gender:               annotated.gender,
+                accepts_new_patients: annotated.accepts_new_patients,
+                network_tier:         annotated.network_tier,
+                age_groups_served:    annotated.age_groups_served,
+                location:             loc.lat_lon,
+                address:              loc.address,
+                is_primary_location:  loc.is_primary,
+                services_text:        annotated.services,
+                bio_text:             annotated.bio,
+                embedding:            embedding,
+                last_verified_at:     annotated.last_verified_at,
+                freshness_score:      compute_freshness_score(provider_id),
+                status:               "active" IF len(failed_validations) == 0 ELSE "demoted"
+            })
 
     // Emit a CloudWatch metric for ingestion observability.
     emit_metric("provider_ingest", value = 1, dimensions = {
@@ -299,17 +320,50 @@ FUNCTION retrieve_candidates(intent, patient_context, top_k = 200):
         // Network match. The patient's plan determines which network tier(s)
         // they can see. A "preferred" plan can see preferred and standard;
         // a "standard" plan can see standard only.
-        { terms: { "network_tier": allowed_tiers_for_plan(patient_context.plan_id) } }
+        { terms: { "network_tier": allowed_tiers_for_plan(patient_context.plan_id) } },
+        // Age-appropriate credentialing. The patient's age must fall within
+        // the provider's age_groups_served range. Use a range query with a
+        // must_not.exists fallback for providers with null max_age (meaning
+        // no upper bound). Err on inclusivity for ambiguous cases.
+        { bool: {
+            should: [
+                { range: { "age_groups_served.max_age": { gte: patient_context.age } } },
+                { bool: { must_not: { exists: { field: "age_groups_served.max_age" } } } }
+            ],
+            minimum_should_match: 1
+        } },
+        { range: { "age_groups_served.min_age": { lte: patient_context.age } } }
     ]
 
-    // The intent can add filters: language, gender, accepts_new_patients.
+    // The intent can add filters: language, gender.
     // Filters from intent are required only when the intent system is confident.
     IF intent.filters.language is not null:
         eligibility_filters.append({ term: { "languages": intent.filters.language } })
     IF intent.filters.gender is not null:
         eligibility_filters.append({ term: { "gender": intent.filters.gender } })
+
+    // accepts_new_patients handling: stale-false records (provider reopened
+    // their panel but the directory still shows closed) get permanently
+    // excluded if we use a hard filter unconditionally. Tier the filter by
+    // freshness: apply as a hard filter only when the field was verified
+    // within the last 30 days; older records get a soft demotion via the
+    // should clause instead.
     IF intent.filters.accepts_new_patients == true:
-        eligibility_filters.append({ term: { "accepts_new_patients": true } })
+        eligibility_filters.append({
+            bool: {
+                should: [
+                    // Hard match: verified-fresh and accepts_new_patients=true
+                    { bool: { must: [
+                        { term: { "accepts_new_patients": true } },
+                        { range: { "last_verified_at": { gte: "now-30d" } } }
+                    ] } },
+                    // Soft fallback: stale records pass but will be demoted by
+                    // the should-clause boost below
+                    { range: { "last_verified_at": { lt: "now-30d" } } }
+                ],
+                minimum_should_match: 1
+            }
+        })
 
     // Geographic radius. Patients always have a location (from explicit input
     // or from the address on file). Default radius depends on geography:
@@ -365,6 +419,13 @@ FUNCTION retrieve_candidates(intent, patient_context, top_k = 200):
                     // Freshness boost. Recently-verified records get a small lift.
                     {
                         range: { "last_verified_at": { gte: "now-30d", boost: 1.2 } }
+                    },
+                    // Soft boost for accepts_new_patients when intent requested it.
+                    // Records with stale verification that passed the filter above
+                    // get demoted here rather than excluded outright. A "panel may
+                    // be closed" annotation is surfaced in result assembly (Step 7).
+                    {
+                        term: { "accepts_new_patients": { value: true, boost: 1.3 } }
                     }
                 ]
             }
@@ -462,8 +523,27 @@ FUNCTION fairness_rerank(sorted_rows, patient_context, policy):
     // 1. Exposure caps: limit how often any single provider appears at the
     // top across a rolling window. Pull live exposure counts from the
     // engagement aggregates table.
-    exposure_window = get_exposure_window(provider_ids = [r.provider_id for r in sorted_rows],
-                                          window = "last_24h")
+    //
+    // Windowing approach: bucketed-counter map. The exposure-aggregates
+    // table stores hourly impression buckets keyed as
+    // `impressions_at_top_3.{yyyy-MM-ddTHH}`. The read sums the last 24
+    // hour-buckets. This avoids the never-reset problem where every popular
+    // provider eventually accumulates counts above the cap permanently.
+    // Cold-start: use DynamoDB `SET ... if_not_exists(...)` for nested-map
+    // initialization (same pattern as Recipe 4.2). TTL on the item removes
+    // buckets older than 48 hours automatically; only the most recent 24 are
+    // summed at read time. A one-to-two minute lag in the count is acceptable
+    // since the cap is a fairness lever, not a correctness boundary.
+    //
+    // Performance (A10): the batched read of exposure aggregates for 100-300
+    // candidates lives in the hot path. Cache aggressively in the
+    // search-orchestrator Lambda (per-container LRU keyed on provider_id,
+    // TTL of 60-120 seconds). At higher traffic volumes, graduate to an
+    // ElastiCache for Redis tier.
+    exposure_window = get_exposure_window(
+        provider_ids = [r.provider_id for r in sorted_rows],
+        window_hours = 24,
+        cache_ttl_seconds = 90)
     FOR row in sorted_rows:
         IF exposure_window[row.provider_id].impressions_at_top_3 > policy.max_top3_impressions:
             row.relevance_score = row.relevance_score * 0.7
@@ -511,7 +591,24 @@ FUNCTION assemble_and_log(reranked_rows, patient_context, intent, top_n = 10):
     search_id = new UUID
 
     // Hydrate the top N with display fields from the provider catalog.
+    // Multi-location deduplication: OpenSearch may return multiple documents
+    // for the same provider_id (one per location). Deduplicate to the
+    // closest location per provider so the displayed address is the location
+    // that matched the geo_distance filter, not whichever address the
+    // catalog cited first.
     top = first top_n of reranked_rows
+    deduplicated = {}
+    FOR row in top:
+        pid = row.provider_id
+        IF pid in deduplicated:
+            // Keep the closer location
+            IF row.features.distance_miles < deduplicated[pid].features.distance_miles:
+                deduplicated[pid] = row
+        ELSE:
+            deduplicated[pid] = row
+    top = sort deduplicated.values() by relevance_score DESC
+    top = first top_n of top
+
     results = []
     FOR row in top:
         provider = DynamoDB.GetItem("provider-catalog", row.provider_id)
@@ -641,12 +738,18 @@ FUNCTION process_engagement_event(event):
     bias_corrected_reward = (event_to_reward(event) / propensity)
 
     // Update the rolling exposure aggregates that the fairness re-ranker reads.
+    // Bucketed-counter approach: write to an hourly bucket key so counts
+    // age out naturally (DynamoDB TTL removes items older than 48 hours).
+    // Step 6 sums the most recent 24 hour-buckets at read time. Use
+    // SET ... if_not_exists(...) for the nested-map cold-start case.
+    current_hour_bucket = format(current UTC timestamp, "yyyy-MM-ddTHH")
     DynamoDB.UpdateItem("exposure-aggregates", event.provider_id,
-        "ADD impressions_total :one" +
+        "SET impressions_map.#bucket = if_not_exists(impressions_map.#bucket, :zero) + :one" +
         IF event.event_type == "search_impression" AND position_in_results <= 3
-            THEN ", impressions_at_top_3 :one"
+            THEN ", top3_map.#bucket = if_not_exists(top3_map.#bucket, :zero) + :one"
             ELSE "",
-        values = { ":one": 1 })
+        expression_attribute_names = { "#bucket": current_hour_bucket },
+        values = { ":one": 1, ":zero": 0 })
 
     // Special handling: a directory complaint (the directory sent the patient
     // to a closed practice, wrong number, etc.) is a gold-standard data
@@ -786,6 +889,17 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Audit log access workflow.** The recipe puts the verbatim query string into a separate audit log. That log needs an access workflow: who can read it, what authorization is required, how requests get logged, how the log itself is retained and disposed of. Define this with privacy and legal before the system is live, not after.
 
 **Position-bias correction at training time.** The pseudocode references position-based bias correction in the engagement attribution. Production-grade LTR training does this correction explicitly inside the loss function (counterfactual learning to rank, IPS-weighted ranker). Wiring that into the training pipeline is real work and worth scoping early.
+
+**Ranker retraining trigger and model promotion.** The architecture diagram shows "Periodic retrain" without an explicit trigger node. In production, specify the mechanism: an EventBridge schedule (weekly cron) triggers a Step Functions workflow that (1) assembles training data from the engagement-events table with position-bias correction, (2) launches a SageMaker Training Job with the XGBoost `rank:ndcg` objective, (3) evaluates the new model on a held-out set against the incumbent, and (4) promotes to inference only if NDCG@10 improves by a configurable threshold. Promotion path: for the Lambda-layer approach, publish a new layer version and update the function alias via a canary shift (10% traffic for 15 minutes, then 100% if no alarm fires). For the SageMaker endpoint approach, use production variant weights with a similar canary window. Rollback: retain the prior model artifact and layer version; the Step Functions workflow reverts on alarm.
+
+**DLQ coverage on all Lambda paths.** The architecture diagram shows none of these:
+(a) API Gateway to search-orchestrator Lambda: accept the synchronous-API tradeoff and pair structured logging with a CloudWatch 5xx alarm and a documented replay-from-logs runbook. A function-level SQS DLQ is an alternative if you want automatic retry for transient failures.
+(b) Step Functions to ingestion Lambdas: each task should `Catch` to an SQS failure queue keyed on `(provider_id, stage, failure_reason)`. The architecture above already routes failed records to a DLQ in the Step Functions flow.
+(c) Kinesis to attribution Lambda: configure an `OnFailure` destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth. This is the most insidious gap: an attribution Lambda silently dropping engagement events leaves the ranker training data incomplete and the exposure aggregates wrong, with no observable symptom until a cohort dashboard regresses weeks later.
+
+**Search log retention policy.** At the illustrative scale (500,000 searches per month), the patient-joined search log accumulates 6 million rows per year and grows more inferentially identifying the longer it lives. Define an explicit retention policy with privacy and compliance approval: 90 days for individually-attributed search logs (sufficient for ranker training data prep and operational debugging); 30 days for the verbatim query audit channel (its purpose is incident investigation, not analytics); longer retention only after de-identification per HIPAA Safe Harbor or expert determination. Add a CloudWatch alarm on the deletion job (confirm rows are actually being deleted on schedule) and a documented re-attestation cadence (quarterly review that the policy still reflects the minimum retention necessary for the stated purposes). Same chapter-wide pattern as Recipe 4.1's reminder-decisions retention.
+
+**Provider-catalog PHI boundary.** The pseudocode in `join_features` (Step 4) computes patient-side personalization features at query time from `patient_context.claims_summary.visits_by_provider`, which keeps the provider catalog non-PHI. The prerequisites CloudTrail row leans toward a future where provider-side patient-overlap counts get persisted onto the provider record, which would cross the catalog into PHI-bearing territory. State the default explicitly: keep the provider catalog non-PHI by computing patient-derived features at query time only. If a future iteration persists provider-side patient aggregates (e.g., for ranker features or operational dashboards), elevate the entire catalog to PHI status from that point forward (customer-managed KMS with a separate key from the patient-profile store, CloudTrail data events, narrow IAM read scopes, defined retention). Note that aggregated counts can be re-identifying for providers with small panels (a rare-specialty provider with three patients from a particular plan).
 
 **Exposure-cap calibration.** The fairness re-ranker uses exposure caps as a policy lever. Setting those caps is a network-operations decision, not a data-science decision. Engage with provider relations early. A cap that's too tight starves high-quality providers of patients; a cap that's too loose lets concentration drift back in. Plan to recalibrate quarterly with data-driven inputs.
 
