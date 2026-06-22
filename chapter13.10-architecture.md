@@ -447,6 +447,12 @@ FUNCTION assemble_results(partial_results_from_all_sources):
 - [Amazon Neptune Pricing](https://aws.amazon.com/neptune/pricing/)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
+**AWS Sample Repos:**
+- [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): Neptune graph database examples including data loading, SPARQL/Gremlin querying, and cross-account access patterns relevant to federation
+
+**AWS Solutions and Blogs:**
+- [Building a Biomedical Knowledge Graph with Amazon Neptune](https://aws.amazon.com/blogs/database/building-a-biomedical-knowledge-graph-with-amazon-neptune/): Architecture for biomedical knowledge graphs on Neptune, directly applicable to federated node design
+
 **External Standards:**
 - [SPARQL 1.1 Federated Query (W3C)](https://www.w3.org/TR/sparql11-federated-query/)
 - [SNOMED CT Browser](https://browser.ihtsdotools.org/)
