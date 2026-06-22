@@ -313,6 +313,9 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
   ]
 }
 ```
+
+> **Important: cross-patient PHI boundary.** The `top_similar_patients` array above is the *internal API response* between the Lambda orchestrator and the caching layer. It is not what the care planning UI displays. The default UI presentation shows only the aggregated `outcome_summary` (goal achievement rates, intervention frequencies, adverse event rates). Individual similar patient IDs are never surfaced to clinicians unless the organization's data governance policy explicitly permits drill-down. If drill-down is enabled, require break-the-glass authorization, log the access as a HIPAA disclosure event, and display only the minimum necessary clinical detail (not the full patient record). Audit these accesses separately from routine queries.
+
 **Performance benchmarks:**
 
 | Metric | Typical Value |
@@ -339,6 +342,24 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
 **Explainability.** A care manager needs to understand why two patients are considered similar. "The algorithm says so" is not acceptable in clinical decision support. You need feature-level explanations: "These patients are similar because they share age range, A1C level, comorbidity profile, and medication history."
 
 **Feature store version transitions.** When the nightly ETL produces a new feature snapshot, the ANN index must be rebuilt before queries reflect the latest data. During the rebuild window (5-15 minutes for 100k patients), queries continue against the previous index version. Cached results include a `feature_version` key, so stale entries expire naturally when the version advances. A patient diagnosed with a new condition today won't appear in similarity results for that condition until the next ETL run plus index rebuild completes. For most care planning workflows, this eventual consistency (up to 24 hours) is acceptable. If same-day freshness is required, consider a hybrid approach: serve from the pre-built index for most queries, with a real-time override path for patients whose data changed since the last build.
+
+---
+
+## Data Governance: Using One Patient's Data to Inform Another's Care
+
+Patient similarity is architecturally different from most clinical decision support tools. It uses one patient's historical data (their outcomes, their treatment responses) to inform clinical decisions for a different patient. This cross-patient inference raises governance questions you need to answer before deployment, not after.
+
+**HIPAA Treatment/Payment/Operations (TPO).** Using de-identified or limited datasets for quality improvement and care delivery typically falls under the TPO exception, meaning individual patient authorization is not required. Most health systems' legal counsel will classify a patient similarity engine used for care planning as a TPO activity. However, this is an organizational determination, not a universal rule. Your privacy officer and legal team must confirm this interpretation for your specific implementation and jurisdiction.
+
+**State law variability.** Some states impose restrictions beyond HIPAA's minimum requirements. States with heightened protections for behavioral health, substance use disorder (42 CFR Part 2), HIV/AIDS, or genetic information may limit whether those data elements can feed into a similarity model, even under TPO. Map your feature set against state-specific restrictions before including sensitive condition categories.
+
+**Data use agreements and IRB review.** If the similarity engine draws on data from multiple affiliated institutions (e.g., an integrated delivery network with separately licensed facilities), data use agreements between entities may restrict secondary analytical use. Additionally, if similarity results are published in research or used to validate the model's performance for academic purposes, IRB review may be required. The line between "clinical operations" and "research" is not always crisp; when in doubt, engage your IRB.
+
+**Patient transparency.** Even when authorization is not legally required, patients should understand that their de-identified data contributes to care planning tools used for other patients. This is both an ethical obligation and a practical one: patient trust erodes when they discover uses of their data they weren't informed about. Include language in your Notice of Privacy Practices that describes analytical use of de-identified data for care improvement. Some organizations go further and provide opt-out mechanisms for patients who do not want their data included in cohort-level analytics.
+
+**Minimum necessary standard.** The similarity engine should use the minimum set of features necessary for clinical utility. Including features that don't improve outcome prediction but increase re-identification risk (e.g., exact date of birth rather than age, zip code rather than region) violates the minimum necessary principle. Perform periodic feature contribution analysis and remove features that add re-identification risk without improving model performance.
+
+**Retention and amendment.** Cached similarity results and the feature store contain derived PHI. If a patient exercises their right to amend their records, the corrected data must propagate through the feature engineering pipeline and invalidate cached results. Build this amendment workflow before go-live, not as a post-launch enhancement.
 
 ---
 

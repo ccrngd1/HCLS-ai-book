@@ -603,6 +603,12 @@ def run_patient_similarity_pipeline(
     #     cache_similarity_results(query_patient_id, similar, outcome_summary, feature_version)
 
     # Assemble the final result.
+    # NOTE: similar_patients contains individual patient IDs. This is the
+    # internal API response used for caching and audit logging. The care
+    # planning UI should display only the aggregated outcome_summary by default.
+    # If your organization permits drill-down into individual similar patient
+    # records, gate that access behind break-the-glass authorization and log
+    # each access as a HIPAA disclosure event.
     result = {
         "query_patient_id": query_patient_id,
         "feature_version": feature_version,
