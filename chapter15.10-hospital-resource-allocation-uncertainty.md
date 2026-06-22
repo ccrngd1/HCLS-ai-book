@@ -1,6 +1,6 @@
 # Recipe 15.10: Hospital Resource Allocation Under Uncertainty
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$3,000-$12,000/month (simulation + training infrastructure)
+**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$4,000-$8,000/month (assumes monthly retraining cadence with 8-24 hour GPU training runs, parallel CPU instances for simulator rollout workers, real-time inference via Lambda, and DynamoDB state/audit storage)
 
 ---
 
@@ -120,7 +120,13 @@ Unlike some RL domains where constraint violations are just suboptimal, hospital
 - Scope of practice (cannot assign tasks outside a provider's credential)
 - Maximum capacity limits (fire code, licensing)
 
-These must be enforced at action selection time, not just penalized in the reward. The architecture needs a constraint checker that vetoes any action violating hard constraints, regardless of what the policy network outputs. The policy learns over time not to propose infeasible actions (because they never result in reward), but the hard constraint layer is the safety guarantee.
+These must be enforced at action selection time, not just penalized in the reward. The architecture needs a constraint checker that vetoes any action violating hard constraints, regardless of what the policy network outputs. Here's how that works concretely:
+
+The constraint checker runs inline in the inference Lambda, blocking before any recommendation is emitted to the dashboard. It evaluates every candidate action against a rule set stored in a versioned DynamoDB table (so rules have audit history and can be rolled back). If all top-k policy actions are infeasible given the current state, the system returns "no recommendation, human judgment required" rather than relaxing constraints or guessing. The system never degrades gracefully by bending the rules; it degrades gracefully by admitting it has nothing useful to say.
+
+Constraint rule updates flow through a governed process: proposed changes require clinical operations sign-off, go through a staging validation pass (replay against recent state snapshots to confirm no false positives), and are deployed with an audit trail linking the rule version to the approver. When constraints conflict (for example, staffing ratio requirements for Unit A and Unit B that cannot both be satisfied because total staff is insufficient), the system triggers an alert to the capacity coordinator with the specific conflicting rules and affected units, rather than silently choosing which constraint to violate.
+
+The policy learns over time not to propose infeasible actions (because they never result in reward), but the hard constraint layer is the safety guarantee.
 
 ### Constrained Markov Decision Processes (CMDPs)
 
@@ -159,6 +165,8 @@ The architecture has four major components: data ingestion, simulation environme
 ```
 
 **Data ingestion** pulls real-time operational data from ADT (Admit-Discharge-Transfer) systems, nurse staffing platforms, OR scheduling systems, and equipment tracking. This feeds the state vector for inference and the historical dataset for simulator calibration.
+
+A critical detail: the state aggregator must timestamp-order incoming events and apply a grace period for late arrivals (ADT systems are notorious for delayed or out-of-order messages). Current state lives in a durable store (not Lambda memory), so it survives function recycling and can be audited. Each field in the state vector carries a freshness timestamp. The inference Lambda should refuse to recommend if critical fields are stale beyond a configured threshold. For example, if staffing data is older than 15 minutes, the system cannot safely reason about nurse-to-patient ratios and should defer to the human operator rather than recommend with incomplete information.
 
 **The simulation environment** is a discrete-event simulation of hospital operations. Patients arrive according to learned distributions. They move through the hospital (ED to inpatient, OR to PACU to floor). Length of stay follows diagnosis-specific distributions. Staff shift according to schedules. The simulator must be fast enough to run thousands of episodes for training.
 
@@ -357,9 +365,16 @@ Before deploying any learned policy, you must evaluate it against historical dat
 
 If you skip evaluation, you're deploying a policy trained in simulation without any evidence it works in reality.
 
+**A note on OPE methodology for clinical settings:** The importance sampling approach shown below is simplified for illustration. In practice, behavior policy estimation (estimating the probability the historical operator took each action) requires a separate modeling step, typically a supervised classifier trained on the same historical data. Without good behavior policy estimates, importance weights are unreliable.
+
+For high-stakes domains like hospital operations, you should use multiple OPE estimators and compare them: basic importance sampling, per-decision importance sampling (PDIS), and doubly-robust methods that combine a learned reward model with importance weighting to reduce variance. If the estimators disagree substantially, that's a signal you don't yet have enough data or your behavior policy model is poor.
+
+Weight clipping (capping individual importance weights at some maximum, typically 5-10x) is essential for variance reduction. Without clipping, a single trajectory where the behavior and evaluation policies diverge sharply can dominate the entire estimate. The bootstrap confidence interval shown below is also unreliable for weighted estimators; prefer the asymptotic confidence intervals from doubly-robust estimators, or at minimum use a bias-corrected bootstrap.
+
 ```pseudocode
 FUNCTION evaluate_policy_offline(policy, historical_episodes):
     // Importance-weighted evaluation (off-policy)
+    // NOTE: behavior_policy_prob requires a separate model of historical decisions
     results = []
 
     FOR episode IN historical_episodes:
@@ -373,8 +388,10 @@ FUNCTION evaluate_policy_offline(policy, historical_episodes):
             policy_action = ARGMAX(policy_action_probs)
 
             // Importance weight for off-policy correction
-            // (only needed for full OPE; simplified here)
+            // behavior_policy_prob must be estimated from a trained classifier
             weight = policy_action_probs[actual_action] / behavior_policy_prob(actual_action)
+            // Clip weights to reduce variance (essential for stability)
+            weight = MIN(weight, MAX_WEIGHT_CLIP)
             importance_weights.append(weight)
 
             cumulative_reward_actual += actual_reward
@@ -391,6 +408,9 @@ FUNCTION evaluate_policy_offline(policy, historical_episodes):
     // Aggregate results
     avg_improvement = MEAN([r.improvement FOR r IN results])
     confidence_interval = BOOTSTRAP_CI(results, alpha=0.05)
+
+    // Compare multiple OPE estimators before trusting any single one
+    // If IS and doubly-robust disagree by more than 20%, flag for review
 
     RETURN {
         avg_improvement: avg_improvement,
@@ -413,7 +433,9 @@ FUNCTION generate_recommendation(hospital_id):
     state = build_state_vector(hospital_id, NOW())
 
     // Load latest approved policy
-    // TODO (TechWriter): Expert review S3 (LOW). Note model artifact integrity verification here: hash check at load time, SageMaker Model Registry lineage tracking.
+    // Verify model artifact integrity: check SHA-256 hash against Model Registry
+    // metadata at load time. SageMaker Model Registry tracks lineage (training job,
+    // data version, evaluation metrics) for full auditability.
     policy = LOAD_MODEL(model_registry, stage="approved")
 
     // Get policy recommendation
@@ -453,6 +475,8 @@ FUNCTION handle_human_decision(recommendation_id, decision):
     })
     // This data feeds back into training to improve policy alignment
 ```
+
+**PHI considerations for recommendation logs.** The state vectors and recommendation logs contain indirect PHI. A state vector recording "ICU census 18, step-down census 22, 3 ED boarders at timestamp 14:30 on March 15" combined with unit-level acuity data creates a re-identification risk when correlated with ADT records. Treat these logs as PHI. Access should be restricted to authorized operations staff (bed coordinators, capacity managers) and compliance auditors. Apply item-level encryption with a dedicated CMK separate from the one used for primary clinical data, so that access to recommendation audit trails can be granted independently of access to patient records. Retention policy: 7 years minimum per HIPAA, with automated lifecycle transitions to cold storage after 1 year.
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter15.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
@@ -518,6 +542,16 @@ FUNCTION handle_human_decision(recommendation_id, decision):
 - **Soft constraints.** "Dr. Smith prefers patients on 4-West" is not a hard constraint but ignoring it creates friction. Capturing preferences without overfitting to them is difficult.
 - **Multi-site coordination.** If your system operates across campuses with patient transfers between them, the state space explodes.
 - **Behavioral dynamics.** Staff respond to recommendations. If the system always floats nurses from 5-East, 5-East morale drops. These second-order effects aren't in the simulator.
+
+### Regulatory Considerations
+
+This system is a clinical decision support (CDS) tool. It makes patient-specific recommendations (which bed, which unit, which staffing adjustment) to healthcare professionals (charge nurses, bed coordinators). That puts it squarely in FDA territory, specifically the 2022 CDS guidance.
+
+The good news: the FDA's final guidance on CDS software identifies four criteria for exemption from device regulation. A system likely qualifies for CDS exemption if it: (1) is not intended to acquire, process, or analyze a medical image or signal, (2) is intended for displaying, analyzing, or printing medical information (including patient-specific data), (3) is intended for use by healthcare professionals, and (4) allows the professional to independently review the basis for recommendations so they do not rely primarily on the software. Criterion 4 is the critical one. If your system provides recommendations with transparent reasoning (which state features drove the decision, what the predicted consequences are) and the human can readily override it, you're likely exempt.
+
+The risk: if you remove the human override, or if the system becomes so ingrained in workflow that operators rubber-stamp without review, you may lose the exemption. Design the interface to encourage active engagement (require a click to accept, show the reasoning prominently, track acceptance patterns and alert if acceptance rate exceeds 95% as that suggests insufficient review).
+
+State-level regulatory variation adds complexity. Some states have specific requirements for automated systems used in patient care decisions, staffing ratio enforcement, or bed placement. California's nurse ratio laws (Title 22), for example, make the staffing constraint checker not just a safety feature but a regulatory compliance requirement. Check with your compliance team before deploying in any new state.
 
 ---
 
