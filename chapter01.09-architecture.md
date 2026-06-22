@@ -777,4 +777,14 @@ The pseudocode above demonstrates the core pipeline. A production deployment in 
 
 ---
 
+## Estimated Implementation Time
+
+| Tier | Timeframe | What You Get |
+|------|-----------|--------------|
+| **Basic (proof of concept)** | 3-5 days | S3 trigger, Textract FORMS + SIGNATURES extraction, rule-based element validation, DynamoDB storage. Enough to demo the extraction-to-deficiency pipeline on a single form layout. |
+| **Production-ready** | 4-6 weeks | Full four-Lambda pipeline with Bedrock LLM consistency checking, request classification, type-specific SQS routing, VPC endpoints, KMS encryption on all storage layers, CloudWatch alarms, dead-letter queues, coordinator review UI integration, and audit trail closure. |
+| **With variations** | 8-12 weeks | Add automated deficiency letter generation, standing authorization expiration monitoring, prompt caching for cost optimization, near-duplicate request detection, and multi-state regulatory rule variations. |
+
+---
+
 *← [Main Recipe 1.9](chapter01.09-medical-records-request-extraction) · [Python Example](chapter01.09-python-example) · [Chapter Preface](chapter01-preface)*
