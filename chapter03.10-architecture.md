@@ -1010,6 +1010,8 @@ FUNCTION on_investigator_action(action):
 | Subgroup precision range across syndrome categories | ±0.05-0.20 | ±0.05-0.15 | ±0.04-0.12 | ±0.04-0.10 | ±0.04-0.10 |
 | End-to-end latency (encounter ingest to surveillance score) | <30 minutes | <30 minutes | <2 hours (daily SaTScan) | <2 hours | <2 hours |
 
+These ranges are directional, derived from typical state-level surveillance program performance reported in the syndromic surveillance literature (Buehler et al., the ESSENCE evaluation literature). Specific figures vary substantially by jurisdiction size, source-feed coverage, syndrome mix, baseline data quality, and surveillance team staffing. Replace with measured numbers from your own validation before using for program planning.
+
 **Where it struggles:**
 
 - **Year-one programs.** A program in its first surveillance season has limited historical baseline data, no cohort calibration, and an unfamiliar review tempo. Expect higher false-alarm rates and slower review cadence during the first 6-12 months. Plan for it in the rollout schedule.
@@ -1174,12 +1176,17 @@ The pseudocode shows the shape. A production surveillance program closes several
 - [LOINC](https://loinc.org/): laboratory test and observation codes.
 - [SNOMED CT](https://www.snomed.org/): clinical terminology.
 - [ICD-10-CM](https://www.cdc.gov/nchs/icd/icd10cm.htm): diagnosis coding.
-- [SaNDS (Surveillance and Notifiable Disease Standards)](https://www.cdc.gov/nndss/data-and-resources/surveillance-message-mapping-guides.html): CDC standards for surveillance message structure. 
+- [CDC NNDSS Message Mapping Guides (MMGs)](https://www.cdc.gov/nndss/data-and-resources/surveillance-message-mapping-guides.html): CDC standards for surveillance message structure and case-notification formatting. 
 
 **Academic and Industry Literature:**
 
 - [`R/surveillance` package](https://cran.r-project.org/package=surveillance): the canonical R package for outbreak detection methodology, including Farrington Flexible and related algorithms.
 - [SaTScan documentation](https://www.satscan.org/): user guide and methodology references for spatial and spatiotemporal scan statistics.
+- Farrington, C.P., Andrews, N.J., Beale, A.D., Catchpole, M.A. (1996). "A statistical algorithm for the early detection of outbreaks of infectious disease." *Journal of the Royal Statistical Society: Series A*, 159(3), 547-563.
+- Noufaily, A., Enki, D.G., Farrington, P., Garthwaite, P., Andrews, N., Charlett, A. (2013). "An improved algorithm for outbreak detection in multiple surveillance systems." *Statistics in Medicine*, 32(7), 1206-1222.
+- Kulldorff, M. (1997). "A spatial scan statistic." *Communications in Statistics: Theory and Methods*, 26(6), 1481-1496.
+- Kulldorff, M., Heffernan, R., Hartman, J., Assuncao, R., Mostashari, F. (2005). "A space-time permutation scan statistic for disease outbreak detection." *PLoS Medicine*, 2(3), e59.
+- Buehler, J.W., Hopkins, R.S., Overhage, J.M., Sosin, D.M., Tong, V. (2004). "Framework for evaluating public health surveillance systems for early detection of outbreaks." *MMWR Recommendations and Reports*, 53(RR-5), 1-11.
 
 **Operational and Vendor References (informational; not endorsements):**
 - [Maven (Conduent)](https://www.conduent.com/government/health/disease-surveillance/): commercial NEDSS-compatible surveillance platform.
