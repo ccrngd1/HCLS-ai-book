@@ -1432,6 +1432,221 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 ---
 
+## Architectural Governance and Operational Primitives
+
+The subsections below specify governance, security, and operational patterns that cross-cut the pseudocode walkthrough. Each is an architectural primitive that a production deployment must implement.
+
+### Voice-as-Biometric-Data Governance Scaffolding with Pediatric-Records, FERPA, and COPPA Layering
+
+Voice samples are biometric data under Illinois BIPA, Texas CUBI, Washington's biometric-data law, and GDPR Article 9 for EU patients. This governance scaffolding treats voice-as-biometric as an architectural primitive rather than a footnote.
+
+**Per-jurisdiction biometric-data consent at collection.** At Step 1C (consent capture), the system identifies the patient's jurisdiction and presents the applicable biometric-data consent disclosure. For minors, the parent or legal guardian provides consent on behalf of the child. The consent record stores the jurisdiction, the specific statutory basis (BIPA written informed consent, CUBI notice-and-consent, Washington biometric-data law consent, GDPR Article 9 explicit consent), and the identity of the consenting party. When the patient reaches age of majority, the system triggers a consent-authority handoff: the patient receives notice and the opportunity to provide or withdraw consent on their own behalf.
+
+**Disclosure-accounting log per use.** Every use of biometric data (audio playback, feature-vector computation, model inference, vendor-API export, SLP review of audio, longitudinal-comparison computation) appends an entry to the disclosure-accounting log. Each entry records the timestamp, the identity of the accessor or system component, the purpose category, the data elements accessed, and the statutory basis. Step 8 audit records include a reference to the disclosure-accounting log entries generated during the session. The disclosure-accounting log is a separate data store from the audit archive and follows its own retention regime (typically the longer of the statutory retention floor and the patient's records-retention horizon).
+
+**Right-to-deletion workflow with deletion-propagation.** A deletion request (from the patient, or from the parent on behalf of a minor, or from the patient after reaching age of majority) triggers propagation across: audio samples in S3, feature vectors in S3, per-item scores in DynamoDB, longitudinal-trajectory entries in DynamoDB, goal-attainment data, any vendor-side copies covered by the BAA, and the corresponding disclosure-accounting log entries. Cryptographic erasure (destroying the per-patient KMS data key) is the deletion primitive for encrypted stores. The deletion workflow respects pediatric-records-retention floors: if a state requires retention until age-of-majority-plus-X, the deletion request is queued until the floor is reached unless a court order or explicit statutory override applies.
+
+**Feature-vector biometric classification.** Feature vectors derived from voice samples (formant trajectories, MFCC representations, speaker-embedding vectors) are classified as biometric data because they can re-identify the speaker. The same consent, disclosure-accounting, and deletion-propagation rules apply to feature vectors as to raw audio.
+
+**Pediatric-records-extending-to-age-of-majority-plus-X retention.** The architecture treats pediatric-records retention as a per-state configuration: California requires retention until age-of-majority-plus-1-year; New York requires 6 years from majority; Texas requires until age 25; other states vary. The per-patient retention-floor calculation uses the patient's date of birth, the applicable state rule, and the institutional regulatory floor. Audio, feature vectors, scoring records, and disclosure-accounting log entries all honor this calculated floor.
+
+**Synthetic-voice-detection and voice-cloning defense.** The capture pipeline includes a synthetic-voice-detection guard that flags audio samples with characteristics consistent with text-to-speech synthesis or voice cloning. For pediatric patients, the detection threshold is lowered (more conservative) because pediatric voice samples have higher value as targets for misuse. Flagged samples are quarantined for SLP review before entering the scoring pipeline.
+
+**FERPA-aligned access controls for school deployments.** In the school deployment context, access control follows FERPA's legitimate-educational-interest standard: school employees with a legitimate educational interest can access the student's records, and parents have access-by-default. The architecture maps FERPA access rules to Cognito or institutional-IdP scopes, with school-employee role verification at the API Gateway authorizer.
+
+**COPPA-aligned verifiable parental consent for direct-to-child interfaces.** Home-practice apps and other interfaces directed at children under 13 require verifiable parental consent under COPPA. The consent mechanism meets the FTC's standards for verifiable consent (not merely click-through). The architecture stores the COPPA consent evidence alongside the HIPAA and biometric-data consent records.
+
+**Step 9 deletion-propagation pseudocode pattern:**
+
+```pseudocode
+FUNCTION process_deletion_request(
+        patient_id_hash, requestor_id, requestor_authority):
+
+    // Verify authority: parent-on-behalf for minors,
+    // patient-on-own-behalf for adults or patients past
+    // age of majority.
+    patient_record = longitudinal_table.get(patient_id_hash)
+    retention_floor = compute_retention_floor(
+        date_of_birth: patient_record.date_of_birth,
+        state: patient_record.jurisdiction_state)
+
+    IF now() < retention_floor:
+        queue_deletion_at(
+            patient_id_hash: patient_id_hash,
+            execute_after: retention_floor,
+            requestor_id: requestor_id)
+        RETURN {status: "queued_until_retention_floor",
+                execute_after: retention_floor}
+
+    // Propagate deletion via cryptographic erasure.
+    destroy_patient_data_key(patient_id_hash)
+
+    // Explicit object deletion for non-KMS-encrypted
+    // stores and vendor-side copies.
+    delete_audio_objects(patient_id_hash)
+    delete_feature_vectors(patient_id_hash)
+    delete_longitudinal_entries(patient_id_hash)
+    delete_scoring_records(patient_id_hash)
+    notify_vendor_deletion(patient_id_hash)
+    append_disclosure_log(
+        patient_id_hash: patient_id_hash,
+        action: "deletion_executed",
+        requestor: requestor_id,
+        authority: requestor_authority)
+
+    RETURN {status: "deleted"}
+```
+
+**Production-gaps owners.** The biometric-governance scaffolding requires named owners: the institutional privacy officer (policy authority), the institutional records-management officer (retention-floor authority), the FERPA records officer for school deployments (educational-records authority), and the engineering lead responsible for the deletion-propagation and disclosure-accounting-log implementations.
+
+### Pediatric, FERPA, COPPA, and School-Context Profile
+
+Four overlapping deployment contexts trigger different consent, access-control, and documentation regimes. The architecture supports per-profile configuration.
+
+**Clinic-based pediatric.** The standard pediatric clinical context. Consent flow: HIPAA-aligned parent or guardian authorization with age-appropriate assent for children typically age 7 and older. Access control: treating-provider access plus patient/legal-representative access. Documentation: standard HIPAA-aligned clinical documentation. Age-of-majority handoff: at the per-state age-of-majority threshold, the system generates a notice to the patient (now an adult), transitions consent authority from parent-on-behalf to patient-on-own-behalf, and updates access-control scopes accordingly.
+
+**School-based pediatric.** School SLP services create dual-jurisdiction complexity. Consent flow: FERPA-aligned consent with per-state educational-records retention rules; when the school bills Medicaid or commercial insurance for the service, HIPAA also applies and both consent surfaces are required. Access control: school-employee-legitimate-educational-interest (FERPA standard) plus parent-access-by-default; when HIPAA applies, treating-provider plus patient/legal-representative access layers on top. The architecture supports dual-access-control evaluation. Documentation: IEP-aligned output for school deployments (progress toward IEP goals, goal-attainment data formatted for the IEP review meeting) alongside HIPAA-aligned clinical documentation where the service is billed to a health plan.
+
+**Direct-to-child interface (home-practice apps for children under 13).** Consent flow: COPPA-aligned verifiable parental consent before the child interacts with the app. The consent mechanism meets FTC standards (signed consent form, credit-card verification, or equivalent approved method). Access control: parent supervises and can access all data; the child's access is mediated through the parent's account. No direct marketing or behavioral targeting of the child. Data retention: COPPA requires that data not be retained longer than reasonably necessary for the purpose; the architecture enforces a tighter retention schedule for direct-to-child data than for clinician-facing data unless the longer pediatric-medical-records floor applies.
+
+**Adult speech-therapy.** The simplest profile. Consent flow: HIPAA-aligned patient authorization with biometric-data disclosure where jurisdiction requires. Access control: treating-provider plus patient access. Documentation: standard clinical documentation. No FERPA or COPPA applicability.
+
+**Per-profile differences in Step 1C consent capture.** The session-setup Lambda reads the `deployment_context` flag and presents the applicable consent surface(s). The consent record stores which profiles applied and the per-profile consent evidence. The audit record at Step 8 includes the `deployment_context` flag and per-profile consent references.
+
+**Age-of-majority handoff.** The system monitors patient age against the per-state age-of-majority threshold. When the threshold is reached, the system generates a notice to the patient, offers consent-on-own-behalf, and transitions access-control authority. For school-based deployments that span the age-of-majority boundary (a student receiving services from age 16 through age 19), the handoff includes both FERPA and HIPAA authority transitions.
+
+**Pediatric-assent gradient.** For older pediatric patients (typically age 7+, but developmentally determined), assent is captured alongside parent consent. The assent language is developmentally appropriate. The architecture stores assent as a separate record from parent consent, with the understanding that assent is a respect-for-persons principle rather than a legal authorization.
+
+### Per-Device-Pattern Audio Path Authentication and Encryption
+
+Different capture devices have different security postures. The architecture specifies per-device-pattern requirements.
+
+**In-clinic dedicated microphone.** TLS in transit as a minimum. Mutual TLS (mTLS) preferred for dedicated hardware with provisioned client certificates. Per-encounter session tokens bind the audio stream to the assessment session. Device-attestation using hardware-backed credentials where the microphone system supports it. BAA scope: the microphone vendor's processing path (if any signal processing occurs on-device before transmission) is covered by the institutional BAA.
+
+**Telepractice video-call audio.** TLS in transit via the video-call platform's encryption. Per-session patient-pairing: the system verifies that the audio stream corresponds to the correct patient session before scoring. For pediatric telepractice, parent-co-presence verification is required (the parent or guardian is confirmed present at the start of the session). Device-attestation is limited to what the video-call platform supports.
+
+**Home-practice mobile-app capture.** Device-attestation for the mobile app using platform-specific attestation APIs (Android SafetyNet/Play Integrity, iOS DeviceCheck/App Attest). Per-encounter session tokens with short expiry. For pediatric direct-to-child interfaces, verifiable parental consent per COPPA finding above, plus parent-co-presence verification for younger children. Audio is encrypted on-device before upload using a per-session key derived from the session token.
+
+**School-based shared equipment.** Per-session patient-pairing under FERPA-aligned access controls. The device may be shared among multiple students; the system verifies student identity at session start and ensures audio from one student's session is not accessible to another student's session. School-employee-legitimate-educational-interest access control applies.
+
+**Per-device-class certification expectations.** In-clinic dedicated microphones: HITRUST or SOC 2 Type II certification for the vendor. Mobile apps: SOC 2 Type II for the app vendor. For devices that are part of an FDA-cleared SaMD pathway, the device is included in the SaMD regulatory submission.
+
+**Audit-record propagation.** The device-attestation context (device class, attestation status, session-token validity, patient-pairing verification, parent-co-presence verification for pediatric telepractice) is recorded in the session metadata and propagated into the Step 8 audit record.
+
+### Vendor-API Integration Security for Biometric-Data Export
+
+When audio or feature vectors cross the institutional-vendor boundary (for example, invoking a third-party speech-scoring API), the export constitutes a biometric-data disclosure event.
+
+**Authentication.** Vendor API authentication via mTLS where the vendor supports it, or API key plus scoped IAM credentials with per-call rotation via Secrets Manager. TLS 1.2+ in transit with certificate pinning where supported.
+
+**Disclosure-accounting.** Each vendor API call that transmits audio or feature vectors appends a disclosure-accounting log entry per the S1 governance scaffolding. The entry records the vendor identity, the data elements transmitted, the statutory basis, and the timestamp.
+
+**BAA scope.** The vendor BAA covers audio data in transit to the vendor, at rest within the vendor's pipeline, and within the vendor's subprocessors. The BAA specifies the vendor's data-retention and deletion obligations.
+
+**Data residency.** For EU patients, audio routes to EU-resident vendor endpoints under GDPR Article 9 requirements. The architecture supports per-patient-jurisdiction routing: the vendor-integration Lambda reads the patient's jurisdiction from the session metadata and selects the appropriate vendor endpoint region.
+
+**Egress hierarchy.** PrivateLink (preferred, where the vendor exposes a PrivateLink endpoint) > Direct Connect or VPN (for vendors with dedicated connectivity) > public-Internet-with-TLS (acceptable for vendors without private connectivity, with additional controls: certificate pinning, WAF egress rules, per-call logging).
+
+### Lambda Resource-Based Policy and Event-Payload Validation
+
+Each Lambda in the pipeline has a resource-based policy that pins the invoking principal to the specific production resource ARN.
+
+**Resource-based policy pinning.** The session-setup Lambda's resource-based policy allows invocation only from the production API Gateway stage ARN. The feature-extraction Lambda allows invocation only from the production Step Functions state-machine ARN. The scoring Lambda allows invocation only from the production Step Functions state-machine ARN. The documentation-generation Lambda allows invocation only from the production Step Functions state-machine ARN or the production EventBridge rule ARN (for event-driven report generation). No Lambda allows invocation from wildcard principals.
+
+**Event-payload validation guard.** Each Lambda includes a defense-in-depth guard at the start of execution that validates the invoking context against production constants. The guard checks: (1) the source ARN from the Lambda context matches the expected invoker; (2) the event payload contains the expected schema fields for the pipeline stage; (3) the session_id in the payload corresponds to an active session in the session table. If any check fails, the Lambda logs the validation failure, emits a CloudWatch alarm metric, and returns an error without processing the event.
+
+### Audit-Log Retention Floor
+
+The audit-log retention floor is the longest of the following per-patient:
+
+1. **HIPAA minimum:** six years from the date of creation or the date when the policy was last in effect, whichever is later.
+2. **State medical-records retention:** including pediatric-extending-to-age-of-majority-plus-X rules. Examples: California requires pediatric records until age-of-majority-plus-1-year; New York requires 6 years from age of majority; Texas requires retention until age 25. The per-patient calculation uses date of birth and applicable state rule.
+3. **Biometric-records retention:** BIPA requires retention policies to specify a maximum retention period (typically 3 years from last interaction or purpose completion); CUBI and Washington's biometric-data law have analogous requirements; GDPR Article 9 requires retention only as long as the processing purpose persists plus the applicable legal obligation floor.
+4. **FERPA educational-record retention:** for school-based deployments, per-state educational-records-retention rules apply (typically 5-7 years from last attendance, but varies).
+5. **COPPA-related retention:** for direct-to-child interface elements, data is retained no longer than reasonably necessary for the purpose unless a longer medical-records or educational-records floor applies.
+6. **FDA SaMD post-market surveillance retention:** for cleared devices, the FDA expects post-market surveillance records to be maintained for the useful life of the device plus any post-market study commitments (typically 5-10 years).
+7. **Institutional regulatory floor:** the institution's own records-management policy, which may exceed all statutory floors.
+
+The disclosure-accounting log (per S1 governance) follows a separate retention regime: it is retained at least as long as any of the data it describes is retained, plus a configurable buffer (typically 2 years) to support deletion-verification auditing.
+
+### Stimulus-Set IP and License Attribution
+
+Assessment instruments and their stimulus sets are intellectual property. The architecture manages licensing as an operational concern.
+
+**Per-stimulus license-attribution log.** Each stimulus presented to the patient is logged with the instrument version, the stimulus identifier, the license under which the stimulus is used, and a reference to the institutional license agreement. This log is appended to the disclosure-accounting log per the S1 governance scaffolding.
+
+**Per-instrument-version tracking with version-mismatch detection.** The session-setup Lambda loads the current instrument definition (including the stimulus set version) from DynamoDB. If the instrument definition has been updated since the patient's last assessment, the longitudinal-comparison Lambda flags the version mismatch so the SLP can interpret score deltas in context (a stimulus-set change can shift baseline scores independent of patient progress).
+
+**Per-norm-reference licensing distinction.** Norm-reference data may be licensed separately from the stimulus set. The architecture tracks norm-reference provenance (publisher, version, license agreement reference) and includes norm-reference attribution in the assessment output.
+
+**Deviation-from-published-stimulus tracking.** When the SLP customizes stimuli at session setup (adding patient-specific target words, adjusting stimulus difficulty), the system records the deviations from the published stimulus set. The scoring engine accounts for the deviation when applying published norms (norms validated on the published stimulus set may not apply directly to customized stimuli; the system flags this limitation).
+
+**License-key management.** Stimulus-set and norm-reference license keys are stored in Secrets Manager with rotation per the publisher's terms. The session-setup Lambda validates the license key at session start and logs the validation result.
+
+**Institutional-license-compliance audit surface.** The analytics layer provides a dashboard showing license utilization (sessions per instrument, per month), license expiration dates, and compliance status. This supports institutional procurement and renewal workflows.
+
+### Deployment Pattern (Versioning and Canary Deployment)
+
+Every component that affects clinical output is version-controlled with commit-SHA-tied builds and canary-deployed with rollback-on-regression.
+
+**Version-controlled artifacts.** Models (SageMaker model artifacts with version tags), prompts (Bedrock inference profile with prompt templates versioned in source control), stimulus sets (instrument definition versions in DynamoDB with change history), per-population norm references (versioned alongside instrument definitions), per-population thresholds (confidence thresholds, severity cutoffs, eligibility gates), and clinical-action mappings (what actions the system recommends based on score patterns).
+
+**SageMaker endpoint canary deployment.** New model versions deploy as canary endpoints with a traffic-shift schedule (typically 5% initial, 25% after 24 hours, 100% after 72 hours if no regression). Regression detection uses per-population SLP-agreement metrics from the canary traffic. Rollback is automatic on regression detection.
+
+**Bedrock inference profile for prompt versioning.** Report-generation prompts and family-summary prompts are versioned through Bedrock inference profiles. A new prompt version deploys to a test cohort first; the faithfulness-check pass rate on the test cohort gates promotion to production. Rollback-on-regression is automated.
+
+**Held-out evaluation set.** A per-population held-out evaluation set (SLP-graded reference assessments not used in training) runs against every new model version, prompt version, and threshold configuration before promotion. The evaluation set includes per-population coverage (each validated population has representation) and prompt-injection test cases (adversarial inputs that should not produce clinical-looking output).
+
+**Version stamping on every assessment session.** The audit record for each session includes: `scoring_model_versions` (one per instrument and per model), `stimulus_set_version`, `per_population_norm_reference_version`, `per_population_threshold_version`, `clinical_action_mapping_version`, `slp_report_prompt_version`, and `family_summary_prompt_version`. This supports traceability: for any historical assessment, the institution can identify exactly which versions of every component produced the result.
+
+**SaMD-specific change-management.** For deployments where one or more instruments operate under an FDA SaMD clearance, version changes to clearance-affecting components (the scoring model, the severity thresholds, the clinical-action mappings) follow the SaMD change-management discipline. Minor changes (prompt wording, UI layout) may fall under the cleared device's change plan; major changes (new model architecture, new population expansion, new clinical claim) require a regulatory submission. The version-control infrastructure distinguishes clearance-affecting from non-clearance-affecting changes.
+
+### Per-Language Pipeline Pattern
+
+Multilingual deployment is a substantial expansion built on a language-aware architecture from day one, even when shipping English-first.
+
+**Per-language acoustic-feature calibration data.** Each supported language has its own acoustic-feature calibration corpus (language-specific phoneme distributions, language-specific formant ranges, language-specific prosodic patterns). The calibration data gates per-language deployment: a language is not enabled until its calibration data meets the institutional quality threshold.
+
+**Per-language linguistic-feature LLM-judge prompts.** Connected-speech linguistic-feature extraction uses Bedrock with language-specific prompts developed with native-speaker SLP-clinical input. The prompt templates are versioned per language and validated against SLP-graded reference transcripts in that language.
+
+**Per-language template definitions.** SLP-report templates and family-summary templates are language-specific. A Spanish-language report uses Spanish clinical terminology and culturally appropriate framing, not a machine translation of the English template.
+
+**Per-language faithfulness rule catalogs.** The Guardrails configuration includes per-language rules for content filtering, clinical-claim boundaries, and reading-level validation.
+
+**Per-language validation cohort.** Each language has its own validation cohort with appropriate demographic representation (age bands, dialects, severity bands, clinical populations). The per-language validation evidence is separate from the English validation evidence; cross-language transfer is not assumed.
+
+**Per-language consent disclosure.** HIPAA, FERPA, COPPA, and biometric-data-law consent disclosures are provided in the patient's or parent's preferred language.
+
+**Per-language stimulus-set licensing.** Stimulus sets for non-English instruments may be licensed from different publishers or developed institutionally. Per the S4 finding, license attribution applies per language.
+
+**Per-dialect calibration within each language.** Within a supported language (for example, Spanish), dialect variation (Mexican Spanish, Caribbean Spanish, Central American Spanish) affects phonological-pattern interpretation. The architecture supports per-dialect calibration data and per-dialect norm references where they exist.
+
+**Code-switching handling.** Bilingual speakers frequently code-switch during assessment. The pipeline detects code-switching events, scores each language segment against the appropriate language model, and presents the bilingual profile to the SLP. Code-switching is not treated as an error; it is treated as a feature of the speaker's linguistic repertoire.
+
+**Per-language deployment gating.** A new language is deployed only when all per-language assets (acoustic calibration, linguistic-feature prompts, templates, faithfulness rules, validation cohort, consent disclosures, stimulus-set licensing) meet the institutional quality threshold and the per-population validation for that language passes the launch gate.
+
+### Disaster Recovery Topology
+
+Each upstream service has a defined failover policy. The SLP must be able to continue clinical work regardless of infrastructure failures.
+
+**SageMaker endpoint outage.** Primary: cross-region fallback to a secondary endpoint in a paired region with the same model version. Secondary (if cross-region is also unavailable): graceful degradation to "scoring not currently available, continue with SLP-only assessment" mode. The SLP records the session; audio is stored; scoring runs when the endpoint recovers. The session state machine in Step Functions enters a "pending-scoring" durable state.
+
+**Bedrock unavailability.** Fallback: structured-output-only rendering of the SLP report and family summary. The system populates the report template with the structured scoring data (tables, per-item results, norm comparisons) without the LLM-generated narrative prose. The SLP can add narrative manually. The family summary uses a pre-authored template with fill-in-the-blank structured data rather than LLM-generated prose.
+
+**Transcribe Medical unavailability.** Linguistic-feature pipelines are disabled for connected-speech tasks. Connected-speech instrument scoring fails gracefully with a clear status ("transcription unavailable, linguistic features not computed"). Acoustic-only instruments (articulation, fluency, voice quality) continue to score normally.
+
+**HealthLake unavailability.** Assessment results are stored durably in the longitudinal DynamoDB table and the score-archive S3 bucket. FHIR write-back is queued with EventBridge retry. The SLP sees results in the application immediately; EHR synchronization catches up when HealthLake recovers.
+
+**School SIS integration unavailability.** IEP-aligned documentation is stored locally and queued for SIS write-back with durable retry. The SLP can export the documentation manually if needed before the retry succeeds.
+
+**EHR API unreachable.** Same pattern as SIS: durable storage with retry. The documentation Lambda stores the FHIR resources in S3 and queues a retry event on EventBridge with exponential backoff.
+
+**Failover-detection triggers.** Health checks run every 60 seconds against each upstream service. Three consecutive failures trigger failover. Failover-back triggers on five consecutive successful health checks after recovery.
+
+**Quarterly testing cadence.** The institution runs a disaster-recovery exercise quarterly, verifying each failover path by simulating the corresponding upstream outage and confirming that the SLP-facing workflow degrades gracefully.
+
+---
+
 ## Variations and Extensions
 
 **School-based SLP deployment with IEP integration.** A focused deployment for school SLPs, with FERPA-aligned consent, IEP-aligned documentation, school SIS integration, and progress-monitoring outputs that feed the IEP review process. School SLPs handle a large share of pediatric speech-therapy caseloads, and the school deployment context is sufficiently different from the clinical context that it warrants its own product configuration.

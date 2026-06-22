@@ -561,7 +561,7 @@ INSTRUMENT_DEFINITIONS = {
                  "narrative_structure_score",
              ]},
         ],
-        "summary_method":  "connected_speech_summary",
+        "summary_method":  "linguistic_feature_summary",
         "severity_cutoffs": {},
         "confidence_threshold": Decimal("0.60"),
         "available_norms": [
@@ -2016,7 +2016,7 @@ def score_item(item, features, scoring_method):
         "evidence":      {"reason": "scoring_method_unknown"},
     }
 
-def compute_instrument_summary(scoring_method, items):
+def compute_instrument_summary(summary_method, items):
     """Compute the per-instrument summary score from the
     contributing items."""
     if not items:
@@ -2024,7 +2024,7 @@ def compute_instrument_summary(scoring_method, items):
             "items_scored":      0,
             "summary_value":     Decimal("0"),
         }
-    if scoring_method == "percent_consonants_correct":
+    if summary_method == "percent_consonants_correct":
         item_correct_counts = []
         item_substituted_counts = []
         item_omitted_counts = []
@@ -2063,7 +2063,7 @@ def compute_instrument_summary(scoring_method, items):
             "summary_label":
                 "percent_consonants_correct",
         }
-    if scoring_method == "connected_speech_summary":
+    if summary_method == "linguistic_feature_summary":
         # Aggregate the linguistic features across items.
         merged = {}
         for it in items:
@@ -2245,7 +2245,8 @@ def score_instruments(session_id):
         review_pending = [i for i in per_item_scores
                            if i["slp_review_flag"]]
         auto_summary = compute_instrument_summary(
-            scoring_method=scoring_method,
+            summary_method=instrument_def.get(
+                "summary_method"),
             items=auto_scored)
 
         # Step 4C: norm-referenced comparison.
@@ -2740,8 +2741,8 @@ def slp_submits_review(session_id, slp_id, edits,
             continue
         all_items = scores.get("per_item_scores", [])
         final_summary = compute_instrument_summary(
-            scoring_method=instrument_def.get(
-                "scoring_method"),
+            summary_method=instrument_def.get(
+                "summary_method"),
             items=all_items)
         final_norm_comparison = apply_norms(
             instrument_id=instrument_id,
