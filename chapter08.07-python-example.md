@@ -331,7 +331,8 @@ def filter_active_conditions(conditions: list) -> list:
         # Keep everything else. Comprehend Medical does not currently expose a
         # dedicated "FAMILY_HISTORY" trait on MEDICAL_CONDITION entities, so we
         # rely on section detection or manual rules for that in production.
-        # TODO: verify trait coverage in latest Comprehend Medical API version
+        # A production implementation would parse note section headers and use
+        # offset ranges to identify conditions documented under "Family History."
         active.append(condition)
 
     return active
