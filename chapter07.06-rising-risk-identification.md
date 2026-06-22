@@ -60,6 +60,25 @@ Rising risk detection requires multiple observations per patient over time. This
 
 **Regression to the mean.** Patients identified as "rising risk" based on recent score increases will, on average, partially revert even without intervention. This is a statistical phenomenon, not a clinical one. It makes it genuinely hard to measure whether your interventions are working, because some of the "improvement" you observe would have happened anyway. Proper evaluation requires a control group or at minimum a regression-adjusted comparison.
 
+### Equity and Bias Considerations
+
+Rising risk models inherit the biases of their input data and underlying risk scores, and trajectory detection introduces additional equity concerns that are easy to overlook.
+
+**Differential data density.** Patients with sparse visit histories (fewer than 3 scoring cycles) fall into the INSUFFICIENT_HISTORY category and are invisible to the trajectory model. This isn't random. Patients who face transportation barriers, lack insurance coverage, or distrust the healthcare system generate less data. The model systematically cannot detect rising risk in the populations that often need intervention most. If 15% of your Medicaid population has insufficient history compared to 3% of your commercial population, you have an equity problem baked into the detection threshold.
+
+**Inherited model bias.** The underlying risk scores themselves carry bias. Obermeyer et al. (2019) demonstrated that a widely-used commercial risk algorithm systematically underestimated the health needs of Black patients because it used cost as a proxy for illness. If your trajectory model sits on top of a biased risk score, it will detect rising risk less reliably for the groups the base model underscores. A patient whose true risk is rising may show a flat trajectory because the base model never assigned them an appropriately high score to begin with.
+
+**Threshold equity across demographic groups.** A single set of detection thresholds (slope > 0.05, delta > 0.20) may perform differently across demographic groups. If one population has systematically lower baseline scores due to model bias, the same absolute delta threshold is effectively harder for them to trigger. Relative thresholds help but don't fully solve this. You need to audit flag rates across race, ethnicity, age, gender, and payer type to confirm that the model flags proportional to true clinical need, not proportional to data availability.
+
+**Intervention allocation fairness.** Even if detection is equitable, routing and prioritization may not be. If the prioritization algorithm ranks by absolute score (higher score = higher priority), patients from under-scored populations will consistently rank lower even when their trajectories are equally alarming. Prioritize by trajectory severity (slope, acceleration) rather than absolute score level to reduce this effect.
+
+**Mitigation strategies:**
+
+- Audit flag rates by demographic group at every threshold change. If flag rates diverge significantly from expected disease burden patterns, investigate whether the model or the thresholds are the source.
+- Consider group-specific threshold calibration where justified by evidence of differential model performance. This is controversial but may be necessary if the base risk model has known calibration differences across groups.
+- Implement proactive outreach for the INSUFFICIENT_HISTORY population. These patients cannot benefit from trajectory detection, so they need a separate pathway (e.g., outreach based on time since last engagement, or community health worker referral).
+- Report equity metrics alongside operational metrics. Track the demographic composition of flagged patients, patients with insufficient history, and patients who received intervention. Surface disparities to clinical leadership alongside the pipeline's performance metrics.
+
 ### Feature Engineering for Trajectory Detection
 
 The features that predict rising risk are different from those that predict current risk. You need both levels and changes:

@@ -18,7 +18,11 @@
 
 **Amazon EventBridge for orchestration.** The scoring pipeline runs on a schedule (weekly or monthly). EventBridge Scheduler triggers the pipeline, and EventBridge rules route completion events to downstream consumers (notifications to care managers, updates to the care management platform, alerts for rapid deterioration).
 
+**Pipeline failure monitoring.** Use AWS Step Functions (or an equivalent orchestrator) to coordinate the pipeline steps rather than loose EventBridge chaining. Step Functions gives you built-in error handling, retries with backoff, and a visual execution history. Each step should emit success/failure metrics to CloudWatch. Configure CloudWatch Alarms for three conditions: (1) the pipeline has not completed within its expected execution window (e.g., 3 hours for a monthly cycle), (2) any individual step fails, and (3) the output deviates anomalously from prior cycles (flagged count more than 50% above or below the previous cycle's count, which usually indicates a data issue rather than a real population shift). Alert the ops team immediately on pipeline failure. A missed cycle means rising-risk patients go unidentified for an additional month, and care managers lose visibility into deteriorating patients during that gap.
+
 **Amazon QuickSight for population-level dashboards.** Leadership needs to see the rising risk population in aggregate: how many patients are flagged, what's the distribution of trajectory severity, which programs are at capacity. QuickSight can query the S3 score history directly, so you don't need to stand up a separate data warehouse just for leadership dashboards.
+
+**Access control: panel-level authorization.** DynamoDB holds PHI (risk scores, trajectory data, patient identifiers). HIPAA's minimum-necessary standard means care managers should only access patients attributed to their panel, not the entire population. Put an API layer (API Gateway or AppSync) in front of DynamoDB that enforces panel-level authorization. A Lambda authorizer validates that the requesting user is assigned to the patient's care panel before returning any data. Restrict direct DynamoDB access to the pipeline's IAM roles only. No human user or care management application should hit the table directly. This also gives you a single enforcement point for audit logging (who accessed which patient's trajectory data and when).
 
 ### Architecture Diagram
 
@@ -57,6 +61,15 @@ flowchart TD
 | **Data Sources** | EHR extract (diagnoses, labs, medications, encounters), claims feed (utilization history), ADT feed (admissions, discharges). Minimum 18-24 months of history for meaningful trajectory analysis. |
 | **Cost Estimate** | Glue: ~$0.44/DPU-hour (feature assembly + trajectory computation ~2-4 DPU-hours per run for 500K patients). SageMaker batch transform: ~$0.05/hour for ml.m5.xlarge (scoring 500K patients takes ~30 min). S3 storage: ~$0.023/GB/month. DynamoDB: on-demand pricing, ~$1.25 per million writes. Total: ~$50-150 per monthly scoring cycle for a 500K-member population. |
 
+**IAM role isolation per pipeline phase.** Do not use a single IAM role with broad permissions across the entire pipeline. Each phase should use a dedicated role scoped to the specific resource ARNs it needs:
+
+- **Glue feature assembly role:** `s3:GetObject` on source data buckets + `s3:PutObject` on the feature store prefix only. No DynamoDB, no EventBridge, no SageMaker access.
+- **SageMaker batch transform role:** `s3:GetObject` on the feature store prefix + `s3:PutObject` on the score history prefix only. No DynamoDB, no SNS access.
+- **Glue trajectory computation role:** `s3:GetObject` on the score history prefix + `s3:PutObject` on the trajectory results prefix only.
+- **Lambda detection/routing role:** `dynamodb:PutItem` and `dynamodb:UpdateItem` on the risk state table + `events:PutEvents` on the specific event bus ARN. No S3 write access, no SageMaker access.
+
+This limits the blast radius if any single component is compromised. A vulnerability in the Lambda detection function cannot be used to read raw clinical data from the source buckets, because that role simply doesn't have those permissions.
+
 ### Ingredients
 
 | AWS Service | Role |
@@ -70,6 +83,8 @@ flowchart TD
 | **Amazon SNS** | Delivers notifications to care management teams for newly flagged patients |
 | **Amazon QuickSight** | Population-level dashboards for leadership visibility into rising risk trends |
 | **AWS KMS** | Manages encryption keys for all data stores |
+
+**SNS and PHI handling.** SNS notifications containing patient IDs, risk scores, or trajectory data constitute PHI. Restrict SNS topic subscriptions to HIPAA-compliant endpoints only: SQS queues, Lambda functions, or HTTPS endpoints with TLS. Do not subscribe email or SMS endpoints that would embed clinical details in unencrypted channels. The recommended pattern: send minimal alert notifications (e.g., "3 new rising-risk patients require review") with a link to the care management dashboard. Keep the trajectory detail in DynamoDB behind the authenticated API layer, not in the notification body itself.
 
 ### Code
 
@@ -295,6 +310,8 @@ FUNCTION detect_rising_risk(trajectories):
 
     RETURN flagged
 ```
+
+**Scaling note for large populations.** For populations exceeding 500K members, the Lambda-based detection step hits memory and timeout constraints. Lambda works well for the routing and notification logic (which handles only the flagged subset, typically less than 1% of the population), but applying thresholds and collecting signals across the full population is a bulk data transformation. For large populations, split this step: use a Glue job for the threshold application and signal collection (it's a map operation over the trajectory results, which Glue's Spark engine parallelizes naturally), then pass only the flagged subset to Lambda for prioritization, routing, and event emission. This keeps Lambda focused on the lightweight, latency-sensitive work it's good at, and lets Glue handle the heavy filtering that doesn't need sub-second response times.
 
 **Step 5: Store results and route to care management.** Write the rising risk flags to the operational database so care management platforms can access them in real-time. Also emit events for newly flagged patients so care managers receive notifications. The routing logic determines which care management program is most appropriate based on the nature of the risk increase (e.g., behavioral health escalation vs. chronic disease management vs. social needs). Include the trajectory summary in the notification so the care manager has context without needing to look it up separately.
 
