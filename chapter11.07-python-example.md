@@ -215,7 +215,7 @@ INSTITUTION_DISPLAY_NAME         = "Acme Health"
 # engagement-message composition for routine check-ins.
 #
 # If your region requires cross-region inference, use the
-# inference profile ID. TODO: verify the exact model IDs
+# inference profile ID. Verify the exact model IDs
 # available in your region and account; Bedrock model
 # availability evolves over time.
 SMALL_MODEL_ID                   = "anthropic.claude-3-5-haiku-20241022-v1:0"
@@ -2031,11 +2031,14 @@ def receive_message(*,
         "timestamp":              _now_iso(),
     }))
 
-    return handle_conversation(
-        session_id=session_id,
-        patient_id=patient_id,
-        user_message=user_message,
-        longitudinal_context=longitudinal_context)
+    # Return the loaded context for the orchestrator.
+    # The orchestrator (coach_full_pipeline) calls
+    # handle_conversation exactly once with this context.
+    return {
+        "session_id": session_id,
+        "patient_id": patient_id,
+        "longitudinal_context": longitudinal_context,
+    }
 
 def _get_or_create_session(state_table, channel,
                             channel_session_id, auth_context):
