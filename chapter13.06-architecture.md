@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Neptune for the knowledge graph.** Neptune is AWS's managed graph database service supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For care gap reasoning, the RDF/SPARQL model is the better fit because it natively supports ontological reasoning through OWL (Web Ontology Language) inference. You can define class hierarchies (coronary artery disease subClassOf cardiovascular disease) and the query engine handles the inference automatically. Neptune is HIPAA eligible, supports encryption at rest and in transit, and runs within your VPC.
+**Amazon Neptune for the knowledge graph.** Neptune is AWS's managed graph database service supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For care gap reasoning, the RDF/SPARQL model is the better fit because clinical guidelines are naturally expressed as class hierarchies and typed relationships. You define condition hierarchies (coronary artery disease rdfs:subClassOf cardiovascular disease) as RDF triples and traverse them at query time using SPARQL property paths (e.g., `rdfs:subClassOf*` for transitive closure). Neptune does not perform OWL inference natively. It stores and queries RDF data, but hierarchy traversal requires explicit SPARQL property path expressions rather than a built-in reasoner. For use cases requiring full OWL reasoning (forward-chaining, complex class expressions), you can integrate a third-party reasoner like RDFox to pre-materialize inferred triples and load them into Neptune. For care gap applicability checks, SPARQL property paths handle the hierarchy traversal we need without an external reasoner. Neptune is HIPAA eligible, supports encryption at rest and in transit, and runs within your VPC.
 
 **AWS Lambda for patient evaluation orchestration.** Each patient evaluation is a bounded, stateless operation: assemble facts, query the graph, score the gaps, return results. Lambda handles the per-patient compute without requiring persistent infrastructure. For batch population evaluation (running all 50,000 patients overnight), Lambda's concurrency model scales naturally.
 
@@ -268,12 +268,9 @@ FUNCTION identify_gaps(applicable_recommendations, patient_facts, evaluation_dat
                 priority:           rec.priority,
                 frequency:          rec.frequency,
                 last_completed:     last_completed.service_date IF exists ELSE "never",
-                // TODO (TechWriter): Code review Finding 1 (WARNING). days_overdue formula is wrong.
-                // days_between(cutoff_date, evaluation_date) always equals the frequency
-                // window size, not the actual overdue amount. Correct formula:
-                // days_between(last_completed.service_date, evaluation_date) - frequency_in_days
-                // Also update the expected output JSON to match corrected math.
-                days_overdue:       days_between(cutoff_date, evaluation_date),
+                days_overdue:       IF last_completed exists THEN
+                                        days_between(last_completed.service_date, evaluation_date) - frequency_in_days
+                                    ELSE null,
                 justification:      item.justification,
                 exclusions_checked: rec.excluded_by  // document what was ruled out
             }
@@ -371,7 +368,7 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
       "priority": "high",
       "frequency": "6 months",
       "last_completed": "2025-03-10",
-      "days_overdue": 66,
+      "days_overdue": 251,
       "composite_score": 8.4,
       "justification": ["Active condition: E11.9 (Type 2 Diabetes)"]
     },
@@ -382,7 +379,7 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
       "priority": "medium",
       "frequency": "12 months",
       "last_completed": "2024-11-20",
-      "days_overdue": 176,
+      "days_overdue": 181,
       "composite_score": 6.2,
       "justification": ["Active condition: E11.9 (Type 2 Diabetes)"]
     },
@@ -408,13 +405,33 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 | Metric | Typical Value |
 |--------|---------------|
 | Per-patient evaluation latency | 200-500ms |
-| Batch throughput (50K patients) | ~45 minutes with 100 concurrent Lambdas |
+| Batch throughput (50K patients) | ~8-15 minutes with 100 concurrent Lambdas |
 | Guideline coverage | Depends on ontology completeness (typically 40-80 HEDIS measures) |
 | False positive rate (gaps already closed) | 5-15% (due to claims lag) |
 | Ontology update deployment time | < 30 minutes (load new RDF, validate, swap) |
 | Cost per patient evaluation | ~$0.002 (Neptune query + Lambda + DynamoDB write) |
 
+**Batch throughput note:** The ~8-15 minute estimate assumes 500 sequential batches (50K patients / 100 concurrent Lambdas) at 200-500ms per patient, plus Step Functions orchestration overhead. Actual throughput depends on Neptune connection pool saturation and query complexity. Key tuning parameters: set `neptune_query_timeout` to 30 seconds to prevent individual query hangs from stalling the batch. Monitor `SparqlRequestsPerSec` and `MainRequestQueuePendingRequests` CloudWatch metrics to detect bottlenecks. Reuse HTTP connections across invocations (initialize the `requests.Session` outside the Lambda handler) to avoid TCP/TLS setup costs on every query.
+
 **Where it struggles:** Patients with complex multi-morbidity where guideline conflicts arise. Claims data lag causing false positive gaps. Exclusion criteria that require clinical judgment (e.g., "patient declined" is often not coded). Guidelines that reference social determinants not captured in structured data.
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the reasoning pattern. Here's what's missing before this handles real patients at scale:
+
+**No ontology validation pipeline.** The guideline ontology is the single most critical input. In production, you need automated validation: load a new ontology version, run it against a set of synthetic patients with known expected gaps, compare outputs, and reject the update if results diverge from expected. Without this, a typo in a condition hierarchy can silently suppress thousands of gap identifications.
+
+**No false positive tracking.** Claims data lags 30-90 days. A gap flagged today might have been closed last week by a service that hasn't been reported yet. You need a feedback loop: when a care manager confirms a gap is already closed, record it, and track your false positive rate over time. If it exceeds 10-15%, trust erodes and outreach teams stop using the system.
+
+**No Neptune connection pooling.** The pseudocode makes a fresh SPARQL request per patient. At 100 concurrent Lambdas, that's 100 simultaneous connections to Neptune. Neptune instances have connection limits (varies by instance type). You need connection reuse within Lambda warm starts, backpressure detection via `MainRequestQueuePendingRequests`, and graceful degradation when Neptune is saturated.
+
+**No exclusion completeness testing.** Missing an exclusion means incorrectly flagging a gap (a patient in hospice getting flagged for a cancer screening, for example). Production requires a regression test suite specifically for exclusion logic, covering edge cases like temporary exclusions (pregnancy), encounter-type exclusions (hospice enrollment without a diagnosis code), and documentation-based exclusions (patient declined).
+
+**No audit trail for reasoning.** HIPAA and quality program audits may require you to explain why a specific gap was (or was not) identified for a specific patient. The current output records the justification, but not the full reasoning trace: which SPARQL queries ran, which hierarchy paths were traversed, which exclusions were evaluated. For auditability, log the query and result at each reasoning step.
+
+**No multi-program support.** Different quality programs (HEDIS, CMS Star Ratings, state Medicaid programs) have overlapping but non-identical measure definitions. A production system needs to evaluate the same patient against multiple program rule sets and deduplicate the output. The ontology needs program-scoped namespaces.
 
 ---
 
@@ -441,7 +458,7 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 **AWS Sample Repos:**
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): Neptune code samples including RDF loading, SPARQL queries, and graph analytics patterns
 
-- [`amazon-neptune-ontology-example-blog`](https://github.com/aws-samples/amazon-neptune-ontology-example-blog): Demonstrates building and querying ontologies in Neptune with OWL reasoning
+- [`amazon-neptune-ontology-example-blog`](https://github.com/aws-samples/amazon-neptune-ontology-example-blog): Demonstrates building and querying ontologies in Neptune with SPARQL property paths (archived, but code samples remain valid)
 
 **AWS Solutions and Blogs:**
 - [Building Knowledge Graphs on AWS (Blog)](https://aws.amazon.com/blogs/database/building-a-knowledge-graph-application-with-amazon-neptune/): Patterns for knowledge graph construction and querying on Neptune

@@ -334,7 +334,8 @@ def find_applicable_recommendations(
     #
     # The key insight: we use rdfs:subClassOf* (the transitive closure)
     # so that E11 (Type2Diabetes) matches guidelines targeting DiabetesMellitus.
-    # Neptune's reasoner handles this traversal automatically.
+    # Neptune evaluates this SPARQL property path at query time, traversing
+    # the subclass hierarchy without requiring a separate reasoning engine.
 
     # Build a VALUES clause for the patient's condition codes.
     values_clause = " ".join(f'"{code}"' for code in patient_condition_codes)
@@ -534,7 +535,10 @@ def identify_gaps(
                 most_recent = max(all_matching, key=lambda s: s["service_date"])
                 last_completed = most_recent["service_date"]
                 last_date = datetime.date.fromisoformat(last_completed)
-                days_overdue = (eval_date - cutoff_date).days
+                # days_overdue = days since last completed minus the frequency window.
+                # Example: last HbA1c 431 days ago, frequency 180 days -> 251 days overdue.
+                frequency_days = freq_months * 30
+                days_overdue = (eval_date - last_date).days - frequency_days
 
             gaps.append({
                 "recommendation_id": rec["recommendation_id"],
@@ -793,7 +797,7 @@ This example demonstrates the reasoning pattern. Run it against a Neptune cluste
 
 **Testing.** There are no tests here. A production pipeline has unit tests for the scoring logic, integration tests against Neptune with a known ontology and synthetic patients with expected gap counts, and regression tests that run whenever the ontology is updated. Use Synthea or CMS Synthetic Medicare data for test populations. Never use real PHI in test environments.
 
-**SPARQL query optimization.** The query in Step 3 works but isn't optimized for large ontologies. Neptune's query optimizer handles most cases well, but for complex ontologies with deep hierarchies, you may need to materialize inferred triples (pre-compute the subclass relationships) rather than relying on runtime reasoning. Neptune's DFE (Data Flow Engine) mode helps with this.
+**SPARQL query optimization.** The query in Step 3 works but isn't optimized for large ontologies. Neptune's query optimizer handles most cases well, but for complex ontologies with deep hierarchies (10+ levels of rdfs:subClassOf), property path traversal can become expensive. You may need to pre-materialize the transitive closure of subclass relationships as explicit triples (using an external tool or a SPARQL CONSTRUCT query) rather than relying on property path evaluation at query time. Neptune's DFE (Data Flow Engine) mode improves performance for complex graph traversals.
 
 **Exclusion completeness.** We check exclusions by ICD-10 code prefix. Real exclusion logic is more nuanced: "patient declined" is often documented in free text, not coded. "Hospice" might be an encounter type rather than a diagnosis code. Some exclusions are temporary (pregnancy) and need date-aware logic. Start with the exclusions that are reliably coded and accept that some will require manual review.
 

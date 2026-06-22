@@ -112,3 +112,11 @@ The part that surprised me most: the condition hierarchy mapping is never "done.
 - **Recipe 4.6 (Care Gap Prioritization):** Complements this recipe by adding personalization to gap outreach (which channel, what time, what message)
 
 ---
+
+## Tags
+
+`knowledge-graph` · `ontology` · `care-gaps` · `quality-measures` · `HEDIS` · `reasoning` · `SPARQL` · `population-health` · `value-based-care` · `Neptune`
+
+---
+
+*← [Recipe 13.5: Clinical Pathway Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling) · [Chapter 13 Index](chapter13-preface) · [Next: Recipe 13.7: Disease-Gene-Drug Relationship Graph →](chapter13.07-disease-gene-drug-relationship-graph)*
