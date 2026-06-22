@@ -803,6 +803,12 @@ def index_results_opensearch(procedure_id: str, metadata: dict, analysis: dict) 
     We index phases and events as separate documents so they're independently
     searchable with their own timestamps and attributes.
 
+    IMPORTANT: The surgeon_id is pseudonymized before indexing. The general
+    search index stores only a stable pseudonym. Resolving the pseudonym to
+    the actual surgeon identity requires a separate restricted lookup table
+    and elevated IAM permissions. See the architecture companion for the
+    full access control model.
+
     Args:
         procedure_id: Links documents back to the procedure.
         metadata: Procedure metadata for filtering.
@@ -821,12 +827,20 @@ def index_results_opensearch(procedure_id: str, metadata: dict, analysis: dict) 
     # )
     # headers = {"Content-Type": "application/json"}
 
+    # Pseudonymize surgeon identity for the search index.
+    # In production, this would be a lookup in a DynamoDB mapping table:
+    #   pseudonym_table.get_item(Key={"surgeon_id": metadata["surgeon_id"]})
+    # If no mapping exists, generate a new pseudonym and store it.
+    # The pseudonym is stable (same surgeon always gets the same pseudonym)
+    # but not reversible without access to the restricted lookup table.
+    surgeon_pseudonym = f"surgeon-{hash(metadata['surgeon_id']) % 100000:05d}"
+
     # Index each phase as a searchable document.
     for phase in analysis["phase_timeline"]:
         doc = {
             "procedure_id": procedure_id,
             "procedure_type": metadata["procedure_type"],
-            "surgeon_id": metadata["surgeon_id"],
+            "surgeon_pseudonym": surgeon_pseudonym,
             "procedure_date": metadata["procedure_date"],
             "phase_name": phase["phase_name"],
             "start_time": phase["start_time"],
@@ -846,7 +860,7 @@ def index_results_opensearch(procedure_id: str, metadata: dict, analysis: dict) 
         doc = {
             "procedure_id": procedure_id,
             "procedure_type": metadata["procedure_type"],
-            "surgeon_id": metadata["surgeon_id"],
+            "surgeon_pseudonym": surgeon_pseudonym,
             "procedure_date": metadata["procedure_date"],
             "event_type": event["event_type"],
             "timestamp": event["timestamp"],

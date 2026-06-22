@@ -12,7 +12,19 @@
 
 **AWS Elemental MediaConvert for video preprocessing.** Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances. MediaConvert accesses S3 via AWS-internal endpoints over TLS; data does not traverse the public internet. For organizations requiring all PHI processing within a VPC boundary, an alternative is running FFmpeg on a VPC-hosted EC2 instance or ECS task, at the cost of managing the compute infrastructure yourself.
 
+**PHI de-identification during preprocessing.** Surgical video is dense with PHI that has nothing to do with the surgical analysis itself. Your preprocessing step must address four vectors before frames reach the ML pipeline:
+
+1. **Audio track stripping.** OR conversations contain patient names, medical history, and team discussions. Since the visual analysis pipeline doesn't use audio at all, strip audio tracks entirely during the MediaConvert transcode step. This eliminates the densest single source of incidental PHI.
+
+2. **Pre-incision footage.** Video recording often starts before draping, capturing the patient's face during positioning and intubation. Detect and either discard or redact frames preceding the first instrument appearance. A simple heuristic (color distribution shift from skin tones to blue drapes and pink tissue) works for coarse trimming; a trained face detection model handles edge cases.
+
+3. **OR monitor overlay detection.** Many OR setups display patient demographics, vitals, or EMR data on monitors visible to the laparoscopic camera. Run OCR-based text detection on a frame sample during preprocessing. If text regions are detected, either crop them out (if they're in a consistent screen region) or blur them (if they're overlaid on the surgical field). Flag procedures where overlay content is detected for manual verification.
+
+4. **Video file metadata sanitization.** Recording systems embed patient identifiers, MRN numbers, and procedure scheduling data in video file headers (DICOM metadata, MP4 user data atoms, MXF descriptive metadata). Strip all non-essential metadata during ingestion, preserving only technical fields needed for transcoding (codec, resolution, frame rate, duration).
+
 **Amazon SageMaker for model training and batch inference.** Surgical video models require GPU compute for both training and inference. SageMaker provides managed training jobs with spot instance support (critical for the multi-day training runs these models require) and batch transform for processing video backlogs. For the feature extraction backbone, SageMaker's built-in support for PyTorch and distributed training across multiple GPUs is essential.
+
+Be aware of cold start overhead with Batch Transform: provisioning a GPU instance and loading model artifacts takes 5-15 minutes per job. For medium volume (5-20 procedures per day), batch procedures together and run a single transform job every few hours to amortize that startup cost across multiple videos. For high volume (more than 20 procedures per day), deploy a persistent real-time SageMaker endpoint instead. The endpoint stays warm and processes new videos in seconds rather than waiting for instance provisioning. The tradeoff is paying for idle GPU time during off-hours, but at 20+ procedures daily the utilization justifies it. Factor the cold start overhead into your cost estimate: at low volume, the per-procedure cost is higher than the raw GPU inference time suggests because you're paying for 5-15 minutes of provisioning per job.
 
 **AWS Step Functions for pipeline orchestration.** The video analysis pipeline has multiple stages with dependencies, error handling requirements, and variable execution times. A single procedure might take 15-60 minutes to process depending on length. Step Functions manages the state machine: trigger on video upload, run preprocessing, launch inference, handle failures with retries, and write results.
 
@@ -49,14 +61,22 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon S3, AWS Elemental MediaConvert, Amazon SageMaker, AWS Step Functions, Amazon DynamoDB, Amazon OpenSearch Service, AWS Lambda, Amazon API Gateway, Amazon CloudWatch |
-| **IAM Permissions** | `s3:GetObject`, `s3:PutObject`, `s3:ListBucket`, `mediaconvert:CreateJob`, `mediaconvert:GetJob`, `sagemaker:CreateTransformJob`, `sagemaker:DescribeTransformJob`, `sagemaker:CreateTrainingJob`, `dynamodb:PutItem`, `dynamodb:Query`, `es:ESHttpPost`, `es:ESHttpGet`, `lambda:InvokeFunction`, `states:StartExecution`, `states:DescribeExecution`, `kms:Decrypt`, `kms:GenerateDataKey`, `logs:CreateLogGroup`, `logs:PutLogEvents` |
+| **IAM Permissions** | Three execution roles with scoped resource ARNs (see below) |
 | **BAA** | AWS BAA signed (surgical video is PHI; even de-identified video may contain identifiable features) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest; OpenSearch: encryption at rest and node-to-node encryption; all transit over TLS; SageMaker: volume encryption on training and inference instances |
 | **VPC** | Production: SageMaker, OpenSearch, and Lambda in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs, and Step Functions. OpenSearch domain must be VPC-only (no public endpoint for PHI data). Post-processing Lambda must be in the same VPC as the OpenSearch domain with security groups allowing HTTPS (443) to the OpenSearch domain's security group. |
 | **CloudTrail** | Enabled: log all S3, SageMaker, and DynamoDB API calls for HIPAA audit trail |
 | **GPU Instances** | SageMaker training: ml.p3.2xlarge or ml.g5.2xlarge minimum. Batch inference: ml.g5.xlarge. Budget for multi-day training runs. |
 | **Sample Data** | Public surgical video datasets: Cholec80 (80 cholecystectomy videos with phase annotations), m2cai16 (tool and phase annotations), CholecSeg8k (semantic segmentation). These are research datasets. Real patient video requires IRB approval and proper de-identification. |
-| **Cost Estimate** | Processing: ~$2.50-$8.00 per procedure (MediaConvert + SageMaker inference). Training: ~$500-$2,000 per model training run (multi-day GPU). Storage: ~$1-2/month per procedure (S3 Intelligent-Tiering). OpenSearch: ~$200-500/month for a small domain. |
+| **Cost Estimate** | Processing: ~$2.50-$8.00 per procedure (MediaConvert + SageMaker inference; add ~$0.50-$1.50 amortized cold start for low-volume Batch Transform). Training: ~$500-$2,000 per model training run (multi-day GPU). Storage: ~$1-2/month per procedure (S3 Intelligent-Tiering). OpenSearch: ~$200-500/month for a small domain. |
+
+**IAM Role Breakdown:**
+
+| Role | Permissions | Resource Scope |
+|------|------------|----------------|
+| **Step Functions Execution Role** | `states:StartExecution`, `lambda:InvokeFunction`, `sagemaker:CreateTransformJob`, `sagemaker:DescribeTransformJob`, `mediaconvert:CreateJob`, `mediaconvert:GetJob`, `events:PutTargets`, `logs:CreateLogGroup`, `logs:PutLogEvents` | Scoped to specific Lambda ARNs, SageMaker transform job prefix `feat-proc-*`, MediaConvert queue ARN |
+| **Lambda Execution Role** (post-processing) | `s3:GetObject` (frames/features buckets), `s3:PutObject` (frames bucket, manifests only), `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` (procedure-index and procedure-registry tables), `es:ESHttpPost`, `es:ESHttpGet` (OpenSearch domain ARN), `kms:Decrypt`, `kms:GenerateDataKey` (specific KMS key ARNs), `logs:CreateLogGroup`, `logs:PutLogEvents`, `sqs:SendMessage` (DLQ ARN) | Resource ARNs for each specific table, bucket prefix, OpenSearch domain, and KMS key. No wildcard resources. |
+| **SageMaker Execution Role** | `s3:GetObject` (frames bucket, model artifacts bucket), `s3:PutObject` (features bucket), `s3:ListBucket` (frames bucket), `kms:Decrypt`, `kms:GenerateDataKey` (volume encryption key), `logs:CreateLogGroup`, `logs:PutLogEvents` | Scoped to specific S3 bucket ARNs and prefixes. No DynamoDB, no OpenSearch, no Lambda invoke. |
 
 ### Ingredients
 
@@ -293,6 +313,11 @@ FUNCTION store_results(procedure_id, analysis_results):
         model_version   = current model version identifier
 
     // Index in OpenSearch for cross-procedure search.
+    // IMPORTANT: Store only the pseudonymized surgeon identifier in the
+    // general search index. The real surgeon_id lives in a separate
+    // restricted lookup table with its own access controls.
+    pseudonym = lookup_or_create_pseudonym(metadata.surgeon_id)
+
     // Flatten the timeline into searchable documents.
     FOR each phase in analysis_results.phase_timeline:
         index in OpenSearch "procedure-phases":
@@ -303,7 +328,7 @@ FUNCTION store_results(procedure_id, analysis_results):
             duration      = phase.duration
             confidence    = phase.confidence
             procedure_type = metadata.procedure_type
-            surgeon_id    = metadata.surgeon_id
+            surgeon_pseudonym = pseudonym
             procedure_date = metadata.procedure_date
 
     FOR each event in analysis_results.events:
@@ -314,7 +339,7 @@ FUNCTION store_results(procedure_id, analysis_results):
             confidence    = event.confidence
             phase_context = event.context
             procedure_type = metadata.procedure_type
-            surgeon_id    = metadata.surgeon_id
+            surgeon_pseudonym = pseudonym
 
     // Update the procedure registry status.
     update DynamoDB "procedure-registry" where procedure_id:
@@ -322,6 +347,112 @@ FUNCTION store_results(procedure_id, analysis_results):
         completed_at = current UTC timestamp
 
     RETURN success
+```
+
+**Access control model for surgeon-identifiable performance data.** Surgical video analysis produces data that, when aggregated, becomes individual performance measurement. This is legally and ethically sensitive. Many states have peer review protection statutes that shield quality improvement data from legal discovery, but only if the data is handled through proper peer review channels. Your access control model must account for this:
+
+1. **Pseudonymize surgeon identity in the search index.** The OpenSearch indices above store a `surgeon_pseudonym` (a random, stable identifier) rather than the actual surgeon_id. This allows population-level queries ("average dissection time across all surgeons") without exposing individual identity to everyone with search access.
+
+2. **Separate restricted lookup table.** A DynamoDB table (or a dedicated IAM-protected API) maps `surgeon_pseudonym` to the actual `surgeon_id`. Access to this table requires an additional IAM role that only designated roles hold (department chair, quality committee members, credentialing staff).
+
+3. **Role-based access tiers:**
+   - *General analytics access:* Can search procedures by type, phase, event, and date. Sees pseudonymized surgeon identifiers only. Sufficient for quality improvement dashboards and aggregate reporting.
+   - *Peer review access:* Can resolve surgeon pseudonyms to real identifiers. Limited to credentialed peer reviewers operating under the institution's peer review committee charter. Access grants are time-bounded and tied to specific review activities.
+   - *Administrative access:* Full access for system administrators who manage the pipeline. Does not imply clinical peer review authority.
+
+4. **Audit logging for identity resolution.** Every query that resolves a surgeon pseudonym to a real identity must be logged via CloudTrail. The audit log captures who resolved the identity, when, and under what authorization context (which peer review committee meeting, which credentialing action). This audit trail is essential for maintaining peer review protection.
+
+5. **Legal counsel review required.** Peer review protection statutes vary significantly by state. Some states protect only data generated through formal peer review processes; others extend protection to quality improvement data more broadly. Your institution's legal counsel must review the access control model and confirm that the data handling qualifies for protection under applicable state law before the system goes live. This is not optional, and it is not something your engineering team should interpret independently.
+
+**OpenSearch index mappings.** For the two indices referenced above, here are the field mappings that support the temporal query patterns this pipeline needs:
+
+```json
+{
+  "procedure-phases": {
+    "mappings": {
+      "properties": {
+        "procedure_id":       { "type": "keyword" },
+        "phase_name":         { "type": "keyword" },
+        "procedure_type":     { "type": "keyword" },
+        "surgeon_pseudonym":  { "type": "keyword" },
+        "procedure_date":     { "type": "date", "format": "yyyy-MM-dd" },
+        "start_time":         { "type": "float" },
+        "end_time":           { "type": "float" },
+        "duration":           { "type": "float" },
+        "confidence":         { "type": "float" }
+      }
+    }
+  }
+}
+```
+
+```json
+{
+  "procedure-events": {
+    "mappings": {
+      "properties": {
+        "procedure_id":       { "type": "keyword" },
+        "event_type":         { "type": "keyword" },
+        "procedure_type":     { "type": "keyword" },
+        "surgeon_pseudonym":  { "type": "keyword" },
+        "procedure_date":     { "type": "date", "format": "yyyy-MM-dd" },
+        "timestamp":          { "type": "float" },
+        "confidence":         { "type": "float" },
+        "phase_context":      { "type": "keyword" }
+      }
+    }
+  }
+}
+```
+
+The temporal query pattern ("find events that occurred within a specific phase's time range") works because each event carries its `phase_context` as a keyword field. You can query directly on `phase_context` rather than doing a range join between the two indices. For more complex temporal queries (events within a custom time window that doesn't align with phase boundaries), use `timestamp` range filters on the `procedure-events` index.
+
+**Failure handling and recovery.** Long-running pipelines fail. MediaConvert jobs time out, SageMaker instances get preempted, Lambda functions hit memory limits on unusually long procedures. Your Step Functions state machine needs a catch-all error state that handles any unrecoverable failure:
+
+```pseudocode
+// Step Functions Catch-All Error Handler (applied to the state machine)
+ON ANY unhandled error in any state:
+    // Write the failure details to a Dead Letter Queue.
+    // This captures the procedure_id, the failed step, and the error message
+    // so an operator (or automated retry) can investigate.
+    send to SQS DLQ "surgical-pipeline-dlq":
+        procedure_id  = execution_input.procedure_id
+        failed_step   = current_state_name
+        error_type    = error.type
+        error_message = error.message
+        failed_at     = current UTC timestamp
+        execution_arn = current execution ARN
+
+    // Update the procedure registry so the status reflects the failure.
+    update DynamoDB "procedure-registry" where procedure_id:
+        status = "failed"
+        failure_step = current_state_name
+        failure_message = error.message
+        failed_at = current UTC timestamp
+
+// CloudWatch Alarm on DLQ depth.
+// If messages accumulate in the DLQ, the pipeline has a systemic issue.
+ALARM: "surgical-pipeline-failures"
+    metric: ApproximateNumberOfMessagesVisible on DLQ
+    threshold: >= 3 over 15 minutes
+    action: notify on-call via SNS
+
+// Scheduled Lambda: scan for stuck procedures.
+// Runs every 30 minutes. Catches cases where Step Functions itself hangs
+// (rare but possible with service disruptions).
+FUNCTION scan_stuck_procedures():
+    stuck = query DynamoDB "procedure-registry" WHERE:
+        status IN ("ingested", "extracting_frames", "analyzing")
+        AND last_updated < (now - 2 hours)
+
+    FOR each stuck procedure:
+        IF retry_count < 3:
+            // Re-trigger the pipeline from the stuck step.
+            restart Step Functions execution for procedure_id
+            increment retry_count in registry
+        ELSE:
+            // Exhausted retries. Send to DLQ for manual investigation.
+            send to SQS DLQ with reason = "exceeded_max_retries"
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -423,6 +554,24 @@ FUNCTION store_results(procedure_id, analysis_results):
 - Smoke and blood obscuration cause temporary accuracy drops. The model may output low-confidence predictions during these periods.
 - Instrument detection fails when instruments are partially occluded or when multiple instruments overlap visually.
 - Generalization across surgeons is imperfect. A model trained primarily on right-handed surgeons may perform worse on left-handed technique.
+
+---
+
+## Why This Isn't Production-Ready
+
+This architecture shows the complete shape of a surgical video analysis pipeline, but several gaps remain between this design and a deployment processing real patient video:
+
+**No trained models ship with this recipe.** The feature extraction backbone and temporal model require hundreds of annotated surgical videos and weeks of GPU training time. The Cholec80 research dataset is a starting point for cholecystectomy, but your institution needs local fine-tuning for its specific cameras, lighting conditions, and patient population. Budget 2-4 months just for initial model training and validation.
+
+**De-identification is described but not implemented.** The preprocessing section outlines the four PHI vectors in surgical video (audio, pre-incision footage, monitor overlays, file metadata), but detecting and redacting these requires additional ML models (face detection, OCR for overlay text) that add complexity and potential failure modes. Each must be validated before you process real patient video.
+
+**Surgeon identity access controls need institutional buy-in.** The pseudonymization scheme and role-based access model described above require policy decisions, legal review, and governance committee approval that can't be solved with code alone. These often take longer than the engineering work.
+
+**No annotation tooling for model improvement.** Over time, you'll find cases where the model fails (unusual anatomy, new instruments, different camera angles). Correcting these requires a feedback loop: surgical domain experts review predictions, flag errors, and correct annotations. That annotation interface and the retraining pipeline around it are a full sub-project.
+
+**Single procedure type.** The pseudocode targets laparoscopic cholecystectomy. Each additional procedure type requires its own phase definitions, event taxonomy, training data, and validation. The infrastructure generalizes, but the model layer does not.
+
+**No integration with clinical systems.** The pipeline stores results in DynamoDB and OpenSearch, but connecting those to the institution's quality dashboards, credentialing systems, or EMR requires interface work and likely HL7/FHIR integration that is outside the scope of this recipe.
 
 ---
 
