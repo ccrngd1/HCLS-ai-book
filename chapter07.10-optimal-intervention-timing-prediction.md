@@ -93,7 +93,7 @@ For most healthcare organizations starting this work, the practical approach is 
 
 **Decision Engine.** Combine the intervention window score with operational constraints: care manager capacity, patient preferences, channel availability (phone, text, in-person), time of day. The output is a prioritized, actionable worklist with recommended timing.
 
-**Care Team Delivery.** Surface the recommendation to the care team through their existing workflow tools (EHR task lists, care management platforms, mobile apps). Include the "why now" explanation: what changed in this patient's trajectory that makes today the right day to act.
+**Care Team Delivery.** Surface the recommendation to the care team through their existing workflow tools (EHR task lists, care management platforms, mobile apps). Include the "why now" explanation: what changed in this patient's trajectory that makes today the right day to act. Apply data minimization to the delivery layer: enforce row-level access control so care managers see only their assigned patients. Prefer coded explanations with deep links to the patient chart rather than embedding full clinical detail in the worklist itself. If your design does embed clinical detail (lab values, diagnosis codes) in the recommendation payload, the care management platform must meet the same encryption-at-rest, encryption-in-transit, and access logging requirements as the EHR. The principle: the worklist should carry enough context for a care manager to act, but not enough PHI to become a breach vector if the platform's access controls are weaker than the source system's.
 
 ---
 

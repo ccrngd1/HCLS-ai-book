@@ -16,9 +16,11 @@
 
 **AWS Lambda for intervention window scoring.** The scoring logic (apply decision rules to model output, check operational constraints, generate recommendations) is stateless and event-driven. Lambda processes each patient's updated trajectory and determines whether to surface an intervention recommendation.
 
-**Amazon DynamoDB for patient state and recommendation storage.** Each patient has a current state (latest risk trajectory, last intervention date, engagement history) that needs fast point lookups and frequent updates. DynamoDB's key-value model with TTL support handles this cleanly. Recommendations are written here for the care team interface to consume.
+**Amazon DynamoDB for patient state and recommendation storage.** Each patient has a current state (latest risk trajectory, last intervention date, engagement history) that needs fast point lookups and frequent updates. DynamoDB's key-value model with TTL support handles this cleanly. Recommendations are written here for the care team interface to consume. Enable TTL on the `expires_at` field so stale recommendations (where the action window has passed without the care manager acting) are automatically deleted. Attach a DynamoDB Streams trigger on TTL deletions to log "expired without action" events; these feed back into the model as outcome labels (the recommendation was either irrelevant or the care team lacked capacity). When a recommendation expires, a Lambda consuming the stream runs re-scoring logic: invoke the model endpoint for the patient's current features, determine whether a new intervention window has opened (risk is still rising) or the risk has resolved (the patient stabilized on their own). If a new window exists, write a fresh recommendation with updated timing; if risk resolved, log it as a natural resolution for model calibration.
 
 **Amazon EventBridge for orchestration.** The pipeline has multiple triggers: batch model retraining (weekly), incremental feature updates (daily), real-time event scoring (continuous). EventBridge coordinates these schedules and routes events between components without tight coupling.
+
+**Amazon SageMaker Model Monitor for drift detection.** Timing models degrade faster than static risk scores because the populations they serve, the interventions available, and the care team's response patterns all shift over time. Model Monitor tracks feature distribution drift (are the input features changing shape compared to the training baseline?) and prediction quality drift (are predicted hazard curves still calibrating against observed event rates?). A periodic recalibration job compares predicted vs. observed event rates weekly; a CloudWatch alarm fires when the validation C-index drops below 0.65, signaling that the model needs retraining. A model health dashboard shows calibration curves over time so the data science team can distinguish gradual drift from sudden distribution shifts.
 
 ### Architecture Diagram
 
@@ -77,7 +79,7 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon CloudWatch |
+| **AWS Services** | Amazon SageMaker, Amazon SageMaker Model Monitor, Amazon S3, AWS Glue, Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon DynamoDB Streams, Amazon EventBridge, Amazon CloudWatch |
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `kinesis:GetRecords`, `kinesis:PutRecord`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `events:PutRule`, `events:PutTargets`. Note: these represent the aggregate across all components. Each Lambda function should have a dedicated execution role scoped to only the permissions it needs (e.g., the scoring Lambda needs `sagemaker:InvokeEndpoint` and `dynamodb:GetItem/PutItem` but not `sagemaker:CreateTrainingJob` or `glue:StartJobRun`). |
 | **BAA** | AWS BAA signed (required: all patient clinical data is PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Kinesis: server-side encryption with KMS (24-hour retention, minimum sufficient for this use case); SageMaker: KMS for training volumes and model artifacts; all API calls over TLS |
@@ -98,6 +100,7 @@ flowchart TD
 | **Amazon DynamoDB** | Stores current patient state, risk trajectories, and intervention recommendations |
 | **Amazon EventBridge** | Orchestrates batch retraining, daily feature updates, and real-time scoring triggers |
 | **Amazon CloudWatch** | Monitors model latency, prediction drift, scoring throughput, and alerting |
+| **Amazon SageMaker Model Monitor** | Tracks feature distribution drift and prediction quality; triggers retraining when C-index degrades |
 | **AWS KMS** | Manages encryption keys for all data stores and model artifacts |
 
 ### Pseudocode Walkthrough
@@ -485,6 +488,28 @@ Without provisioned concurrency, Lambda cold starts in VPC can push real-time pa
 - Patients whose behavior changes abruptly (new stressor, job loss, family crisis) without corresponding clinical data
 - Conditions where the intervention itself changes the trajectory in ways the model hasn't seen (novel treatments)
 - Populations underrepresented in training data produce poorly calibrated timing estimates
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above get you to a working prototype. Here's what stands between that and a system you'd trust with real care decisions.
+
+**No model monitoring or retraining trigger.** The architecture describes Model Monitor, but the pseudocode doesn't implement the feedback loop. In production, you need: (1) a weekly calibration job that compares predicted hazard curves against observed event rates for the prior period, (2) a CloudWatch alarm that fires when the C-index drops below your acceptable threshold (0.65 is a reasonable floor for survival models), and (3) an automated retraining pipeline that kicks off when drift is confirmed. Without this, your model silently degrades over 2-3 months as population characteristics shift.
+
+**The holdout ethics problem.** To maintain training signal, you need some patients who are flagged by the model but not intervened on. This is straightforward statistically but fraught ethically. A production deployment needs IRB review for any prospective holdout design. The practical alternative: use natural variation in care manager capacity (busy days where not all recommendations get actioned) as a quasi-experimental control. Document this approach and get clinical leadership sign-off before launch.
+
+**Integration testing with the EHR.** The pseudocode writes to DynamoDB and assumes the care management platform reads from it. In reality, the integration surface is complex: HL7 FHIR or proprietary API calls, patient context launch (so the care manager lands on the right chart), and handling of patients who have been discharged, transferred, or deceased between scoring and worklist delivery. Test the full round-trip with your EHR vendor in a sandbox environment before production.
+
+**A/B testing infrastructure.** You need to measure whether model-timed interventions actually prevent events better than the care team's existing judgment. This requires randomization at the patient or panel level, outcome tracking over 30-90 day windows, and statistical methodology for time-to-event comparisons (log-rank tests, not simple proportions). Build the measurement infrastructure before launch, not after.
+
+**Explanation fidelity.** The "why now" explanations in Step 5 are rule-based approximations. They don't necessarily reflect what the neural network actually relied on for its prediction. For a production system, consider SHAP values or attention-weight-based explanations that trace back to specific input features. Misleading explanations erode clinician trust faster than no explanations at all.
+
+**Care manager feedback loop.** The pseudocode generates recommendations but doesn't capture whether the care manager found them useful. Production needs a lightweight feedback mechanism: "Was this recommendation actionable?" (yes/no/already knew). This signal feeds back into the decision thresholds and the model's intervention fatigue parameters. Without it, you're tuning blind.
+
+**Latency under cold start.** The Lambda scoring function in a VPC can cold-start in 10-15 seconds. For the batch path (daily panel scoring) this doesn't matter. For the real-time path (acute lab result triggers immediate re-scoring), a 15-second delay means the care manager might have already moved on. Use provisioned concurrency on the real-time scoring Lambda if sub-5-second response is a requirement.
+
+**Graceful degradation when the model endpoint is down.** SageMaker endpoints have occasional availability blips during deployments or scaling events. The scoring Lambda needs a fallback: if the endpoint returns an error, fall back to the patient's most recent cached trajectory rather than producing no recommendation at all. Log the fallback event and alert the ops team, but don't let a transient endpoint issue make the entire worklist disappear.
 
 ---
 
