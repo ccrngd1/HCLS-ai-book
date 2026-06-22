@@ -2327,6 +2327,11 @@
                     <span class="s2">&quot;deployment_posture&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
         <span class="p">})</span>
 
+    <span class="c1"># Translation delivered; return to idle so the next</span>
+    <span class="c1"># speech_start from either speaker does not trigger</span>
+    <span class="c1"># a spurious BARGE_IN event.</span>
+    <span class="n">transition_to_state</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">,</span> <span class="s2">&quot;idle&quot;</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;audio_stream&quot;</span><span class="p">:</span>            <span class="n">synthesis</span><span class="p">,</span>
         <span class="s2">&quot;end_to_end_latency_ms&quot;</span><span class="p">:</span>   <span class="n">end_to_end_latency_ms</span><span class="p">,</span>
@@ -2418,10 +2423,17 @@
                 <span class="n">active_speaker</span><span class="o">=</span><span class="n">speaker</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;speech_end&quot;</span><span class="p">:</span>
         <span class="c1"># Speaker finished; ASR path will finalize the</span>
-        <span class="c1"># transcript segment.</span>
+        <span class="c1"># transcript segment. Populate in_flight_translation</span>
+        <span class="c1"># so any barge-in during translation references a</span>
+        <span class="c1"># meaningful ID rather than None.</span>
+        <span class="n">translation_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
         <span class="n">transition_to_state</span><span class="p">(</span>
             <span class="n">encounter_id</span><span class="p">,</span> <span class="s2">&quot;translating&quot;</span><span class="p">,</span>
-            <span class="n">translating_for_speaker</span><span class="o">=</span><span class="n">speaker</span><span class="p">)</span>
+            <span class="n">translating_for_speaker</span><span class="o">=</span><span class="n">speaker</span><span class="p">,</span>
+            <span class="n">in_flight_translation</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;translation_id&quot;</span><span class="p">:</span> <span class="n">translation_id</span><span class="p">,</span>
+                <span class="s2">&quot;speaker&quot;</span><span class="p">:</span> <span class="n">speaker</span><span class="p">,</span>
+            <span class="p">})</span>
     <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;silence&quot;</span><span class="p">:</span>
         <span class="c1"># Long-silence-driven idle reset is handled by the</span>
         <span class="c1"># caller; this branch records the silence event.</span>
@@ -2637,6 +2649,12 @@
         <span class="s2">&quot;last_escalation_reason&quot;</span><span class="p">:</span>  <span class="n">reason</span><span class="p">,</span>
         <span class="s2">&quot;last_escalation_at&quot;</span><span class="p">:</span>      <span class="n">_now_iso</span><span class="p">(),</span>
     <span class="p">})</span>
+
+    <span class="c1"># Audio now routes to the human interpreter; reset the</span>
+    <span class="c1"># conversational state machine so subsequent VAD events</span>
+    <span class="c1"># do not trigger spurious BARGE_IN against a stale</span>
+    <span class="c1"># in_flight_translation reference.</span>
+    <span class="n">transition_to_state</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">,</span> <span class="s2">&quot;idle&quot;</span><span class="p">)</span>
 
     <span class="n">audit_log</span><span class="p">({</span>
         <span class="s2">&quot;event_type&quot;</span><span class="p">:</span>      <span class="s2">&quot;HUMAN_ESCALATION_COMPLETE&quot;</span><span class="p">,</span>

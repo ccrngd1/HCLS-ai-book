@@ -548,7 +548,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">boto3.dynamodb.conditions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Key</span>
@@ -586,24 +585,19 @@
 <span class="n">EVENTS_BUS_NAME</span>        <span class="o">=</span> <span class="s2">&quot;address-and-household-drift&quot;</span>
 <span class="n">CLOUDWATCH_NAMESPACE</span>   <span class="o">=</span> <span class="s2">&quot;Address/Standardization&quot;</span>
 
-<span class="c1"># Deploy-time guardrail.</span>
-<span class="c1"># TODO (TechWriter): Code review Finding 5 (NOTE). Extend the</span>
-<span class="c1"># guardrail to cover every resource-name constant so a missing</span>
-<span class="c1"># value produces an actionable assertion message rather than a</span>
-<span class="c1"># downstream boto3 ValidationException. Suggested loop:</span>
-<span class="c1">#</span>
-<span class="c1">#   for name, value in [</span>
-<span class="c1">#       (&quot;ADDRESS_TABLE&quot;, ADDRESS_TABLE),</span>
-<span class="c1">#       (&quot;HOUSEHOLD_TABLE&quot;, HOUSEHOLD_TABLE),</span>
-<span class="c1">#       (&quot;CANONICAL_HASH_INDEX&quot;, CANONICAL_HASH_INDEX),</span>
-<span class="c1">#       (&quot;AUDIT_BUCKET&quot;, AUDIT_BUCKET),</span>
-<span class="c1">#       (&quot;EVENTS_BUS_NAME&quot;, EVENTS_BUS_NAME),</span>
-<span class="c1">#       (&quot;CLOUDWATCH_NAMESPACE&quot;, CLOUDWATCH_NAMESPACE),</span>
-<span class="c1">#   ]:</span>
-<span class="c1">#       assert value, f&quot;{name} must be set before deploying.&quot;</span>
-<span class="c1">#</span>
-<span class="c1"># Same chapter pattern as 5.2 Finding 8.</span>
-<span class="k">assert</span> <span class="n">AUDIT_BUCKET</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;AUDIT_BUCKET must be set before deploying.&quot;</span>
+<span class="c1"># Deploy-time guardrail. Every resource-name constant must be set</span>
+<span class="c1"># before deploying; a missing value should produce an actionable</span>
+<span class="c1"># assertion message rather than a downstream boto3</span>
+<span class="c1"># ValidationException.</span>
+<span class="k">for</span> <span class="n">_name</span><span class="p">,</span> <span class="n">_value</span> <span class="ow">in</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;ADDRESS_TABLE&quot;</span><span class="p">,</span> <span class="n">ADDRESS_TABLE</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;HOUSEHOLD_TABLE&quot;</span><span class="p">,</span> <span class="n">HOUSEHOLD_TABLE</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;CANONICAL_HASH_INDEX&quot;</span><span class="p">,</span> <span class="n">CANONICAL_HASH_INDEX</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;AUDIT_BUCKET&quot;</span><span class="p">,</span> <span class="n">AUDIT_BUCKET</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;EVENTS_BUS_NAME&quot;</span><span class="p">,</span> <span class="n">EVENTS_BUS_NAME</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;CLOUDWATCH_NAMESPACE&quot;</span><span class="p">,</span> <span class="n">CLOUDWATCH_NAMESPACE</span><span class="p">),</span>
+<span class="p">]:</span>
+    <span class="k">assert</span> <span class="n">_value</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_name</span><span class="si">}</span><span class="s2"> must be set before deploying.&quot;</span>
 
 <span class="c1"># --- Versioning ---</span>
 <span class="n">NORMALIZER_VERSION</span>         <span class="o">=</span> <span class="s2">&quot;addr-norm-v1.0&quot;</span>
@@ -961,33 +955,19 @@
         <span class="k">return</span> <span class="s2">&quot;NOT_VALIDATED&quot;</span>
     <span class="k">return</span> <span class="s2">&quot;INVALID&quot;</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_build_canonical_hash</span><span class="p">(</span><span class="n">delivery_line_1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">secondary_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-                            <span class="n">last_line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_canonical_hash</span><span class="p">(</span><span class="n">delivery_line_1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">last_line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stable hash for the canonical address. Same physical address</span>
 <span class="sd">    with the same secondary unit produces the same hash; that is</span>
 <span class="sd">    the substrate for household grouping. The hash drops casing</span>
 <span class="sd">    and whitespace differences so equivalent inputs collide.</span>
 
-<span class="sd">    TODO (TechWriter): Code review Finding 2 (NOTE). Drop the</span>
-<span class="sd">    secondary_number parameter. CASS-certified vendors return</span>
-<span class="sd">    delivery_line_1 with the unit number already included (e.g.,</span>
-<span class="sd">    &quot;1421 ELM ST APT 3B&quot;), so passing secondary_number separately</span>
-<span class="sd">    duplicates the unit number in the canonical form</span>
-<span class="sd">    (&quot;1421 elm st apt 3b 3b ...&quot;). The hash is still deterministic</span>
-<span class="sd">    so household grouping works, but the redundancy is pedagogically</span>
-<span class="sd">    odd and obscures the &quot;canonical form is the standardized address&quot;</span>
-<span class="sd">    framing. Replace with:</span>
-
-<span class="sd">        def _build_canonical_hash(delivery_line_1, last_line):</span>
-<span class="sd">            return _sha256(_canonical_form(delivery_line_1, last_line))</span>
-
-<span class="sd">    and update the call site in standardize_address to pass only</span>
-<span class="sd">    delivery_line_1 and last_line. Note this changes the canonical</span>
-<span class="sd">    hash for any address with a secondary unit; safe before the</span>
-<span class="sd">    demo has been run against persisted records.</span>
+<span class="sd">    delivery_line_1 from a CASS-certified vendor already includes</span>
+<span class="sd">    the unit number when present (e.g., &quot;1421 ELM ST APT 3B&quot;), so</span>
+<span class="sd">    the canonical form is simply (delivery_line_1, last_line). No</span>
+<span class="sd">    separate secondary_number parameter is needed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">canon</span> <span class="o">=</span> <span class="n">_canonical_form</span><span class="p">(</span><span class="n">delivery_line_1</span><span class="p">,</span> <span class="n">secondary_number</span><span class="p">,</span> <span class="n">last_line</span><span class="p">)</span>
+    <span class="n">canon</span> <span class="o">=</span> <span class="n">_canonical_form</span><span class="p">(</span><span class="n">delivery_line_1</span><span class="p">,</span> <span class="n">last_line</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_sha256</span><span class="p">(</span><span class="n">canon</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">standardize_address</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -1065,7 +1045,6 @@
         <span class="n">standardized</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metadata&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="n">standardized</span><span class="p">[</span><span class="s2">&quot;canonical_hash&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_canonical_hash</span><span class="p">(</span>
             <span class="n">vr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;delivery_line_1&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">vr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;components&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;secondary_number&quot;</span><span class="p">),</span>
             <span class="n">vr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;last_line&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;CORRECTED&quot;</span><span class="p">:</span>
@@ -1152,13 +1131,12 @@
     <span class="n">new_canonical_hash</span> <span class="o">=</span> <span class="n">standardized</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canonical_hash&quot;</span><span class="p">)</span>
 
     <span class="c1"># 3B: write the current standardized record.</span>
-    <span class="c1"># TODO (TechWriter): Expert review A1 (HIGH). Wrap the</span>
-    <span class="c1"># DynamoDB write, the S3 audit write, and the EventBridge</span>
-    <span class="c1"># emit in a TransactWriteItems plus an outbox row drained by</span>
-    <span class="c1"># a Streams-driven event emitter so partial failures cannot</span>
-    <span class="c1"># leave the address table out of sync with downstream</span>
-    <span class="c1"># consumers. Same chapter pattern as 5.1 Finding A1, 5.2</span>
-    <span class="c1"># Finding A1.</span>
+    <span class="c1"># Production note: the DynamoDB write, the S3 audit write, and</span>
+    <span class="c1"># the EventBridge emit should be wrapped in a TransactWriteItems</span>
+    <span class="c1"># plus an outbox row drained by a Streams-driven event emitter</span>
+    <span class="c1"># so partial failures cannot leave the address table out of</span>
+    <span class="c1"># sync with downstream consumers. The demo skips the</span>
+    <span class="c1"># transactional wrapper for readability.</span>
     <span class="c1">#</span>
     <span class="c1"># NOTE for the pseudocode-to-Python reader: the pseudocode&#39;s</span>
     <span class="c1"># Step 3E (trigger household re-inference for affected</span>
@@ -1167,7 +1145,7 @@
     <span class="c1"># inside this function. In production, persistence and</span>
     <span class="c1"># household-inference are typically separate Lambdas wired by</span>
     <span class="c1"># EventBridge or Step Functions; the wrapper represents the</span>
-    <span class="c1"># orchestration layer. See Code review Finding 3.</span>
+    <span class="c1"># orchestration layer.</span>
     <span class="n">next_revalidation_due</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
         <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">REVALIDATION_CADENCE_DAYS</span><span class="p">)</span>
@@ -1189,6 +1167,19 @@
                       <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)})</span>
         <span class="c1"># In production: DLQ + alarm. The demo continues so the</span>
         <span class="c1"># rest of the pipeline still runs.</span>
+
+    <span class="c1"># Demo-mode mirror: update the in-memory registry so the</span>
+    <span class="c1"># canonical-hash GSI fallback in _query_records_at_canonical</span>
+    <span class="c1"># stays consistent with the persisted record. In production</span>
+    <span class="c1"># this role is filled by the real DynamoDB canonical-hash GSI;</span>
+    <span class="c1"># the registry is purely a demo stand-in.</span>
+    <span class="k">if</span> <span class="n">new_canonical_hash</span><span class="p">:</span>
+        <span class="n">_IN_MEMORY_ADDRESS_REGISTRY</span><span class="p">[(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">address_role</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span>     <span class="n">patient_id</span><span class="p">,</span>
+            <span class="s2">&quot;address_role&quot;</span><span class="p">:</span>   <span class="n">address_role</span><span class="p">,</span>
+            <span class="s2">&quot;canonical_hash&quot;</span><span class="p">:</span> <span class="n">new_canonical_hash</span><span class="p">,</span>
+            <span class="s2">&quot;standardized&quot;</span><span class="p">:</span>   <span class="n">standardized</span><span class="p">,</span>
+        <span class="p">}</span>
 
     <span class="c1"># 3C: archive the curated record to S3.</span>
     <span class="n">_write_audit</span><span class="p">({</span>
@@ -1700,26 +1691,11 @@
 <span class="sd">    match_type}. Production submits the patient address list to a</span>
 <span class="sd">    NCOAlink-certified vendor and processes the response file.</span>
 
-<span class="sd">    TODO (TechWriter): Code review Finding 1 (WARNING). This path</span>
-<span class="sd">    and `monthly_usps_refresh` both call `persist_standardized_record`</span>
-<span class="sd">    directly rather than going through `run_standardize_pipeline_for_patient`,</span>
-<span class="sd">    and `persist_standardized_record` does not update the demo-only</span>
-<span class="sd">    `_IN_MEMORY_ADDRESS_REGISTRY`. The result is that after Phase 2&#39;s</span>
-<span class="sd">    NCOA mover simulation the registry still has the moved patient</span>
-<span class="sd">    at the old canonical address, so the household re-inference for</span>
-<span class="sd">    both old and new canonicals produces silently-wrong results in</span>
-<span class="sd">    demo mode. Recommended fix: move the in-memory registry update</span>
-<span class="sd">    inside `persist_standardized_record` (so every code path that</span>
-<span class="sd">    persists a standardized record also updates the demo&#39;s registry)</span>
-<span class="sd">    and drop the parallel registry update from</span>
-<span class="sd">    `run_standardize_pipeline_for_patient`. Verify by re-running the</span>
-<span class="sd">    demo and inspecting the household state after Phase 2: the</span>
-<span class="sd">    Patel household at Apt 3B should re-evaluate to the four-record</span>
-<span class="sd">    group without 00874, and the Apt 5A canonical should re-evaluate</span>
-<span class="sd">    from SINGLE_PATIENT to a two-record group containing 00874 and</span>
-<span class="sd">    00990. Optionally extend the demo&#39;s print output to surface the</span>
-<span class="sd">    post-NCOA household-inference results so the success of the fix</span>
-<span class="sd">    is visible without reaching for a debugger.</span>
+<span class="sd">    This path calls `persist_standardized_record` directly rather</span>
+<span class="sd">    than going through `run_standardize_pipeline_for_patient`; the</span>
+<span class="sd">    registry update happens inside `persist_standardized_record` so</span>
+<span class="sd">    household re-inference for affected canonical hashes sees the</span>
+<span class="sd">    updated state correctly.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">processed</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">affected_canonicals</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -1791,18 +1767,6 @@
 
     <span class="n">persist_summary</span> <span class="o">=</span> <span class="n">persist_standardized_record</span><span class="p">(</span>
         <span class="n">source_event</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span> <span class="n">raw</span><span class="p">,</span> <span class="n">standardized</span><span class="p">)</span>
-
-    <span class="c1"># Maintain the in-memory registry so the household-inference</span>
-    <span class="c1"># GSI-fallback path works in the demo.</span>
-    <span class="k">if</span> <span class="n">standardized</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canonical_hash&quot;</span><span class="p">):</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">source_event</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
-                <span class="n">source_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;address_role&quot;</span><span class="p">,</span> <span class="s2">&quot;physical&quot;</span><span class="p">))</span>
-        <span class="n">_IN_MEMORY_ADDRESS_REGISTRY</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span>     <span class="n">source_event</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;address_role&quot;</span><span class="p">:</span>   <span class="n">source_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;address_role&quot;</span><span class="p">,</span> <span class="s2">&quot;physical&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;canonical_hash&quot;</span><span class="p">:</span> <span class="n">standardized</span><span class="p">[</span><span class="s2">&quot;canonical_hash&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;standardized&quot;</span><span class="p">:</span>   <span class="n">standardized</span><span class="p">,</span>
-        <span class="p">}</span>
 
     <span class="n">household_summary</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">standardized</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canonical_hash&quot;</span><span class="p">):</span>

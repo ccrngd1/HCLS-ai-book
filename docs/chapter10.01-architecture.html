@@ -661,7 +661,7 @@
 </tr>
 <tr>
 <td><strong>BAA and Compliance</strong></td>
-<td>AWS BAA signed. Connect, Lex, Polly, Transcribe, Lambda, DynamoDB, S3, Kinesis, KMS, Secrets Manager, CloudWatch Logs, CloudTrail are HIPAA-eligible (verify the current list at build time).  Recording-consent disclosure played as the first audio after answer (&quot;This call may be recorded for quality and training purposes&quot; or whatever language the institution's legal team has approved for the jurisdictions you operate in). The disclosure is jurisdiction-aware: some U.S. states are one-party-consent, some are all-party-consent, and the disclosure plus continued participation is the standard pattern for satisfying both.</td>
+<td>AWS BAA signed. Connect, Lex, Polly, Transcribe, Lambda, DynamoDB, S3, Kinesis, KMS, Secrets Manager, CloudWatch Logs, CloudTrail, Connect Contact Lens, and Connect Voice ID are HIPAA-eligible (verify the current list at the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a> at build time, as the eligible set evolves). Recording-consent disclosure played as the first audio after answer (&quot;This call may be recorded for quality and training purposes&quot; or whatever language the institution's legal team has approved for the jurisdictions you operate in). The disclosure is jurisdiction-aware: some U.S. states are one-party-consent, some are all-party-consent, and the disclosure plus continued participation is the standard pattern for satisfying both.</td>
 </tr>
 <tr>
 <td><strong>Encryption</strong></td>
@@ -669,11 +669,15 @@
 </tr>
 <tr>
 <td><strong>VPC</strong></td>
-<td>Production: Lambdas that call back-office APIs run in VPC with subnets that have controlled egress to the back-office systems' network. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge so the Lambdas don't need NAT for AWS-internal calls. Connect itself is a managed service that runs outside your VPC; the integration with Lambda and Lex still terminates in your account.</td>
+<td>Production: Lambdas that call back-office APIs run in VPC with subnets that have controlled egress to the back-office systems' network. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge so the Lambdas don't need NAT for AWS-internal calls. Interface VPC endpoints for Lex Runtime V2 (<code>com.amazonaws.&lt;region&gt;.runtime-v2.lex</code>), Polly (<code>com.amazonaws.&lt;region&gt;.polly</code>), and Transcribe (<code>com.amazonaws.&lt;region&gt;.transcribe</code>) for Lambdas that call these services from within VPC. Connect itself is a managed service that runs outside your VPC; the integration with Lambda and Lex still terminates in your account. Back-office egress topology: VPC peering or Transit Gateway for institutional-network-attached back-office systems (EHR, e-prescribing, scheduling); PrivateLink for vendor-managed APIs that expose PrivateLink endpoints; NAT Gateway egress on public Internet as the fallback for external APIs without private connectivity.</td>
+</tr>
+<tr>
+<td><strong>Carrier-Side Transport</strong></td>
+<td>The PSTN leg (caller to carrier) cannot be encrypted; the SIP-trunk leg (carrier to Connect) can and should be. Institutional posture: TLS for SIP signaling and SRTP for media on the carrier-to-Connect boundary. The decision to require carrier-BAA coverage for the SIP-trunk segment is an institutional governance question (some carriers offer HIPAA-eligible SIP trunking under BAA, some do not). Document the institutional decision and the carrier-BAA status as part of the deployment record.</td>
 </tr>
 <tr>
 <td><strong>CloudTrail</strong></td>
-<td>Enabled with data events on the call-recordings S3 bucket, the active-call-context DynamoDB table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Lex bot configuration changes logged (version control your bot definitions). Connect contact flow changes logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longest of HIPAA's six-year minimum, state medical-records-retention, and the institutional regulatory floor.</td>
+<td>Enabled with data events on the call-recordings S3 bucket, the active-call-context DynamoDB table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Lex bot configuration changes logged (version control your bot definitions). Connect contact flow changes logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. IVR-specific audit-log retention floor: the longest of HIPAA's six-year minimum, the state-specific call-recording retention (typically 1-7 years depending on jurisdiction), and the institutional regulatory floor. The institution decides which floor applies; document the decision and configure the lifecycle policy accordingly.</td>
 </tr>
 <tr>
 <td><strong>Sample Data</strong></td>
@@ -777,15 +781,16 @@
     // Step 1B: play the consent and recording disclosure.
     // The exact wording is institutional and should be
     // approved by general counsel for the jurisdictions
-    // you operate in.
-    // TODO (TechWriter): Expert review S6 (LOW).
-    // Hardcoding `consent-disclosure-en-us.wav` doesn&#x27;t
-    // capture the jurisdiction-aware variation called out
-    // in prose. Specify per-DNIS disclosure lookup with a
-    // conservative all-party-consent default for unknown
-    // jurisdictions; reference the Reporters Committee
-    // for Freedom of the Press tracker.
-    play_audio(&quot;consent-disclosure-en-us.wav&quot;)
+    // you operate in. The disclosure WAV is selected per
+    // DNIS (each published number maps to a jurisdiction
+    // or jurisdiction group). Conservative default: use
+    // all-party-consent disclosure for unknown
+    // jurisdictions. See the Reporters Committee for
+    // Freedom of the Press state-by-state tracker for
+    // current recording-consent requirements.
+    disclosure_key = lookup_disclosure_wav_by_dnis(dnis,
+        default=&quot;consent-disclosure-all-party-default.wav&quot;)
+    play_audio(disclosure_key)
 
     // Step 1C: hand off to the Lex bot with an open-ended
     // prompt. This is the moment the conversational IVR
@@ -799,39 +804,42 @@
 </code></pre>
 <p><strong>Step 2: Lex returns a turn result; classify and route.</strong> The Lex bot has performed ASR, intent classification, and slot filling for the caller's first utterance. The turn result includes the intent, slot values, per-element confidence, and the raw transcript. The intent-router Lambda receives this as a fulfillment hook. Skip the per-intent confidence threshold and you'll route ambiguous utterances confidently to the wrong place.</p>
 <pre class="code code-plain"><code>FUNCTION handle_lex_turn(turn_event):
+    // Defense-in-depth: validate that this invocation came
+    // from the production Lex bot. The Lambda&#x27;s resource-based
+    // policy pins the invoking principal to the production Lex
+    // bot ARN with the production alias. Additionally, validate
+    // the bot_id and bot_alias_id in the payload against the
+    // production constants. Reject mismatches. This prevents a
+    // misconfigured dev bot from invoking the production
+    // fulfillment Lambda.
+    IF turn_event.bot.bot_id != PATIENT_BOT_ID OR
+       turn_event.bot.bot_alias_id != PATIENT_BOT_ALIAS_PROD:
+        RAISE &quot;Invocation source mismatch: expected production bot&quot;
+
     call_id = turn_event.session_id
     transcript = turn_event.input_transcript
     intent_name = turn_event.intent.name
     intent_confidence = turn_event.intent.confidence
     slots = turn_event.intent.slots
 
-    // TODO (TechWriter): Expert review S4 (MEDIUM).
-    // Lambda fulfillment-hook authentication of the Lex
-    // invocation source is not specified. Add a defense-
-    // in-depth guard that validates `turn_event.bot.bot_id`
-    // and `turn_event.bot.bot_alias_id` against the
-    // production constants and rejects mismatches. The
-    // Lambda&#x27;s resource-based policy should also pin the
-    // invoking principal to the production Lex bot ARN
-    // with the production alias.
-
     // Step 2A: log the turn so we can audit it later
     // regardless of routing outcome.
+    // Transcripts are PHI. The audit log carries only a
+    // reference to the transcript in the secure archive,
+    // plus structural metadata. Never raw content.
+    transcript_ref = transcript_archive.store(
+        call_id=call_id,
+        turn_index=turn_event.turn_index,
+        content=transcript)
+
     audit_log({
         event_type: &quot;LEX_TURN_RECEIVED&quot;,
         call_id: call_id,
         intent_name: intent_name,
         intent_confidence: intent_confidence,
-        transcript: transcript,
-        // TODO (TechWriter): Expert review S1 (HIGH).
-        // Audit log records raw transcript verbatim,
-        // creating a parallel PHI store outside the
-        // recordings-bucket governance. Replace
-        // `transcript` with `transcript_archive_ref`,
-        // `transcript_length_chars`, and `transcript_hash`;
-        // keep the full transcript in the secure transcript
-        // archive only. The Python companion already does
-        // this; the pseudocode here should match.
+        transcript_archive_ref: transcript_ref.archive_key,
+        transcript_length_chars: len(transcript),
+        transcript_hash: sha256(transcript),
         timestamp: current UTC timestamp
     })
 
@@ -928,15 +936,17 @@
     // Step 3D: collect verification slots. This is a
     // sub-dialog Lex handles for us once we&#x27;ve
     // declared the verification intent in the bot.
-    // TODO (TechWriter): Expert review S3 (MEDIUM).
-    // The &quot;dob_plus_partial_phone&quot; method is illustrative
-    // and may not meet the production bar for high-impact
-    // intents like prescription release. Specify an
-    // intent-keyed verification-strength matrix (no /
-    // basic / strong / out-of-band) and annotate this
-    // example as illustrative. Reference the institutional
-    // identity-and-access-governance policy as the
-    // canonical source.
+    // The verification strength is intent-keyed:
+    //   - &quot;no verification&quot;: ask_hours_or_location
+    //   - &quot;basic&quot; (DOB + partial phone): confirm_appointment
+    //   - &quot;strong&quot; (DOB + partial phone + address):
+    //     refill_prescription, billing actions
+    //   - &quot;out-of-band&quot; (SMS OTP or callback):
+    //     reserved for future high-impact intents
+    // The example below uses &quot;basic&quot; as illustrative.
+    // The institutional identity-and-access-governance
+    // policy is the canonical source for which intents
+    // map to which verification tier.
     RETURN response_with_sub_dialog(
         &quot;verification_dialog&quot;,
         context_hint={
@@ -1044,24 +1054,23 @@ FUNCTION verify_slots_returned(call_id, dob, partial_phone):
     // Step 4E: queue the refill request. We don&#x27;t
     // dispense, just queue it for the e-prescribing
     // system&#x27;s normal flow.
-    // TODO (TechWriter): Expert review S2 (HIGH).
-    // Step 4E has no idempotency key. A Lex retry,
+    // Idempotency: the (call_id, intent_name, turn_index)
+    // tuple is the idempotency key. A Lex retry,
     // EventBridge replay, or at-least-once Lambda
-    // invocation produces a duplicate refill request.
-    // Promote the (call_id, intent_name, turn_index)
-    // idempotency-key pattern from the production-gaps
-    // section into this pseudocode and require the
-    // e-prescribing API to honor the key. Apply the
-    // same pattern to the appointment-fulfillment path
-    // (Finding A8). Step 4F&#x27;s EventBridge.PutEvents
-    // should carry the idempotency_key in
-    // `detail.event_id` so consumers can deduplicate.
+    // invocation that produces a second call with the same
+    // key must not double-queue. The e-prescribing API
+    // honors the key and returns the existing request_id
+    // on duplicates.
+    idempotency_key = call_id + &quot;:refill_prescription:&quot; +
+        str(turn_index)
+
     refill_request_id =
         e_prescribing.queue_refill_request(
             patient_id=patient_id,
             medication_id=matching_med.medication_id,
             requested_via=&quot;ivr_self_service&quot;,
-            requested_at=current UTC timestamp)
+            requested_at=current UTC timestamp,
+            idempotency_key=idempotency_key)
 
     audit_log({
         event_type: &quot;REFILL_REQUEST_QUEUED&quot;,
@@ -1073,11 +1082,13 @@ FUNCTION verify_slots_returned(call_id, dob, partial_phone):
     })
 
     // Step 4F: emit cross-system event so the e-prescribing
-    // pipeline picks it up.
+    // pipeline picks it up. The idempotency_key in
+    // detail.event_id lets consumers deduplicate.
     EventBridge.PutEvents([{
         source: &quot;ivr.refill&quot;,
         detail_type: &quot;refill_request_queued&quot;,
         detail: {
+            event_id: idempotency_key,
             call_id: call_id,
             patient_id: patient_id,
             refill_request_id: refill_request_id,
@@ -1136,6 +1147,40 @@ FUNCTION verify_slots_returned(call_id, dob, partial_phone):
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter10.01-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<hr />
+<h3 id="dlq-topology">DLQ Topology</h3>
+<p>Every fulfillment Lambda has its own Dead-Letter Queue (not a pooled DLQ shared across functions). The architectural primitives:</p>
+<ul>
+<li><strong>Per-Lambda DLQ.</strong> Each Lambda (caller-verifier, refill-fulfillment, appointment-fulfillment, urgency-escalator) has its own SQS DLQ. Per-Lambda isolation means a DLQ alarm instantly identifies which function is failing.</li>
+<li><strong>Maximum-receive-count tuned per Lambda.</strong> The urgency-escalator gets a low maxReceiveCount (2) because a retried escalation is a clinical-safety concern. The refill-fulfillment Lambda gets a slightly higher maxReceiveCount (3) because back-office API transient failures are more common.</li>
+<li><strong>DLQ-depth alarms.</strong> CloudWatch alarms on <code>ApproximateNumberOfMessagesVisible</code> per DLQ. The urgency-escalator DLQ alarm pages immediately (not next-business-day); it means an escalation failed and was not retried successfully.</li>
+<li><strong>DLQ-redrive runbook.</strong> When a DLQ message is redriven, the operator validates the idempotency key before allowing the message back into the function. The redrive runbook is a documented operational procedure, not an ad-hoc decision.</li>
+<li><strong>Reserved concurrency for the urgency-escalator.</strong> The urgency-escalator Lambda has reserved concurrency set so that a traffic spike in the refill-fulfillment path cannot starve the escalator of execution capacity.</li>
+</ul>
+<h3 id="deployment-pattern">Deployment Pattern</h3>
+<p>Bot updates and intent-model retraining carry risk: a new model version can regress accuracy on specific cohorts. The deployment pattern for Lex bot versions:</p>
+<ul>
+<li><strong>Versioned bot definitions in version control.</strong> The Lex bot definition (intents, utterances, slot types, dialog policies) lives in source control alongside the Lambda code. Changes go through code review.</li>
+<li><strong>Canary alias with traffic-shift.</strong> Deploy the new bot version behind a canary alias. Route 5% of calls to the canary; monitor subgroup-stratified metrics for one week. If no regression, advance to 25%, then 50%, then 100%.</li>
+<li><strong>Rollback-on-regression.</strong> If subgroup-stratified production metrics (containment rate by cohort, accuracy by cohort, time-to-triage by cohort) regress beyond configured thresholds during the canary period, roll back the alias to the previous version automatically.</li>
+<li><strong>Held-out evaluation set.</strong> Every bot version is validated against a held-out evaluation set before entering the canary pipeline. The evaluation set covers accent samples, multi-intent utterances, urgency keywords, controlled-substance medication names, and the full language of the clinical-urgency lexicon.</li>
+</ul>
+<h3 id="multi-locale-architecture">Multi-Locale Architecture</h3>
+<p>The recommended pattern for multilingual IVR is a per-locale bot plus a router bot:</p>
+<ul>
+<li><strong>Router bot.</strong> A lightweight Lex bot that detects the caller's language at start-of-call. Conservative default: &quot;Press 1 for English. Para Espanol, oprima 2.&quot; Auto-detection from the caller's first utterance is optional and can be added once the English-only bot is stable.</li>
+<li><strong>Per-locale bot.</strong> One Lex bot per supported locale (en-US, es-US, others as needed). Each locale has its own intent-training utterances, slot-elicitation prompts, and confirmation phrasing. Locale-specific evaluation sets validate each bot independently.</li>
+<li><strong>Locale-specific lexicon governance.</strong> The clinical-urgency lexicon, the verification prompts, and the fulfillment confirmation prompts are maintained per locale as independent artifacts with their own review cadence.</li>
+<li><strong>Locale detection at start-of-call.</strong> The router bot routes to the appropriate locale bot. If auto-detection is used, the fallback on low-confidence detection is the explicit &quot;press 1 / press 2&quot; prompt.</li>
+</ul>
+<h3 id="disaster-recovery-topology">Disaster Recovery Topology</h3>
+<p>The IVR is the front door. Its failover pattern:</p>
+<ul>
+<li><strong>Lex-failover-within-Connect.</strong> If the Lex bot is unavailable (health check fails, latency exceeds threshold), the Connect contact flow branches to a degraded DTMF menu that handles the top five intents via keypress (&quot;Press 1 for refills, press 2 for appointments...&quot;). The DTMF menu is a static contact-flow branch, not a Lex feature, so it survives a Lex outage.</li>
+<li><strong>Connect-failover-to-backup-carrier-side-IVR.</strong> If Connect itself is unavailable (regional outage, instance failure), the carrier-side SIP routing fails over to a backup IVR hosted at the carrier or at an alternate region. The backup IVR plays a recorded message with the practice's callback number and alternate contact methods.</li>
+<li><strong>Quarterly failover testing with synthetic calls.</strong> Exercise both failover paths quarterly using synthetic test calls. Validate that the DTMF menu handles the top intents correctly and that the carrier-side failover answers and plays the correct message.</li>
+<li><strong>Failover-detection and failover-back triggers.</strong> Automated via Connect and Lex health checks in CloudWatch. Failover triggers when the health-check alarm enters ALARM state; failover-back triggers when the alarm returns to OK and stays there for a configurable stabilization window (default: 5 minutes).</li>
+</ul>
 <hr />
 <h3 id="expected-results">Expected Results</h3>
 <p><strong>Sample turn record from Lex (illustrative):</strong></p>

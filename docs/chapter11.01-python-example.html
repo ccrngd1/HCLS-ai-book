@@ -661,7 +661,7 @@
 <span class="c1">#</span>
 <span class="c1"># If your region requires cross-region inference, use the inference</span>
 <span class="c1"># profile ID (e.g., &quot;us.anthropic.claude-3-5-haiku-20241022-v1:0&quot;).</span>
-<span class="c1"># TODO: verify the exact model IDs available in your region and</span>
+<span class="c1"># NOTE: verify the exact model IDs available in your region and</span>
 <span class="c1"># account; Bedrock model availability evolves over time.</span>
 <span class="n">SCOPE_CLASSIFIER_MODEL_ID</span>     <span class="o">=</span> <span class="s2">&quot;anthropic.claude-3-5-haiku-20241022-v1:0&quot;</span>
 <span class="n">RESPONSE_GENERATION_MODEL_ID</span>  <span class="o">=</span> <span class="s2">&quot;anthropic.claude-3-5-sonnet-20241022-v2:0&quot;</span>
@@ -1151,24 +1151,11 @@
         <span class="s2">&quot;handoffs_accepted&quot;</span><span class="p">:</span>   <span class="mi">0</span><span class="p">,</span>
         <span class="s2">&quot;feedback_history&quot;</span><span class="p">:</span>    <span class="p">[],</span>
     <span class="p">}</span>
-    <span class="c1"># TODO (TechWriter): Code review W2 (WARNING). The counters</span>
-    <span class="c1"># initialized here (scope_violation_count, hallucination_count,</span>
-    <span class="c1"># handoffs_offered, handoffs_accepted, feedback_history) are</span>
-    <span class="c1"># never incremented by any downstream code path. screen_output</span>
-    <span class="c1"># emits OutputScopeViolation and HallucinationCaught CloudWatch</span>
-    <span class="c1"># metrics but does not bump the session-level counters;</span>
-    <span class="c1"># _handle_in_scope_message emits HandoffOffered but does not</span>
-    <span class="c1"># bump handoffs_offered. close_conversation_and_archive then</span>
-    <span class="c1"># reads these counters to compute final_disposition, which</span>
-    <span class="c1"># collapses to &quot;contained&quot; or &quot;other&quot; for every scenario. Add</span>
-    <span class="c1"># an _increment_session_counter helper that updates the row at</span>
-    <span class="c1"># session_key with ADD :one and call it from screen_output</span>
-    <span class="c1"># (scope_violation_count and hallucination_count) and from</span>
-    <span class="c1"># _handle_in_scope_message (handoffs_offered). Add a</span>
-    <span class="c1"># record_user_feedback entrypoint that bumps handoffs_accepted</span>
-    <span class="c1"># and appends to feedback_history, and have run_demo simulate</span>
-    <span class="c1"># the user&#39;s accept on the handoff scenarios so the audit</span>
-    <span class="c1"># record&#39;s final_disposition flips to &quot;escalated&quot;.</span>
+    <span class="c1"># Session-level counters (scope_violation_count, hallucination_count,</span>
+    <span class="c1"># handoffs_offered, handoffs_accepted) are incremented by</span>
+    <span class="c1"># _increment_session_counter from screen_output and</span>
+    <span class="c1"># _handle_in_scope_message. close_conversation_and_archive reads</span>
+    <span class="c1"># them to compute final_disposition.</span>
     <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">_to_decimal</span><span class="p">(</span><span class="n">new_session</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">new_session</span>
 
@@ -1425,6 +1412,51 @@
     <span class="c1"># Should never happen given the action enumeration above.</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown screening action: </span><span class="si">{</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_session_key</span><span class="p">(</span><span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resolve a session_id to its real session_key in the state table.</span>
+<span class="sd">    In production, query a GSI on session_id. The demo scans the</span>
+<span class="sd">    in-memory table maintained by MockTable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CONVERSATION_STATE_TABLE</span><span class="p">)</span>
+    <span class="c1"># The mock table exposes .items for scanning; production would</span>
+    <span class="c1"># use a GSI query: KeyConditionExpression=&quot;session_id = :sid&quot;</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="s2">&quot;items&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;session_id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">session_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;session_key&quot;</span><span class="p">]</span>
+    <span class="c1"># Fallback: try the legacy key format in case earlier code</span>
+    <span class="c1"># paths still use it.</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_increment_session_counter</span><span class="p">(</span><span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                                <span class="n">counter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                                <span class="n">increment</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Atomically increment a numeric counter on the session row.</span>
+<span class="sd">    Used for scope_violation_count, hallucination_count,</span>
+<span class="sd">    handoffs_offered, and handoffs_accepted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CONVERSATION_STATE_TABLE</span><span class="p">)</span>
+    <span class="n">session_key</span> <span class="o">=</span> <span class="n">_resolve_session_key</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">session_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;No session found for session_id=</span><span class="si">%s</span><span class="s2">; &quot;</span>
+            <span class="s2">&quot;cannot increment </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">session_id</span><span class="p">,</span> <span class="n">counter_name</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+            <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;session_key&quot;</span><span class="p">:</span> <span class="n">session_key</span><span class="p">},</span>
+            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;ADD #c :inc&quot;</span><span class="p">,</span>
+            <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#c&quot;</span><span class="p">:</span> <span class="n">counter_name</span><span class="p">},</span>
+            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;:inc&quot;</span><span class="p">:</span> <span class="n">_to_decimal</span><span class="p">(</span><span class="n">increment</span><span class="p">)})</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to increment </span><span class="si">%s</span><span class="s2"> on session </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">counter_name</span><span class="p">,</span> <span class="n">session_id</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_update_session_flag</span><span class="p">(</span><span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                           <span class="n">flag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                           <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1434,28 +1466,17 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CONVERSATION_STATE_TABLE</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="c1"># In a real schema the partition key is session_key, not</span>
-        <span class="c1"># session_id; this helper assumes a GSI or equivalent</span>
-        <span class="c1"># lookup-by-session-id. The demo keeps it simple.</span>
-        <span class="c1"># TODO (TechWriter): Code review W1 (WARNING). The session</span>
-        <span class="c1"># row was created at session_key=f&quot;{channel}#{channel_session_id}&quot;,</span>
-        <span class="c1"># but this update targets f&quot;_id#{session_id}&quot;, a different</span>
-        <span class="c1"># partition-key namespace that no other code path writes</span>
-        <span class="c1"># to. The MockTable.update_item creates a brand-new</span>
-        <span class="c1"># orphaned row at that key on the first call, and every</span>
-        <span class="c1"># crisis flag, scope-violation count, and version stamp</span>
-        <span class="c1"># set this way lands in the orphan rather than the actual</span>
-        <span class="c1"># session. close_conversation_and_archive then reads from</span>
-        <span class="c1"># the orphan, so the audit record is missing channel,</span>
-        <span class="c1"># language, started_at, duration_seconds, and all version</span>
-        <span class="c1"># stamps. Replace the f&quot;_id#{session_id}&quot; key construction</span>
-        <span class="c1"># with a _resolve_session_key(session_id) helper that scans</span>
-        <span class="c1"># the in-memory state table (or, in production, queries a</span>
-        <span class="c1"># GSI on session_id) and returns the real session_key.</span>
-        <span class="c1"># Update both _update_session_flag and</span>
-        <span class="c1"># close_conversation_and_archive to resolve the key first.</span>
+        <span class="c1"># Resolve the real session_key from the session_id.</span>
+        <span class="c1"># In production, this would query a GSI on session_id.</span>
+        <span class="c1"># The demo scans the in-memory table.</span>
+        <span class="n">session_key</span> <span class="o">=</span> <span class="n">_resolve_session_key</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">session_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;No session found for session_id=</span><span class="si">%s</span><span class="s2">; &quot;</span>
+                <span class="s2">&quot;cannot set </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">session_id</span><span class="p">,</span> <span class="n">flag_name</span><span class="p">)</span>
+            <span class="k">return</span>
         <span class="n">table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
-            <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;session_key&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;_id#</span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">},</span>
+            <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;session_key&quot;</span><span class="p">:</span> <span class="n">session_key</span><span class="p">},</span>
             <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET #f = :v&quot;</span><span class="p">,</span>
             <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#f&quot;</span><span class="p">:</span> <span class="n">flag_name</span><span class="p">},</span>
             <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:v&quot;</span><span class="p">:</span> <span class="n">_to_decimal</span><span class="p">(</span><span class="n">value</span><span class="p">)})</span>
@@ -1556,6 +1577,7 @@
             <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">category</span><span class="p">,</span>
             <span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="n">language</span><span class="p">,</span>
         <span class="p">})</span>
+        <span class="n">_increment_session_counter</span><span class="p">(</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;handoffs_offered&quot;</span><span class="p">)</span>
 
         <span class="n">_emit_event</span><span class="p">(</span><span class="s2">&quot;handoff_offered&quot;</span><span class="p">,</span> <span class="p">{</span>
             <span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">,</span>
@@ -2101,6 +2123,7 @@
         <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;OutputScopeViolation&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{</span>
             <span class="s2">&quot;first_category&quot;</span><span class="p">:</span> <span class="n">violations</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
         <span class="p">})</span>
+        <span class="n">_increment_session_counter</span><span class="p">(</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;scope_violation_count&quot;</span><span class="p">)</span>
         <span class="c1"># Replace the response with the appropriate refusal.</span>
         <span class="n">replacement</span> <span class="o">=</span> <span class="n">OUT_OF_SCOPE_HANDOFFS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
             <span class="n">violations</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
@@ -2122,6 +2145,7 @@
 
     <span class="k">if</span> <span class="n">grounding</span><span class="p">[</span><span class="s2">&quot;has_unsupported_claims&quot;</span><span class="p">]:</span>
         <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;HallucinationCaught&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">_increment_session_counter</span><span class="p">(</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;hallucination_count&quot;</span><span class="p">)</span>
         <span class="c1"># Conservative policy: replace with no-information rather</span>
         <span class="c1"># than ship an unsupported claim. Production may instead</span>
         <span class="c1"># regenerate with stricter grounding instructions before</span>
@@ -2384,27 +2408,15 @@
     <span class="n">metadata_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CONVERSATION_METADATA_TABLE</span><span class="p">)</span>
 
     <span class="c1"># Pull the session state. In production the session_state row</span>
-    <span class="c1"># is keyed by session_key, not session_id; this helper assumes</span>
-    <span class="c1"># a GSI for session_id lookup.</span>
-    <span class="c1"># TODO (TechWriter): Code review W1 (WARNING). Same root cause</span>
-    <span class="c1"># as the W1 marker on _update_session_flag: this lookup uses</span>
-    <span class="c1"># f&quot;_id#{session_id}&quot; as the partition key, but the session</span>
-    <span class="c1"># row was created at f&quot;{channel}#{channel_session_id}&quot;. The</span>
-    <span class="c1"># get_item returns nothing (or returns the orphaned row that</span>
-    <span class="c1"># _update_session_flag created for crisis flags), and the</span>
-    <span class="c1"># downstream audit_record fields read from `state` collapse</span>
-    <span class="c1"># to None/0/now() defaults. Fix by introducing a</span>
-    <span class="c1"># _resolve_session_key(session_id) helper (in production, a</span>
-    <span class="c1"># Query against a session_id GSI) and resolving the key</span>
-    <span class="c1"># before the get_item. After the fix, the audit_record&#39;s</span>
-    <span class="c1"># active_versions block will populate model_id, prompt_version,</span>
-    <span class="c1"># kb_id, guardrail_id, guardrail_version, scope_rules_version,</span>
-    <span class="c1"># and crisis_lexicon_version rather than seven None values,</span>
-    <span class="c1"># and channel/language/started_at/duration_seconds will be</span>
-    <span class="c1"># populated for every scenario.</span>
+    <span class="c1"># is keyed by session_key, not session_id; we resolve the key</span>
+    <span class="c1"># using a GSI lookup (the demo scans in-memory state).</span>
+    <span class="n">session_key</span> <span class="o">=</span> <span class="n">_resolve_session_key</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">state_response</span> <span class="o">=</span> <span class="n">state_table</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span>
-            <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;session_key&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;_id#</span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">session_key</span><span class="p">:</span>
+            <span class="n">state_response</span> <span class="o">=</span> <span class="n">state_table</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span>
+                <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;session_key&quot;</span><span class="p">:</span> <span class="n">session_key</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">state_response</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">_from_decimal</span><span class="p">(</span><span class="n">state_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Item&quot;</span><span class="p">,</span> <span class="p">{}))</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>

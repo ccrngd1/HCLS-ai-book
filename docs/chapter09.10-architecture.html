@@ -512,7 +512,7 @@
 <h2 id="why-these-services">Why These Services</h2>
 <p><strong>Amazon S3 for DICOM storage and processing pipeline.</strong> Medical imaging generates massive data volumes. A single PET-CT study can be 500+ MB of DICOM files. S3 provides the durable, encrypted, high-throughput storage needed to receive studies from PACS, stage them for processing, and retain results. S3 event notifications trigger the processing pipeline when a complete study arrives. Lifecycle policies handle archival of processed studies to cheaper storage tiers.</p>
 <p><strong>Amazon SageMaker for ML model hosting and batch inference.</strong> The registration and fusion models (deep learning-based deformable registration, multi-modal segmentation networks) need GPU compute. SageMaker provides managed GPU instances for both training and inference. For batch processing (nightly fusion runs on new studies), SageMaker Processing Jobs or Batch Transform handle the compute without persistent infrastructure. For near-real-time clinical use, SageMaker endpoints with GPU-backed instances provide consistent latency.</p>
-<p><strong>AWS Step Functions for pipeline orchestration.</strong> The fusion pipeline is a multi-step workflow with conditional logic: registration might succeed or fail, the fusion approach depends on which modalities are available, and quality checks gate progression. Step Functions models this as a state machine with error handling, retries, and parallel execution branches (e.g., preprocessing multiple modalities simultaneously).</p>
+<p><strong>AWS Step Functions for pipeline orchestration.</strong> The fusion pipeline is a multi-step workflow with conditional logic: registration might succeed or fail, the fusion approach depends on which modalities are available, and quality checks gate progression. Step Functions models this as a state machine with error handling, retries, and parallel execution branches (e.g., preprocessing multiple modalities simultaneously). Configure error handling per step: preprocessing failures retry 2x with exponential backoff then fail the job; registration failures retry 1x (GPU operations are expensive to retry blindly) then route to a manual review queue; QA failures route to physicist review with all intermediate outputs retained in S3; export failures retry 3x then alert operations with the validated registration available for manual export. Use Step Functions <code>ResultPath</code> to preserve intermediate outputs in the execution state for debugging partial failures.</p>
 <p><strong>AWS Lambda for lightweight coordination tasks.</strong> DICOM parsing, metadata extraction, study completeness checks, notification dispatch, and result packaging are short-lived tasks that fit Lambda's execution model. Lambda handles the glue between pipeline stages while SageMaker handles the heavy compute.</p>
 <p><strong>Amazon DynamoDB for study tracking and metadata.</strong> Track pipeline state: which studies are in progress, which completed, which failed. Store registration quality metrics, fusion parameters used, and audit records. Point lookups by study ID support the clinical workflow where a radiologist checks whether fusion results are ready.</p>
 <p><strong>Amazon HealthLake or S3 + custom indexing for DICOM management.</strong> For DICOM study management, evaluate HealthLake Imaging for native DICOM storage and retrieval, or build a custom indexing layer on S3 if your query patterns (DICOM-RT cross-references, multi-modal series linking) exceed what HealthLake supports natively.</p>
@@ -538,6 +538,7 @@
     style H fill:#ff9,stroke:#333
     style M fill:#9ff,stroke:#333
 </pre>
+<p><strong>Network path from PACS to cloud.</strong> The connection between institutional PACS and AWS carries multi-gigabyte imaging studies (a CT + MRI + PET set for one patient can be 3-8 GB) containing PHI. Options for this path: (1) AWS Direct Connect provides dedicated bandwidth and private connectivity, preferred for production radiation oncology workflows requiring predictable latency; (2) Site-to-Site VPN provides an encrypted tunnel over existing internet, acceptable if bandwidth is sufficient and consistent; (3) DICOMweb over TLS encrypts data in transit over the public internet but may not satisfy institutional requirements for private network paths. For departments requiring fusion results within 30 minutes of scan completion, ensure the network path can sustain 50-100 Mbps dedicated to imaging transfer. Shared internet connections during peak clinical hours may introduce unacceptable delays.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <table>
 <thead>
@@ -553,7 +554,7 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td><code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>sagemaker:CreateProcessingJob</code>, <code>sagemaker:InvokeEndpoint</code>, <code>states:StartExecution</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>, <code>sns:Publish</code></td>
+<td>Per-component roles (never a single shared role): <strong>Step Functions:</strong> <code>states:StartExecution</code>, <code>ecs:RunTask</code>, <code>sagemaker:InvokeEndpoint</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:GetItem</code>. <strong>Lambda (preprocessing):</strong> <code>medical-imaging:GetImageSet</code>, <code>medical-imaging:GetImageFrame</code>, <code>s3:GetObject</code>/<code>PutObject</code> on processing bucket. <strong>SageMaker Endpoint:</strong> <code>s3:GetObject</code> on <code>processing-bucket/*/preprocessed*</code>, <code>s3:PutObject</code> on <code>processing-bucket/*/registered*</code>. <strong>Lambda (post-processing):</strong> <code>s3:GetObject</code> on processing bucket, <code>medical-imaging:StartDICOMImportJob</code>, <code>dynamodb:UpdateItem</code>, <code>sns:Publish</code>. <strong>All:</strong> <code>logs:CreateLogGroup</code>, <code>logs:PutLogEvents</code>.</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
@@ -561,11 +562,11 @@
 </tr>
 <tr>
 <td><strong>Encryption</strong></td>
-<td>S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: volume encryption with KMS; all transit over TLS</td>
+<td>S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: volume encryption with KMS; all transit over TLS. If using multi-instance SageMaker endpoints for throughput scaling, enable <code>EnableInterContainerTrafficEncryption</code> to ensure PHI is encrypted when distributed across instances.</td>
 </tr>
 <tr>
 <td><strong>VPC</strong></td>
-<td>Production: SageMaker and Lambda in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime. PACS connectivity via Direct Connect or VPN to VPC.</td>
+<td>Production: SageMaker and Lambda in VPC with VPC endpoints for S3 (Gateway), DynamoDB (Gateway), SageMaker Runtime (Interface), HealthImaging (Interface), CloudWatch Logs (Interface), and CloudWatch Monitoring (Interface). SageMaker endpoint security group: allow inbound TCP 443 from Lambda/ECS task security group only; deny all other inbound; no outbound internet access required (model artifacts loaded at deploy time from S3 via VPC endpoint). PACS connectivity via Direct Connect or Site-to-Site VPN to VPC.</td>
 </tr>
 <tr>
 <td><strong>CloudTrail</strong></td>
@@ -577,11 +578,11 @@
 </tr>
 <tr>
 <td><strong>Sample Data</strong></td>
-<td>BraTS (Brain Tumor Segmentation) challenge data for brain multi-modal MRI. TCIA (The Cancer Imaging Archive) for PET-CT datasets. Never use real patient imaging in dev.</td>
+<td>BraTS (Brain Tumor Segmentation) challenge data for brain multi-modal MRI. TCIA (The Cancer Imaging Archive) for PET-CT datasets. Never use real patient imaging in dev. For development with institutional data: coordinate de-identification across all studies in a fusion set using consistent pseudonym mapping. Standard DICOM de-identification must strip UIDs, dates, and all demographic tags while preserving spatial metadata (ImagePositionPatient, ImageOrientationPatient, PixelSpacing) that registration depends on. Use TCIA public datasets when possible (already de-identified with consistent pseudonyms across modalities). Verify that geometry tags survive the de-identification process before running registration.</td>
 </tr>
 <tr>
 <td><strong>Cost Estimate</strong></td>
-<td>Per study: ~$0.50 storage + $1.00-5.00 SageMaker GPU compute (registration + fusion) + $0.10 Lambda/Step Functions. Varies heavily with image resolution and model complexity.</td>
+<td>Per study: ~$0.50 storage + $1.00-5.00 SageMaker GPU compute (registration + fusion) + $0.10 Lambda/Step Functions. Varies heavily with image resolution and model complexity. Additional costs: S3 intermediate storage (~1GB/study; implement lifecycle policy to transition to Glacier or delete after QA acceptance); HealthImaging storage for input and output studies (see HealthImaging pricing); data transfer from on-premises if not using Direct Connect. For a department processing 50 studies/day: compute ~$125-400/day; storage accumulation requires lifecycle management.</td>
 </tr>
 </tbody>
 </table>
@@ -748,6 +749,7 @@
         passed_qc: quality_metrics meet threshold criteria
     }
 </code></pre>
+<p>Quality thresholds (mutual information, target registration error, Jacobian folding fraction) are clinical parameters, not software configurations. Changes to these values alter the safety boundary of the system. In production, store thresholds in a versioned configuration with a change audit trail. Any threshold modification should require medical physics sign-off and documented validation on a test cohort before deployment. Treat threshold changes with the same governance as model updates.</p>
 <p><strong>Step 4: Multi-modal fusion and analysis.</strong> With all modalities registered to the same coordinate frame, combine their information for the target clinical task. The fusion approach depends on what you're trying to accomplish. For automated segmentation (e.g., delineating tumor extent), the state-of-the-art is a deep learning model that takes all modalities as input channels and outputs a voxel-wise segmentation map. For treatment planning support, the fusion might propagate structure contours from one modality to another. For radiomics (quantitative feature extraction), the fusion extracts features from each modality independently but in the same spatial regions. Each approach produces different outputs, but they all depend on accurate registration from Step 3.</p>
 <pre class="code code-plain"><code>FUNCTION fuse_and_analyze(registered_volumes, clinical_task):
     // Stack all registered modalities as channels of a multi-channel volume
@@ -922,7 +924,9 @@
 </tr>
 </tbody>
 </table>
+<p>Pipeline times assume a warm SageMaker endpoint. Cold-start (first request after scale-up) adds 3-5 minutes for model loading. For predictable latency in clinical use, configure minimum instance count = 1 to avoid scale-to-zero.</p>
 <p><strong>Where it struggles:</strong> Non-rigid abdominal anatomy with large respiratory or bowel motion between scans. Studies with significant time gaps where tumor growth invalidates the registration assumption. Rare modality combinations not well-represented in training data. Edge cases where automated registration converges to a local minimum (producing obviously wrong but algorithmically &quot;stable&quot; alignments).</p>
+<p><strong>Concurrent job handling.</strong> If multiple patients have planning imaging completed within the same hour, Step Functions starts multiple executions and SageMaker endpoints become the bottleneck. With a single GPU instance processing one registration at a time (30-120 seconds for deformable), 5 concurrent requests will queue. For departments processing more than 10 fusion studies/hour, configure SageMaker auto-scaling with a target of InvocationsPerInstance &lt; 2. Alternatively, use SageMaker Asynchronous Inference for long-running registration jobs, which provides built-in queuing with SNS notification on completion rather than blocking the Step Functions execution.</p>
 <hr />
 <h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
 <p><strong>FDA regulatory pathway.</strong> If this system's outputs influence clinical decisions (treatment planning contours, diagnostic segmentation), it likely requires FDA clearance as a Class II medical device. The 510(k) pathway requires demonstrated substantial equivalence to a predicate device, plus clinical validation studies. This recipe covers the technical architecture, not the regulatory journey, which adds 12-24 months and significant cost.</p>
@@ -955,12 +959,8 @@
 </ul>
 <p><strong>AWS Solutions and Blogs:</strong></p>
 <ul>
-<li>
-<p><a href="https://aws.amazon.com/solutions/implementations/medical-image-analysis-on-aws/">Medical Image Analysis on AWS</a>: Reference architecture for medical imaging workloads on AWS</p>
-</li>
-<li>
-<p><a href="https://aws.amazon.com/blogs/machine-learning/">Build a medical image analysis pipeline on AWS</a>: Blog posts covering SageMaker-based medical imaging pipelines</p>
-</li>
+<li><a href="https://aws.amazon.com/solutions/?solutions-all.sort-by=item.additionalFields.sortDate&amp;solutions-all.sort-order=desc&amp;awsf.content-type=content-type%23solution&amp;awsf.industry=industry%23healthcare">AWS Solutions Library (Healthcare)</a>: Deployable reference architectures for healthcare workloads on AWS</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: Search for &quot;medical imaging&quot; and &quot;SageMaker&quot; to find posts on GPU-based imaging pipelines and DICOM processing</li>
 </ul>
 <hr />
 <h2 id="estimated-implementation-time">Estimated Implementation Time</h2>

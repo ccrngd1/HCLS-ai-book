@@ -507,7 +507,7 @@
     <main class="content">
       <article>
         <h1 id="recipe-24-prior-authorization-letter-generation">Recipe 2.4: Prior Authorization Letter Generation</h1>
-<p><strong>Complexity:</strong> Medium · <strong>Phase:</strong> MVP → Production · <strong>Estimated Cost:</strong> ~$0.10-0.30 per letter</p>
+<p><strong>Complexity:</strong> Medium · <strong>Phase:</strong> MVP → Production · <strong>Estimated Cost:</strong> ~$1.50-2.50 per letter (multi-call pipeline on Claude Sonnet)</p>
 <hr />
 <h2 id="the-problem">The Problem</h2>
 <p>A rheumatologist needs to prescribe a biologic for a patient with rheumatoid arthritis. The patient has failed methotrexate, has documented disease activity, and meets every clinical criterion the payer has published for approval. This should be a fifteen-minute decision. Instead, it becomes a four-hour project.</p>
@@ -548,6 +548,7 @@
 <p><strong>Citation fabrication.</strong> Ask an LLM to cite supporting literature and it will happily generate plausible-looking journal citations that don't exist. The model confabulates author names, journal titles, and DOIs with high confidence. The mitigation: use retrieval for citations. Pull from a vetted literature corpus or a guideline repository. Never let the model generate citations from its training data alone.</p>
 <p><strong>Payer-specific formatting.</strong> Most payers accept letters in PDF format submitted through a portal. Some require specific fields in specific places. Some want structured JSON submitted via API (the HL7 DaVinci project is pushing toward this, and CMS-0057-F is accelerating it). Your generation pipeline has to produce the right output format for each payer, which means the architecture has to support multiple output modalities from a common content core.</p>
 <p><strong>Physician sign-off friction.</strong> A generated letter is only valuable if the physician signs it. If the review workflow is cumbersome (print, read, sign, scan, upload), the time savings evaporate. The integration with clinical workflows matters as much as the letter quality.</p>
+<p><strong>Prompt injection from clinical content.</strong> This is the one that security teams miss on first review. The clinical notes you feed into the model are not fully trusted input. Patient portal messages, OCR of faxed outside records, and external referral letters all originate from weakly controlled channels. An adversarial string embedded in a note field could attempt to override the model's grounding constraint (for example, instructing it to fabricate claims or cite nonexistent literature). The mitigation is layered: configure input-side prompt-attack filters (Bedrock Guardrails supports this), and treat EHR-sourced structured data (lab values, coded diagnoses) as a different trust tier from free-text narrative content. Structured data goes into the prompt with minimal transformation. Free-text content gets sanitized and filtered before it reaches the model. This is especially important because the downstream output is a legal document that goes to a payer under a physician's signature.</p>
 <h3 id="grounded-generation-the-architectural-answer">Grounded Generation: The Architectural Answer</h3>
 <p>The pattern that makes prior auth letter generation viable is grounded generation, which is a specific flavor of Retrieval-Augmented Generation adapted for letter composition. The idea:</p>
 <ol>
@@ -618,7 +619,7 @@
 <li><strong>Recipe 2.3 (Clinical Documentation Improvement):</strong> CDI suggestions improve the clinical documentation that this recipe depends on. Better notes produce better fact extraction and stronger PA letters.</li>
 <li><strong>Recipe 2.7 (Literature Search and Evidence Synthesis):</strong> The evidence retrieval in this recipe is a simplified form of the RAG pattern in 2.7. For complex PA cases where standard citations don't apply, the literature search pattern becomes relevant.</li>
 <li><strong>Recipe 2.9 (Clinical Decision Support Synthesis):</strong> Similar synthesis architecture but higher-stakes output. The grounding patterns used here are essential there.</li>
-<li><strong>Recipe 5.x (Entity Resolution):</strong> Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation.</li>
+<li><strong>Recipe 5.4 (Insurance Eligibility Matching):</strong> Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation. Getting the patient-to-payer identity match wrong means the letter targets the wrong plan or references the wrong member ID.</li>
 </ul>
 <hr />
 <h2 id="tags">Tags</h2>

@@ -604,7 +604,7 @@
 <span class="c1"># probabilities are per-pathway (a pharmacy nudge&#39;s signature is not</span>
 <span class="c1"># the same as a specialist referral&#39;s signature).</span>
 <span class="n">URGENCY_MODEL_NAMES</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;hedis-cdc-eye-exam&quot;</span><span class="p">:</span>              <span class="s2">&quot;urgency-eye-exam-v3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hedis-eed&quot;</span><span class="p">:</span>                       <span class="s2">&quot;urgency-eye-exam-v3&quot;</span><span class="p">,</span>
     <span class="s2">&quot;hedis-cdc-foot-exam&quot;</span><span class="p">:</span>             <span class="s2">&quot;urgency-foot-exam-v2&quot;</span><span class="p">,</span>
     <span class="s2">&quot;uspstf-colorectal-screening&quot;</span><span class="p">:</span>     <span class="s2">&quot;urgency-colorectal-v4&quot;</span><span class="p">,</span>
     <span class="s2">&quot;cdc-pneumococcal-65plus&quot;</span><span class="p">:</span>         <span class="s2">&quot;urgency-pneumococcal-v2&quot;</span><span class="p">,</span>
@@ -747,9 +747,9 @@
 <span class="c1"># of this type.</span>
 <span class="n">SAMPLE_MEASURE_REGISTRY</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">{</span>
-        <span class="s2">&quot;measure_id&quot;</span><span class="p">:</span>            <span class="s2">&quot;hedis-cdc-eye-exam&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;measure_id&quot;</span><span class="p">:</span>            <span class="s2">&quot;hedis-eed&quot;</span><span class="p">,</span>
         <span class="s2">&quot;version&quot;</span><span class="p">:</span>               <span class="s2">&quot;2026-v1&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;display_name&quot;</span><span class="p">:</span>          <span class="s2">&quot;HEDIS CDC Eye Exam (Diabetic Retinal)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;display_name&quot;</span><span class="p">:</span>          <span class="s2">&quot;HEDIS Eye Exam for Patients with Diabetes (EED)&quot;</span><span class="p">,</span>
         <span class="s2">&quot;denominator_logic&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;age_min&quot;</span><span class="p">:</span>                  <span class="mi">18</span><span class="p">,</span>
             <span class="s2">&quot;age_max&quot;</span><span class="p">:</span>                  <span class="mi">75</span><span class="p">,</span>
@@ -1774,7 +1774,7 @@
 
     <span class="c1"># Comorbidity load: a patient with multiple complications has</span>
     <span class="c1"># higher urgency on diabetes-related gaps.</span>
-    <span class="k">if</span> <span class="n">measure_id</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;hedis-cdc-eye-exam&quot;</span><span class="p">,</span> <span class="s2">&quot;hedis-cdc-foot-exam&quot;</span><span class="p">}:</span>
+    <span class="k">if</span> <span class="n">measure_id</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;hedis-eed&quot;</span><span class="p">,</span> <span class="s2">&quot;hedis-cdc-foot-exam&quot;</span><span class="p">}:</span>
         <span class="n">a1c</span> <span class="o">=</span> <span class="n">lab_trends</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;a1c_recent&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">a1c</span> <span class="ow">and</span> <span class="n">a1c</span> <span class="o">&gt;=</span> <span class="mf">8.0</span><span class="p">:</span>
             <span class="n">urgency</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">urgency</span> <span class="o">+</span> <span class="mf">0.15</span><span class="p">)</span>
@@ -2624,7 +2624,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_suggest_specialty_for_measure</span><span class="p">(</span><span class="n">measure</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mapping of measure to suggested specialty for referral.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;hedis-cdc-eye-exam&quot;</span><span class="p">:</span>           <span class="s2">&quot;ophthalmology_optometry&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hedis-eed&quot;</span><span class="p">:</span>                    <span class="s2">&quot;ophthalmology_optometry&quot;</span><span class="p">,</span>
         <span class="s2">&quot;uspstf-colorectal-screening&quot;</span><span class="p">:</span>  <span class="s2">&quot;gastroenterology&quot;</span><span class="p">,</span>
     <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">measure</span><span class="p">[</span><span class="s2">&quot;measure_id&quot;</span><span class="p">],</span> <span class="s2">&quot;primary_care&quot;</span><span class="p">)</span>
 

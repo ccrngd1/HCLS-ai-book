@@ -772,21 +772,19 @@
             pharmacy_load[prep_hour] &lt;= resource_model.pharmacy_slots[prep_hour].max_preps
         )
     
-    // Constraint: drug stability
+    // Constraint: drug stability (batch planning guard)
+    // The real drug stability risk is reactive: a patient delayed after prep
+    // causes the bag to expire. Step 6 handles that in real time. But the
+    // batch planner still validates that the planned prep-to-administration
+    // gap (including a buffer for expected variance) fits within the BUD.
     FOR EACH request IN requests:
-        // Note: In the batch schedule, this constraint ensures pharmacy prep
-        // is scheduled close enough to the patient&#x27;s start time that the drug
-        // won&#x27;t expire even with expected variance. The tighter real-time check
-        // (in Step 6) verifies actual prep completion against actual expected
-        // administration time when delays occur.
+        prep_start = request.start_var - request.pharmacy_prep_minutes
+        prep_completion = prep_start + request.pharmacy_prep_minutes
         model.add_constraint(
-            request.start_var - prep_completion_time(request) 
+            request.start_var - prep_completion
+            + config.expected_delay_buffer_minutes
             &lt;= request.drug_stability_hours * 60
         )
-    // TODO (TechWriter): Expert review A3 (MEDIUM). prep_completion_time() is
-    // undefined. Reformulate: batch constraint should use start_var minus
-    // (prep_start + pharmacy_prep_minutes) &lt;= stability_hours * 60 - buffer.
-    // Real drug stability risk is reactive (patient delayed after prep), handled in Step 6.
     
     // Objective: weighted combination
     objective = (

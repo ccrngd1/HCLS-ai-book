@@ -550,7 +550,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">mean</span><span class="p">,</span> <span class="n">stdev</span>
@@ -967,16 +967,22 @@
 <hr />
 <h2 id="step-1-prepare-consumption-data">Step 1: Prepare Consumption Data</h2>
 <p>This step pulls the raw daily consumption rows, collapses them to one row per <code>(facility_id, sku_id, date)</code> triple, fills missing days with zero counts, applies the SKU master successor map, and attaches calendar features. In production this is a Glue ETL job (PySpark or Glue notebooks) reading partitioned Parquet from S3 and writing a modeling-ready Parquet output back to S3. The demo does the equivalent in plain Python over the synthetic rows so you can trace what each transform accomplishes.</p>
-<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prepare_consumption_data</span><span class="p">(</span><span class="n">raw_rows</span><span class="p">,</span> <span class="n">sku_master</span><span class="p">):</span>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prepare_consumption_data</span><span class="p">(</span><span class="n">raw_rows</span><span class="p">,</span> <span class="n">sku_master</span><span class="p">,</span> <span class="n">case_volume_by_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Step 1: Clean, fill gaps, reconcile successors, add features.</span>
 
 <span class="sd">    See pseudocode Step 1 in the main recipe. The output is a list</span>
 <span class="sd">    of rows, one per (facility_id, sku_id, date) triple, with</span>
 <span class="sd">    quantity (zero-filled), calendar features (day_of_week,</span>
-<span class="sd">    month, is_holiday placeholder), and a flag for procedure-</span>
-<span class="sd">    driven SKUs that the segmentation step uses to override the</span>
-<span class="sd">    quantitative classification.</span>
+<span class="sd">    month, is_holiday placeholder, scheduled_cases,</span>
+<span class="sd">    flu_season_index), and a flag for procedure-driven SKUs that</span>
+<span class="sd">    the segmentation step uses to override the quantitative</span>
+<span class="sd">    classification. The scheduled_cases and flu_season_index</span>
+<span class="sd">    columns teach the row-as-feature-vector pattern the</span>
+<span class="sd">    pseudocode advocates: the modeling-ready table is visibly</span>
+<span class="sd">    self-contained with all exogenous signals attached per row.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">case_volume_by_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">case_volume_by_date</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="c1"># 1a. Group raw transactions by (facility, sku, date) and sum.</span>
     <span class="n">grouped</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">raw_rows</span><span class="p">:</span>
@@ -1020,6 +1026,23 @@
         <span class="k">for</span> <span class="n">d_iso</span> <span class="ow">in</span> <span class="n">full_dates</span><span class="p">:</span>
             <span class="n">qty</span>       <span class="o">=</span> <span class="n">grouped</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">facility_id</span><span class="p">,</span> <span class="n">sku_id</span><span class="p">,</span> <span class="n">d_iso</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
             <span class="n">d</span>         <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">d_iso</span><span class="p">)</span>
+            <span class="c1"># Scheduled cases: for procedure-driven SKUs, the</span>
+            <span class="c1"># forecasted OR case volume is the primary signal.</span>
+            <span class="c1"># For other SKUs it is an informational feature that</span>
+            <span class="c1"># can improve a multivariate model. Production reads</span>
+            <span class="c1"># this from the surgical scheduling system&#39;s forward-</span>
+            <span class="c1"># looking extract.</span>
+            <span class="n">scheduled_cases</span> <span class="o">=</span> <span class="n">case_volume_by_date</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">d_iso</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Flu/respiratory season index: a simple seasonal</span>
+            <span class="c1"># indicator (0.0-1.0) for respiratory SKUs.</span>
+            <span class="c1"># Peaks Nov-Feb in the Northern Hemisphere. Production</span>
+            <span class="c1"># reads from a configurable seasonal-indicator table.</span>
+            <span class="n">month_num</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">month</span>
+            <span class="n">flu_season_index</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mf">1.0</span> <span class="k">if</span> <span class="n">month_num</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">else</span>
+                <span class="mf">0.5</span> <span class="k">if</span> <span class="n">month_num</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">else</span>
+                <span class="mf">0.0</span>
+            <span class="p">)</span>
             <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
                 <span class="s2">&quot;facility_id&quot;</span><span class="p">:</span>         <span class="n">facility_id</span><span class="p">,</span>
                 <span class="s2">&quot;sku_id&quot;</span><span class="p">:</span>              <span class="n">target_sku_id</span><span class="p">,</span>
@@ -1028,6 +1051,8 @@
                 <span class="s2">&quot;day_of_week&quot;</span><span class="p">:</span>         <span class="n">d</span><span class="o">.</span><span class="n">weekday</span><span class="p">(),</span>
                 <span class="s2">&quot;month&quot;</span><span class="p">:</span>               <span class="n">d</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
                 <span class="s2">&quot;is_holiday&quot;</span><span class="p">:</span>          <span class="kc">False</span><span class="p">,</span>   <span class="c1"># production reads from a holiday calendar table</span>
+                <span class="s2">&quot;scheduled_cases&quot;</span><span class="p">:</span>     <span class="n">scheduled_cases</span><span class="p">,</span>
+                <span class="s2">&quot;flu_season_index&quot;</span><span class="p">:</span>    <span class="n">flu_season_index</span><span class="p">,</span>
                 <span class="s2">&quot;is_procedure_driven&quot;</span><span class="p">:</span> <span class="n">is_procedure_driven</span><span class="p">,</span>
             <span class="p">})</span>
 
@@ -1124,12 +1149,11 @@
             <span class="s2">&quot;override_reason&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">}</span>
 
+    <span class="n">seg_counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">segments</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
         <span class="s2">&quot;Segmented </span><span class="si">%d</span><span class="s2"> SKUs: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
         <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">),</span>
-        <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">seg</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">seg</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span>
-                  <span class="nb">sorted</span><span class="p">({(</span><span class="n">s</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">segments</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">s</span><span class="p">))</span>
-                          <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">segments</span><span class="o">.</span><span class="n">values</span><span class="p">())})))</span>
+        <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">seg</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">seg</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">seg_counts</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
     <span class="k">return</span> <span class="n">segments</span><span class="p">,</span> <span class="n">diagnostics</span>
 </pre></div>
 
@@ -1488,20 +1512,12 @@
                          <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">lead_time_days</span><span class="p">)))</span>
                          <span class="o">*</span> <span class="n">sigma_daily</span><span class="p">)</span>
 
-        <span class="n">reorder_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span>
-            <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">mean_demand_lead</span><span class="p">))</span> <span class="o">+</span> <span class="n">safety_stock</span><span class="p">)))</span>
-        <span class="c1"># TODO (TechWriter): Code review Issue 8 (NOTE). The</span>
-        <span class="c1"># round-trip Decimal(str(float)) -&gt; Decimal -&gt; float -&gt;</span>
-        <span class="c1"># round -&gt; int discards Decimal&#39;s precision benefit</span>
-        <span class="c1"># because the immediate float() cast is what determines</span>
-        <span class="c1"># the final integer. Either compute everything in float</span>
-        <span class="c1"># (Decimal only at the DynamoDB boundary, matching the</span>
-        <span class="c1"># demo&#39;s existing pattern: int(round(mean_demand_lead +</span>
-        <span class="c1"># float(safety_stock)))) or stay in Decimal end-to-end</span>
-        <span class="c1"># (mean_demand_lead_dec = Decimal(str(mean_demand_lead));</span>
-        <span class="c1"># int((mean_demand_lead_dec + safety_stock).quantize(</span>
-        <span class="c1"># Decimal(&quot;1&quot;)))). The all-float form fits the file</span>
-        <span class="c1"># better.</span>
+        <span class="c1"># Compute reorder point in float (Decimal only at the</span>
+        <span class="c1"># DynamoDB write boundary). The safety-stock formula</span>
+        <span class="c1"># operates at unit-count precision; sub-unit decimals</span>
+        <span class="c1"># are meaningless for physical inventory.</span>
+        <span class="n">reorder_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span>
+            <span class="n">mean_demand_lead</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">safety_stock</span><span class="p">)))</span>
 
         <span class="n">order_quantity</span> <span class="o">=</span> <span class="n">_suggest_order_quantity</span><span class="p">(</span>
             <span class="n">mean_demand_per_day</span><span class="p">,</span> <span class="n">master_entry</span><span class="p">)</span>
@@ -1638,7 +1654,7 @@
 
     <span class="c1"># --- Step 1: Prepare and clean the consumption data ---</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[step 1] prepare_consumption_data&quot;</span><span class="p">)</span>
-    <span class="n">prepared</span> <span class="o">=</span> <span class="n">prepare_consumption_data</span><span class="p">(</span><span class="n">raw_rows</span><span class="p">,</span> <span class="n">sku_master</span><span class="p">)</span>
+    <span class="n">prepared</span> <span class="o">=</span> <span class="n">prepare_consumption_data</span><span class="p">(</span><span class="n">raw_rows</span><span class="p">,</span> <span class="n">sku_master</span><span class="p">,</span> <span class="n">case_volume_by_date</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">prepared</span><span class="p">)</span><span class="si">}</span><span class="s2"> prepared rows&quot;</span><span class="p">)</span>
 
     <span class="c1"># --- Step 2: Segment SKUs by demand pattern ---</span>

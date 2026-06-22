@@ -513,6 +513,7 @@
 <h3 id="why-these-services">Why These Services</h3>
 <p><strong>Amazon Kinesis Data Streams for the result feed.</strong> The result ingest pipeline accepts HL7 ORU messages (from the LIS), JSON payloads (from POCT data managers), and batch file feeds (from reference labs) with different throughput profiles. Kinesis provides durable, ordered event streams with multi-consumer fan-out, which matters because the same result gets read by the real-time outlier service, the batch cohort pipelines, and the audit archive. HIPAA-eligible under the BAA.</p>
 <p><strong>Amazon MQ for HL7 v2 ingress.</strong> LIS-to-AWS integration usually uses MLLP (Minimal Lower Layer Protocol) over TCP. An on-premises MLLP listener (Mirth Connect, Rhapsody, Corepoint, or a simple listener built on the HL7 libraries) republishes to Amazon MQ (ActiveMQ) or to a Kinesis-backed ingress Lambda. ActiveMQ is the common bridge because most integration engines have pre-built ActiveMQ connectors.</p>
+<p><strong>MLLP transport security posture:</strong> Wrap MLLP in TLS with mutual TLS authentication between the on-premises integration engine and the AWS-side listener. Deploy the listener endpoint in a DMZ subnet rather than on the clinical production network. For production volumes and latency-sensitive autoverification timing, prefer AWS Direct Connect over Site-to-Site VPN (VPN jitter during peak can push callback latency above the CLIA window). Authenticate the MQ broker via mutual TLS or short-lived IAM-derived credentials (STS tokens rotated via the integration engine's credential provider) rather than long-lived shared secrets stored in the engine's configuration database.</p>
 <p><strong>AWS Lambda for the real-time outlier service.</strong> The hot path (rule evaluation, patient-context cache lookup, delta-check computation, specimen-quality fusion, severity tiering) needs to complete in tens to low hundreds of milliseconds because autoverification and callback timing depend on it. A Kinesis-triggered Lambda fits this profile. Keep it thin; offload heavy statistical work to async downstream steps.</p>
 <p><strong>Amazon DynamoDB for the patient-context cache and patient-history store.</strong> Low-latency key-value reads. The cache is keyed by patient ID and stores demographics, pregnancy status, active problems, active meds, and (via a separate item) the recent-results map per analyte. The recent-results data supports delta checks and rolling-mean computations without hitting the LIS for every incoming result. HIPAA-eligible under the BAA with customer-managed KMS.</p>
 <p><strong>Amazon SageMaker Feature Store for analyte-cohort baselines.</strong> Population reference statistics (robust median, MAD, percentiles) per analyte per cohort live here with point-in-time correctness. The real-time Lambda queries the online store; the retraining jobs use the offline store for historical cohort reconstruction. HIPAA-eligible.</p>
@@ -520,10 +521,11 @@
 <p><strong>Amazon S3 with AWS KMS.</strong> Raw result archive (HL7 ORU as parsed JSON, POCT payloads as-is), panel-level Parquet for batch analysis, model artifacts, labels parquet from feedback capture. Customer-managed KMS on everything. Lifecycle to Glacier for long-term retention (state regulations and CLIA retention vary; 2 years minimum under CLIA for most records, 10+ years for some specialty lab records).</p>
 <p><strong>Amazon OpenSearch Service for the outlier index and audit.</strong> Every flag produced gets indexed. The lab director dashboards, pathologist review interfaces, and the audit team queries all read from OpenSearch. Fine-grained access control matters because pathology, laboratory QA, and IT compliance need different slices.</p>
 <p><strong>Amazon EventBridge for routing flags.</strong> Flags fan out via EventBridge rather than hard-coded integrations. Subscribers include the critical-value callback service, the tech-review queue service, the autoverification release service, the audit logger, the metrics aggregator, and the feedback-capture service.</p>
-<p><strong>Amazon SNS and Amazon Pinpoint for alert delivery.</strong> Critical-value callbacks usually route through an existing callback platform (Vocera, TigerConnect, a custom service) over an SNS topic. Less-urgent flags go to email or the lab tech review application. Pinpoint handles patient-facing outreach when a patient-reported outpatient test result (home A1C, home INR) looks anomalous.</p>
+<p><strong>Amazon SNS and Amazon Pinpoint for alert delivery.</strong> Critical-value callbacks usually route through an existing callback platform (Vocera, TigerConnect, a custom service) over an SNS topic. Less-urgent flags go to email or the lab tech review application. Pinpoint handles patient-facing outreach when a patient-reported outpatient test result (home A1C, home INR) looks anomalous. The chapter-3 minimum-PHI convention applies: SNS messages carry only event_id, severity, and a fetch_by_id pointer. The callback service fetches full context from the outlier store by ID. For high-stigma test classes (HIV viral load, hepatitis C viral load, syphilis serology, drug-of-abuse panels, lithium and other psychiatric medication levels, gender-affirming hormone monitoring), the LOINC display name is excluded from the notification subject to prevent rendering on a recipient's lock screen.</p>
 <p><strong>Amazon Step Functions for orchestration.</strong> The batch pipelines (hourly panel Isolation Forest scoring, daily cohort baseline recomputation, weekly retraining, daily reference-range validation) are multi-step workflows. State machines provide the retry, timeout, and visibility semantics that multi-step pipelines need.</p>
 <p><strong>Amazon Comprehend Medical for clinical context extraction.</strong> When the patient's chart has recent free-text clinical notes, Comprehend Medical extracts diagnoses, medications, and symptoms to attach to the patient-context cache. Used sparingly (extract-once-and-cache) because per-page cost adds up at lab-data volumes.</p>
 <p><strong>Amazon Bedrock for LLM-assisted interpretation (optional, advanced).</strong> For results that have been flagged by the statistical layers, a HIPAA-eligible LLM can read the patient's clinical context and the flagged result together and produce a triage recommendation (likely artifact given specimen quality; likely real given clinical picture; insufficient evidence). Not a primary detector; a triage accelerator for the review queue.</p>
+<p><strong>BAA discipline for Bedrock:</strong> Amazon foundation models on Bedrock (Claude, Titan) are HIPAA-eligible under the AWS BAA. Third-party models hosted on Bedrock have differing BAA postures and require separate review with your compliance team before PHI touches them. Prompt construction must follow minimum-necessary principles: include only the flagged result, relevant recent note excerpts, active medication and problem lists, not the full chart. Output filtering is required for clinical-recommendation hallucinations (the model may suggest treatment actions it is not qualified to recommend). Maintain a full prompt-and-response audit trail tied to the triage decision, with CloudTrail data events on every Bedrock invocation. See the Chapter 2 generative AI recipes (particularly Recipe 2.4 and Recipe 2.5) for the established BAA-discipline and prompt-safety patterns that apply here.</p>
 <p><strong>Amazon QuickSight for lab operations dashboards.</strong> Autoverification rate by analyte, critical-value callback volume and compliance, delta-check override rates, specimen-rejection trends, analyzer-specific drift metrics. QuickSight on top of Athena over S3 plus OpenSearch queries. HIPAA-eligible.</p>
 <p><strong>AWS CloudTrail and Amazon CloudWatch.</strong> CloudTrail data events on PHI-bearing stores. CloudWatch dashboards for pipeline health, alert latency (especially the critical-value callback timing), autoverification rate, and rule-level override rates. Drift on the core metrics (a sudden drop in autoverification rate, a climb in specimen-rejection rate) triggers on-call attention.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
@@ -540,6 +542,10 @@
     F --&gt; H[AWS Lambda&lt;br/&gt;result-normalizer]
     H --&gt;|LOINC + units| I[(Amazon DynamoDB&lt;br/&gt;patient-context-cache)]
     H --&gt; J[AWS Lambda&lt;br/&gt;real-time-outlier-service]
+
+    H -.-&gt;|OnFailure| H_DLQ[SQS&lt;br/&gt;result-normalizer-dlq]
+    J -.-&gt;|OnFailure| J_DLQ[SQS&lt;br/&gt;real-time-outlier-service-dlq]
+    O5 -.-&gt;|OnFailure| O5_DLQ[SQS&lt;br/&gt;feedback-capture-dlq]
 
     J --&gt;|reads cache| I
     J --&gt;|reads baselines| K[(SageMaker Feature Store&lt;br/&gt;analyte-cohort-baselines)]
@@ -591,11 +597,15 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td>Least-privilege per role. Real-time outlier Lambda: <code>dynamodb:GetItem</code> on patient-context-cache, <code>sagemaker-featurestore-runtime:GetRecord</code> on analyte-cohort-baselines, <code>s3:GetObject</code> on lab-rules bucket, <code>events:PutEvents</code> to the outlier-events bus, <code>kinesis:GetRecords</code>. Result normalizer Lambda: <code>kinesis:GetRecords</code>, <code>dynamodb:PutItem</code>. Callback Lambda: <code>sns:Publish</code> only on the callback topic. Batch pipelines scoped to specific S3 prefixes. No <code>*</code> actions in production.</td>
+<td>Least-privilege per role. Real-time outlier Lambda: <code>dynamodb:GetItem</code> on patient-context-cache, <code>sagemaker-featurestore-runtime:GetRecord</code> on analyte-cohort-baselines, <code>s3:GetObject</code> on lab-rules bucket, <code>events:PutEvents</code> to the outlier-events bus, <code>kinesis:GetRecords</code>. Result normalizer Lambda: <code>kinesis:GetRecords</code>, <code>dynamodb:PutItem</code>. Callback Lambda: <code>sns:Publish</code> only on the callback topic. Batch pipelines scoped to specific S3 prefixes. No <code>*</code> actions in production. Per-consumer scoping for shared resources: cache-refresher Lambda gets <code>dynamodb:PutItem</code> on patient-context-cache and <code>kinesis:GetRecords</code> on the EHR event stream (write-only on cache, read-only on EHR stream). Autoverify-release Lambda gets <code>events:GetEvents</code> (consume from outlier-events bus) and write to the LIS-EHR bridge queue, with no broader EHR or cache access. Feedback-capture Lambda gets <code>s3:PutObject</code> on the labels bucket and <code>dynamodb:PutItem</code> on the feedback store only; no <code>events:PutEvents</code> because it consumes events rather than producing them.</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
 <td>AWS BAA signed. Every service above is HIPAA-eligible under the BAA when configured properly. See the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a>.</td>
+</tr>
+<tr>
+<td><strong>Subgroup Data Access</strong></td>
+<td>Read access to demographic attributes (age band, sex, race, ethnicity, preferred language, insurance type) restricted to the retraining role and the dashboard role. Race and ethnicity data may be governed differently from clinical PHI in some regulatory regimes (state privacy laws, tribal sovereignty provisions, research consent restrictions); confirm with legal before exposing in analytics. CloudTrail data events enabled on all subgroup-attribute queries. QuickSight dashboards query an aggregated subgroup-metrics table (flag rates by demographic cohort, suppression rates by population) rather than the raw demographic-joined outlier archive, preventing analyst access to individual patient demographics via the dashboard path.</td>
 </tr>
 <tr>
 <td><strong>Encryption</strong></td>
@@ -603,11 +613,15 @@
 </tr>
 <tr>
 <td><strong>VPC</strong></td>
-<td>Production: Lambdas, SageMaker jobs, and OpenSearch in a VPC with VPC endpoints for S3, DynamoDB, Kinesis, SageMaker runtime, Comprehend Medical, Bedrock, and KMS. No public endpoints on OpenSearch.</td>
+<td>Production: Lambdas, SageMaker jobs, and OpenSearch in a VPC with VPC endpoints for S3, DynamoDB, Kinesis, SageMaker runtime, Comprehend Medical, Bedrock, and KMS. No public endpoints on OpenSearch. VPC Flow Logs enabled on all subnets carrying Lambda, SageMaker, and OpenSearch traffic, delivered to a dedicated S3 bucket with customer-managed KMS encryption. Flow Log retention aligned to the deepest applicable retention requirement (CLIA 2-year minimum; 5 years for blood bank; longer in many states for pathology and sentinel-event-related records). VPC endpoints required: Gateway endpoints for <code>s3</code> and <code>dynamodb</code>; Interface endpoints for <code>kinesis-streams</code>, <code>sagemaker.api</code>, <code>sagemaker.featurestore-runtime</code>, <code>sagemaker.runtime</code>, <code>states</code>, <code>events</code>, <code>scheduler</code>, <code>logs</code>, <code>monitoring</code>, <code>kms</code>, <code>sns</code>, <code>bedrock-runtime</code>, and <code>comprehendmedical</code>. OpenSearch and any graph extensions (Neptune) accessible only via VPC. Pinpoint reached via its regional endpoint through the Lambda's egress path.</td>
 </tr>
 <tr>
 <td><strong>CloudTrail</strong></td>
 <td>Enabled with data events on patient-context-cache, lab-rules bucket, feedback-labels bucket, OpenSearch domain operations, and the critical-value callback topic. Every flag decision and every callback is audit-logged.</td>
+</tr>
+<tr>
+<td><strong>Dead-Letter Queues</strong></td>
+<td>Three SQS DLQs configured as Lambda OnFailure destinations: <code>result-normalizer-dlq</code>, <code>real-time-outlier-service-dlq</code>, and <code>feedback-capture-dlq</code>. CloudWatch alarms on DLQ depth with threshold of 1 message for the real-time path (a single dropped result means a result released to the chart without an outlier check, which is the failure mode the entire pipeline is designed to prevent and constitutes a CLIA-audit-trail event). Replay events from DLQ after root-cause fix. For events older than the autoverification window or critical-callback window, escalate to laboratory-director review rather than auto-replay, because the release decision and callback timing have already been made.</td>
 </tr>
 </tbody>
 </table>
@@ -616,6 +630,7 @@
 | <strong>Sample Data</strong> | <a href="https://github.com/synthetichealth/synthea">Synthea</a> generates synthetic lab data with realistic distributions. <a href="https://mimic.mit.edu/">MIMIC-IV</a> has dense ICU lab data suitable for developing patient-baseline algorithms; access requires PhysioNet credentialing and a data use agreement. <a href="https://loinc.org/">LOINC</a> is free and essential for normalization prototyping. Never use real PHI in development. |
 | <strong>Reference Data</strong> | LOINC (free from Regenstrief Institute) for test identification. Reference ranges from the lab's validated sources (instrument inserts, validation studies, published consensus). An analyte metadata table (canonical unit, expected stability, delta-check thresholds, specimen-quality sensitivity) maintained jointly by the lab and the analytics team. |
 | <strong>Lab Integration</strong> | LIS system (Cerner Millennium, Epic Beaker, Sunquest, SoftLab, Orchard, others) producing HL7 v2 ORU messages or FHIR DiagnosticReport/Observation resources. Middleware (Data Innovations, Beckman, Sysmex Caresphere) that captures and forwards specimen-quality indices. POCT data manager integration if POCT is in scope. |
+| <strong>Transfer Family (Reference Lab Inbound)</strong> | VPC endpoint (not public-facing) in production. Source-IP allowlist restricted to the reference lab's known egress IP ranges. SSH key authentication with out-of-band public key exchange (do not accept password authentication). Customer-managed KMS encryption at rest on the S3 bucket receiving files. CloudTrail data events on every PutObject and GetObject on the reference-lab inbound prefix. Separate IAM role for the Transfer Family server with write-only access to the inbound prefix and no access to other pipeline buckets. |
 | <strong>Retention</strong> | CLIA baseline is 2 years for most records, 5 years for blood bank. State regulations often extend this (5-10 years common). Pathology reports often 20 years or longer. Confirm retention schedule with legal and compliance before production. |
 | <strong>Cost Estimate</strong> | For a mid-size hospital lab (say, 3 million results per year, including chemistry, hematology, immunology, microbiology culture results): Kinesis and Lambda real-time path: ~$150-400/month. DynamoDB patient-context cache: ~$80-250/month. SageMaker Feature Store: ~$30-90/month. SageMaker Processing: ~$200-500/month for batch scoring. OpenSearch outlier index: ~$300-700/month. Comprehend Medical and optional Bedrock: usage-dependent, typically $100-600/month. Total infrastructure: typically $1,200-3,500/month. Compare to cost avoidance: pre-analytical error recollections cost $10-50 per event in supplies and labor plus the unmeasurable clinical-workflow cost, and sentinel-event-level errors from a missed critical value have costs that dwarf the infrastructure.  |</p>
 <h3 id="ingredients">Ingredients</h3>
@@ -971,28 +986,76 @@
         analyte_meta = analyte_metadata.get(enriched_result.loinc_code)
 
         IF time_delta_hours &lt;= analyte_meta.delta_check_window_hours:
-            absolute_delta = enriched_result.value - enriched_result.previous_result.value
-            percent_delta  = (absolute_delta / enriched_result.previous_result.value) * 100 if enriched_result.previous_result.value != 0 else null
 
-            // Delta thresholds are analyte-specific and patient-aware.
-            // A 2 g/dL hemoglobin drop is significant in anyone; the same drop
-            // in a patient with sickle cell disease on chronic transfusion may
-            // be within expected range. Analyte metadata includes the context
-            // rules that modulate the default thresholds.
-            effective_thresholds = analyte_meta.delta_thresholds.for_patient(enriched_result.patient_attributes)
+            // Method-comparison gate: if the current and previous results were
+            // produced by different analyzer methods, a naive delta comparison
+            // will produce false flags every time a patient&#x27;s labs cross methods
+            // (dual-platform central labs, satellite labs, analyzer-downtime
+            // re-routing). Check for a documented harmonization coefficient
+            // before computing the delta.
+            previous_method = enriched_result.previous_result.get(&quot;method&quot;)
+            current_method = enriched_result.method
 
-            IF abs(absolute_delta) &gt;= effective_thresholds.absolute \
-               OR (percent_delta is not null AND abs(percent_delta) &gt;= effective_thresholds.percent):
-                flags.append({
-                    rule_type:  &quot;delta_check_failure&quot;,
-                    severity:   delta_severity(enriched_result, absolute_delta, percent_delta),
-                    absolute_delta: absolute_delta,
-                    percent_delta:  percent_delta,
-                    previous_value: enriched_result.previous_result.value,
-                    previous_resulted_at: enriched_result.previous_result.resulted_at,
-                    hours_between_results: time_delta_hours,
-                    message: build_delta_message(enriched_result, absolute_delta, percent_delta)
-                })
+            IF previous_method is not null AND current_method != previous_method:
+                harmonization = analyte_meta.get_method_harmonization(previous_method, current_method)
+                IF harmonization is null:
+                    // No documented harmonization coefficient exists for this
+                    // method pair. The absolute-delta check is invalid; skip it.
+                    // The patient-history z-score below remains valid because it
+                    // uses the patient&#x27;s full distribution across all methods.
+                    emit_metric(&quot;delta_suppressed_method_change&quot;, 1, dimensions = {
+                        loinc: enriched_result.loinc_code,
+                        from_method: previous_method,
+                        to_method: current_method
+                    })
+                    // Skip absolute-delta; fall through to z-score below.
+                ELSE:
+                    // Apply the harmonization coefficient to make the previous
+                    // value comparable before computing the delta.
+                    harmonized_previous_value = harmonization.apply(enriched_result.previous_result.value)
+                    absolute_delta = enriched_result.value - harmonized_previous_value
+                    percent_delta  = (absolute_delta / harmonized_previous_value) * 100 if harmonized_previous_value != 0 else null
+
+                    effective_thresholds = analyte_meta.delta_thresholds.for_patient(enriched_result.patient_attributes)
+
+                    IF abs(absolute_delta) &gt;= effective_thresholds.absolute \
+                       OR (percent_delta is not null AND abs(percent_delta) &gt;= effective_thresholds.percent):
+                        flags.append({
+                            rule_type:  &quot;delta_check_failure&quot;,
+                            severity:   delta_severity(enriched_result, absolute_delta, percent_delta),
+                            absolute_delta: absolute_delta,
+                            percent_delta:  percent_delta,
+                            previous_value: enriched_result.previous_result.value,
+                            harmonized_previous_value: harmonized_previous_value,
+                            method_harmonization_applied: True,
+                            previous_resulted_at: enriched_result.previous_result.resulted_at,
+                            hours_between_results: time_delta_hours,
+                            message: build_delta_message(enriched_result, absolute_delta, percent_delta)
+                        })
+            ELSE:
+                // Same method (or no method tracking on previous): standard delta.
+                absolute_delta = enriched_result.value - enriched_result.previous_result.value
+                percent_delta  = (absolute_delta / enriched_result.previous_result.value) * 100 if enriched_result.previous_result.value != 0 else null
+
+                // Delta thresholds are analyte-specific and patient-aware.
+                // A 2 g/dL hemoglobin drop is significant in anyone; the same drop
+                // in a patient with sickle cell disease on chronic transfusion may
+                // be within expected range. Analyte metadata includes the context
+                // rules that modulate the default thresholds.
+                effective_thresholds = analyte_meta.delta_thresholds.for_patient(enriched_result.patient_attributes)
+
+                IF abs(absolute_delta) &gt;= effective_thresholds.absolute \
+                   OR (percent_delta is not null AND abs(percent_delta) &gt;= effective_thresholds.percent):
+                    flags.append({
+                        rule_type:  &quot;delta_check_failure&quot;,
+                        severity:   delta_severity(enriched_result, absolute_delta, percent_delta),
+                        absolute_delta: absolute_delta,
+                        percent_delta:  percent_delta,
+                        previous_value: enriched_result.previous_result.value,
+                        previous_resulted_at: enriched_result.previous_result.resulted_at,
+                        hours_between_results: time_delta_hours,
+                        message: build_delta_message(enriched_result, absolute_delta, percent_delta)
+                    })
 
     // Patient-history robust z-score. Requires enough prior data to be stable.
     IF enriched_result.baseline_stats is not null AND enriched_result.baseline_stats.mad &gt; 0:
@@ -1049,6 +1112,7 @@
     return flags
 </code></pre>
 <p><strong>Step 6: Aggregate flags, determine severity, and route.</strong> Combine flags from all paths. Determine overall routing based on the highest-severity flag and the combination of flag types (a critical value combined with an invalidating specimen quality index routes differently from a critical value with clean specimen quality).</p>
+<p>Routing precedence rules: (1) Critical-callback always fires when any flag has severity <code>critical_callback</code>, regardless of other flags. (2) Specimen-quality-invalidating combined with critical = callback fires with recollect context attached (the callback payload notes the artifact concern so the clinician can disposition faster). (3) Specimen-quality-invalidating alone (no critical) = tech-review-hold. (4) Delta-check or z-score flags with no specimen-quality concerns and no critical = autoverify-with-flag (release to chart with the flag visible to the clinician). The <code>determine_routing</code> function applies these precedence rules in order.</p>
 <pre class="code code-plain"><code>FUNCTION route_result(enriched_result, all_flags):
     IF length(all_flags) == 0:
         // No flags, no delta, specimen quality clean, in reference range.
@@ -1069,8 +1133,12 @@
         loinc_display:       enriched_result.loinc_display,
         value:               enriched_result.value,
         unit:                enriched_result.unit,
+        method:              enriched_result.method,
         resulted_at:         enriched_result.resulted_at,
         accession:           enriched_result.accession,
+        reference_range_version: enriched_result.reference_range_version,
+        rule_library_version:    RULE_LIBRARY_VERSION,
+        analyte_metadata_version: ANALYTE_METADATA_VERSION,
         flags:               all_flags,
         specimen_quality:    enriched_result.specimen_quality,
         patient_context_summary: summary_of(enriched_result.patient_attributes),
@@ -1094,9 +1162,51 @@
             // read-back, and documentation. Critical values are still
             // released to the chart; the callback is the separate
             // notification workflow.
+            //
+            // Callback workflow primitives:
+            callback_id = generate_callback_id()
+            DynamoDB.PutItem(&quot;callback-records&quot;, {
+                callback_id:     callback_id,
+                outlier_event_id: outlier_event.event_id,
+                state:           &quot;initiated&quot;,          // initiated → acknowledged → read-back-captured → closed
+                initiated_at:    NOW(),
+                window_expires_at: NOW() + CLIA_CALLBACK_WINDOW,
+                patient_id:      outlier_event.patient_id,
+                ordering_provider: lookup_ordering_provider(outlier_event),
+                loinc_code:      outlier_event.loinc_code
+            })
+
+            // Schedule escalation at the callback window boundary.
+            // If state is not &quot;closed&quot; when the timer fires, escalate to
+            // fallback-to-manual-phone-call and document the escalation.
+            EventBridgeScheduler.CreateSchedule(
+                name = f&quot;callback-escalation-{callback_id}&quot;,
+                at   = NOW() + CLIA_CALLBACK_WINDOW,
+                target = CALLBACK_ESCALATION_LAMBDA,
+                input  = { callback_id: callback_id }
+            )
+
+            // Minimum-PHI notification convention: the SNS message carries
+            // only event_id, severity, and a fetch_by_id pointer. The callback
+            // service fetches full context by ID from the outlier store.
+            // For high-stigma test classes (HIV viral load LOINC 20447-9,
+            // hepatitis C viral load LOINC 20416-4, syphilis serology,
+            // drug-of-abuse panels, lithium, gender-affirming hormone levels),
+            // exclude the LOINC display name from the notification subject
+            // to prevent rendering on a recipient&#x27;s lock screen.
+            is_high_stigma = outlier_event.loinc_code in HIGH_STIGMA_LOINC_SET
+            notification_subject = &quot;Critical Lab Value&quot; if is_high_stigma \
+                else f&quot;Critical: {outlier_event.loinc_display}&quot;
+
             SNS.Publish(
                 topic   = CRITICAL_CALLBACK_TOPIC,
-                message = build_callback_payload(outlier_event)
+                subject = notification_subject,
+                message = json.dumps({
+                    event_id:    outlier_event.event_id,
+                    callback_id: callback_id,
+                    severity:    &quot;critical_callback&quot;,
+                    fetch_url:   f&quot;{OUTLIER_SERVICE_BASE}/events/{outlier_event.event_id}&quot;
+                })
             )
             autoverify_release(enriched_result, with_flag = &quot;critical_value&quot;)
 
@@ -1112,10 +1222,93 @@
             // Release to chart with an attached informational flag.
             autoverify_release(enriched_result, with_flag = routing_to_chart_flag(all_flags))
 </code></pre>
-<p><strong>Step 7: Run the panel-level multivariate check and patient trajectory analytics.</strong> Panel-level Isolation Forest runs when all components of a multi-analyte panel are available. Patient-trajectory CUSUM and change-point detection run on a scheduled cadence for patients with dense chronic-monitoring data.</p>
+<p><strong>Step 7: Run the panel-level coherence rules, multivariate check, and patient trajectory analytics.</strong> Panel coherence rules and the panel-level Isolation Forest run when all components of a multi-analyte panel are available. Patient-trajectory CUSUM and change-point detection run on a scheduled cadence for patients with dense chronic-monitoring data.</p>
+<pre class="code code-plain"><code>FUNCTION panel_coherence_check(panel):
+    // Panel coherence rules encode known physiological relationships between
+    // results. They catch implausible combinations: lab errors, calibration
+    // drift across analytes, and specimen artifacts that manifest as impossible
+    // chemistry. These are rule-based, not ML, and they are among the most
+    // reliable layers in the pipeline.
+    flags = []
+
+    // Anion gap plausibility: Na - Cl - HCO3, expected 8-16 mEq/L.
+    // A gap outside this range with no clinical explanation (DKA, lactic
+    // acidosis, renal failure) suggests a measurement error on one of the
+    // component analytes.
+    IF panel.has(&quot;2951-2&quot;) AND panel.has(&quot;2075-0&quot;) AND panel.has(&quot;1963-8&quot;):   // Na, Cl, HCO3
+        anion_gap = panel.get(&quot;2951-2&quot;).value - panel.get(&quot;2075-0&quot;).value - panel.get(&quot;1963-8&quot;).value
+        IF anion_gap &lt; 3 OR anion_gap &gt; 30:
+            flags.append({
+                rule_type:    &quot;panel_coherence_anion_gap&quot;,
+                severity:     &quot;tech_review_hold&quot;,
+                computed_gap: anion_gap,
+                expected_range: &quot;8-16 mEq/L&quot;,
+                message:      f&quot;Anion gap {anion_gap:.1f} outside plausible range (8-16)&quot;
+            })
+
+    // Hemoglobin / hematocrit 3:1 ratio. The hematocrit is approximately
+    // 3x the hemoglobin in g/dL. Deviation beyond ~3% suggests a specimen
+    // or instrument issue on one of the two measurements.
+    IF panel.has(&quot;718-7&quot;) AND panel.has(&quot;4544-3&quot;):   // Hgb, Hct
+        hgb = panel.get(&quot;718-7&quot;).value
+        hct = panel.get(&quot;4544-3&quot;).value
+        expected_hct = hgb * 3.0
+        IF hgb &gt; 0 AND abs(hct - expected_hct) / expected_hct &gt; 0.10:
+            flags.append({
+                rule_type:      &quot;panel_coherence_hgb_hct_ratio&quot;,
+                severity:       &quot;tech_review_hold&quot;,
+                hgb:            hgb,
+                hct:            hct,
+                expected_ratio: &quot;~3:1&quot;,
+                message:        f&quot;Hgb {hgb} / Hct {hct} ratio deviates &gt;10% from expected 3:1&quot;
+            })
+
+    // TSH / free T4 consistency. Very low TSH (&lt;0.01) with normal free T4
+    // suggests non-thyroidal illness, subclinical hyperthyroidism, or assay
+    // interference rather than overt hyperthyroidism.
+    IF panel.has(&quot;3016-3&quot;) AND panel.has(&quot;3024-7&quot;):   // TSH, Free T4
+        tsh = panel.get(&quot;3016-3&quot;).value
+        ft4 = panel.get(&quot;3024-7&quot;).value
+        IF tsh &lt; 0.01 AND 0.8 &lt;= ft4 &lt;= 1.7:
+            flags.append({
+                rule_type:  &quot;panel_coherence_tsh_ft4&quot;,
+                severity:   &quot;synchronous&quot;,
+                tsh:        tsh,
+                ft4:        ft4,
+                message:    f&quot;Undetectable TSH ({tsh}) with normal free T4 ({ft4}); check for assay interference or non-thyroidal illness&quot;
+            })
+
+    // Bilirubin fractions summing. Total bilirubin should approximately
+    // equal direct + indirect. Discrepancy &gt; 20% suggests a measurement
+    // error on one of the components.
+    IF panel.has(&quot;1975-2&quot;) AND panel.has(&quot;1968-7&quot;):   // Total bili, Direct bili
+        total_bili = panel.get(&quot;1975-2&quot;).value
+        direct_bili = panel.get(&quot;1968-7&quot;).value
+        IF total_bili &gt; 0 AND direct_bili &gt; total_bili * 1.1:
+            flags.append({
+                rule_type:   &quot;panel_coherence_bilirubin_fractions&quot;,
+                severity:    &quot;tech_review_hold&quot;,
+                total_bili:  total_bili,
+                direct_bili: direct_bili,
+                message:     f&quot;Direct bilirubin ({direct_bili}) exceeds total ({total_bili}); measurement inconsistency&quot;
+            })
+
+    return flags
+</code></pre>
 <pre class="code code-plain"><code>FUNCTION panel_multivariate_check(panel):
     // A panel is a set of related results from the same specimen
     // (e.g., basic metabolic panel: Na, K, Cl, CO2, BUN, creatinine, glucose, Ca).
+    // First run the coherence rules, then the multivariate outlier scorer.
+    // Both contribute flags to panel-level routing.
+    coherence_flags = panel_coherence_check(panel)
+    FOR each flag in coherence_flags:
+        EventBridge.PutEvent(
+            bus         = &quot;lab-outlier-events&quot;,
+            source      = &quot;lab-outlier-service&quot;,
+            detail_type = f&quot;LabOutlier.{flag.severity}&quot;,
+            detail      = { panel_id: panel.panel_id, flag: flag }
+        )
+
     // When all components are present, build the multivariate feature vector.
     panel_vector = build_panel_vector(panel)
 
@@ -1176,7 +1369,19 @@ FUNCTION patient_trajectory_scoring(as_of_timestamp):
                 )
 </code></pre>
 <p><strong>Step 8: Capture feedback and close the loop.</strong> Tech review decisions, recollect outcomes, and critical-value callback responses all get logged and linked back to the original flag. Confirmed artifact events (the recollected specimen showed a clinically different value) become high-value labels for retraining.</p>
+<p>EventBridge to Lambda async delivery is at-least-once. A redelivered event that is processed twice will double-count <code>flag_tech_decision</code> metrics (directly driving rule-retirement decisions), bias the supervised classifier's training distribution, and corrupt the confirmed-artifact-vs-confirmed-real signal. Each handler uses a deterministic event-key derivation and a conditional write to a <code>processed-feedback-events</code> DynamoDB table (TTL ~90 days) as a write-once guard before the OpenSearch update, label write, and metric emission.</p>
 <pre class="code code-plain"><code>FUNCTION on_tech_review_decision(decision_event):
+    // Idempotency guard: derive a deterministic key from the event.
+    idempotency_key = hash(decision_event.outlier_event_id + &quot;:&quot; + decision_event.decision)
+    already_processed = DynamoDB.PutItem(
+        table = &quot;processed-feedback-events&quot;,
+        item  = { event_key: idempotency_key, processed_at: NOW(), ttl: NOW() + 90_DAYS },
+        condition = &quot;attribute_not_exists(event_key)&quot;
+    )
+    IF already_processed == CONDITION_CHECK_FAILED:
+        // Duplicate delivery; skip silently.
+        return
+
     // decision_event: { outlier_event_id, decision, decision_reason, deciding_tech,
     //                   recollect_requested, recollect_accession }
     outlier = OpenSearch.Get(&quot;lab-outliers&quot;, decision_event.outlier_event_id)
@@ -1198,6 +1403,16 @@ FUNCTION patient_trajectory_scoring(as_of_timestamp):
         })
 
 FUNCTION on_recollect_result(original_outlier_event_id, recollect_result):
+    // Idempotency guard for recollect events.
+    idempotency_key = hash(original_outlier_event_id + &quot;:&quot; + recollect_result.accession)
+    already_processed = DynamoDB.PutItem(
+        table = &quot;processed-feedback-events&quot;,
+        item  = { event_key: idempotency_key, processed_at: NOW(), ttl: NOW() + 90_DAYS },
+        condition = &quot;attribute_not_exists(event_key)&quot;
+    )
+    IF already_processed == CONDITION_CHECK_FAILED:
+        return
+
     // When a recollect comes back, compare to the original.
     original = OpenSearch.Get(&quot;lab-outliers&quot;, original_outlier_event_id)
 
@@ -1250,7 +1465,7 @@ FUNCTION on_recollect_result(original_outlier_event_id, recollect_result):
 <hr />
 <h3 id="expected-results">Expected Results</h3>
 <blockquote>
-<p>Sample timestamps and event IDs in the examples below are illustrative and reflect the draft date. Production output uses real ISO-8601 timestamps from the event handler's invocation time.</p>
+<p>Sample timestamps and event IDs in the examples below are illustrative. Production output uses real ISO-8601 timestamps from the event handler's invocation time.</p>
 </blockquote>
 <p><strong>Sample critical-value-with-artifact-context flag:</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
@@ -1507,7 +1722,8 @@ FUNCTION on_recollect_result(original_outlier_event_id, recollect_result):
 <p><strong>Patient-level alerting suppression governance.</strong> A patient with known end-stage renal disease doesn't need a &quot;creatinine above reference range&quot; alert on every result. Patient-level suppression rules (expressed as &quot;suppress high creatinine reference-range flag if on_dialysis == true&quot;) are clinically useful but introduce governance complexity: who authorizes which suppressions, how are they versioned, what happens when the suppression decision is wrong? This is a longer-term program, not a sprint 1 feature.</p>
 <p><strong>Bias and equity monitoring.</strong> Reference ranges derived from historical populations may encode bias. The creatinine-GFR race coefficient discussion from the last several years is the example everyone points to. Cohort-level z-scores can flag legitimately-different values for populations underrepresented in the training data. Subgroup monitoring dashboards (flag rate by patient race, ethnicity, language, insurance status) are part of the minimum deployment. Reference range validation should include representative population sampling. These are ongoing concerns, not check-the-box items.</p>
 <p><strong>FDA regulatory considerations.</strong> Laboratory-developed tests and some autoverification software fall under FDA oversight in evolving ways. The FDA's final rule on laboratory-developed tests (issued 2024, implementation phased through the late 2020s) subjects many previously-exempt LDTs to FDA premarket review. Autoverification algorithms that alter clinical reporting may cross into regulated software territory. Coordinate with regulatory affairs, laboratory leadership, and legal before production deployment; do not assume the pre-2024 landscape applies.</p>
-<p><strong>Disaster recovery for the lab.</strong> The outlier pipeline is in the result-release path. If the pipeline is down, results cannot be held indefinitely; clinical care needs results. The documented downtime behavior has to specify which alerts continue to fire (critical values, at minimum) versus which are degraded (cohort z-score, for example, can pause). The rules layer should be deployable as a standalone fallback. The lab doesn't stop running because AWS has a regional issue; plan accordingly.</p>
+<p><strong>Disaster recovery for the lab.</strong> The outlier pipeline is in the result-release path. If the pipeline is down, results cannot be held indefinitely; clinical care needs results. The documented downtime behavior has to specify which alerts continue to fire (critical values, at minimum) versus which are degraded (cohort z-score, for example, can pause). The rules layer should be deployable as a standalone fallback. The lab doesn't stop running because AWS has a regional issue; plan accordingly. DLQ replay discipline ties directly to this: when the pipeline recovers, events on the DLQ that are older than the autoverification window or critical-callback window must go to laboratory-director review rather than being automatically replayed, because the clinical decision and the callback timing have already passed.</p>
+<p><strong>Trigger idempotency.</strong> EventBridge-to-Lambda async is at-least-once delivery. The feedback handlers (tech-review decisions, recollect outcomes, callback closures) must be idempotent. Without a write-once guard, redelivered events double-count training labels, bias metric-driven rule-retirement decisions, and corrupt the artifact-vs-real signal that drives supervised model retraining. The pattern (deterministic event-key derivation plus conditional DynamoDB write with TTL) is demonstrated in Step 8 above. This pattern recurs across every recipe in this chapter and would benefit from a cookbook-wide appendix on trigger-idempotency disciplines for event-driven clinical pipelines.</p>
 <p><strong>Autoverification rate targets are business decisions.</strong> The goal is not to maximize autoverification rate; the goal is to maximize the rate at which safe-to-autoverify results are released without human review, while catching the unsafe-to-autoverify cases for review. Those are different targets. A pipeline that aggressively autoverifies will produce a high rate but at the cost of missed artifacts. A pipeline that conservatively holds will have a low rate and frustrated techs. The operating point is a governance decision driven by lab leadership, not a technical optimization.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>

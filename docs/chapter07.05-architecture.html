@@ -517,6 +517,8 @@
 <p><strong>AWS Step Functions for pipeline orchestration.</strong> The scoring workflow (detect discharge, assemble features, invoke model, stratify risk, route intervention, store results) has multiple steps with error handling and retry logic. Step Functions coordinates this sequence and provides visibility into failures. If the feature assembly step fails (e.g., a source system is down), the workflow retries with backoff rather than silently dropping the patient.</p>
 <p><strong>Amazon DynamoDB for risk score storage and lookup.</strong> Scored patients need their risk tier accessible to downstream systems (care management platforms, EHR dashboards, nurse worklists) in real time. DynamoDB provides single-digit-millisecond lookups by patient ID. Scores are written at discharge and read by operational systems throughout the 30-day window.</p>
 <p><strong>Amazon SNS for intervention notifications.</strong> When a patient is scored as high-risk, the appropriate care team needs to be notified immediately. SNS delivers notifications to care transition nurses, case managers, or automated workflow systems based on the risk tier and contributing factors. Important: SNS messages containing patient identifiers and clinical indicators constitute PHI. Restrict topic subscriptions to HIPAA-compliant endpoints only (Lambda functions, SQS queues within your VPC, or HTTPS endpoints covered under your BAA). Do not use email or SMS subscriptions for messages containing patient-level data. If email notification is needed, send a minimal alert (&quot;1 new high-risk discharge requires review&quot;) with a link to the secure care management dashboard.</p>
+<p><strong>Amazon SQS Dead Letter Queue for failed scoring events.</strong> Not every discharge will score cleanly on the first attempt. HealthLake might be temporarily unavailable, the SageMaker endpoint might be scaling up, or a patient's record might have malformed data that breaks feature assembly. Rather than silently dropping these patients (which means a high-risk patient never gets scored and never gets an intervention), route failures to an SQS dead letter queue. Set a CloudWatch alarm on DLQ depth &gt; 0 so your operations team knows immediately when patients are falling through the cracks. A daily retry Lambda re-processes messages from the DLQ with exponential backoff. For patients still unscored after 24 hours, escalate to a manual review fallback: these patients should appear on the care transition team's worklist for human assessment regardless of model output. The 24-hour SLA matters because intervention effectiveness degrades rapidly after discharge.</p>
+<p><strong>Amazon DynamoDB as a pre-computed feature store.</strong> For sites processing more than 100 discharges per day, querying HealthLake for all historical utilization features at scoring time introduces unacceptable latency. The hybrid approach: run a nightly Glue job that pre-computes historical features (prior admissions in 6/12 months, ED visit counts, prior 30-day readmission flags, medication history summaries) and writes them to a DynamoDB table keyed by patient_id. At scoring time, the workflow queries HealthLake only for current-encounter features (this admission's diagnoses, labs, medications) and pulls pre-computed historical features from DynamoDB in a single GetItem call. This hybrid keeps end-to-end feature assembly latency under 500ms even for patients with complex histories spanning years of encounters.</p>
 <h2 id="architecture-diagram">Architecture Diagram</h2>
 <pre class="mermaid">flowchart TD
     subgraph Data Sources
@@ -530,11 +532,14 @@
     subgraph Event Processing
         A --&gt;|Discharge Event| F[EventBridge\nDischarge Filter]
         F --&gt;|Qualified Discharge| G[Step Functions\nScoring Workflow]
+        G --&gt;|On Failure| DLQ[SQS Dead Letter Queue]
+        DLQ --&gt;|Daily Retry| RETRY[Retry Lambda]
+        RETRY --&gt;|Reprocess| G
     end
 
     subgraph Feature Assembly
-        G --&gt;|Query Patient Data| H[HealthLake\nFHIR Store]
-        G --&gt;|Historical Features| I[S3 Feature Store\nParquet]
+        G --&gt;|Current Encounter| H[HealthLake\nFHIR Store]
+        G --&gt;|Historical Features| I[DynamoDB\nFeature Store]
         H --&gt; J[Feature Vector\nAssembly]
         I --&gt; J
     end
@@ -551,7 +556,8 @@
     end
 
     subgraph Model Lifecycle
-        P[Glue\nFeature Engineering] --&gt;|Training Data| Q[S3\nTraining Dataset]
+        P[Glue\nNightly Feature Compute] --&gt;|Pre-computed Features| I
+        P --&gt;|Training Data| Q[S3\nTraining Dataset]
         Q --&gt; R[SageMaker Training\nMonthly Retrain]
         R --&gt;|New Model| K
     end
@@ -572,7 +578,7 @@
 <tbody>
 <tr>
 <td><strong>AWS Services</strong></td>
-<td>Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon EventBridge, AWS Step Functions, Amazon DynamoDB, Amazon SNS, Amazon S3, Amazon QuickSight</td>
+<td>Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon EventBridge, AWS Step Functions, Amazon DynamoDB, Amazon SQS, Amazon SNS, Amazon S3, Amazon QuickSight</td>
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
@@ -600,7 +606,7 @@
 </tr>
 <tr>
 <td><strong>Cost Estimate</strong></td>
-<td>SageMaker real-time endpoint (ml.m5.large): ~$0.115/hour (~$83/month). Scoring latency: &lt;200ms per patient. At 100 discharges/day, the per-discharge cost is ~$0.003. HealthLake: $0.60/GB stored + $0.09 per 1000 read operations. Glue: $0.44/DPU-hour for batch feature engineering. Feature assembly involves 5-7 FHIR queries per patient; parallelize independent queries to keep assembly latency under 1 second.</td>
+<td>SageMaker real-time endpoint (ml.m5.large): ~$0.115/hour (~$83/month). Scoring latency: &lt;200ms per patient. At 100 discharges/day, the per-discharge cost is ~$0.003. HealthLake: $0.60/GB stored + $0.09 per 1000 read operations. Glue: $0.44/DPU-hour for batch feature engineering. DynamoDB feature store: on-demand pricing at ~$1.25/million writes (nightly batch) + ~$0.25/million reads (at scoring time). SQS DLQ: effectively free at this volume ($0.40/million requests). Feature assembly involves 5-7 FHIR queries per patient for current-encounter features plus one DynamoDB GetItem for historical features; parallelize the FHIR queries to keep assembly latency under 500ms.</td>
 </tr>
 </tbody>
 </table>
@@ -619,11 +625,11 @@
 </tr>
 <tr>
 <td><strong>Amazon HealthLake</strong></td>
-<td>FHIR-native clinical data store for real-time feature queries</td>
+<td>FHIR-native clinical data store for current-encounter feature queries</td>
 </tr>
 <tr>
 <td><strong>AWS Glue</strong></td>
-<td>Batch feature engineering, historical feature computation, training data preparation</td>
+<td>Nightly historical feature computation, training data preparation</td>
 </tr>
 <tr>
 <td><strong>Amazon EventBridge</strong></td>
@@ -635,7 +641,11 @@
 </tr>
 <tr>
 <td><strong>Amazon DynamoDB</strong></td>
-<td>Stores risk scores for real-time lookup by downstream systems</td>
+<td>Pre-computed feature store (keyed by patient_id) and risk score storage for real-time lookup</td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Dead letter queue for failed scoring events; enables retry and manual review fallback</td>
 </tr>
 <tr>
 <td><strong>Amazon SNS</strong></td>
@@ -643,7 +653,7 @@
 </tr>
 <tr>
 <td><strong>Amazon S3</strong></td>
-<td>Feature store (Parquet), model artifacts, training datasets, scoring audit logs</td>
+<td>Model artifacts, training datasets, scoring audit logs, long-term score archive</td>
 </tr>
 <tr>
 <td><strong>Amazon QuickSight</strong></td>
@@ -655,7 +665,7 @@
 </tr>
 <tr>
 <td><strong>Amazon CloudWatch</strong></td>
-<td>Monitoring, alerting on scoring failures, model performance metrics</td>
+<td>Monitoring, alerting on scoring failures and DLQ depth, model performance metrics</td>
 </tr>
 </tbody>
 </table>
@@ -702,14 +712,14 @@
     }
 </code></pre>
 <h3 id="step-2-feature-assembly-from-clinical-data">Step 2: Feature Assembly from Clinical Data</h3>
-<p><strong>What this does:</strong> Queries multiple data sources to assemble the complete feature vector for the discharged patient. Combines real-time clinical data from the current encounter with historical utilization patterns.</p>
-<p><strong>What goes wrong if you skip it:</strong> The model receives incomplete or stale data, producing unreliable risk scores. Missing features (especially prior utilization history) dramatically reduce predictive accuracy.</p>
+<p><strong>What this does:</strong> Queries multiple data sources to assemble the complete feature vector for the discharged patient. Current-encounter features come from HealthLake in real time. Historical utilization features come from the pre-computed DynamoDB feature store (populated nightly by Glue). This hybrid approach keeps assembly latency under 500ms even for patients with complex multi-year histories.</p>
+<p><strong>What goes wrong if you skip it:</strong> The model receives incomplete or stale data, producing unreliable risk scores. Missing features (especially prior utilization history) dramatically reduce predictive accuracy. If you query HealthLake for all historical features at scoring time, latency spikes to 3-5 seconds for patients with long encounter histories, which breaks your SLA at high discharge volumes.</p>
 <pre class="code code-plain"><code>FUNCTION assemble_features(discharge_info):
     patient_id = discharge_info.patient_id
     encounter_id = discharge_info.encounter_id
 
-    // --- Current Encounter Features ---
-    // Query HealthLake for the index admission details
+    // --- Current Encounter Features (from HealthLake, real-time) ---
+    // These are specific to the just-ended admission and can only be queried live.
     encounter = FHIR_SEARCH(&quot;Encounter&quot;, id=encounter_id)
     conditions = FHIR_SEARCH(&quot;Condition&quot;, encounter=encounter_id)
     medications = FHIR_SEARCH(&quot;MedicationRequest&quot;, encounter=encounter_id)
@@ -734,28 +744,44 @@
         bnp_last: most_recent_value(labs, code=&quot;42637-9&quot;)
     }
 
-    // --- Historical Utilization Features ---
-    // Look back 12 months for prior utilization patterns
-    lookback_start = discharge_info.discharge_date - 365 days
-    prior_encounters = FHIR_SEARCH(&quot;Encounter&quot;,
-        patient=patient_id,
-        date_range=[lookback_start, discharge_info.discharge_date],
-        type=&quot;inpatient&quot;)
-    prior_ed_visits = FHIR_SEARCH(&quot;Encounter&quot;,
-        patient=patient_id,
-        date_range=[lookback_start, discharge_info.discharge_date],
-        type=&quot;emergency&quot;)
+    // --- Historical Utilization Features (from DynamoDB feature store) ---
+    // Pre-computed nightly by Glue. Single GetItem call by patient_id.
+    // For sites with &gt;100 discharges/day, this avoids expensive historical
+    // FHIR queries at scoring time and keeps latency under 500ms.
+    precomputed = DYNAMODB_GET(&quot;patient-feature-store&quot;, key=patient_id)
 
-    history_features = {
-        admissions_past_6mo: COUNT(prior_encounters WHERE date &gt; now - 180 days),
-        admissions_past_12mo: COUNT(prior_encounters),
-        ed_visits_past_6mo: COUNT(prior_ed_visits WHERE date &gt; now - 180 days),
-        prior_30day_readmission: ANY(prior_encounters WHERE
-            days_since_prior_discharge &lt;= 30),
-        days_since_last_admission: days_between(
-            most_recent(prior_encounters).discharge_date,
-            discharge_info.discharge_date)
-    }
+    IF precomputed IS NOT NULL:
+        history_features = {
+            admissions_past_6mo: precomputed.admissions_past_6mo,
+            admissions_past_12mo: precomputed.admissions_past_12mo,
+            ed_visits_past_6mo: precomputed.ed_visits_past_6mo,
+            prior_30day_readmission: precomputed.prior_30day_readmission,
+            days_since_last_admission: precomputed.days_since_last_admission
+        }
+    ELSE:
+        // Fallback for new patients not yet in feature store:
+        // query HealthLake directly (slower but correct)
+        lookback_start = discharge_info.discharge_date - 365 days
+        prior_encounters = FHIR_SEARCH(&quot;Encounter&quot;,
+            patient=patient_id,
+            date_range=[lookback_start, discharge_info.discharge_date],
+            type=&quot;inpatient&quot;)
+        prior_ed_visits = FHIR_SEARCH(&quot;Encounter&quot;,
+            patient=patient_id,
+            date_range=[lookback_start, discharge_info.discharge_date],
+            type=&quot;emergency&quot;)
+
+        history_features = {
+            admissions_past_6mo: COUNT(prior_encounters WHERE date &gt; now - 180 days),
+            admissions_past_12mo: COUNT(prior_encounters),
+            ed_visits_past_6mo: COUNT(prior_ed_visits WHERE date &gt; now - 180 days),
+            prior_30day_readmission: ANY(prior_encounters WHERE
+                days_since_prior_discharge &lt;= 30),
+            days_since_last_admission: days_between(
+                most_recent(prior_encounters).discharge_date,
+                discharge_info.discharge_date)
+        }
+    END IF
 
     // --- Comorbidity Features ---
     // Calculate Elixhauser comorbidity index from all active conditions
@@ -882,10 +908,13 @@
         model_version: score_result.model_version,
         scored_at: score_result.scored_at,
         ttl: discharge_info.discharge_date + 45 days  // Keep 15 days past window
-        // TODO (TechWriter): Expert review S4 (MEDIUM). Add note about compliance
-        // retention requirements. 45-day TTL is operationally sound but scores that
-        // influenced clinical decisions may need 6-10 year retention. Consider
-        // archiving to S3 before TTL deletion.
+        // Note on retention: the 45-day DynamoDB TTL is for operational access.
+        // Scores that influenced clinical decisions (intervention routing, care
+        // team notifications) may require 6-10 year retention depending on state
+        // medical records retention laws and your organization&#x27;s compliance policy.
+        // Archive scored records to S3 (Glacier after 90 days) before TTL deletion.
+        // The archive should include the score, risk tier, model version, feature
+        // vector, and which interventions were triggered.
     }
 
     // Write to DynamoDB for downstream system access
@@ -965,6 +994,105 @@
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter07.05-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<hr />
+<h2 id="expected-results">Expected Results</h2>
+<h3 id="sample-output">Sample Output</h3>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PAT-2847193&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;encounter_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ENC-9928374&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;discharge_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-15T14:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scored_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-15T15:02:33Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;readmission-xgb-v2.3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;probability&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.41</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;risk_tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HIGH&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;risk_drivers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admissions_past_6mo&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;discharge_medication_count&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.09</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;length_of_stay&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.07</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;has_chf&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.06</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;albumin_last&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.8</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;interventions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;nurse_callback_48hr&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;pharmacist_med_reconciliation&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;care_transition_program_enrollment&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;remote_weight_monitoring&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;calibration_check&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;predicted_decile&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;historical_rate_for_decile&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.38</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3 id="performance-benchmarks">Performance Benchmarks</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Expected Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AUC-ROC (C-statistic)</td>
+<td>0.68-0.75</td>
+<td>Depends on feature richness; social determinants push toward upper range</td>
+</tr>
+<tr>
+<td>Calibration slope</td>
+<td>0.90-1.10</td>
+<td>After Platt scaling; check quarterly</td>
+</tr>
+<tr>
+<td>Brier score</td>
+<td>0.12-0.16</td>
+<td>Lower is better; baseline (prevalence) ~0.13</td>
+</tr>
+<tr>
+<td>Sensitivity at top 15%</td>
+<td>0.35-0.45</td>
+<td>Captures 35-45% of actual readmissions in top risk tier</td>
+</tr>
+<tr>
+<td>PPV at top 15%</td>
+<td>0.28-0.38</td>
+<td>28-38% of flagged patients actually readmit</td>
+</tr>
+<tr>
+<td>Scoring latency</td>
+<td>&lt;500ms</td>
+<td>End-to-end from feature assembly to score storage</td>
+</tr>
+<tr>
+<td>Time from discharge to score</td>
+<td>&lt;2 hours</td>
+<td>Includes ADT event propagation delay</td>
+</tr>
+<tr>
+<td>Model retraining frequency</td>
+<td>Monthly</td>
+<td>Or when AUC drops below 0.65</td>
+</tr>
+</tbody>
+</table>
+<h3 id="where-it-struggles">Where It Struggles</h3>
+<ul>
+<li><strong>Patients with no prior history at your facility.</strong> New patients or transfers from other systems have sparse feature vectors. The model defaults to population-level risk, which is less useful.</li>
+<li><strong>Social determinant-driven readmissions.</strong> A patient readmitted because they couldn't afford their medications or had no transportation to follow-up won't be well-predicted by clinical features alone.</li>
+<li><strong>Planned readmissions misclassified as unplanned.</strong> The CMS planned readmission algorithm isn't perfect. Some planned returns get labeled as failures, inflating your apparent readmission rate.</li>
+<li><strong>Weekend and holiday discharges.</strong> Patients discharged when follow-up resources are unavailable have elevated risk that's driven by system factors, not patient factors. The model may not capture this well unless day-of-week features are included.</li>
+<li><strong>Rapidly changing care patterns.</strong> If your hospital launches a new heart failure program that dramatically reduces CHF readmissions, the model trained on pre-program data will over-predict risk for CHF patients until retrained.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode above demonstrates the scoring logic, but a production deployment needs substantially more:</p>
+<p><strong>Dead letter queue and retry.</strong> The DLQ pattern described in &quot;Why These Services&quot; is critical. Every failed scoring event must be captured, retried, and escalated if unresolved within 24 hours. Patients who fall through the cracks are exactly the ones who tend to need intervention most (complex patients with messy data).</p>
+<p><strong>Feature freshness guarantees.</strong> The nightly Glue job means historical features could be up to 24 hours stale. For a patient admitted and discharged on the same day they had a prior admission, the feature store won't reflect today's admission in the historical count. Accept this as a known limitation or add a real-time update path for the feature store triggered by ADT events.</p>
+<p><strong>Multi-site consistency.</strong> If your health system has multiple hospitals, a patient discharged from Hospital A might have relevant history at Hospital B. The feature store needs to aggregate across all sites, which requires a unified patient identifier (MPI) or probabilistic matching.</p>
+<p><strong>Fairness validation.</strong> Before going live, validate that model performance (AUC and calibration) is acceptable across racial, ethnic, age, and insurance subgroups. A model well-calibrated overall but poorly calibrated for Black patients or Medicaid patients is not acceptable for clinical use.</p>
+<p><strong>Clinical governance sign-off.</strong> The CMO or a designated clinical committee must approve the model for use, the intervention protocols, and the escalation pathways. Document the validation study, known limitations, and the plan for ongoing monitoring.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <h3 id="condition-specific-models">Condition-Specific Models</h3>

@@ -516,14 +516,15 @@
 <div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>scipy<span class="w"> </span>SimpleITK<span class="w"> </span>nibabel
 </pre></div>
 
-<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs (scoped to only the resources each component accesses):</p>
 <ul>
-<li><code>medical-imaging:GetImageSet</code>, <code>medical-imaging:GetImageFrame</code>, <code>medical-imaging:CreateImageSet</code> (AWS HealthImaging)</li>
-<li><code>s3:GetObject</code>, <code>s3:PutObject</code> (processing bucket)</li>
-<li><code>sagemaker:InvokeEndpoint</code> (registration model)</li>
-<li><code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:GetItem</code> (metadata table)</li>
+<li><code>medical-imaging:GetImageSet</code>, <code>medical-imaging:GetImageFrame</code> (AWS HealthImaging, read-only for preprocessing)</li>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code> (processing bucket only)</li>
+<li><code>sagemaker:InvokeEndpoint</code> (registration model endpoint only)</li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:GetItem</code> (metadata table only)</li>
 <li><code>states:StartExecution</code> (Step Functions, if using orchestration)</li>
 </ul>
+<p>In production, never apply all of these as a single shared role. See the architecture companion for per-component scoping.</p>
 <hr />
 <h2 id="config-and-constants">Config and Constants</h2>
 <p>Before we get to the pipeline steps, here's the configuration that drives the fusion process. Registration parameters, quality thresholds, and AWS resource names all live here so they're easy to tune without digging through logic.</p>
@@ -560,6 +561,7 @@
 <span class="n">PROCESSING_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-imaging-fusion-processing&quot;</span>
 
 <span class="c1"># DynamoDB table for fusion job metadata and quality tracking.</span>
+<span class="c1"># Table schema: partition key = &quot;job_id&quot; (String), no sort key.</span>
 <span class="n">METADATA_TABLE</span> <span class="o">=</span> <span class="s2">&quot;imaging-fusion-metadata&quot;</span>
 
 <span class="c1"># SageMaker endpoint hosting the registration model (VoxelMorph or similar).</span>
@@ -670,13 +672,25 @@
         <span class="n">moving_studies</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">studies</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;modality&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;CT&quot;</span><span class="p">]</span>
 
         <span class="c1"># Validate frame counts. Incomplete series produce garbage registration.</span>
+        <span class="c1"># Filter out studies with too few frames rather than continuing blindly.</span>
+        <span class="n">valid_moving_studies</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">study</span> <span class="ow">in</span> <span class="p">[</span><span class="n">fixed_study</span><span class="p">]</span> <span class="o">+</span> <span class="n">moving_studies</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">study</span><span class="p">[</span><span class="s2">&quot;frame_count&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                     <span class="s2">&quot;Study </span><span class="si">%s</span><span class="s2"> has only </span><span class="si">%d</span><span class="s2"> frames, likely incomplete. Skipping.&quot;</span><span class="p">,</span>
                     <span class="n">study</span><span class="p">[</span><span class="s2">&quot;image_set_id&quot;</span><span class="p">],</span> <span class="n">study</span><span class="p">[</span><span class="s2">&quot;frame_count&quot;</span><span class="p">]</span>
                 <span class="p">)</span>
-                <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">study</span> <span class="o">==</span> <span class="n">fixed_study</span><span class="p">:</span>
+                    <span class="c1"># If the fixed study itself is incomplete, skip this patient entirely.</span>
+                    <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">study</span> <span class="o">!=</span> <span class="n">fixed_study</span><span class="p">:</span>
+                <span class="n">valid_moving_studies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">study</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Only runs if the loop completes without break (fixed study was valid).</span>
+            <span class="n">moving_studies</span> <span class="o">=</span> <span class="n">valid_moving_studies</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">moving_studies</span><span class="p">:</span>
+            <span class="k">continue</span>
 
         <span class="c1"># Create a fusion job for each CT + moving modality pair.</span>
         <span class="k">for</span> <span class="n">moving_study</span> <span class="ow">in</span> <span class="n">moving_studies</span><span class="p">:</span>
@@ -726,6 +740,9 @@
 <span class="sd">        Tuple of (volume as numpy array, affine matrix as 4x4 numpy array)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># Reproducible synthetic data</span>
+    <span class="c1"># Fixed seed + same tumor location across modalities = guaranteed registration</span>
+    <span class="c1"># success for demo purposes. Real cross-modal data is much harder because</span>
+    <span class="c1"># tumor appearance and extent genuinely differ between modalities.</span>
 
     <span class="k">if</span> <span class="n">modality</span> <span class="o">==</span> <span class="s2">&quot;CT&quot;</span><span class="p">:</span>
         <span class="c1"># CT values are in Hounsfield units. Air = -1000, water = 0, bone = 1000+.</span>
@@ -1064,6 +1081,13 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Computing deformable registration via SageMaker endpoint...&quot;</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  (Simulating model inference for demonstration)&quot;</span><span class="p">)</span>
 
+    <span class="c1"># Both fixed and moving must have the same shape at this point</span>
+    <span class="c1"># (ensured by the min_shape crop in preprocessing above).</span>
+    <span class="k">assert</span> <span class="n">fixed</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">moving</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Shape mismatch: fixed </span><span class="si">{</span><span class="n">fixed</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> vs moving </span><span class="si">{</span><span class="n">moving</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">. &quot;</span>
+        <span class="s2">&quot;Both volumes must be cropped to the same dimensions before registration.&quot;</span>
+    <span class="p">)</span>
+
     <span class="c1"># Simulate a smooth, physically plausible deformation field.</span>
     <span class="c1"># In reality, the model would output learned displacements.</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter</span>
@@ -1168,6 +1192,8 @@
     <span class="n">passed</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="c1"># --- Check 1: Mutual Information ---</span>
+    <span class="c1"># MI computation repeated here for self-contained readability.</span>
+    <span class="c1"># In production, extract to a shared utility function.</span>
     <span class="c1"># Compute MI between fixed and registered moving.</span>
     <span class="n">hist_2d</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span>
         <span class="n">fixed</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span>

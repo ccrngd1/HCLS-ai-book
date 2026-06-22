@@ -659,6 +659,7 @@
 <span class="c1"># Trajectory features look at recent history; baseline features look at a</span>
 <span class="c1"># longer window. The exact windows are clinical-governance decisions and</span>
 <span class="c1"># vary by population.</span>
+<span class="n">LEAKAGE_BUFFER_MINUTES</span> <span class="o">=</span> <span class="mi">30</span>        <span class="c1"># observations must precede as_of by this margin</span>
 <span class="n">TRAJECTORY_WINDOW_HOURS</span> <span class="o">=</span> <span class="mi">24</span>       <span class="c1"># vitals trajectory features</span>
 <span class="n">LAB_TRAJECTORY_WINDOW_HOURS</span> <span class="o">=</span> <span class="mi">48</span>   <span class="c1"># lab trajectory features</span>
 <span class="n">BASELINE_WINDOW_HOURS</span> <span class="o">=</span> <span class="mi">72</span>         <span class="c1"># patient-specific baseline window</span>
@@ -2019,16 +2020,21 @@
 <span class="sd">    SNS topic subscribers are the rapid response team&#39;s pagers, the</span>
 <span class="sd">    on-call hospitalist, and the charge nurse. Each subscriber has its</span>
 <span class="sd">    own delivery protocol (SMS, email-to-pager-gateway, vendor API).</span>
+
+<span class="sd">    The pager channel carries ONLY the alert_id, tier, and unit. No</span>
+<span class="sd">    patient_id, no vital values, no narrative. PHI does not transit</span>
+<span class="sd">    lock-screen-visible channels or the logs they generate. The clinician</span>
+<span class="sd">    fetches the full alert by alert_id through the authenticated</span>
+<span class="sd">    dashboard or EHR banner.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Minimal payload: alert_id, tier, unit. No PHI.</span>
     <span class="n">summary</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;tier&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] Deterioration alert for patient &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (encounter </span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;encounter_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">). &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;Score: </span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, delta: </span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;score_delta&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">. &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;See chart banner for details.&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;tier&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] Deterioration alert on </span><span class="si">{</span><span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;unit_type&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown unit&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Alert ID: </span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;alert_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">. Open dashboard for details.&quot;</span>
     <span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
         <span class="n">TopicArn</span><span class="o">=</span><span class="n">RAPID_RESPONSE_TOPIC_ARN</span><span class="p">,</span>
-        <span class="n">Subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;tier&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] Deterioration: </span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">Subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;tier&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] Deterioration: </span><span class="si">{</span><span class="n">alert</span><span class="p">[</span><span class="s1">&#39;alert_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
         <span class="n">Message</span><span class="o">=</span><span class="n">summary</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -2162,12 +2168,33 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Record a downstream clinical outcome and link it to recent alerts.</span>
 
 <span class="sd">    outcome_event keys:</span>
+<span class="sd">      event_id:    unique event identifier from the source system</span>
 <span class="sd">      type:        icu_transfer | code_blue | unexpected_death |</span>
 <span class="sd">                   sepsis_bundle_initiated | rapid_response_activated |</span>
 <span class="sd">                   uneventful_discharge</span>
 <span class="sd">      occurred_at: ISO8601 UTC</span>
 <span class="sd">      details:     dict</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Idempotency guard. EventBridge delivers at-least-once; redelivered</span>
+    <span class="c1"># outcome events must not double-link outcomes or double-write S3 label</span>
+    <span class="c1"># rows, which would bias the retraining distribution toward redelivered</span>
+    <span class="c1"># cases on a rare positive class.</span>
+    <span class="n">processed_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="s2">&quot;processed-outcome-events&quot;</span><span class="p">)</span>
+    <span class="n">outcome_event_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">outcome_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;event_id&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">outcome_event</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">processed_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+            <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;event_key&quot;</span><span class="p">:</span> <span class="n">outcome_event_key</span><span class="p">,</span>
+                <span class="s2">&quot;processed_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="p">},</span>
+            <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;attribute_not_exists(event_key)&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">processed_table</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConditionalCheckFailedException</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;duplicate outcome event, skipping&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;event_key&quot;</span><span class="p">:</span> <span class="n">outcome_event_key</span><span class="p">,</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">ALERT_STATE_TABLE</span><span class="p">)</span>
     <span class="n">occurred_at</span> <span class="o">=</span> <span class="n">outcome_event</span><span class="p">[</span><span class="s2">&quot;occurred_at&quot;</span><span class="p">]</span>
     <span class="n">occurred_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">occurred_at</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;+00:00&quot;</span><span class="p">))</span>

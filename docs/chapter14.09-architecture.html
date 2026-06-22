@@ -536,7 +536,10 @@
     K --&gt; M[Patient Portal]
     K --&gt; N[Pharmacy System]
     
-    O[EventBridge\nDisruption Events] --&gt; P[Lambda\nReal-Time Adjuster]
+    L --&gt;|Overrides| K
+    K --&gt;|Re-solve / Lock / Reassign| P[Lambda\nReal-Time Adjuster]
+    
+    O[EventBridge\nDisruption Events] --&gt; P
     P --&gt; J
     P --&gt; N
     
@@ -547,6 +550,13 @@
     style J fill:#9ff,stroke:#333
     style G fill:#f9f,stroke:#333
 </pre>
+<h3 id="human-override-mechanism">Human Override Mechanism</h3>
+<p>The optimizer produces a recommendation, not a commandment. Clinical staff must be able to override any scheduling decision. The staff dashboard provides four override actions:</p>
+<p><strong>Drag-and-drop reassignment.</strong> A charge nurse sees that Patient A is anxious about being near the window. She drags that patient's card from Chair 12 to Chair 5. The system validates the move (no overlap, nursing capacity still within bounds) and publishes the updated schedule. If the move creates a constraint violation, the dashboard shows the conflict and offers to re-solve the affected subset.</p>
+<p><strong>Assignment locking.</strong> Pharmacy has already prepped for Patient B in Chair 7 at 09:00. The charge nurse locks that assignment so subsequent re-solves cannot move it. Locked assignments become hard constraints in any future optimization pass.</p>
+<p><strong>Ad-hoc constraint addition.</strong> A patient calls ahead requesting to not be seated near another patient (family dispute, emotional response to seeing a specific regimen). The charge nurse adds a &quot;not same section&quot; constraint between the two patients and triggers a partial re-solve for the affected time window.</p>
+<p><strong>Re-solve requests.</strong> After several morning cancellations, the schedule has gaps. The charge nurse hits &quot;re-optimize afternoon&quot; to pack the remaining patients more efficiently. The re-solve treats locked assignments and already-started infusions as fixed, optimizing only the movable patients.</p>
+<p>Every override writes an audit record: staff ID, timestamp, action type, before state, after state, and free-text reason. These records serve compliance (who changed the schedule and why?) and model improvement (if nurses always move first-dose patients to the chairs near the nursing station, that's a missing constraint the optimizer should learn).</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <table>
 <thead>
@@ -633,6 +643,22 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="failover-and-graceful-degradation">Failover and Graceful Degradation</h2>
+<p>The optimization layer enhances existing scheduling. It does not replace it. If the optimizer goes down, patients still need to be scheduled, pharmacy still needs to prep, and nurses still need assignments. Design for degradation from day one.</p>
+<h3 id="batch-optimizer-failure">Batch Optimizer Failure</h3>
+<p>The Step Functions workflow that builds tomorrow's schedule runs at 2 AM. If it fails (solver timeout, infeasible constraints, Lambda error, SageMaker endpoint unavailable), the system has four hours to recover before staff arrive.</p>
+<p><strong>Retry policy.</strong> Step Functions retries the batch job twice with 15-minute backoff. If the solver hits the time limit without finding a feasible solution, relax soft constraints (drop preference satisfaction, allow slight nursing overload) and retry. Log the relaxation for review.</p>
+<p><strong>Fallback to template-based schedule.</strong> If the batch optimizer has not produced a published schedule by 6 AM, the system falls back to the template-based schedule. Every center already has one: it's the &quot;default&quot; schedule pattern that rotating patients get assigned to before optimization exists. The system copies last week's same-day template (e.g., last Monday's schedule as a template for this Monday), slots in today's patients by protocol duration, and publishes to DynamoDB with a &quot;TEMPLATE_FALLBACK&quot; status flag. Staff see a yellow banner: &quot;Today's schedule was generated from the template. Manual adjustments may be needed.&quot;</p>
+<p><strong>Alert chain.</strong> CloudWatch alarm fires if the batch job has not written a schedule to DynamoDB by 5:30 AM. The alarm triggers SNS notification to the on-call engineer and the charge nurse's pager. Include the Step Functions execution URL in the alert so the engineer can diagnose immediately.</p>
+<h3 id="real-time-adjuster-timeout">Real-Time Adjuster Timeout</h3>
+<p>The real-time adjuster fires on disruption events (patient late, cancellation, extended duration). It must respond quickly because staff are waiting.</p>
+<p><strong>Timeout threshold.</strong> If the real-time adjuster Lambda does not return a valid adjustment within 5 seconds, the invocation is considered failed. The function's timeout is set to 10 seconds (giving 5 seconds for the solver and 5 seconds for validation and persistence), but the caller treats anything over 5 seconds as a timeout.</p>
+<p><strong>Fallback to human queue.</strong> On timeout, the disruption event routes to the charge nurse's manual resolution queue in the staff dashboard. The event appears with a red flag: &quot;Automatic resolution timed out. Manual reassignment needed.&quot; The staff dashboard still shows the current schedule (pre-disruption state) so the nurse has full context.</p>
+<p><strong>Consecutive failure detection.</strong> If 3 or more consecutive real-time adjustments exceed the 5-second threshold, CloudWatch fires an alarm. This pattern usually indicates either degraded SageMaker endpoint latency, DynamoDB throttling, or a schedule state that's become too fragmented for quick re-optimization. The alert tells the engineer to check endpoint health and consider a full re-solve of the remaining day.</p>
+<h3 id="dashboard-availability">Dashboard Availability</h3>
+<p>The staff dashboard must display the current schedule regardless of optimizer availability. It reads directly from DynamoDB (the published schedule table), not from the optimization engine. Even if every Lambda function is down, the dashboard shows the last-published schedule. The architecture separates &quot;schedule generation&quot; (can fail) from &quot;schedule display&quot; (must always work).</p>
+<p>If the DynamoDB table itself becomes unreachable (region-level issue), the dashboard falls back to a cached copy in the browser's local storage, updated on every successful fetch. The cache shows a staleness indicator: &quot;Last updated 3 minutes ago&quot; in green, or &quot;Last updated 45 minutes ago, connection issues&quot; in amber.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <h3 id="multi-site-scheduling">Multi-Site Scheduling</h3>

@@ -1177,6 +1177,142 @@
 </pre></div>
 
 <hr />
+<h2 id="step-8-model-monitoring-monthly-ground-truth-evaluation">Step 8: Model Monitoring (Monthly Ground-Truth Evaluation)</h2>
+<p><em>The architecture companion's Step 6 defines model monitoring: comparing predictions from 90 days ago against actual disenrollment outcomes, computing rolling AUC-PR and ECE, and triggering retraining when performance degrades. This step runs monthly on a separate schedule from scoring. It is especially critical around open enrollment periods when population composition shifts.</em></p>
+<div class="code"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">average_precision_score</span>
+
+<span class="c1"># Create CloudWatch client for publishing monitoring metrics.</span>
+<span class="n">cloudwatch_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;cloudwatch&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_ece</span><span class="p">(</span><span class="n">probabilities</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">actuals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute Expected Calibration Error (ECE).</span>
+
+<span class="sd">    ECE measures how well-calibrated the model&#39;s probabilities are. When the</span>
+<span class="sd">    model predicts 0.7, do roughly 70% of those members actually churn?</span>
+<span class="sd">    Poor calibration means your tier thresholds produce the wrong outreach volume.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        probabilities: Predicted churn probabilities.</span>
+<span class="sd">        actuals: Binary ground truth (1 = churned, 0 = stayed).</span>
+<span class="sd">        n_bins: Number of equal-width bins for calibration measurement.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ECE value (lower is better; 0.0 = perfectly calibrated).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_bins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">ece</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_bins</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">probabilities</span> <span class="o">&gt;=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">probabilities</span> <span class="o">&lt;</span> <span class="n">bin_edges</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">bin_confidence</span> <span class="o">=</span> <span class="n">probabilities</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">bin_accuracy</span> <span class="o">=</span> <span class="n">actuals</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">bin_weight</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">probabilities</span><span class="p">)</span>
+        <span class="n">ece</span> <span class="o">+=</span> <span class="n">bin_weight</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">bin_confidence</span> <span class="o">-</span> <span class="n">bin_accuracy</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ece</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">monitor_model_performance</span><span class="p">(</span><span class="n">prediction_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">evaluation_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate model performance by joining 90-day-old predictions against outcomes.</span>
+
+<span class="sd">    This runs monthly. It loads the scores generated on prediction_date, joins</span>
+<span class="sd">    them against actual disenrollment outcomes as of evaluation_date, computes</span>
+<span class="sd">    AUC-PR and ECE, publishes to CloudWatch, and triggers retraining if needed.</span>
+
+<span class="sd">    In production, the prediction_date would be dynamically computed as</span>
+<span class="sd">    evaluation_date minus 90 days. The ground truth comes from the eligibility</span>
+<span class="sd">    system (who actually disenrolled between those dates).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prediction_date: ISO date of the scoring run to evaluate (e.g., &quot;2026-03-01&quot;).</span>
+<span class="sd">        evaluation_date: ISO date when outcomes are measured (e.g., &quot;2026-06-01&quot;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with auc_pr, ece, and whether retraining was triggered.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load historical predictions from S3.</span>
+    <span class="c1"># In production, read the Parquet file from the scoring output path.</span>
+    <span class="n">predictions_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">PREDICTIONS_PREFIX</span><span class="si">}</span><span class="s2">scoring_date=</span><span class="si">{</span><span class="n">prediction_date</span><span class="si">}</span><span class="s2">/members.parquet&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading predictions from s3://</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ML_BUCKET</span><span class="p">,</span> <span class="n">predictions_key</span><span class="p">)</span>
+
+    <span class="c1"># Simulated: in a real system you&#39;d read from S3 and join eligibility data.</span>
+    <span class="c1"># Here we generate a synthetic evaluation set for demonstration.</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span>
+    <span class="n">n_eval</span> <span class="o">=</span> <span class="mi">5000</span>
+    <span class="n">predicted_probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">n_eval</span><span class="p">)</span>  <span class="c1"># skewed toward low risk</span>
+    <span class="c1"># Simulate outcomes correlated with predictions (imperfect model).</span>
+    <span class="n">actual_outcomes</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n_eval</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">predicted_probs</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Compute AUC-PR.</span>
+    <span class="n">auc_pr</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">actual_outcomes</span><span class="p">,</span> <span class="n">predicted_probs</span><span class="p">)</span>
+
+    <span class="c1"># Compute ECE.</span>
+    <span class="n">ece</span> <span class="o">=</span> <span class="n">compute_ece</span><span class="p">(</span><span class="n">predicted_probs</span><span class="p">,</span> <span class="n">actual_outcomes</span><span class="p">)</span>
+
+    <span class="n">actual_churn_rate</span> <span class="o">=</span> <span class="n">actual_outcomes</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">predicted_churn_rate</span> <span class="o">=</span> <span class="n">predicted_probs</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model performance: AUC-PR=</span><span class="si">%.3f</span><span class="s2">, ECE=</span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">auc_pr</span><span class="p">,</span> <span class="n">ece</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Actual churn rate: </span><span class="si">%.3f</span><span class="s2">, Predicted mean: </span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">actual_churn_rate</span><span class="p">,</span> <span class="n">predicted_churn_rate</span><span class="p">)</span>
+
+    <span class="c1"># Publish metrics to CloudWatch.</span>
+    <span class="n">cloudwatch_client</span><span class="o">.</span><span class="n">put_metric_data</span><span class="p">(</span>
+        <span class="n">Namespace</span><span class="o">=</span><span class="s2">&quot;ChurnModel/Performance&quot;</span><span class="p">,</span>
+        <span class="n">MetricData</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;AUC-PR&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">auc_pr</span><span class="p">,</span>
+                <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;EvaluationMonth&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">evaluation_date</span><span class="p">[:</span><span class="mi">7</span><span class="p">]}],</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;ECE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">ece</span><span class="p">,</span>
+                <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;EvaluationMonth&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">evaluation_date</span><span class="p">[:</span><span class="mi">7</span><span class="p">]}],</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;ActualChurnRate&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">actual_churn_rate</span><span class="p">,</span>
+                <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;EvaluationMonth&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">evaluation_date</span><span class="p">[:</span><span class="mi">7</span><span class="p">]}],</span>
+            <span class="p">},</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Check retraining triggers.</span>
+    <span class="n">retrain_triggered</span> <span class="o">=</span> <span class="n">auc_pr</span> <span class="o">&lt;</span> <span class="mf">0.40</span> <span class="ow">or</span> <span class="n">ece</span> <span class="o">&gt;</span> <span class="mf">0.10</span>
+
+    <span class="k">if</span> <span class="n">retrain_triggered</span><span class="p">:</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;AUC-PR degraded&quot;</span> <span class="k">if</span> <span class="n">auc_pr</span> <span class="o">&lt;</span> <span class="mf">0.40</span> <span class="k">else</span> <span class="s2">&quot;Calibration drift&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Retraining triggered: </span><span class="si">%s</span><span class="s2"> (AUC-PR=</span><span class="si">%.3f</span><span class="s2">, ECE=</span><span class="si">%.3f</span><span class="s2">)&quot;</span><span class="p">,</span>
+                       <span class="n">reason</span><span class="p">,</span> <span class="n">auc_pr</span><span class="p">,</span> <span class="n">ece</span><span class="p">)</span>
+
+        <span class="c1"># Publish retraining event to EventBridge.</span>
+        <span class="n">events_client</span><span class="o">.</span><span class="n">put_events</span><span class="p">(</span><span class="n">Entries</span><span class="o">=</span><span class="p">[{</span>
+            <span class="s2">&quot;Source&quot;</span><span class="p">:</span> <span class="s2">&quot;churn-prediction-pipeline&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DetailType&quot;</span><span class="p">:</span> <span class="s2">&quot;ChurnModelRetrainingRequired&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Detail&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">reason</span><span class="p">,</span>
+                <span class="s2">&quot;auc_pr&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">auc_pr</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                <span class="s2">&quot;ece&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">ece</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                <span class="s2">&quot;evaluation_date&quot;</span><span class="p">:</span> <span class="n">evaluation_date</span><span class="p">,</span>
+                <span class="s2">&quot;prediction_date&quot;</span><span class="p">:</span> <span class="n">prediction_date</span><span class="p">,</span>
+            <span class="p">}),</span>
+            <span class="s2">&quot;EventBusName&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="p">}])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model performance within acceptable bounds. No retraining needed.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;auc_pr&quot;</span><span class="p">:</span> <span class="n">auc_pr</span><span class="p">,</span> <span class="s2">&quot;ece&quot;</span><span class="p">:</span> <span class="n">ece</span><span class="p">,</span> <span class="s2">&quot;retrain_triggered&quot;</span><span class="p">:</span> <span class="n">retrain_triggered</span><span class="p">}</span>
+</pre></div>
+
+<hr />
 <h2 id="putting-it-all-together">Putting It All Together</h2>
 <p>Here's the full pipeline assembled into a single function. In production, this would be orchestrated by Step Functions with each step as a separate Lambda or Glue job. Here we run it sequentially for clarity.</p>
 <div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_churn_prediction_pipeline</span><span class="p">():</span>
@@ -1186,8 +1322,9 @@
 <span class="sd">    In a real deployment:</span>
 <span class="sd">    - Step 1 (feature assembly) is a Glue job pulling from 6+ source systems</span>
 <span class="sd">    - Step 2 (training) runs quarterly or when model performance degrades</span>
-<span class="sd">    - Steps 3-6 (scoring, tiers, storage, events) run weekly via Step Functions</span>
-<span class="sd">    - EventBridge schedules the weekly run</span>
+<span class="sd">    - Steps 3-7 (scoring, tiers, storage, events) run weekly via Step Functions</span>
+<span class="sd">    - Step 8 (monitoring) runs monthly on a separate schedule</span>
+<span class="sd">    - EventBridge schedules both the weekly and monthly runs</span>
 
 <span class="sd">    This function combines everything for demonstration purposes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1240,6 +1377,19 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 7: Publishing high-risk events...&quot;</span><span class="p">)</span>
     <span class="n">publish_high_risk_events</span><span class="p">(</span><span class="n">results_df</span><span class="p">,</span> <span class="n">scoring_date</span><span class="p">)</span>
 
+    <span class="c1"># Step 8: Model monitoring (runs monthly on a separate schedule in production).</span>
+    <span class="c1"># Here we demonstrate it inline. In production, this is a separate Step Functions</span>
+    <span class="c1"># execution triggered monthly by EventBridge Scheduler, evaluating predictions</span>
+    <span class="c1"># from 90 days prior against actual outcomes.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 8: Running model monitoring...&quot;</span><span class="p">)</span>
+    <span class="n">prediction_date_90d_ago</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">monitoring_results</span> <span class="o">=</span> <span class="n">monitor_model_performance</span><span class="p">(</span><span class="n">prediction_date_90d_ago</span><span class="p">,</span> <span class="n">scoring_date</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  AUC-PR: </span><span class="si">%.3f</span><span class="s2">, ECE: </span><span class="si">%.3f</span><span class="s2">, Retrain triggered: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">monitoring_results</span><span class="p">[</span><span class="s2">&quot;auc_pr&quot;</span><span class="p">],</span> <span class="n">monitoring_results</span><span class="p">[</span><span class="s2">&quot;ece&quot;</span><span class="p">],</span>
+                <span class="n">monitoring_results</span><span class="p">[</span><span class="s2">&quot;retrain_triggered&quot;</span><span class="p">])</span>
+
     <span class="c1"># Print summary.</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Pipeline Complete ===&quot;</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Total members scored: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results_df</span><span class="p">))</span>
@@ -1269,7 +1419,7 @@
 <p><strong>Error handling.</strong> Right now, if SageMaker returns an error or DynamoDB throttles, the pipeline crashes and members don't get scored. A production system wraps every external call in try/except blocks with specific handling for throttling, service unavailability, and malformed responses. Step Functions provides built-in retry and error handling at the orchestration level.</p>
 <p><strong>Retries and backoff.</strong> The <code>BOTO3_RETRY_CONFIG</code> handles basic retries, but SageMaker training jobs can fail for transient reasons (spot instance interruptions, capacity issues). Production pipelines use Step Functions retry policies with exponential backoff and maximum attempt limits. DynamoDB batch writes should handle <code>UnprocessedItems</code> in the response.</p>
 <p><strong>Input validation.</strong> This code trusts its inputs completely. A production system validates that source data is fresh (not stale from a failed upstream job), checks for unexpected nulls or distributions that suggest data quality issues, and rejects scoring runs where feature coverage drops below a threshold.</p>
-<p><strong>Model monitoring.</strong> Models degrade over time as member behavior shifts. SageMaker Model Monitor can detect data drift (feature distributions changing) and prediction drift (score distributions shifting). When drift exceeds thresholds, trigger a retraining job. Without monitoring, you'll deploy a model that slowly becomes useless and not know until retention numbers drop.</p>
+<p><strong>Model monitoring.</strong> Step 8 demonstrates the core monitoring loop: ground-truth join, AUC-PR and ECE computation, CloudWatch publishing, and retraining triggers. A production system adds SageMaker Model Monitor for real-time data drift detection (feature distributions changing between training and inference), alerting dashboards with historical trend lines, and a promotion gate that validates new model versions against the current champion before swapping. The monthly cadence shown here should be supplemented with continuous drift detection on the scoring input distributions.</p>
 <p><strong>Calibration.</strong> This example skips probability calibration entirely. In production, you must calibrate the model's raw probabilities using isotonic regression or Platt scaling on a held-out calibration set. Without calibration, a predicted &quot;0.7&quot; might actually correspond to 40% churn, making your tier thresholds meaningless.</p>
 <p><strong>SHAP values for explainability.</strong> The <code>_identify_risk_factors</code> function uses simple heuristics. A production system computes actual SHAP values using the <code>shap</code> library, which provides mathematically rigorous feature attribution for each individual prediction. This matters for compliance (explaining why a member was flagged) and for routing (knowing the true driver, not just a heuristic guess).</p>
 <p><strong>Time-based train/validation split.</strong> The stratified random split used here leaks temporal information. Production models must use time-based splitting: train on data from months 1-9, validate on months 10-12. This simulates how the model will actually be used and gives honest performance estimates.</p>

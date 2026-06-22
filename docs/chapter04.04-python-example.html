@@ -1347,12 +1347,17 @@
 
     <span class="c1"># Build a flat list of (member, program, priority) candidates and</span>
     <span class="c1"># join in the cohort features the equity floors check.</span>
+    <span class="c1"># Pre-cache cohort features per member to avoid redundant DynamoDB</span>
+    <span class="c1"># reads when a member appears across multiple programs, and to ensure</span>
+    <span class="c1"># consistent cohort assignments within a single run.</span>
+    <span class="n">unique_members</span> <span class="o">=</span> <span class="nb">list</span><span class="p">({</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;member_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">ranked_rows</span><span class="p">})</span>
+    <span class="n">cohort_cache</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">_lookup_cohort_features</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">unique_members</span><span class="p">}</span>
+
     <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">ranked_rows</span><span class="p">:</span>
-        <span class="n">cohort</span> <span class="o">=</span> <span class="n">_lookup_cohort_features</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;member_id&quot;</span><span class="p">])</span>
         <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
             <span class="o">**</span><span class="n">r</span><span class="p">,</span>
-            <span class="s2">&quot;cohort_features&quot;</span><span class="p">:</span> <span class="n">cohort</span><span class="p">,</span>
+            <span class="s2">&quot;cohort_features&quot;</span><span class="p">:</span> <span class="n">cohort_cache</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;member_id&quot;</span><span class="p">]],</span>
         <span class="p">})</span>
     <span class="n">candidates</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -1525,8 +1530,21 @@
 <span class="sd">    Stable tracking_id used to join allocations to outreach to</span>
 <span class="sd">    engagement events. Stable across retries so duplicate processing</span>
 <span class="sd">    converges to the same recommendation-log row.</span>
+
+<span class="sd">    IMPORTANT: the tracking_id is opaque and non-reversible. It flows on</span>
+<span class="sd">    outbound channels (email open-tracking pixels, SMS click-through links,</span>
+<span class="sd">    vendor outreach platform handoffs) and inbound engagement events.</span>
+<span class="sd">    Member identity is reattached only inside systems with read access to</span>
+<span class="sd">    the recommendation log. Plain-text member_ids embedded in URLs and SMS</span>
+<span class="sd">    payloads are PHI leakage even when the surrounding context looks</span>
+<span class="sd">    innocuous (tracking pixel domains, vendor analytics paths, CloudWatch</span>
+<span class="sd">    logs at INFO level).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;wellness-</span><span class="si">{</span><span class="n">run_date</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">member_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">program_id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="n">composite</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_date</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">member_id</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">program_id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">secret</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TRACKING_ID_HMAC_SECRET&quot;</span><span class="p">,</span> <span class="s2">&quot;local-dev-only&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">((</span><span class="n">secret</span> <span class="o">+</span> <span class="n">composite</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">32</span><span class="p">]</span>
 </pre></div>
 
 <hr />
@@ -1565,14 +1583,40 @@
 
         <span class="n">profile</span> <span class="o">=</span> <span class="n">_from_decimal</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Item&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
 
-        <span class="c1"># ---- Wellness consent check ----</span>
-        <span class="c1"># In jurisdictions or plan policies that require explicit</span>
-        <span class="c1"># consent for wellness outreach, the member must have an</span>
-        <span class="c1"># active consent flag. Members can also opt out per program;</span>
-        <span class="c1"># check that too.</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wellness_consent_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
-            <span class="n">deferred</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;row&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no_active_wellness_consent&quot;</span><span class="p">})</span>
+        <span class="c1"># ---- Multi-dimensional consent verification ----</span>
+        <span class="c1"># Wellness consent is not a single boolean. Each dimension that</span>
+        <span class="c1"># fails produces its own deferral reason so dashboards surface</span>
+        <span class="c1"># exactly what&#39;s missing and the member-services team can act.</span>
+
+        <span class="n">consent</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;consent&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="c1"># (a) ADA voluntary-participation</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">consent</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ada_voluntary_participation&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">deferred</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;row&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;ada_voluntary_participation_not_confirmed&quot;</span><span class="p">})</span>
             <span class="k">continue</span>
+
+        <span class="c1"># (b) GINA authorization: only checked when the program uses</span>
+        <span class="c1"># family-history features in its eligibility criteria.</span>
+        <span class="n">program_meta</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">SAMPLE_PROGRAMS</span> <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;program_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">program_id</span><span class="p">),</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="n">program_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eligibility_criteria&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uses_family_history&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">consent</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gina_authorization&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="n">deferred</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;row&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;gina_authorization_required&quot;</span><span class="p">})</span>
+                <span class="k">continue</span>
+
+        <span class="c1"># (c) Program-specific consent (keyed on program_id)</span>
+        <span class="n">program_consents</span> <span class="o">=</span> <span class="n">consent</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;program_consents&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">program_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">program_consents</span><span class="p">:</span>
+            <span class="n">deferred</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;row&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;program_specific_consent_missing&quot;</span><span class="p">})</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># (d) Channel-specific consent</span>
+        <span class="n">channel_consents</span> <span class="o">=</span> <span class="n">consent</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;channel_consents&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">intended_channel</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;preferred_channel&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">intended_channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">channel_consents</span><span class="p">:</span>
+            <span class="n">deferred</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;row&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;channel_consent_missing&quot;</span><span class="p">})</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Program-level opt-out (explicit &quot;don&#39;t recommend this to me&quot;)</span>
         <span class="n">opt_outs</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;opt_outs&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;programs&quot;</span><span class="p">,</span> <span class="p">[])</span>
         <span class="k">if</span> <span class="n">program_id</span> <span class="ow">in</span> <span class="n">opt_outs</span><span class="p">:</span>
             <span class="n">deferred</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;row&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;member_opted_out_of_program&quot;</span><span class="p">})</span>
@@ -1942,7 +1986,7 @@
 <span class="sd">                        &quot;program_outreach_opened&quot; | &quot;program_enrolled&quot; |</span>
 <span class="sd">                        &quot;program_session_attended&quot; | &quot;program_completed&quot; |</span>
 <span class="sd">                        &quot;program_dropped_out&quot; | &quot;pcp_override&quot;,</span>
-<span class="sd">        &quot;tracking_id&quot;:  &quot;wellness-&lt;run_date&gt;-&lt;member_id&gt;-&lt;program_id&gt;&quot;,</span>
+<span class="sd">        &quot;tracking_id&quot;:  &quot;&lt;opaque HMAC, e.g. a3f8c91e7b2d04561f9c8e3a7b204d56&gt;&quot;,</span>
 <span class="sd">        &quot;member_id&quot;:    &quot;...&quot;,</span>
 <span class="sd">        &quot;program_id&quot;:   &quot;...&quot;,</span>
 <span class="sd">        &quot;timestamp&quot;:    ISO 8601,</span>
@@ -2355,7 +2399,13 @@
             <span class="s2">&quot;engagement_history_quartile&quot;</span><span class="p">:</span>     <span class="s2">&quot;q2&quot;</span><span class="p">,</span>
             <span class="s2">&quot;sdoh_cohort&quot;</span><span class="p">:</span>                     <span class="s2">&quot;low_food_security&quot;</span><span class="p">,</span>
             <span class="s2">&quot;age_band&quot;</span><span class="p">:</span>                        <span class="s2">&quot;55-64&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;wellness_consent_active&quot;</span><span class="p">:</span>         <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;consent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ada_voluntary_participation&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;gina_authorization&quot;</span><span class="p">:</span>          <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;program_consents&quot;</span><span class="p">:</span>            <span class="p">[</span><span class="s2">&quot;prog-dpp&quot;</span><span class="p">,</span> <span class="s2">&quot;prog-weight&quot;</span><span class="p">,</span> <span class="s2">&quot;prog-stress&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;channel_consents&quot;</span><span class="p">:</span>            <span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">,</span> <span class="s2">&quot;sms&quot;</span><span class="p">],</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;preferred_channel&quot;</span><span class="p">:</span>               <span class="s2">&quot;email&quot;</span><span class="p">,</span>
             <span class="s2">&quot;outreach_recent_wellness_count&quot;</span><span class="p">:</span>  <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
             <span class="s2">&quot;outreach_recent_total_count&quot;</span><span class="p">:</span>     <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
             <span class="s2">&quot;opt_outs&quot;</span><span class="p">:</span>                        <span class="p">{</span><span class="s2">&quot;programs&quot;</span><span class="p">:</span> <span class="p">[]},</span>
@@ -2366,7 +2416,13 @@
             <span class="s2">&quot;engagement_history_quartile&quot;</span><span class="p">:</span>     <span class="s2">&quot;q1&quot;</span><span class="p">,</span>
             <span class="s2">&quot;sdoh_cohort&quot;</span><span class="p">:</span>                     <span class="kc">None</span><span class="p">,</span>
             <span class="s2">&quot;age_band&quot;</span><span class="p">:</span>                        <span class="s2">&quot;45-54&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;wellness_consent_active&quot;</span><span class="p">:</span>         <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;consent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ada_voluntary_participation&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;gina_authorization&quot;</span><span class="p">:</span>          <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;program_consents&quot;</span><span class="p">:</span>            <span class="p">[</span><span class="s2">&quot;prog-smoking&quot;</span><span class="p">,</span> <span class="s2">&quot;prog-stress&quot;</span><span class="p">,</span> <span class="s2">&quot;prog-sleep&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;channel_consents&quot;</span><span class="p">:</span>            <span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">],</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;preferred_channel&quot;</span><span class="p">:</span>               <span class="s2">&quot;email&quot;</span><span class="p">,</span>
             <span class="s2">&quot;outreach_recent_wellness_count&quot;</span><span class="p">:</span>  <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
             <span class="s2">&quot;outreach_recent_total_count&quot;</span><span class="p">:</span>     <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
             <span class="s2">&quot;opt_outs&quot;</span><span class="p">:</span>                        <span class="p">{</span><span class="s2">&quot;programs&quot;</span><span class="p">:</span> <span class="p">[]},</span>

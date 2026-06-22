@@ -689,6 +689,56 @@
         <span class="k">if</span> <span class="n">unit_level</span> <span class="o">&gt;=</span> <span class="n">required_level</span><span class="p">:</span>
             <span class="n">available</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">available</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_gps_fix</span><span class="p">(</span><span class="n">gps_event</span><span class="p">,</span> <span class="n">previous_fix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">service_area_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate a GPS position fix before accepting it into fleet state.</span>
+
+<span class="sd">    In production, these checks run in the Kinesis consumer Lambda before</span>
+<span class="sd">    the DynamoDB write. Invalid fixes are logged to a GPS anomalies table</span>
+<span class="sd">    for fleet maintenance review but do not update the unit&#39;s position.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        gps_event: dict with unit_id, latitude, longitude, timestamp, speed</span>
+<span class="sd">        previous_fix: the last accepted fix for this unit (for movement checks)</span>
+<span class="sd">        service_area_bounds: dict with min_lat, max_lat, min_lon, max_lon</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (is_valid, reason) tuple. If invalid, reason explains why.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">gps_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;latitude&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">gps_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;longitude&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Check for GPS default/null coordinates (common when device loses lock)</span>
+    <span class="k">if</span> <span class="n">lat</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">lon</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;null_coordinates&quot;</span>
+
+    <span class="c1"># Bounds check: must be within service area (with buffer for mutual aid)</span>
+    <span class="k">if</span> <span class="n">service_area_bounds</span><span class="p">:</span>
+        <span class="n">buffer</span> <span class="o">=</span> <span class="mf">0.5</span>  <span class="c1"># ~55 km buffer for mutual aid runs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">service_area_bounds</span><span class="p">[</span><span class="s2">&quot;min_lat&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">buffer</span> <span class="o">&lt;=</span> <span class="n">lat</span>
+                <span class="o">&lt;=</span> <span class="n">service_area_bounds</span><span class="p">[</span><span class="s2">&quot;max_lat&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">buffer</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;latitude_out_of_bounds&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">service_area_bounds</span><span class="p">[</span><span class="s2">&quot;min_lon&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">buffer</span> <span class="o">&lt;=</span> <span class="n">lon</span>
+                <span class="o">&lt;=</span> <span class="n">service_area_bounds</span><span class="p">[</span><span class="s2">&quot;max_lon&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">buffer</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;longitude_out_of_bounds&quot;</span>
+
+    <span class="c1"># Speed plausibility: ambulances do not exceed 200 km/h</span>
+    <span class="k">if</span> <span class="n">gps_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;speed&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;speed_implausible&quot;</span>
+
+    <span class="c1"># Movement plausibility: check against previous fix</span>
+    <span class="k">if</span> <span class="n">previous_fix</span><span class="p">:</span>
+        <span class="n">distance_km</span> <span class="o">=</span> <span class="n">haversine_distance_km</span><span class="p">(</span>
+            <span class="n">previous_fix</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">],</span> <span class="n">previous_fix</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">],</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span>
+        <span class="p">)</span>
+        <span class="n">time_delta_s</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">gps_event</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">previous_fix</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">time_delta_s</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">distance_km</span> <span class="o">/</span> <span class="p">(</span><span class="n">time_delta_s</span> <span class="o">/</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;impossible_movement&quot;</span>
+
+    <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;ok&quot;</span>
 </pre></div>
 
 <hr />
@@ -1165,10 +1215,14 @@
 <span class="sd">    - What were the alternatives?</span>
 <span class="sd">    - What was the estimated response time?</span>
 <span class="sd">    - What hospital was recommended?</span>
+<span class="sd">    - Did the dispatcher accept or override the recommendation?</span>
 
-<span class="sd">    In production, this table has a TTL for old records (retain 7 years</span>
-<span class="sd">    per state EMS record retention requirements) and is encrypted with</span>
-<span class="sd">    a KMS CMK.</span>
+<span class="sd">    In production, this table uses an IAM policy that denies UpdateItem and</span>
+<span class="sd">    DeleteItem for all principals except a break-glass role. Records are</span>
+<span class="sd">    immutable once written. Retention: 10 years minimum (state EMS record</span>
+<span class="sd">    retention requirements vary; default to the most stringent). After 12</span>
+<span class="sd">    months, records export to S3 with Object Lock in Compliance mode for</span>
+<span class="sd">    tamper-evident long-term archival.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">DISPATCH_TABLE_NAME</span><span class="p">)</span>
 
@@ -1270,6 +1324,11 @@
             <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;travel_time_seconds&quot;</span><span class="p">]</span>
             <span class="o">&lt;=</span> <span class="n">RESPONSE_TIME_TARGETS</span><span class="p">[</span><span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">]]</span>
         <span class="p">),</span>
+        <span class="c1"># Dispatcher-in-the-loop fields (populated by the dispatcher console</span>
+        <span class="c1"># in production; here we simulate auto-accept for Priority 1):</span>
+        <span class="s2">&quot;dispatcher_action&quot;</span><span class="p">:</span> <span class="s2">&quot;auto_dispatched&quot;</span> <span class="k">if</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;pending&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dispatcher_id&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># filled by dispatcher console on accept/override</span>
+        <span class="s2">&quot;override_reason_code&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Meets target: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%d</span><span class="s2">s vs </span><span class="si">%d</span><span class="s2">s threshold)&quot;</span><span class="p">,</span>

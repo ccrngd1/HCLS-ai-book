@@ -543,6 +543,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
@@ -554,7 +556,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">boto3.dynamodb.conditions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Key</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">boto3.dynamodb.conditions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attr</span><span class="p">,</span> <span class="n">Key</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsolationForest</span>
 
 <span class="c1"># Structured logging. In production, ship JSON-formatted records to CloudWatch</span>
@@ -562,6 +564,7 @@
 <span class="c1"># date range plus a patient population is re-identifying even without names),</span>
 <span class="c1"># so we log structural metadata only. Never log full claim bodies, patient</span>
 <span class="c1"># identifiers, or full feature vectors in regular application logs.</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(name)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2"> </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
@@ -595,14 +598,38 @@
 <span class="n">MODEL_ARTIFACTS_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-billing-anomaly-model-artifacts&quot;</span>
 <span class="n">ATHENA_OUTPUT_LOCATION</span> <span class="o">=</span> <span class="s2">&quot;s3://my-athena-results/billing-anomaly/&quot;</span>
 <span class="n">ATHENA_DATABASE</span> <span class="o">=</span> <span class="s2">&quot;claims_warehouse&quot;</span>
+
+<span class="c1"># Customer-managed KMS key ARN for all S3 writes. Signal payloads carry</span>
+<span class="c1"># provider IDs plus period ranges plus peer-group keys (re-identifying in</span>
+<span class="c1"># combination). Label archives carry disposition and exposure. Model</span>
+<span class="c1"># artifacts can be inverted to approximate training data characteristics.</span>
+<span class="c1"># All require customer-managed key encryption per the recipe&#39;s architecture.</span>
+<span class="n">S3_KMS_KEY_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:kms:us-east-1:123456789012:key/REPLACE-WITH-YOUR-KEY-ID&quot;</span>
+
 <span class="n">ANALYST_NOTIFICATION_TOPIC_ARN</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s2">&quot;arn:aws:sns:us-east-1:123456789012:payment-integrity-new-case&quot;</span>
 <span class="p">)</span>
 <span class="n">EVENT_BUS_NAME</span> <span class="o">=</span> <span class="s2">&quot;payment-integrity-events&quot;</span>
 
-<span class="c1"># Deploy-time guardrail: catch unreplaced example values.</span>
-<span class="k">assert</span> <span class="s2">&quot;123456789012&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ANALYST_NOTIFICATION_TOPIC_ARN</span> <span class="ow">or</span> <span class="vm">__name__</span> <span class="o">!=</span> <span class="s2">&quot;__production__&quot;</span><span class="p">,</span> \
-    <span class="s2">&quot;ANALYST_NOTIFICATION_TOPIC_ARN still uses the example AWS account ID. Replace before deploying.&quot;</span>
+<span class="c1"># Deploy-time guardrail: catch unreplaced example values. The check is gated</span>
+<span class="c1"># on the DEPLOYMENT_STAGE environment variable so it only fires in deployed</span>
+<span class="c1"># environments (where you MUST replace example account IDs before launch).</span>
+<span class="c1"># Using os.environ rather than assert avoids the issue where Python&#39;s -O flag</span>
+<span class="c1"># silently removes assert statements.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_config_replaced</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DEPLOYMENT_STAGE&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;production&quot;</span><span class="p">,</span> <span class="s2">&quot;staging&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;123456789012&quot;</span> <span class="ow">in</span> <span class="n">ANALYST_NOTIFICATION_TOPIC_ARN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;ANALYST_NOTIFICATION_TOPIC_ARN still uses the example AWS account ID. &quot;</span>
+                <span class="s2">&quot;Replace before deploying.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;REPLACE-WITH-YOUR-KEY-ID&quot;</span> <span class="ow">in</span> <span class="n">S3_KMS_KEY_ARN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;S3_KMS_KEY_ARN still uses the placeholder value. &quot;</span>
+                <span class="s2">&quot;Replace with your customer-managed KMS key ARN before deploying.&quot;</span>
+            <span class="p">)</span>
+
+<span class="n">_check_config_replaced</span><span class="p">()</span>
 
 <span class="c1"># --- Scorer Version ---</span>
 <span class="c1"># Every anomaly signal, case record, and captured label records the scorer</span>
@@ -682,11 +709,16 @@
 <span class="c1"># much larger crosswalk including hospital, nursing facility, home, and</span>
 <span class="c1"># specialty E/M ranges. Level (1-5) is derived from the last digit for</span>
 <span class="c1"># the standard new/established ranges.</span>
+<span class="c1">#</span>
+<span class="c1"># Note: CPT 99201 (new patient, level 1) was deleted effective 2021-01-01</span>
+<span class="c1"># as part of the CMS/AMA E/M documentation overhaul. Current new-patient</span>
+<span class="c1"># codes are 99202-99205 (levels 2-5). Do not include 99201 in feature</span>
+<span class="c1"># vectors built from post-2020 claims data.</span>
 <span class="n">EM_CODES</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># Office or outpatient, established patient (levels 1-5).</span>
     <span class="s2">&quot;99211&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;99212&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;99213&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;99214&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;99215&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
-    <span class="c1"># Office or outpatient, new patient (levels 1-5).</span>
-    <span class="s2">&quot;99201&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;99202&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;99203&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;99204&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;99205&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="c1"># Office or outpatient, new patient (levels 2-5; level 1 deleted 2021).</span>
+    <span class="s2">&quot;99202&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;99203&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;99204&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;99205&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="c1"># --- Time-based CPT Codes ---</span>
@@ -721,12 +753,19 @@
 <span class="sd">    DynamoDB rejects float. Always pass Decimal. Quantizing to four decimal</span>
 <span class="sd">    places keeps the storage format predictable without losing meaningful</span>
 <span class="sd">    precision for probabilities, rates, or z-scores.</span>
+
+<span class="sd">    NaN and Inf are coerced to zero. This masks an upstream error (a feature</span>
+<span class="sd">    computation that produced NaN means missing data or division by zero).</span>
+<span class="sd">    In production, log a warning when this branch fires so the data</span>
+<span class="sd">    engineering team can trace the root cause. The zero-coercion keeps the</span>
+<span class="sd">    DynamoDB write from failing but loses the error signal.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Decimal</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">value</span>
     <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.0000&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">value</span><span class="p">)):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;decimal_coercion_masked_nan_or_inf&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;raw_value&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)})</span>
         <span class="k">return</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.0000&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="o">.</span><span class="n">quantize</span><span class="p">(</span><span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.0001&quot;</span><span class="p">))</span>
 
@@ -1386,6 +1425,7 @@
         <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">_decimal_to_float</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
         <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
         <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="n">SSEKMSKeyId</span><span class="o">=</span><span class="n">S3_KMS_KEY_ARN</span><span class="p">,</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -1521,15 +1561,27 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Query the case-registry GSI on provider_id to find recent cases for</span>
 <span class="sd">    this provider. Used to compute persistence across consecutive periods.</span>
+
+<span class="sd">    Uses Attr (not Key) for FilterExpression because period_start is not</span>
+<span class="sd">    part of the GSI key schema. Paginates to handle the (unlikely but</span>
+<span class="sd">    possible) scenario where a hot provider has enough historical cases</span>
+<span class="sd">    to exceed a 1 MB DynamoDB page before filtering.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">lookback_months</span> <span class="o">*</span> <span class="mi">31</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CASE_REGISTRY_TABLE</span><span class="p">)</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-        <span class="n">IndexName</span><span class="o">=</span><span class="s2">&quot;provider_id_index&quot;</span><span class="p">,</span>
-        <span class="n">KeyConditionExpression</span><span class="o">=</span><span class="n">Key</span><span class="p">(</span><span class="s2">&quot;provider_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">provider_id</span><span class="p">),</span>
-        <span class="n">FilterExpression</span><span class="o">=</span><span class="n">Key</span><span class="p">(</span><span class="s2">&quot;period_start&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="n">cutoff</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;IndexName&quot;</span><span class="p">:</span> <span class="s2">&quot;provider_id_index&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;KeyConditionExpression&quot;</span><span class="p">:</span> <span class="n">Key</span><span class="p">(</span><span class="s2">&quot;provider_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">provider_id</span><span class="p">),</span>
+        <span class="s2">&quot;FilterExpression&quot;</span><span class="p">:</span> <span class="n">Attr</span><span class="p">(</span><span class="s2">&quot;period_start&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="n">cutoff</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="k">if</span> <span class="s2">&quot;LastEvaluatedKey&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;ExclusiveStartKey&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;LastEvaluatedKey&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">items</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_count_consecutive_periods</span><span class="p">(</span><span class="n">prior_cases</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">ending_period</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1597,11 +1649,21 @@
 
     <span class="c1"># Poll for completion. Real deployments drive this via Step Functions</span>
     <span class="c1"># so the polling is framework-managed; here we loop for illustration.</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="c1"># Sleep between polls to avoid burning Athena API throttle budget, and</span>
+    <span class="c1"># cap iterations so a stuck query cannot spin indefinitely.</span>
+    <span class="n">max_polls</span> <span class="o">=</span> <span class="mi">120</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_polls</span><span class="p">):</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">athena</span><span class="o">.</span><span class="n">get_query_execution</span><span class="p">(</span><span class="n">QueryExecutionId</span><span class="o">=</span><span class="n">execution_id</span><span class="p">)</span>
         <span class="n">status</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;QueryExecution&quot;</span><span class="p">][</span><span class="s2">&quot;Status&quot;</span><span class="p">][</span><span class="s2">&quot;State&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;SUCCEEDED&quot;</span><span class="p">,</span> <span class="s2">&quot;FAILED&quot;</span><span class="p">,</span> <span class="s2">&quot;CANCELLED&quot;</span><span class="p">):</span>
             <span class="k">break</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;athena_poll_timeout&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="n">provider_id</span><span class="p">,</span>
+            <span class="s2">&quot;execution_id&quot;</span><span class="p">:</span> <span class="n">execution_id</span><span class="p">,</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;SUCCEEDED&quot;</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;evidence_query_failed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
             <span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="n">provider_id</span><span class="p">,</span>
@@ -1751,15 +1813,17 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_notify_analysts</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Publish a minimal notification to the payment integrity SNS topic.</span>
-<span class="sd">    The message carries the case id only; the analyst UI fetches the</span>
-<span class="sd">    full record by id so the notification channel never carries PHI.</span>
+<span class="sd">    The message carries the case id and routing tier only; the analyst UI</span>
+<span class="sd">    fetches the full record by id so the notification channel never</span>
+<span class="sd">    carries PHI or PHI-adjacent identifiers (provider IDs, exposure</span>
+<span class="sd">    dollars, signal details). SNS messages traverse infrastructure</span>
+<span class="sd">    (mobile push, email previews, Slack webhooks) that may not be</span>
+<span class="sd">    governed to the same standard as the case registry.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">message</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;case_id&quot;</span><span class="p">:</span>     <span class="n">case</span><span class="p">[</span><span class="s2">&quot;case_id&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;provider_id&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;severity&quot;</span><span class="p">:</span>    <span class="n">case</span><span class="p">[</span><span class="s2">&quot;overall_severity&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;routing&quot;</span><span class="p">:</span>     <span class="n">case</span><span class="p">[</span><span class="s2">&quot;routing&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;created_at&quot;</span><span class="p">:</span>  <span class="n">case</span><span class="p">[</span><span class="s2">&quot;created_at&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;case_id&quot;</span><span class="p">:</span>      <span class="n">case</span><span class="p">[</span><span class="s2">&quot;case_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;routing_tier&quot;</span><span class="p">:</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;routing&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;severity_band&quot;</span><span class="p">:</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;overall_severity&quot;</span><span class="p">],</span>
     <span class="p">}</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
         <span class="n">TopicArn</span><span class="o">=</span><span class="n">ANALYST_NOTIFICATION_TOPIC_ARN</span><span class="p">,</span>
@@ -1767,7 +1831,7 @@
         <span class="n">Subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;New </span><span class="si">{</span><span class="n">case</span><span class="p">[</span><span class="s1">&#39;overall_severity&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">-severity case: </span><span class="si">{</span><span class="n">case</span><span class="p">[</span><span class="s1">&#39;case_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_emit_metric</span><span class="p">(</span><span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_emit_metric</span><span class="p">(</span><span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Publish an operational metric to CloudWatch. Includes the scorer</span>
 <span class="sd">    version as a standard dimension so regressions can be attributed to</span>
@@ -1806,6 +1870,18 @@
 <span class="sd">      case_id, disposition, notes, resolved_at, resolved_by,</span>
 <span class="sd">      dollars_recovered, referred_to_siu (bool), provider_educated (bool)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Validate required fields before any side effect. A malformed event</span>
+    <span class="c1"># from the analyst tooling should fail loudly rather than propagating</span>
+    <span class="c1"># as a KeyError deep inside a DynamoDB update or S3 write.</span>
+    <span class="n">required_fields</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;case_id&quot;</span><span class="p">,</span> <span class="s2">&quot;disposition&quot;</span><span class="p">,</span> <span class="s2">&quot;resolved_at&quot;</span><span class="p">,</span> <span class="s2">&quot;resolved_by&quot;</span><span class="p">)</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">required_fields</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">event</span> <span class="ow">or</span> <span class="n">event</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;outcome_event_missing_fields&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">missing</span><span class="p">,</span>
+            <span class="s2">&quot;event_keys&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+        <span class="p">})</span>
+        <span class="k">return</span>
+
     <span class="n">case_id</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;case_id&quot;</span><span class="p">]</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CASE_REGISTRY_TABLE</span><span class="p">)</span>
 
@@ -1868,7 +1944,7 @@
     <span class="p">})</span>
     <span class="n">_emit_metric</span><span class="p">(</span>
         <span class="s2">&quot;dollars_recovered&quot;</span><span class="p">,</span>
-        <span class="n">value</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dollars_recovered&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+        <span class="n">value</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dollars_recovered&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
         <span class="n">dimensions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;overall_severity&quot;</span><span class="p">]},</span>
     <span class="p">)</span>
     <span class="n">_emit_metric</span><span class="p">(</span><span class="s2">&quot;outcome_by_severity&quot;</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="p">{</span>
@@ -1917,6 +1993,7 @@
         <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">training_row</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
         <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
         <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="n">SSEKMSKeyId</span><span class="o">=</span><span class="n">S3_KMS_KEY_ARN</span><span class="p">,</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -1982,7 +2059,7 @@
     <span class="n">sample_claims</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span>
         <span class="c1"># --- An internist who shifted E&amp;M distribution upward ---</span>
         <span class="p">{</span><span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PRV-0044721&quot;</span><span class="p">,</span> <span class="s2">&quot;claim_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;CLM-A-</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-         <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-A-</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">40</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;service_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-05-10&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-A-</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">40</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;service_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2025-01-10&quot;</span><span class="p">,</span>
          <span class="s2">&quot;procedure_code&quot;</span><span class="p">:</span> <span class="s2">&quot;99214&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">60</span> <span class="k">else</span> <span class="s2">&quot;99213&quot;</span><span class="p">,</span>
          <span class="s2">&quot;modifiers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;25&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[],</span>
          <span class="s2">&quot;billed_amount&quot;</span><span class="p">:</span> <span class="mf">180.0</span><span class="p">,</span> <span class="s2">&quot;units&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;place_of_service&quot;</span><span class="p">:</span> <span class="s2">&quot;11&quot;</span><span class="p">,</span>
@@ -1991,7 +2068,7 @@
     <span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
         <span class="c1"># --- A dermatology solo practice also billing PT codes (atypical) ---</span>
         <span class="p">{</span><span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PRV-0062104&quot;</span><span class="p">,</span> <span class="s2">&quot;claim_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;CLM-B-</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-         <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-B-</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">30</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;service_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-05-14&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-B-</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">30</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;service_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2025-01-14&quot;</span><span class="p">,</span>
          <span class="s2">&quot;procedure_code&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;17110&quot;</span><span class="p">,</span> <span class="s2">&quot;97110&quot;</span><span class="p">,</span> <span class="s2">&quot;97112&quot;</span><span class="p">][</span><span class="n">i</span> <span class="o">%</span> <span class="mi">3</span><span class="p">],</span>
          <span class="s2">&quot;modifiers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;59&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[],</span>
          <span class="s2">&quot;billed_amount&quot;</span><span class="p">:</span> <span class="mf">220.0</span><span class="p">,</span> <span class="s2">&quot;units&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;place_of_service&quot;</span><span class="p">:</span> <span class="s2">&quot;11&quot;</span><span class="p">,</span>
@@ -2011,8 +2088,8 @@
         <span class="n">claims_df</span><span class="o">=</span><span class="n">sample_claims</span><span class="p">,</span>
         <span class="n">history_df</span><span class="o">=</span><span class="n">sample_history</span><span class="p">,</span>
         <span class="n">provider_master_df</span><span class="o">=</span><span class="n">sample_provider_master</span><span class="p">,</span>
-        <span class="n">period_start</span><span class="o">=</span><span class="s2">&quot;2026-05-01&quot;</span><span class="p">,</span>
-        <span class="n">period_end</span><span class="o">=</span><span class="s2">&quot;2026-05-31&quot;</span><span class="p">,</span>
+        <span class="n">period_start</span><span class="o">=</span><span class="s2">&quot;2025-01-01&quot;</span><span class="p">,</span>
+        <span class="n">period_end</span><span class="o">=</span><span class="s2">&quot;2025-01-31&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="nb">print</span><span class="p">()</span>
@@ -2103,6 +2180,7 @@
         <span class="n">Key</span><span class="o">=</span><span class="n">version_key</span><span class="p">,</span>
         <span class="n">Body</span><span class="o">=</span><span class="n">buf</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span>
         <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="n">SSEKMSKeyId</span><span class="o">=</span><span class="n">S3_KMS_KEY_ARN</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># 6. Update the &#39;current&#39; pointer. In production, register in the</span>
@@ -2113,6 +2191,7 @@
         <span class="n">Key</span><span class="o">=</span><span class="s2">&quot;current/isolation_forest.joblib&quot;</span><span class="p">,</span>
         <span class="n">CopySource</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Bucket&quot;</span><span class="p">:</span> <span class="n">MODEL_ARTIFACTS_BUCKET</span><span class="p">,</span> <span class="s2">&quot;Key&quot;</span><span class="p">:</span> <span class="n">version_key</span><span class="p">},</span>
         <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="n">SSEKMSKeyId</span><span class="o">=</span><span class="n">S3_KMS_KEY_ARN</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;trained&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;version_key&quot;</span><span class="p">:</span> <span class="n">version_key</span><span class="p">,</span> <span class="s2">&quot;rows&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))}</span>

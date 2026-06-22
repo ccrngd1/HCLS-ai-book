@@ -522,8 +522,8 @@
 <li><code>dynamodb:PutItem</code>, <code>dynamodb:Query</code>, <code>dynamodb:GetItem</code> on the <code>claim-history</code> and <code>claim-labels</code> tables (and on the <code>content_hash_index</code> GSI on <code>claim-history</code>)</li>
 <li><code>s3:GetObject</code> on the raw 837 bucket, <code>s3:PutObject</code> on the normalized-claims and labels buckets</li>
 <li><code>sqs:SendMessage</code> on the review queue ARN</li>
-<li><code>events:PutEvents</code> on the EventBridge bus (for publishing examiner-verdict events from the workstation side)</li>
 <li><code>cloudwatch:PutMetricData</code> for the operational metrics</li>
+<li>(On the examiner workstation side, not in this file: <code>events:PutEvents</code> on the EventBridge bus for publishing verdict events)</li>
 </ul>
 <p>Scope each Lambda's IAM role to the specific resource ARNs it touches. The tutorial-level permissions above are fine for learning and will fail any serious IAM review. In production, each of the three Lambdas (parser, detector, label-writer) gets its own role with the minimum permissions for its job.</p>
 <p>A few things worth knowing upfront:</p>
@@ -554,6 +554,9 @@
 <span class="c1"># service is a re-identification risk even without a name), so we log</span>
 <span class="c1"># structural metadata only. Never log full claim bodies, member IDs, diagnosis</span>
 <span class="c1"># codes, or similarity score components in regular application logs.</span>
+<span class="c1"># logging.basicConfig is a no-op when Lambda configures the root logger, but</span>
+<span class="c1"># it makes structured log lines visible when running this file directly.</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2"> </span><span class="si">%(name)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
@@ -570,7 +573,9 @@
 <span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
 <span class="n">sqs_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sqs&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
 <span class="n">cloudwatch</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;cloudwatch&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
-<span class="n">eventbridge</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="c1"># The examiner workstation (a separate component, not included here) publishes</span>
+<span class="c1"># verdict events to EventBridge. This file&#39;s on_examiner_verdict is a consumer</span>
+<span class="c1"># of those events and does not need the events client.</span>
 
 <span class="c1"># --- Resource Names ---</span>
 <span class="c1"># Fill these in with your actual resource names.</span>
@@ -582,9 +587,18 @@
 <span class="n">REVIEW_QUEUE_URL</span> <span class="o">=</span> <span class="s2">&quot;https://sqs.us-east-1.amazonaws.com/123456789012/claim-review-queue&quot;</span>
 <span class="n">EVENT_BUS_NAME</span> <span class="o">=</span> <span class="s2">&quot;claim-events&quot;</span>
 
-<span class="c1"># Deploy-time guardrail: catch unreplaced example values.</span>
-<span class="k">assert</span> <span class="s2">&quot;123456789012&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">REVIEW_QUEUE_URL</span><span class="p">,</span> \
-    <span class="s2">&quot;REVIEW_QUEUE_URL still uses the example AWS account ID. Replace before deploying.&quot;</span>
+<span class="c1"># Customer-managed KMS key ARNs. Distinct keys per bucket so rotation and</span>
+<span class="c1"># access grants can be scoped independently. Replace with your actual ARNs.</span>
+<span class="n">NORMALIZED_CLAIMS_CMK_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:kms:us-east-1:123456789012:key/your-normalized-claims-key-id&quot;</span>
+<span class="n">LABELS_CMK_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:kms:us-east-1:123456789012:key/your-labels-key-id&quot;</span>
+
+<span class="c1"># Runtime guardrail: warn on unreplaced placeholder values so the reader</span>
+<span class="c1"># knows which constants still need real values, without blocking import.</span>
+<span class="k">if</span> <span class="s2">&quot;123456789012&quot;</span> <span class="ow">in</span> <span class="n">REVIEW_QUEUE_URL</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+        <span class="s2">&quot;REVIEW_QUEUE_URL still uses the example AWS account ID. &quot;</span>
+        <span class="s2">&quot;Replace before deploying; route_claim will attempt to call a queue that does not exist.&quot;</span>
+    <span class="p">)</span>
 
 <span class="c1"># --- Scorer Version ---</span>
 <span class="c1"># Every routing decision and every captured label records the scorer version</span>
@@ -736,16 +750,15 @@
         <span class="nb">str</span><span class="p">(</span><span class="n">normalized</span><span class="p">[</span><span class="s2">&quot;billed_amount&quot;</span><span class="p">]),</span>
     <span class="p">])</span>
 
-    <span class="c1"># Blocking hash: coarser than the content hash. The goal is to group</span>
-    <span class="c1"># claims into small buckets such that any two claims in the same bucket</span>
-    <span class="c1"># are plausibly duplicates. The date is rounded to YYYY-MM so nearby-</span>
-    <span class="c1"># date claims land in the same block; date proximity is scored later.</span>
-    <span class="c1"># The billing NPI is truncated to its first four digits so claims from</span>
-    <span class="c1"># the same billing organization land together even if the individual</span>
-    <span class="c1"># rendering NPI shifts between submissions.</span>
+    <span class="c1"># Blocking hash: coarser than content_hash, used to find candidates for</span>
+    <span class="c1"># fuzzy comparison. We block on patient + month; NPI variation across</span>
+    <span class="c1"># submissions is handled by per-field NPI similarity in the scorer.</span>
+    <span class="c1"># NPIs are issued sequentially by NPPES and have no hierarchical structure</span>
+    <span class="c1"># by organization, so an NPI prefix is not a usable org-level block.</span>
+    <span class="c1"># For multi-NPI organizations (same tax ID, different NPIs), feed a</span>
+    <span class="c1"># provider-hierarchy lookup into the blocking key; see Recipe 5.1.</span>
     <span class="n">blocking_hash</span> <span class="o">=</span> <span class="n">_sha256_of_parts</span><span class="p">([</span>
         <span class="n">normalized</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
-        <span class="n">normalized</span><span class="p">[</span><span class="s2">&quot;billing_npi&quot;</span><span class="p">][:</span><span class="mi">4</span><span class="p">],</span>
         <span class="n">normalized</span><span class="p">[</span><span class="s2">&quot;date_of_service&quot;</span><span class="p">][:</span><span class="mi">7</span><span class="p">],</span>  <span class="c1"># YYYY-MM</span>
     <span class="p">])</span>
 
@@ -847,6 +860,7 @@
         <span class="c1"># Enforce it at the bucket policy level as well; don&#39;t rely on the</span>
         <span class="c1"># per-PutObject flag alone.</span>
         <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="n">SSEKMSKeyId</span><span class="o">=</span><span class="n">NORMALIZED_CLAIMS_CMK_ARN</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -1265,9 +1279,10 @@
         <span class="s2">&quot;examiner_id&quot;</span><span class="p">:</span>              <span class="n">event</span><span class="p">[</span><span class="s2">&quot;examiner_id&quot;</span><span class="p">],</span>
         <span class="s2">&quot;verdict&quot;</span><span class="p">:</span>                  <span class="n">event</span><span class="p">[</span><span class="s2">&quot;verdict&quot;</span><span class="p">],</span>
         <span class="s2">&quot;reasoning_code&quot;</span><span class="p">:</span>           <span class="n">event</span><span class="p">[</span><span class="s2">&quot;reasoning_code&quot;</span><span class="p">],</span>
-        <span class="c1"># Free-text reasoning may include PHI references. Encrypt at rest</span>
-        <span class="c1"># and scope read access tightly. Retention follows your PHI policy.</span>
-        <span class="s2">&quot;reasoning_text&quot;</span><span class="p">:</span>           <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="c1"># Free-text reasoning may include PHI references. Scrub common</span>
+        <span class="c1"># identifier patterns before writing to the long-lived label store.</span>
+        <span class="c1"># The structured reasoning_code carries the operational signal.</span>
+        <span class="s2">&quot;reasoning_text&quot;</span><span class="p">:</span>           <span class="n">_scrub_phi_text</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span>
         <span class="s2">&quot;scorer_version&quot;</span><span class="p">:</span>           <span class="n">event</span><span class="p">[</span><span class="s2">&quot;scorer_version&quot;</span><span class="p">],</span>
         <span class="s2">&quot;score_at_decision&quot;</span><span class="p">:</span>        <span class="n">_to_decimal</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s2">&quot;score_at_decision&quot;</span><span class="p">]),</span>
         <span class="s2">&quot;components_at_decision&quot;</span><span class="p">:</span>   <span class="p">{</span>
@@ -1293,6 +1308,7 @@
         <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
         <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
         <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="n">SSEKMSKeyId</span><span class="o">=</span><span class="n">LABELS_CMK_ARN</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Operational metrics. Verdict distribution over time is an early</span>
@@ -1310,6 +1326,35 @@
             <span class="s2">&quot;review_sec&quot;</span><span class="p">:</span>     <span class="nb">int</span><span class="p">(</span><span class="n">review_duration_sec</span><span class="p">),</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_scrub_phi_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Best-effort PHI minimization on examiner free-text reasoning.</span>
+
+<span class="sd">    Examiners working with patient records open in another tab routinely</span>
+<span class="sd">    reference MRNs, NPIs, names, and dates of birth in their free-text</span>
+<span class="sd">    justifications. The structured reasoning_code carries the operational</span>
+<span class="sd">    signal; free text is supplementary. Strip common identifier patterns</span>
+<span class="sd">    before writing to the long-lived label store.</span>
+
+<span class="sd">    For production, replace this regex-based pass with AWS Comprehend</span>
+<span class="sd">    Medical PHI detection (DetectPHI API) for higher recall.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">text</span>
+    <span class="c1"># MRN-shaped strings (6-10 digits in identifier contexts)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\bMRN[\s:#]*\d{6,10}\b&quot;</span><span class="p">,</span> <span class="s2">&quot;[REDACTED_MRN]&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="c1"># NPI-shaped strings (10-digit numbers)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b\d</span><span class="si">{10}</span><span class="s2">\b&quot;</span><span class="p">,</span> <span class="s2">&quot;[REDACTED_NPI]&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="c1"># Names following common honorifics</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b(Dr|Mr|Mrs|Ms|Miss)\.?\s+[A-Z][a-z]+&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1. [REDACTED_NAME]&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="c1"># DOB patterns (MM/DD/YYYY, YYYY-MM-DD)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b\d{1,2}/\d{1,2}/\d</span><span class="si">{4}</span><span class="s2">\b&quot;</span><span class="p">,</span> <span class="s2">&quot;[REDACTED_DOB]&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">\b&quot;</span><span class="p">,</span> <span class="s2">&quot;[REDACTED_DATE]&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="c1"># Phone numbers (US patterns)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b\(?\d</span><span class="si">{3}</span><span class="s2">\)?[-.\s]?\d</span><span class="si">{3}</span><span class="s2">[-.\s]?\d</span><span class="si">{4}</span><span class="s2">\b&quot;</span><span class="p">,</span> <span class="s2">&quot;[REDACTED_PHONE]&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_verdict_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>

@@ -619,6 +619,12 @@
 <span class="n">pinpoint_client</span>       <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;pinpoint&quot;</span><span class="p">,</span>
                                      <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                      <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="c1"># Note: secrets_client and pinpoint_client are declared for</span>
+<span class="c1"># completeness (the production architecture uses Secrets</span>
+<span class="c1"># Manager for upstream-system credentials and Pinpoint for</span>
+<span class="c1"># proactive recruitment messaging). The demo exercises them</span>
+<span class="c1"># symbolically; production wires them through their</span>
+<span class="c1"># respective tool-implementation Lambdas.</span>
 <span class="n">connect_client</span>        <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;connect&quot;</span><span class="p">,</span>
                                      <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                      <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
@@ -730,6 +736,16 @@
 <span class="n">DISPOSITION_TRIAL_CLOSED</span>          <span class="o">=</span> <span class="s2">&quot;TRIAL_CLOSED_OR_PAUSED&quot;</span>
 <span class="n">DISPOSITION_OUT_OF_SCOPE</span>          <span class="o">=</span> <span class="s2">&quot;OUT_OF_SCOPE_ROUTED&quot;</span>
 <span class="n">DISPOSITION_EMERGENCY_ROUTED</span>      <span class="o">=</span> <span class="s2">&quot;EMERGENCY_ROUTED&quot;</span>
+
+<span class="n">DISPOSITIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">DISPOSITION_DISQUALIFIED</span><span class="p">,</span>
+    <span class="n">DISPOSITION_UNCERTAIN_PENDING</span><span class="p">,</span>
+    <span class="n">DISPOSITION_LIKELY_ELIGIBLE</span><span class="p">,</span>
+    <span class="n">DISPOSITION_DECLINED_BY_PATIENT</span><span class="p">,</span>
+    <span class="n">DISPOSITION_TRIAL_CLOSED</span><span class="p">,</span>
+    <span class="n">DISPOSITION_OUT_OF_SCOPE</span><span class="p">,</span>
+    <span class="n">DISPOSITION_EMERGENCY_ROUTED</span><span class="p">,</span>
+<span class="p">}</span>
 
 <span class="c1"># --- Trial-state codes ---</span>
 <span class="n">TRIAL_STATE_OPEN</span>                  <span class="o">=</span> <span class="s2">&quot;OPEN_FOR_ENROLLMENT&quot;</span>
@@ -886,6 +902,12 @@
     <span class="s2">&quot;mrn&quot;</span><span class="p">:</span>       <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\bMRN[:\s]*\d+\b&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">),</span>
     <span class="s2">&quot;dob&quot;</span><span class="p">:</span>       <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b\d{1,2}/\d{1,2}/(?:19|20)\d</span><span class="si">{2}</span><span class="s2">\b&quot;</span><span class="p">),</span>
     <span class="s2">&quot;zip5&quot;</span><span class="p">:</span>      <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b\d</span><span class="si">{5}</span><span class="s2">(?:-\d</span><span class="si">{4}</span><span class="s2">)?\b&quot;</span><span class="p">),</span>
+    <span class="c1"># Note: the zip5 pattern over-matches (any 5-digit</span>
+    <span class="c1"># number). Production combines pattern-based redaction</span>
+    <span class="c1"># with a managed PII-detection service (Comprehend or</span>
+    <span class="c1"># Macie) for contextual precision. The pattern is</span>
+    <span class="c1"># acceptable for log-line redaction where false</span>
+    <span class="c1"># positives are preferable to false negatives.</span>
     <span class="s2">&quot;name_hint&quot;</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
         <span class="sa">r</span><span class="s2">&quot;\bmy name is\s+([A-Z][a-z]+\s+[A-Z][a-z]+)&quot;</span><span class="p">,</span>
         <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">),</span>
@@ -1941,6 +1963,12 @@
             <span class="s2">&quot;referral_source&quot;</span><span class="p">:</span>     <span class="n">referral_source</span><span class="p">,</span>
             <span class="s2">&quot;identity&quot;</span><span class="p">:</span>            <span class="n">identity</span><span class="p">,</span>
         <span class="p">}</span>
+        <span class="n">record_funnel_stage</span><span class="p">(</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+            <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
+            <span class="n">stage</span><span class="o">=</span><span class="n">FUNNEL_STAGE_ENTERED</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;channel&quot;</span><span class="p">:</span> <span class="n">channel</span><span class="p">,</span>
+                      <span class="s2">&quot;referral_source&quot;</span><span class="p">:</span> <span class="n">referral_source</span><span class="p">})</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">conversation_state</span> <span class="o">=</span> <span class="n">_from_decimal</span><span class="p">(</span><span class="n">conversation_state</span><span class="p">)</span>
         <span class="c1"># Mid-conversation amendment-version drift triggers</span>
@@ -2607,8 +2635,12 @@
         <span class="p">})</span>
 
     <span class="n">matches</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;retrievalResults&quot;</span><span class="p">,</span> <span class="p">[])</span>
-    <span class="c1"># Apply the per-trial filter post-hoc as the mock does</span>
-    <span class="c1"># not enforce the metadata filter natively.</span>
+    <span class="c1"># Defense-in-depth: production deployments rely on the</span>
+    <span class="c1"># index-time metadata filter (vectorSearchConfiguration</span>
+    <span class="c1"># above) for per-trial isolation correctness. This</span>
+    <span class="c1"># post-hoc check guards against misconfigured filters</span>
+    <span class="c1"># or index-rebuild races; it is not the primary</span>
+    <span class="c1"># isolation mechanism.</span>
     <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">matches</span>
         <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;trial_id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">trial_id</span>
@@ -2705,6 +2737,13 @@
         <span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;trial_id&quot;</span><span class="p">:</span> <span class="n">trial_id</span><span class="p">}</span>
 
     <span class="n">responses</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prescreen_responses&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="c1"># Record prescreen-started on the first captured criterion.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">responses</span><span class="p">:</span>
+        <span class="n">record_funnel_stage</span><span class="p">(</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+            <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
+            <span class="n">stage</span><span class="o">=</span><span class="n">FUNNEL_STAGE_PRESCREEN_STARTED</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;first_criterion&quot;</span><span class="p">:</span> <span class="n">criterion_id</span><span class="p">})</span>
     <span class="n">responses</span><span class="p">[</span><span class="n">criterion_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;value&quot;</span><span class="p">:</span>            <span class="n">patient_response_value</span><span class="p">,</span>
         <span class="s2">&quot;unit&quot;</span><span class="p">:</span>             <span class="n">patient_reported_unit</span><span class="p">,</span>
@@ -2921,15 +2960,56 @@
     <span class="k">if</span> <span class="n">current_disposition</span> <span class="o">==</span> <span class="n">DISPOSITION_DISQUALIFIED</span><span class="p">:</span>
         <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;PrescreenDisqualified&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{</span>
             <span class="s2">&quot;trial_id&quot;</span><span class="p">:</span> <span class="n">trial_id</span><span class="p">})</span>
+        <span class="n">record_funnel_stage</span><span class="p">(</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+            <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
+            <span class="n">stage</span><span class="o">=</span><span class="n">FUNNEL_STAGE_PRESCREEN_COMPLETED</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disposition&quot;</span><span class="p">:</span> <span class="n">current_disposition</span><span class="p">})</span>
     <span class="k">elif</span> <span class="n">current_disposition</span> <span class="o">==</span> <span class="n">DISPOSITION_LIKELY_ELIGIBLE</span><span class="p">:</span>
         <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;PrescreenLikelyEligible&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{</span>
             <span class="s2">&quot;trial_id&quot;</span><span class="p">:</span> <span class="n">trial_id</span><span class="p">})</span>
+        <span class="n">record_funnel_stage</span><span class="p">(</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+            <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
+            <span class="n">stage</span><span class="o">=</span><span class="n">FUNNEL_STAGE_PRESCREEN_COMPLETED</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disposition&quot;</span><span class="p">:</span> <span class="n">current_disposition</span><span class="p">})</span>
     <span class="k">elif</span> <span class="n">current_disposition</span> <span class="o">==</span> <span class="n">DISPOSITION_UNCERTAIN_PENDING</span><span class="p">:</span>
         <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;PrescreenUncertainPending&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{</span>
             <span class="s2">&quot;trial_id&quot;</span><span class="p">:</span> <span class="n">trial_id</span><span class="p">})</span>
+        <span class="n">record_funnel_stage</span><span class="p">(</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+            <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
+            <span class="n">stage</span><span class="o">=</span><span class="n">FUNNEL_STAGE_PRESCREEN_COMPLETED</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disposition&quot;</span><span class="p">:</span> <span class="n">current_disposition</span><span class="p">})</span>
 
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;outcome&quot;</span><span class="p">:</span> <span class="s2">&quot;OK&quot;</span><span class="p">,</span>
             <span class="s2">&quot;current_disposition&quot;</span><span class="p">:</span> <span class="n">current_disposition</span><span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_prescreen_disposition</span><span class="p">(</span><span class="n">prescreen_responses</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate per-criterion evaluation outcomes into a</span>
+<span class="sd">    final disposition. The deterministic engine owns the</span>
+<span class="sd">    disposition vocabulary: if any criterion evaluated to</span>
+<span class="sd">    NOT_MET, the patient is disqualified. If all evaluated</span>
+<span class="sd">    criteria are MET, the patient is likely eligible. If</span>
+<span class="sd">    any criteria are INDETERMINATE or REQUIRES_COORDINATOR,</span>
+<span class="sd">    the disposition is uncertain pending coordinator review.</span>
+<span class="sd">    If no criteria have been evaluated yet, default to</span>
+<span class="sd">    LIKELY_ELIGIBLE (the patient expressed interest and was</span>
+<span class="sd">    not disqualified by any evaluated criterion).&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">prescreen_responses</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DISPOSITION_LIKELY_ELIGIBLE</span>
+
+    <span class="n">outcomes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;evaluation&quot;</span><span class="p">,</span> <span class="n">EVAL_OUTCOME_INDETERMINATE</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">prescreen_responses</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">o</span> <span class="o">==</span> <span class="n">EVAL_OUTCOME_NOT_MET</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">outcomes</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DISPOSITION_DISQUALIFIED</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">o</span> <span class="ow">in</span> <span class="p">(</span><span class="n">EVAL_OUTCOME_INDETERMINATE</span><span class="p">,</span>
+                 <span class="n">EVAL_OUTCOME_REQUIRES_COORDINATOR</span><span class="p">)</span>
+           <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">outcomes</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DISPOSITION_UNCERTAIN_PENDING</span>
+    <span class="k">return</span> <span class="n">DISPOSITION_LIKELY_ELIGIBLE</span>
 </pre></div>
 
 <hr />
@@ -3029,18 +3109,35 @@
     <span class="n">disclosures_shown</span> <span class="o">=</span> <span class="n">conversation_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
         <span class="s2">&quot;disclosures_shown&quot;</span><span class="p">,</span> <span class="p">[])</span>
     <span class="k">if</span> <span class="n">is_first_turn</span><span class="p">:</span>
-        <span class="c1"># The first-turn response should mention the chat-</span>
-        <span class="c1"># tool-not-person disclosure and the can-stop-any-</span>
-        <span class="c1"># time disclosure at minimum.</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;chat&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-                <span class="ow">and</span> <span class="s2">&quot;tool&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-                <span class="ow">and</span> <span class="n">DISCLOSURE_ASSISTANT_NOT_PERSON</span>
-                <span class="ow">not</span> <span class="ow">in</span> <span class="n">disclosures_shown</span><span class="p">):</span>
-            <span class="n">findings</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s2">&quot;category&quot;</span><span class="p">:</span>     <span class="s2">&quot;MISSING_DISCLOSURE&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;severity&quot;</span><span class="p">:</span>     <span class="s2">&quot;WARN&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;disclosure&quot;</span><span class="p">:</span>   <span class="n">DISCLOSURE_ASSISTANT_NOT_PERSON</span><span class="p">,</span>
-            <span class="p">})</span>
+        <span class="c1"># Illustrative check: verify all required first-turn</span>
+        <span class="c1"># disclosures were surfaced. Production uses an</span>
+        <span class="c1"># explicit token taxonomy reviewed by the IRB rather</span>
+        <span class="c1"># than substring matching. This demo checks for</span>
+        <span class="c1"># keywords associated with each disclosure as a</span>
+        <span class="c1"># structural indicator.</span>
+        <span class="n">disclosure_keywords</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">DISCLOSURE_ASSISTANT_NOT_PERSON</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;chat&quot;</span><span class="p">,</span> <span class="s2">&quot;tool&quot;</span><span class="p">],</span>
+            <span class="n">DISCLOSURE_NOT_COORDINATOR</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;not&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinator&quot;</span><span class="p">],</span>
+            <span class="n">DISCLOSURE_CANNOT_ENROLL</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;can&#39;t enroll&quot;</span><span class="p">,</span>
+                                       <span class="s2">&quot;cannot enroll&quot;</span><span class="p">],</span>
+            <span class="n">DISCLOSURE_CAN_STOP_ANY_TIME</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="s2">&quot;any time&quot;</span><span class="p">],</span>
+            <span class="n">DISCLOSURE_REQUEST_COORDINATOR</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;coordinator&quot;</span><span class="p">,</span>
+                                             <span class="s2">&quot;speak with&quot;</span><span class="p">],</span>
+            <span class="n">DISCLOSURE_PROVIDING_INFO_ONLY</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;not medical&quot;</span><span class="p">,</span>
+                                             <span class="s2">&quot;information&quot;</span><span class="p">],</span>
+            <span class="n">DISCLOSURE_DATA_RETENTION_NOTICE</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;record&quot;</span><span class="p">,</span>
+                                               <span class="s2">&quot;retain&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="n">lower_text</span> <span class="o">=</span> <span class="n">response_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">disc_const</span><span class="p">,</span> <span class="n">keywords</span> <span class="ow">in</span> <span class="n">disclosure_keywords</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">disc_const</span> <span class="ow">in</span> <span class="n">disclosures_shown</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">kw</span> <span class="ow">in</span> <span class="n">lower_text</span> <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">):</span>
+                <span class="n">findings</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;category&quot;</span><span class="p">:</span>   <span class="s2">&quot;MISSING_DISCLOSURE&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;severity&quot;</span><span class="p">:</span>   <span class="s2">&quot;WARN&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;disclosure&quot;</span><span class="p">:</span> <span class="n">disc_const</span><span class="p">,</span>
+                <span class="p">})</span>
 
     <span class="c1"># 4. Off-corpus assertion check. The response must</span>
     <span class="c1">#    not include trial-specific factual claims that</span>
@@ -3066,9 +3163,24 @@
     <span class="c1"># 5. Bedrock Guardrail apply. In production this is the</span>
     <span class="c1">#    real bedrock_runtime.apply_guardrail call against</span>
     <span class="c1">#    the recruitment-tuned guardrail. The demo skips</span>
-    <span class="c1">#    the network call and assumes the guardrail</span>
-    <span class="c1">#    response is permitted unless a recommendation</span>
-    <span class="c1">#    pattern fires above.</span>
+    <span class="c1">#    the actual network call but shows the call shape</span>
+    <span class="c1">#    for reference.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">guardrail_response</span> <span class="o">=</span> <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">apply_guardrail</span><span class="p">(</span>
+            <span class="n">guardrailIdentifier</span><span class="o">=</span><span class="n">GUARDRAIL_ID</span><span class="p">,</span>
+            <span class="n">guardrailVersion</span><span class="o">=</span><span class="n">GUARDRAIL_VERSION</span><span class="p">,</span>
+            <span class="n">source</span><span class="o">=</span><span class="s2">&quot;OUTPUT&quot;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">response_text</span><span class="p">}}])</span>
+        <span class="k">if</span> <span class="n">guardrail_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;GUARDRAIL_INTERVENED&quot;</span><span class="p">:</span>
+            <span class="n">findings</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;GUARDRAIL_BLOCKED&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;BLOCK&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;detail&quot;</span><span class="p">:</span>   <span class="n">guardrail_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">})</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="c1"># The mock does not implement apply_guardrail;</span>
+        <span class="c1"># production wires this to the real endpoint.</span>
+        <span class="k">pass</span>
 
     <span class="c1"># Decide overall verdict.</span>
     <span class="n">blocked</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;severity&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;BLOCK&quot;</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">findings</span><span class="p">)</span>
@@ -3195,6 +3307,13 @@
         <span class="n">contact_response</span><span class="p">[</span><span class="s2">&quot;ContactId&quot;</span><span class="p">])</span>
     <span class="n">table_state</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CONVERSATION_STATE_TABLE</span><span class="p">)</span>
     <span class="n">table_state</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">_to_decimal</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+
+    <span class="n">record_funnel_stage</span><span class="p">(</span>
+        <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+        <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
+        <span class="n">stage</span><span class="o">=</span><span class="n">FUNNEL_STAGE_HANDOFF_SCHEDULED</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;handoff_id&quot;</span><span class="p">:</span> <span class="n">handoff_id</span><span class="p">,</span>
+                  <span class="s2">&quot;disposition&quot;</span><span class="p">:</span> <span class="n">disposition</span><span class="p">})</span>
 
     <span class="c1"># Emit funnel-stage event.</span>
     <span class="n">_emit_event</span><span class="p">(</span><span class="s2">&quot;RecruitmentEvent.HandoffQueued&quot;</span><span class="p">,</span> <span class="p">{</span>
@@ -3693,47 +3812,32 @@
     <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">_from_decimal</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
         <span class="n">funnel_stage</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;funnel_stage&quot;</span><span class="p">)</span>
-        <span class="n">prescreen_state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prescreen_state&quot;</span><span class="p">)</span>
-        <span class="c1"># TODO (TechWriter): Code review Issue 1 (WARNING).</span>
-        <span class="c1"># The state&#39;s prescreen_state can be &quot;IN_PROGRESS&quot;</span>
-        <span class="c1"># (set by tool_eligibility_response_capture) when</span>
-        <span class="c1"># the LLM never calls prescreen_save_progress before</span>
-        <span class="c1"># requesting handoff. The `or DISPOSITION_LIKELY_ELIGIBLE`</span>
-        <span class="c1"># fallback only triggers when prescreen_state is</span>
-        <span class="c1"># empty/None, not the string &quot;IN_PROGRESS&quot;, which</span>
-        <span class="c1"># results in a recruitment-decision record persisted</span>
-        <span class="c1"># with disposition=&quot;IN_PROGRESS&quot; outside the</span>
-        <span class="c1"># documented vocabulary. Fix options: (a) add an</span>
-        <span class="c1"># aggregator helper that the chat-handler calls</span>
-        <span class="c1"># before persisting (compute_prescreen_disposition</span>
-        <span class="c1"># _from_responses), normalizing per-criterion</span>
-        <span class="c1"># evaluations into a final DISPOSITION_* value; or</span>
-        <span class="c1"># (b) gate the `disposition=prescreen_state or ...`</span>
-        <span class="c1"># logic on `prescreen_state in DISPOSITIONS` and</span>
-        <span class="c1"># otherwise fall back to a documented default; or</span>
-        <span class="c1"># (c) make the orchestration prompt require the LLM</span>
-        <span class="c1"># to call prescreen_save_progress before requesting</span>
-        <span class="c1"># the handoff. Option (a) matches the</span>
-        <span class="c1"># deterministic-engine-owns-disposition discipline</span>
-        <span class="c1"># the prose advocates.</span>
+        <span class="c1"># Compute the final disposition from per-criterion</span>
+        <span class="c1"># evaluations. The deterministic engine owns the</span>
+        <span class="c1"># disposition: we aggregate per-criterion outcomes</span>
+        <span class="c1"># rather than trusting the raw prescreen_state</span>
+        <span class="c1"># field (which may still be &quot;IN_PROGRESS&quot; if the</span>
+        <span class="c1"># LLM never called prescreen_save_progress).</span>
+        <span class="n">disposition</span> <span class="o">=</span> <span class="n">compute_prescreen_disposition</span><span class="p">(</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prescreen_responses&quot;</span><span class="p">,</span> <span class="p">{}))</span>
         <span class="k">if</span> <span class="n">funnel_stage</span> <span class="o">==</span> <span class="n">FUNNEL_STAGE_HANDOFF_SCHEDULED</span><span class="p">:</span>
             <span class="n">persist_recruitment_decision</span><span class="p">(</span>
                 <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
                 <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
-                <span class="n">disposition</span><span class="o">=</span><span class="n">prescreen_state</span> <span class="ow">or</span> <span class="n">DISPOSITION_LIKELY_ELIGIBLE</span><span class="p">,</span>
+                <span class="n">disposition</span><span class="o">=</span><span class="n">disposition</span><span class="p">,</span>
                 <span class="n">prescreen_summary</span><span class="o">=</span><span class="n">build_prescreen_summary</span><span class="p">(</span>
                     <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
                     <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
                     <span class="n">prescreen_responses</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                         <span class="s2">&quot;prescreen_responses&quot;</span><span class="p">,</span> <span class="p">{}),</span>
-                    <span class="n">disposition</span><span class="o">=</span><span class="n">prescreen_state</span> <span class="ow">or</span> <span class="n">DISPOSITION_LIKELY_ELIGIBLE</span><span class="p">,</span>
+                    <span class="n">disposition</span><span class="o">=</span><span class="n">disposition</span><span class="p">,</span>
                     <span class="n">patient_questions_open</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                         <span class="s2">&quot;patient_questions_open&quot;</span><span class="p">,</span> <span class="p">[])),</span>
                 <span class="n">coordinator_handoff</span><span class="o">=</span><span class="p">{</span>
                     <span class="s2">&quot;handoff_id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;handoff_id&quot;</span><span class="p">),</span>
                 <span class="p">},</span>
                 <span class="n">notes</span><span class="o">=</span><span class="s2">&quot;Coordinator handoff scheduled&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">prescreen_state</span> <span class="o">==</span> <span class="n">DISPOSITION_DISQUALIFIED</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">disposition</span> <span class="o">==</span> <span class="n">DISPOSITION_DISQUALIFIED</span><span class="p">:</span>
             <span class="n">persist_recruitment_decision</span><span class="p">(</span>
                 <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
                 <span class="n">trial_id</span><span class="o">=</span><span class="n">trial_id</span><span class="p">,</span>
@@ -3957,31 +4061,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_seed_scripted_model_responses</span><span class="p">(</span><span class="n">trial_id</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Queue mock model responses for the demo turns. Real</span>
 <span class="sd">    deployments use the real bedrock-runtime client.&quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review Issue 2 (WARNING).</span>
-    <span class="c1"># The mock currently queues six scripted responses</span>
-    <span class="c1"># across four turns, but only Turns 0 and 3 cleanly</span>
-    <span class="c1"># bracket the tool call with a corresponding end-of-turn</span>
-    <span class="c1"># text response. Turns 1 (logistics question -&gt; FAQ</span>
-    <span class="c1"># retrieval) and 2 (age 52 capture -&gt; eligibility</span>
-    <span class="c1"># response capture) fire tool calls then fall through</span>
-    <span class="c1"># to the default mock response, which is the unrelated</span>
-    <span class="c1"># coordinator-handoff fallback (&quot;I appreciate your</span>
-    <span class="c1"># interest. I&#39;d like to connect you with a research</span>
-    <span class="c1"># coordinator...&quot;). The pedagogy issue: a learner</span>
-    <span class="c1"># reading the demo output sees a tool call name</span>
-    <span class="c1"># followed by a coordinator-handoff message that has</span>
-    <span class="c1"># nothing to do with the tool&#39;s purpose, and may infer</span>
-    <span class="c1"># that this is how the loop is supposed to work.</span>
-    <span class="c1"># Fix: either queue end-of-turn responses for Turns 1</span>
-    <span class="c1"># and 2 that actually reference the tool result (for</span>
-    <span class="c1"># example, &quot;Visits run about 90 minutes over 12 months&quot;</span>
-    <span class="c1"># after the FAQ retrieval, or &quot;You&#39;re in the eligible</span>
-    <span class="c1"># age range&quot; after capturing age 52), or restructure</span>
-    <span class="c1"># the demo so the scripted responses cleanly bracket</span>
-    <span class="c1"># each turn&#39;s tool call with the corresponding</span>
-    <span class="c1"># end-of-turn text. Two additional bedrock_runtime</span>
-    <span class="c1"># .queue_response({...}) calls in this function close</span>
-    <span class="c1"># the gap.</span>
+    <span class="c1"># Turn 0, iteration 0: disclosure + tool call to retrieve</span>
+    <span class="c1"># the protocol summary.</span>
     <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">queue_response</span><span class="p">({</span>
         <span class="s2">&quot;stop_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;tool_use&quot;</span><span class="p">,</span>
         <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -4006,6 +4087,8 @@
             <span class="p">},</span>
         <span class="p">],</span>
     <span class="p">})</span>
+    <span class="c1"># Turn 0, iteration 1: end-of-turn text referencing the</span>
+    <span class="c1"># protocol summary tool result.</span>
     <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">queue_response</span><span class="p">({</span>
         <span class="s2">&quot;stop_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;end_turn&quot;</span><span class="p">,</span>
         <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[{</span>
@@ -4024,6 +4107,9 @@
             <span class="p">}],</span>
         <span class="p">}],</span>
     <span class="p">})</span>
+    <span class="c1"># Turn 1, iteration 0: FAQ/logistics question triggers</span>
+    <span class="c1"># the eligibility-question surface tool to begin the</span>
+    <span class="c1"># prescreen alongside answering the logistics question.</span>
     <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">queue_response</span><span class="p">({</span>
         <span class="s2">&quot;stop_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;tool_use&quot;</span><span class="p">,</span>
         <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -4035,6 +4121,28 @@
             <span class="p">},</span>
         <span class="p">],</span>
     <span class="p">})</span>
+    <span class="c1"># Turn 1, iteration 1: end-of-turn text referencing the</span>
+    <span class="c1"># surfaced eligibility criterion and answering the</span>
+    <span class="c1"># logistics question from the FAQ retrieval.</span>
+    <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">queue_response</span><span class="p">({</span>
+        <span class="s2">&quot;stop_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;end_turn&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Per the IRB-approved visit schedule: visits &quot;</span>
+                <span class="s2">&quot;run about 90 minutes each over 12 months, &quot;</span>
+                <span class="s2">&quot;with visits every 4 weeks for the first 3 &quot;</span>
+                <span class="s2">&quot;months and then every 8 weeks after that. &quot;</span>
+                <span class="s2">&quot;To help with the initial screen, could you &quot;</span>
+                <span class="s2">&quot;tell me your age?&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;citations&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;trial_id&quot;</span><span class="p">:</span>  <span class="n">trial_id</span><span class="p">,</span>
+                <span class="s2">&quot;section&quot;</span><span class="p">:</span>   <span class="s2">&quot;visit_schedule&quot;</span><span class="p">,</span>
+            <span class="p">}],</span>
+        <span class="p">}],</span>
+    <span class="p">})</span>
+    <span class="c1"># Turn 2, iteration 0: patient provides age, the model</span>
+    <span class="c1"># calls eligibility_response_capture with the value.</span>
     <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">queue_response</span><span class="p">({</span>
         <span class="s2">&quot;stop_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;tool_use&quot;</span><span class="p">,</span>
         <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -4049,6 +4157,26 @@
             <span class="p">},</span>
         <span class="p">],</span>
     <span class="p">})</span>
+    <span class="c1"># Turn 2, iteration 1: end-of-turn text confirming the</span>
+    <span class="c1"># criterion evaluation result.</span>
+    <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">queue_response</span><span class="p">({</span>
+        <span class="s2">&quot;stop_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;end_turn&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Got it, 52. That&#39;s within the eligible &quot;</span>
+                <span class="s2">&quot;age range for this trial (18 to 75). &quot;</span>
+                <span class="s2">&quot;Would you like to continue with the &quot;</span>
+                <span class="s2">&quot;screen, or would you prefer to speak &quot;</span>
+                <span class="s2">&quot;with a research coordinator now?&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;citations&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;trial_id&quot;</span><span class="p">:</span>  <span class="n">trial_id</span><span class="p">,</span>
+                <span class="s2">&quot;section&quot;</span><span class="p">:</span>   <span class="s2">&quot;eligibility_criteria&quot;</span><span class="p">,</span>
+            <span class="p">}],</span>
+        <span class="p">}],</span>
+    <span class="p">})</span>
+    <span class="c1"># Turn 3, iteration 0: patient requests coordinator</span>
+    <span class="c1"># handoff, the model calls coordinator_handoff_request.</span>
     <span class="n">bedrock_runtime</span><span class="o">.</span><span class="n">queue_response</span><span class="p">({</span>
         <span class="s2">&quot;stop_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;tool_use&quot;</span><span class="p">,</span>
         <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>

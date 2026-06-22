@@ -1000,8 +1000,13 @@
 
 <hr />
 <h2 id="step-5-store-phenotype-assignments">Step 5: Store Phenotype Assignments</h2>
-<p><em>The pseudocode calls this <code>store_phenotype_assignment(patient_id, phenotype, confidence, feature_snapshot)</code>. This writes each patient's phenotype to DynamoDB for real-time lookup by care management systems. Includes a staleness date so downstream systems know when to trigger re-evaluation.</em></p>
+<p><em>The pseudocode calls this <code>store_phenotype_assignment(patient_id, phenotype, confidence, feature_snapshot)</code>. This writes each patient's phenotype to DynamoDB for real-time lookup by care management systems. Includes a staleness date so downstream systems know when to trigger re-evaluation. Note: the feature snapshot itself is derived PHI. In production, store the full snapshot in S3 (KMS-encrypted) and write only the S3 URI to DynamoDB. This reduces the PHI surface in the real-time lookup store.</em></p>
 <div class="code"><pre><span></span><span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># In production, the feature snapshot bucket holds derived PHI subject to</span>
+<span class="c1"># the same retention and access controls as source clinical data.</span>
+<span class="n">SNAPSHOT_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;phenotype-feature-snapshots&quot;</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">store_phenotype_assignment</span><span class="p">(</span>
     <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1019,6 +1024,9 @@
 <span class="sd">    - When it expires (stale_after date)</span>
 <span class="sd">    - The model version that produced it (for reproducibility)</span>
 
+<span class="sd">    The feature snapshot (derived PHI) is stored in S3 and referenced</span>
+<span class="sd">    by URI in DynamoDB to reduce PHI surface in the real-time store.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        patient_id: Patient identifier (partition key).</span>
 <span class="sd">        phenotype: The phenotype profile dict from characterize_phenotypes.</span>
@@ -1035,6 +1043,16 @@
     <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
     <span class="n">stale_date</span> <span class="o">=</span> <span class="p">(</span><span class="n">now</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">STALENESS_THRESHOLD_DAYS</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
 
+    <span class="c1"># In production, write the feature snapshot to S3 and store the URI:</span>
+    <span class="c1"># snapshot_key = f&quot;snapshots/{patient_id}/{now.strftime(&#39;%Y%m%dT%H%M%S&#39;)}.json&quot;</span>
+    <span class="c1"># s3_client.put_object(</span>
+    <span class="c1">#     Bucket=SNAPSHOT_BUCKET,</span>
+    <span class="c1">#     Key=snapshot_key,</span>
+    <span class="c1">#     Body=json.dumps(feature_snapshot),</span>
+    <span class="c1">#     ServerSideEncryption=&quot;aws:kms&quot;,</span>
+    <span class="c1"># )</span>
+    <span class="c1"># snapshot_uri = f&quot;s3://{SNAPSHOT_BUCKET}/{snapshot_key}&quot;</span>
+
     <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
         <span class="s2">&quot;phenotype_id&quot;</span><span class="p">:</span> <span class="n">phenotype</span><span class="p">[</span><span class="s2">&quot;cluster_id&quot;</span><span class="p">],</span>
@@ -1044,6 +1062,7 @@
         <span class="s2">&quot;assigned_date&quot;</span><span class="p">:</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
         <span class="s2">&quot;stale_after&quot;</span><span class="p">:</span> <span class="n">stale_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
         <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">model_version</span><span class="p">,</span>
+        <span class="c1"># &quot;feature_snapshot_uri&quot;: snapshot_uri,  # Production: S3 reference, not inline PHI</span>
     <span class="p">}</span>
 
     <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>

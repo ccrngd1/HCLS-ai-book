@@ -524,7 +524,7 @@
 <li><code>dynamodb:GetItem</code></li>
 <li><code>dynamodb:Query</code></li>
 </ul>
-<p>No BAA-covered data in development. Use synthetic clinical notes only. The MIMIC-III dataset on PhysioNet provides de-identified clinical text if you need realistic content for testing.</p>
+<p>No BAA-covered data in development. Use synthetic clinical notes only. The MIMIC-IV dataset on PhysioNet provides de-identified clinical text if you need realistic content for testing.</p>
 <hr />
 <h2 id="configuration-and-constants">Configuration and Constants</h2>
 <p>These live at the top of the module. Thresholds, rules, and table names are configuration, not logic. You'll tune these as your coders provide feedback on suggestion quality.</p>
@@ -669,39 +669,47 @@
 <span class="sd">    return an entity for &quot;chest pain&quot; but it will have the NEGATION trait, which</span>
 <span class="sd">    we filter on in Step 3.</span>
 
+<span class="sd">    Includes retry with exponential backoff for transient failures.</span>
+<span class="sd">    On persistent failure, returns an empty list so the coder can still work</span>
+<span class="sd">    without suggestions rather than receiving an HTTP 500.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        clinical_text: Preprocessed note text (output of preprocess_note).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        List of entity dicts from the API response.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">infer_icd10_cm</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">clinical_text</span><span class="p">)</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">botocore.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClientError</span>
 
-    <span class="c1"># Response structure:</span>
-    <span class="c1"># {</span>
-    <span class="c1">#   &quot;Entities&quot;: [</span>
-    <span class="c1">#     {</span>
-    <span class="c1">#       &quot;Id&quot;: 0,</span>
-    <span class="c1">#       &quot;Text&quot;: &quot;Type 2 diabetes&quot;,</span>
-    <span class="c1">#       &quot;Category&quot;: &quot;MEDICAL_CONDITION&quot;,</span>
-    <span class="c1">#       &quot;Type&quot;: &quot;DX_NAME&quot;,</span>
-    <span class="c1">#       &quot;Score&quot;: 0.95,</span>
-    <span class="c1">#       &quot;BeginOffset&quot;: 142,</span>
-    <span class="c1">#       &quot;EndOffset&quot;: 158,</span>
-    <span class="c1">#       &quot;Traits&quot;: [{&quot;Name&quot;: &quot;DIAGNOSIS&quot;, &quot;Score&quot;: 0.93}],</span>
-    <span class="c1">#       &quot;ICD10CMConcepts&quot;: [</span>
-    <span class="c1">#         {&quot;Code&quot;: &quot;E11.9&quot;, &quot;Description&quot;: &quot;Type 2 diabetes mellitus without complications&quot;, &quot;Score&quot;: 0.82},</span>
-    <span class="c1">#         {&quot;Code&quot;: &quot;E11.65&quot;, &quot;Description&quot;: &quot;Type 2 diabetes mellitus with hyperglycemia&quot;, &quot;Score&quot;: 0.71},</span>
-    <span class="c1">#         ...</span>
-    <span class="c1">#       ]</span>
-    <span class="c1">#     },</span>
-    <span class="c1">#     ...</span>
-    <span class="c1">#   ]</span>
-    <span class="c1"># }</span>
+    <span class="n">max_retries</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">retry_delays</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># seconds</span>
 
-    <span class="n">entities</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[])</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;InferICD10CM returned </span><span class="si">%d</span><span class="s2"> entities&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">entities</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">entities</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">infer_icd10_cm</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">clinical_text</span><span class="p">)</span>
+            <span class="n">entities</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;InferICD10CM returned </span><span class="si">%d</span><span class="s2"> entities&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">entities</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">entities</span>
+        <span class="k">except</span> <span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">error_code</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Error&quot;</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">error_code</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ThrottlingException&quot;</span><span class="p">,</span> <span class="s2">&quot;InternalServerException&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;InferICD10CM </span><span class="si">%s</span><span class="s2"> on attempt </span><span class="si">%d</span><span class="s2">, retrying in </span><span class="si">%d</span><span class="s2">s&quot;</span><span class="p">,</span>
+                        <span class="n">error_code</span><span class="p">,</span> <span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">retry_delays</span><span class="p">[</span><span class="n">attempt</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">retry_delays</span><span class="p">[</span><span class="n">attempt</span><span class="p">])</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;InferICD10CM unavailable after </span><span class="si">%d</span><span class="s2"> retries&quot;</span><span class="p">,</span> <span class="n">max_retries</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="p">[]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Non-retryable error (InvalidRequestException, etc.)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;InferICD10CM non-retryable error: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">error_code</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">return</span> <span class="p">[]</span>  <span class="c1"># Should not reach here, but satisfy linters</span>
 </pre></div>
 
 <hr />
@@ -861,7 +869,7 @@
 <hr />
 <h2 id="step-5-store-results-and-build-response">Step 5: Store Results and Build Response</h2>
 <p><em>Maps to the pseudocode's <code>store_and_respond(encounter_id, suggestions, original_note_length)</code>. The final step persists suggestions for audit trail and feedback collection, then returns the ranked list to the caller. Every suggestion includes its source text so the coder can see exactly what triggered it. DynamoDB requires Decimal for numbers (not float), which is why we wrap scores here.</em></p>
-<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_and_respond</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">suggestions</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">note_char_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_and_respond</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">requester_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">suggestions</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">note_char_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Persist suggestion results to DynamoDB and build the API response.</span>
 
@@ -872,6 +880,8 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        encounter_id: Unique identifier for the clinical encounter.</span>
+<span class="sd">        requester_id: Identity of the coder who triggered this request</span>
+<span class="sd">                      (HIPAA minimum necessary: track who accessed what).</span>
 <span class="sd">        suggestions: Final ranked suggestion list from apply_coding_rules.</span>
 <span class="sd">        note_char_count: Character count of the original (pre-processed) note.</span>
 
@@ -882,6 +892,7 @@
 
     <span class="n">response_payload</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;encounter_id&quot;</span><span class="p">:</span> <span class="n">encounter_id</span><span class="p">,</span>
+        <span class="s2">&quot;requester_id&quot;</span><span class="p">:</span> <span class="n">requester_id</span><span class="p">,</span>
         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
         <span class="s2">&quot;note_char_count&quot;</span><span class="p">:</span> <span class="n">note_char_count</span><span class="p">,</span>
         <span class="s2">&quot;suggestion_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">suggestions</span><span class="p">),</span>
@@ -894,6 +905,7 @@
 
     <span class="n">dynamo_item</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;encounter_id&quot;</span><span class="p">:</span> <span class="n">encounter_id</span><span class="p">,</span>
+        <span class="s2">&quot;requester_id&quot;</span><span class="p">:</span> <span class="n">requester_id</span><span class="p">,</span>
         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
         <span class="s2">&quot;note_char_count&quot;</span><span class="p">:</span> <span class="n">note_char_count</span><span class="p">,</span>
         <span class="s2">&quot;suggestion_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">suggestions</span><span class="p">),</span>
@@ -917,7 +929,7 @@
 <hr />
 <h2 id="full-pipeline-putting-it-all-together">Full Pipeline: Putting It All Together</h2>
 <p>This assembles all steps into a single callable function. In a Lambda deployment, this is your handler's core logic. The Lambda receives the encounter ID and note text from API Gateway, runs the pipeline, and returns the suggestion JSON.</p>
-<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">suggest_icd10_codes</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">clinical_note</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">suggest_icd10_codes</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">requester_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">clinical_note</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    End-to-end ICD-10 code suggestion pipeline.</span>
 
@@ -927,6 +939,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        encounter_id: Unique encounter identifier (from the EHR system).</span>
+<span class="sd">        requester_id: Identity of the requesting coder (from request headers).</span>
 <span class="sd">        clinical_note: Raw clinical note text.</span>
 
 <span class="sd">    Returns:</span>
@@ -950,7 +963,7 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;       </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">refined</span><span class="p">)</span><span class="si">}</span><span class="s2"> suggestions after rules&quot;</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[5/5] Storing results...&quot;</span><span class="p">)</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">store_and_respond</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">,</span> <span class="n">refined</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">clinical_note</span><span class="p">))</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">store_and_respond</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">,</span> <span class="n">requester_id</span><span class="p">,</span> <span class="n">refined</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">clinical_note</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;       Done. </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;suggestion_count&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> suggestions returned.&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">result</span>
@@ -1005,6 +1018,7 @@
 
     <span class="n">result</span> <span class="o">=</span> <span class="n">suggest_icd10_codes</span><span class="p">(</span>
         <span class="n">encounter_id</span><span class="o">=</span><span class="s2">&quot;ENC-DEMO-20260315&quot;</span><span class="p">,</span>
+        <span class="n">requester_id</span><span class="o">=</span><span class="s2">&quot;coder-jsmith-01&quot;</span><span class="p">,</span>
         <span class="n">clinical_note</span><span class="o">=</span><span class="n">SAMPLE_NOTE</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -1019,6 +1033,7 @@
 <p>Running the example above against Comprehend Medical produces output like this (actual scores vary slightly per API call):</p>
 <div class="code"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;encounter_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ENC-DEMO-20260315&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;requester_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;coder-jsmith-01&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-15T14:22:08.441Z&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;note_char_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1642</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;suggestion_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span>
@@ -1096,7 +1111,7 @@
 <p><strong>VPC and network isolation.</strong> This example makes API calls over the public internet. A production Lambda handling PHI runs inside a VPC with private subnets. You'll need VPC endpoints for Comprehend Medical (<code>com.amazonaws.{region}.comprehendmedical</code>), DynamoDB (<code>com.amazonaws.{region}.dynamodb</code>), and CloudWatch Logs. Without VPC endpoints, Lambda in a private subnet can't reach these services.</p>
 <p><strong>DynamoDB Decimal requirement.</strong> This example already handles the Decimal conversion (see Step 5's <code>json.loads(..., parse_float=Decimal)</code> pattern). If you add numeric fields to the DynamoDB item later, remember: raw Python floats will throw <code>TypeError</code> at write time. Always serialize through the <code>parse_float=Decimal</code> trick or wrap explicitly.</p>
 <p><strong>Cost at scale.</strong> Comprehend Medical InferICD10CM costs approximately $0.01 per 100 characters. A 2,500-character note costs about $0.025. At 10,000 encounters per day, that's $250/day in API costs alone. If cost is a concern, consider batching suggestions (run once when the note is signed rather than on every edit), caching results for unchanged notes, or training a custom model on SageMaker that you host at a fixed monthly cost regardless of volume.</p>
-<p><strong>Testing without real PHI.</strong> Never use real patient notes in development or test environments. Synthetic notes (like the example above) cover the common patterns. For systematic testing, generate a corpus of synthetic notes covering different specialties, documentation styles, and code distributions. The MIMIC-III dataset provides de-identified text for research purposes (requires PhysioNet credentialing). Your test suite should include notes with heavy negation, sparse documentation, and rare conditions to exercise edge cases.</p>
+<p><strong>Testing without real PHI.</strong> Never use real patient notes in development or test environments. Synthetic notes (like the example above) cover the common patterns. For systematic testing, generate a corpus of synthetic notes covering different specialties, documentation styles, and code distributions. The MIMIC-IV dataset provides de-identified text for research purposes (requires PhysioNet credentialing). Your test suite should include notes with heavy negation, sparse documentation, and rare conditions to exercise edge cases.</p>
 <hr />
 <p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter08.03-icd-10-code-suggestion.html">Recipe 8.3: ICD-10 Code Suggestion</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
 

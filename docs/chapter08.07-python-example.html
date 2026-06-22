@@ -776,6 +776,8 @@ Start here to understand the concepts. Don't ship this as-is.</p>
 
     <span class="c1"># Normalize medication names to RxNorm codes.</span>
     <span class="c1"># This enables cross-note aggregation: &quot;amlodipine&quot; and &quot;Norvasc&quot; map to the same CUI.</span>
+    <span class="c1"># Production optimization: cache results by med[&quot;text&quot;] to avoid duplicate API calls.</span>
+    <span class="c1"># A note mentioning the same drug multiple times only needs one InferRxNorm lookup.</span>
     <span class="k">for</span> <span class="n">med</span> <span class="ow">in</span> <span class="n">medications</span><span class="p">:</span>
         <span class="n">rxnorm_response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">infer_rx_norm</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">med</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span>
         <span class="n">concepts</span> <span class="o">=</span> <span class="n">rxnorm_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[])</span>
@@ -822,7 +824,8 @@ Start here to understand the concepts. Don't ship this as-is.</p>
         <span class="c1"># Keep everything else. Comprehend Medical does not currently expose a</span>
         <span class="c1"># dedicated &quot;FAMILY_HISTORY&quot; trait on MEDICAL_CONDITION entities, so we</span>
         <span class="c1"># rely on section detection or manual rules for that in production.</span>
-        <span class="c1"># TODO: verify trait coverage in latest Comprehend Medical API version</span>
+        <span class="c1"># A production implementation would parse note section headers and use</span>
+        <span class="c1"># offset ranges to identify conditions documented under &quot;Family History.&quot;</span>
         <span class="n">active</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">active</span>
@@ -878,15 +881,17 @@ Start here to understand the concepts. Don't ship this as-is.</p>
                 <span class="s2">&quot;since starting&quot;</span><span class="p">,</span> <span class="s2">&quot;after beginning&quot;</span><span class="p">,</span> <span class="s2">&quot;after starting&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;since initiating&quot;</span><span class="p">,</span> <span class="s2">&quot;days after&quot;</span><span class="p">,</span> <span class="s2">&quot;weeks after&quot;</span><span class="p">,</span> <span class="s2">&quot;onset after&quot;</span>
             <span class="p">]</span>
+            <span class="n">temporal_found</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">for</span> <span class="n">temporal</span> <span class="ow">in</span> <span class="n">temporals</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">temporal_found</span><span class="p">:</span>
+                    <span class="k">break</span>
                 <span class="n">temporal_text</span> <span class="o">=</span> <span class="n">temporal</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                 <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">temporal_keywords</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">temporal_text</span><span class="p">:</span>
                         <span class="n">evidence_score</span> <span class="o">+=</span> <span class="mf">0.3</span>
                         <span class="n">evidence_reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;temporal_association: </span><span class="si">{</span><span class="n">temporal</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">temporal_found</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="k">break</span>
-                <span class="k">if</span> <span class="n">evidence_score</span> <span class="o">&gt;=</span> <span class="mf">0.3</span> <span class="ow">and</span> <span class="s2">&quot;temporal_association&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">evidence_reasons</span><span class="p">):</span>
-                    <span class="k">break</span>
 
             <span class="c1"># ----- Layer 3: Text proximity -----</span>
             <span class="c1"># Entities in the same sentence or adjacent sentences are more likely</span>
@@ -947,10 +952,11 @@ Start here to understand the concepts. Don't ship this as-is.</p>
             <span class="k">if</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">context_window</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">grade</span><span class="p">,</span> <span class="n">indicator</span>
 
-    <span class="c1"># Default: if documented at all, assume moderate. Grade 1 events are</span>
-    <span class="c1"># often not documented. Absence of severity language suggests the clinician</span>
-    <span class="c1"># found it noteworthy enough to write down.</span>
-    <span class="k">return</span> <span class="s2">&quot;grade_2_moderate&quot;</span><span class="p">,</span> <span class="s2">&quot;default_no_indicators&quot;</span>
+    <span class="c1"># Default: if no severity indicators found, assume Grade 1 (mild).</span>
+    <span class="c1"># Rationale: absence of severity language is consistent with routine mentions.</span>
+    <span class="c1"># Events with actual clinical impact will have documentation context</span>
+    <span class="c1"># (&quot;dose reduced,&quot; &quot;admitted,&quot; &quot;discontinued&quot;) that indicator matching catches.</span>
+    <span class="k">return</span> <span class="s2">&quot;grade_1_mild&quot;</span><span class="p">,</span> <span class="s2">&quot;default_no_indicators&quot;</span>
 </pre></div>
 
 <hr />
@@ -994,12 +1000,20 @@ Start here to understand the concepts. Don't ship this as-is.</p>
     <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">ae_record</span><span class="p">)</span>
 
     <span class="c1"># High-severity: Grade 3+ triggers immediate notification.</span>
+    <span class="c1"># IMPORTANT: Never include patient_id or note_id in SNS messages.</span>
+    <span class="c1"># Subscriber endpoints may not all be within your HIPAA-covered boundary.</span>
     <span class="k">if</span> <span class="n">severity</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;grade_3_severe&quot;</span><span class="p">,</span> <span class="s2">&quot;grade_4_life_threatening&quot;</span><span class="p">):</span>
         <span class="n">sns</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
             <span class="n">TopicArn</span><span class="o">=</span><span class="n">SNS_CRITICAL_TOPIC</span><span class="p">,</span>
             <span class="n">Subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;High-severity adverse event detected: </span><span class="si">{</span><span class="n">severity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
             <span class="n">Message</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ae_record</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;ae_id&quot;</span><span class="p">:</span> <span class="n">ae_id</span><span class="p">,</span>
+                    <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">severity</span><span class="p">,</span>
+                    <span class="s2">&quot;medication&quot;</span><span class="p">:</span> <span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;medication&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;event_description&quot;</span><span class="p">:</span> <span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;event&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;dashboard_link&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;https://safety-dashboard.internal/ae/</span><span class="si">{</span><span class="n">ae_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
                 <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">)</span>
@@ -1035,6 +1049,8 @@ Start here to understand the concepts. Don't ship this as-is.</p>
     <span class="n">recent_events</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[])</span>
 
     <span class="c1"># Group by normalized drug-event pair.</span>
+    <span class="c1"># Note: Uses set() for O(1) dedup and tuple keys for compound grouping.</span>
+    <span class="c1"># Convert sets to lists and tuples to strings if you need JSON serialization.</span>
     <span class="n">pair_counts</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">recent_events</span><span class="p">:</span>
         <span class="n">pair_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rxnorm_code&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;event_description&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
@@ -1131,7 +1147,8 @@ Start here to understand the concepts. Don't ship this as-is.</p>
         <span class="c1"># ae_record = store_adverse_event(note, ae, severity, indicator)</span>
         <span class="c1"># results.append(ae_record)</span>
 
-        <span class="c1"># For demonstration, build the record without writing to DynamoDB</span>
+        <span class="c1"># For demonstration, build the record without writing to DynamoDB.</span>
+        <span class="c1"># Demo uses simplified field names; store_adverse_event uses the full schema.</span>
         <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
             <span class="s2">&quot;ae_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;ae-demo-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
             <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>

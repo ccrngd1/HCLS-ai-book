@@ -522,7 +522,7 @@
 <ul>
 <li><code>s3:GetObject</code>, <code>s3:PutObject</code> on the audio bucket and the transcript bucket, scoped to the per-voicemail key prefixes</li>
 <li><code>transcribe:StartMedicalTranscriptionJob</code>, <code>transcribe:GetMedicalTranscriptionJob</code> for submitting and polling the async ASR jobs</li>
-<li><code>comprehendmedical:DetectEntitiesV2</code> for the medical-entity extraction call</li>
+<li><code>comprehendmedical:DetectEntitiesV2</code>, <code>comprehendmedical:InferRxNorm</code>, <code>comprehendmedical:InferICD10CM</code>, <code>comprehendmedical:InferSNOMEDCT</code> for medical-entity extraction and ontology linking</li>
 <li><code>bedrock:InvokeModel</code> for the classifier, scoped to the specific foundation-model ARN and inference profile in use</li>
 <li><code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code> on the voicemail-records, triage-queue, and patient-index tables</li>
 <li><code>sns:Publish</code> on the emergent-voicemail SNS topic</li>
@@ -1804,28 +1804,25 @@
                        <span class="k">else</span> <span class="s2">&quot;classifier&quot;</span><span class="p">)</span>
 
     <span class="c1"># Step 4E: medical entity extraction.</span>
-    <span class="c1"># TODO (TechWriter): Code review Finding 2 (WARNING) and</span>
-    <span class="c1"># Expert review S1 (HIGH). The fixture data and the list</span>
-    <span class="c1"># comprehensions below imply that detect_entities_v2</span>
-    <span class="c1"># returns RxNorm/ICD-10 concepts on each entity. It does</span>
-    <span class="c1"># not. Production pipelines call DetectEntitiesV2 to get</span>
-    <span class="c1"># entities, then InferRxNorm / InferICD10CM / InferSNOMEDCT</span>
-    <span class="c1"># in parallel and merge the ontology codes by text-offset.</span>
-    <span class="c1"># Either (a) extend the demo to call (and mock) the Infer-*</span>
-    <span class="c1"># APIs alongside DetectEntitiesV2 with a merge step, or</span>
-    <span class="c1"># (b) drop the rxnorm_codes/icd10_codes fields from this</span>
-    <span class="c1"># path and add a comment that ontology linking is a</span>
-    <span class="c1"># separate API surface (the medication_alignment cross-</span>
-    <span class="c1"># reference in enrich_voicemail already falls back to</span>
-    <span class="c1"># text-based matching).</span>
+    <span class="c1"># Entity extraction: in production, four parallel calls to</span>
+    <span class="c1"># Comprehend Medical (DetectEntitiesV2, InferRxNorm,</span>
+    <span class="c1"># InferICD10CM, InferSNOMEDCT) are merged by text offset.</span>
+    <span class="c1"># This demo uses a single mock that returns pre-merged</span>
+    <span class="c1"># entities with ontology codes already attached, simulating</span>
+    <span class="c1"># the merged output. The mock&#39;s fixture data represents</span>
+    <span class="c1"># what the production pipeline would produce after the</span>
+    <span class="c1"># merge step. See the architecture companion for the full</span>
+    <span class="c1"># multi-call pattern.</span>
     <span class="n">entity_response</span> <span class="o">=</span> <span class="n">comprehend_mock</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span>
         <span class="n">text</span><span class="o">=</span><span class="n">transcript_text</span><span class="p">)</span>
     <span class="n">raw_entities</span> <span class="o">=</span> <span class="n">entity_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[])</span>
 
-    <span class="c1"># Filter to the categories the routing logic uses. In</span>
-    <span class="c1"># production Comprehend Medical returns a richer structure</span>
-    <span class="c1"># with attributes, traits, RxNorm/ICD-10/SNOMED concepts;</span>
-    <span class="c1"># the demo flattens a small subset.</span>
+    <span class="c1"># Filter to the categories the routing logic uses. The</span>
+    <span class="c1"># rxnorm_codes and icd10_codes fields below represent</span>
+    <span class="c1"># the output after merging InferRxNorm/InferICD10CM</span>
+    <span class="c1"># responses onto DetectEntitiesV2 entities by offset.</span>
+    <span class="c1"># The mock pre-populates these; in production you would</span>
+    <span class="c1"># call the four APIs in parallel and merge explicitly.</span>
     <span class="n">medications</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Text&quot;</span><span class="p">),</span>
          <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Score&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))),</span>

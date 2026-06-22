@@ -528,12 +528,25 @@
     G --&gt; H[DynamoDB:\nPatient Timeline]
     G --&gt; I[Neptune:\nTemporal Graph\n- optional -]
 
+    B -- failure --&gt; DLQ[SQS Dead Letter Queue]
+    C -- throttle/failure --&gt; DLQ
+    F -- throttle/failure --&gt; DLQ
+    DLQ --&gt; CW[CloudWatch Alarm\nDLQ Depth &gt; 10]
+
+    SF[Step Functions] -.-&gt; B
+    SF -.-&gt; C
+    SF -.-&gt; F
+    SF -. &quot;retry: MaxAttempts=3\nexponential backoff&quot; .-&gt; C
+
     style A fill:#f9f,stroke:#333
     style C fill:#ff9,stroke:#333
     style F fill:#ff9,stroke:#333
     style H fill:#9ff,stroke:#333
     style I fill:#9ff,stroke:#333
+    style DLQ fill:#f66,stroke:#333
+    style CW fill:#f96,stroke:#333
 </pre>
+<p><strong>Error handling architecture.</strong> The pipeline uses Step Functions for orchestration with built-in retry logic. Configure retries with <code>MaxAttempts=3</code> and exponential backoff (specifically for Comprehend Medical throttling, which happens under burst load). Any Lambda that fails after retries sends the event to an SQS dead letter queue. Set a CloudWatch alarm on DLQ depth greater than 10 messages. A growing DLQ means notes are failing silently, which means gaps in patient timelines that nobody knows about until a clinician notices missing events.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <table>
 <thead>
@@ -571,9 +584,20 @@
 <td><strong>Training Data</strong></td>
 <td>Temporal relation annotated clinical corpus (minimum 500-1000 annotated documents). See THYME corpus licensing for research use. Production systems need institution-specific annotations.</td>
 </tr>
+<tr>
+<td><strong>Training Corpus Access Control</strong></td>
+<td>Separate S3 bucket for training data, isolated from inference pipeline. Bucket policy restricts access to ML training roles only. S3 access logging enabled for audit. Versioning enabled for annotation provenance (so you can trace which annotations produced which model version).</td>
+</tr>
+<tr>
+<td><strong>Data Retention / Lifecycle</strong></td>
+<td>DynamoDB: TTL configured per institutional records retention policy (typically 7-10 years for adult records, longer for minors per state law). Neptune: scheduled deletion jobs for graph data past retention window. S3: lifecycle policy transitions processed clinical notes to Glacier after 90 days, expires after retention period. Coordinate with records management on per-data-type schedules rather than a single global policy.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Comprehend Medical: ~$0.01 per 100 characters. Custom Classification: ~$0.0005 per request. At ~50 candidate pairs per note: ~$0.03 per note total.</td>
+</tr>
 </tbody>
 </table>
-<p>| <strong>Cost Estimate</strong> | Comprehend Medical: ~$0.01 per 100 characters. Custom Classification: ~$0.0005 per request. At ~50 candidate pairs per note: ~$0.03 per note total. |</p>
 <h3 id="ingredients">Ingredients</h3>
 <table>
 <thead>
@@ -708,6 +732,16 @@
                 IF is_nearest_temporal(entity_a, entity_b):
                     append to candidates: (entity_a, entity_b, &quot;nearest_anchor&quot;)
 
+            // Heuristic 5: Section-anchored pairs (cross-section relationships).
+            // Events in different sections that share a temporal expression or are
+            // both anchored to the same clinical episode (same admission, same procedure).
+            // This captures cross-section relationships like HPI events linked to
+            // Hospital Course events in discharge summaries.
+            IF different_sections(entity_a, entity_b):
+                IF shared_temporal_anchor(entity_a, entity_b) OR
+                   same_clinical_episode(entity_a, entity_b):
+                    append to candidates: (entity_a, entity_b, &quot;section_anchored&quot;)
+
     // Deduplicate: (A,B) and (B,A) are the same pair.
     candidates = deduplicate_pairs(candidates)
 
@@ -743,11 +777,9 @@ FUNCTION classify_relations(candidate_pairs, full_text, sections):
                 entity_b: entity_b,
                 relation: prediction.label,   // e.g., &quot;BEFORE&quot; means entity_a before entity_b
                 confidence: prediction.confidence,
-                evidence: context_window       // for audit trail
-                // TODO (TechWriter): Expert review S2 (MEDIUM). Note that evidence context
-                // should be stored in a separate audit table with restricted access.
-                // Downstream timeline APIs should return only structured fields (event_text,
-                // event_type, timestamp, confidence), not raw clinical narrative.
+                evidence: context_window       // stored in separate audit table, restricted access
+                // Note: downstream timeline APIs return only structured fields (event_text,
+                // event_type, timestamp, confidence), never raw clinical narrative.
             }
 
     RETURN classified_relations
@@ -957,6 +989,12 @@ FUNCTION classify_relations(candidate_pairs, full_text, sections):
 </ul>
 <hr />
 <h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. Deploying this against a live clinical data warehouse requires closing several gaps that are intentionally outside the scope of a cookbook recipe:</p>
+<p><strong>Model retraining cadence.</strong> Clinical documentation patterns drift. New EHR templates, new providers, new temporal conventions (oncology cycle notation, clinical trial protocol days) all introduce patterns the model hasn't seen. Plan for quarterly retraining cycles with fresh annotations. Monitor mean classification confidence over time; a downward shift signals distribution drift before accuracy metrics catch up.</p>
+<p><strong>Annotation pipeline.</strong> The relation classifier needs labeled training data, and that data needs to come from your institution's note population (not just a research corpus). Budget for a sustained annotation program: clinical annotators reviewing temporal pairs, adjudicating disagreements, and feeding corrections back into the training set. This is an ongoing cost, not a one-time investment.</p>
+<p><strong>Cross-document timeline linking.</strong> This pipeline processes one note at a time. A patient's full timeline spans hundreds of notes across years. Merging single-document timelines into a longitudinal patient record requires cross-document event coreference resolution (is &quot;the knee pain&quot; in two notes the same episode?), conflict resolution logic, and incremental graph updates. That is a separate system built on top of this extraction layer.</p>
+<p><strong>Human-in-the-loop review workflows.</strong> Low-confidence relations, detected inconsistencies (broken cycles), and notes with abnormally low extraction counts all need clinical review. Build a review queue with a lightweight annotation UI so clinicians can confirm, correct, or reject timeline entries. The correction data feeds back into model retraining.</p>
+<p><strong>Institution-specific temporal pattern tuning.</strong> Every health system has its own abbreviations, section headers, and temporal conventions. The candidate pair heuristics (sentence distance thresholds, section-anchoring logic) and temporal expression patterns need tuning per document type and per specialty. Your neurologists write differently than your surgeons, and both write differently than the training corpus defaults.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Cross-document longitudinal timeline.</strong> Extend the single-document pipeline to construct a patient's full longitudinal timeline from all available notes. This requires: (1) cross-document coreference resolution to link the same clinical event across notes, (2) timeline merging logic to combine single-document timelines into a master timeline, and (3) conflict resolution when two documents imply contradictory temporal orderings. Start with a simple approach: anchor each document's timeline to its creation date and merge chronologically. Add cross-document event linking as a second phase.</p>

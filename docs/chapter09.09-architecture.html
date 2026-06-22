@@ -513,7 +513,23 @@
 <h3 id="why-these-services">Why These Services</h3>
 <p><strong>Amazon S3 for video storage.</strong> Surgical video files are large (50-100 GB per procedure at full resolution) and write-once. S3 provides durable, encrypted storage with lifecycle policies to manage cost. Use S3 Intelligent-Tiering or transition to S3 Glacier for videos older than 90 days that aren't actively being analyzed. S3's multipart upload handles the large file sizes gracefully.</p>
 <p><strong>AWS Elemental MediaConvert for video preprocessing.</strong> Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances. MediaConvert accesses S3 via AWS-internal endpoints over TLS; data does not traverse the public internet. For organizations requiring all PHI processing within a VPC boundary, an alternative is running FFmpeg on a VPC-hosted EC2 instance or ECS task, at the cost of managing the compute infrastructure yourself.</p>
+<p><strong>PHI de-identification during preprocessing.</strong> Surgical video is dense with PHI that has nothing to do with the surgical analysis itself. Your preprocessing step must address four vectors before frames reach the ML pipeline:</p>
+<ol>
+<li>
+<p><strong>Audio track stripping.</strong> OR conversations contain patient names, medical history, and team discussions. Since the visual analysis pipeline doesn't use audio at all, strip audio tracks entirely during the MediaConvert transcode step. This eliminates the densest single source of incidental PHI.</p>
+</li>
+<li>
+<p><strong>Pre-incision footage.</strong> Video recording often starts before draping, capturing the patient's face during positioning and intubation. Detect and either discard or redact frames preceding the first instrument appearance. A simple heuristic (color distribution shift from skin tones to blue drapes and pink tissue) works for coarse trimming; a trained face detection model handles edge cases.</p>
+</li>
+<li>
+<p><strong>OR monitor overlay detection.</strong> Many OR setups display patient demographics, vitals, or EMR data on monitors visible to the laparoscopic camera. Run OCR-based text detection on a frame sample during preprocessing. If text regions are detected, either crop them out (if they're in a consistent screen region) or blur them (if they're overlaid on the surgical field). Flag procedures where overlay content is detected for manual verification.</p>
+</li>
+<li>
+<p><strong>Video file metadata sanitization.</strong> Recording systems embed patient identifiers, MRN numbers, and procedure scheduling data in video file headers (DICOM metadata, MP4 user data atoms, MXF descriptive metadata). Strip all non-essential metadata during ingestion, preserving only technical fields needed for transcoding (codec, resolution, frame rate, duration).</p>
+</li>
+</ol>
 <p><strong>Amazon SageMaker for model training and batch inference.</strong> Surgical video models require GPU compute for both training and inference. SageMaker provides managed training jobs with spot instance support (critical for the multi-day training runs these models require) and batch transform for processing video backlogs. For the feature extraction backbone, SageMaker's built-in support for PyTorch and distributed training across multiple GPUs is essential.</p>
+<p>Be aware of cold start overhead with Batch Transform: provisioning a GPU instance and loading model artifacts takes 5-15 minutes per job. For medium volume (5-20 procedures per day), batch procedures together and run a single transform job every few hours to amortize that startup cost across multiple videos. For high volume (more than 20 procedures per day), deploy a persistent real-time SageMaker endpoint instead. The endpoint stays warm and processes new videos in seconds rather than waiting for instance provisioning. The tradeoff is paying for idle GPU time during off-hours, but at 20+ procedures daily the utilization justifies it. Factor the cold start overhead into your cost estimate: at low volume, the per-procedure cost is higher than the raw GPU inference time suggests because you're paying for 5-15 minutes of provisioning per job.</p>
 <p><strong>AWS Step Functions for pipeline orchestration.</strong> The video analysis pipeline has multiple stages with dependencies, error handling requirements, and variable execution times. A single procedure might take 15-60 minutes to process depending on length. Step Functions manages the state machine: trigger on video upload, run preprocessing, launch inference, handle failures with retries, and write results.</p>
 <p><strong>Amazon DynamoDB for the structured index.</strong> Phase timelines, instrument logs, and event flags are time-series data with procedure-level access patterns. DynamoDB's flexible schema handles the varying output structures across procedure types, and its query performance supports the interactive visualization use case.</p>
 <p><strong>Amazon OpenSearch Service for full-text and temporal search.</strong> When a quality committee wants to find &quot;all cholecystectomies where the critical view of safety was not clearly achieved&quot; or &quot;cases with bleeding events during Calot's triangle dissection,&quot; you need a search engine that can handle structured queries across the procedure index. OpenSearch supports both keyword search on annotations and range queries on timestamps.</p>
@@ -552,7 +568,7 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td><code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>s3:ListBucket</code>, <code>mediaconvert:CreateJob</code>, <code>mediaconvert:GetJob</code>, <code>sagemaker:CreateTransformJob</code>, <code>sagemaker:DescribeTransformJob</code>, <code>sagemaker:CreateTrainingJob</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:Query</code>, <code>es:ESHttpPost</code>, <code>es:ESHttpGet</code>, <code>lambda:InvokeFunction</code>, <code>states:StartExecution</code>, <code>states:DescribeExecution</code>, <code>kms:Decrypt</code>, <code>kms:GenerateDataKey</code>, <code>logs:CreateLogGroup</code>, <code>logs:PutLogEvents</code></td>
+<td>Three execution roles with scoped resource ARNs (see below)</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
@@ -580,7 +596,34 @@
 </tr>
 <tr>
 <td><strong>Cost Estimate</strong></td>
-<td>Processing: ~$2.50-$8.00 per procedure (MediaConvert + SageMaker inference). Training: ~$500-$2,000 per model training run (multi-day GPU). Storage: ~$1-2/month per procedure (S3 Intelligent-Tiering). OpenSearch: ~$200-500/month for a small domain.</td>
+<td>Processing: ~$2.50-$8.00 per procedure (MediaConvert + SageMaker inference; add ~$0.50-$1.50 amortized cold start for low-volume Batch Transform). Training: ~$500-$2,000 per model training run (multi-day GPU). Storage: ~$1-2/month per procedure (S3 Intelligent-Tiering). OpenSearch: ~$200-500/month for a small domain.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>IAM Role Breakdown:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Permissions</th>
+<th>Resource Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Step Functions Execution Role</strong></td>
+<td><code>states:StartExecution</code>, <code>lambda:InvokeFunction</code>, <code>sagemaker:CreateTransformJob</code>, <code>sagemaker:DescribeTransformJob</code>, <code>mediaconvert:CreateJob</code>, <code>mediaconvert:GetJob</code>, <code>events:PutTargets</code>, <code>logs:CreateLogGroup</code>, <code>logs:PutLogEvents</code></td>
+<td>Scoped to specific Lambda ARNs, SageMaker transform job prefix <code>feat-proc-*</code>, MediaConvert queue ARN</td>
+</tr>
+<tr>
+<td><strong>Lambda Execution Role</strong> (post-processing)</td>
+<td><code>s3:GetObject</code> (frames/features buckets), <code>s3:PutObject</code> (frames bucket, manifests only), <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code> (procedure-index and procedure-registry tables), <code>es:ESHttpPost</code>, <code>es:ESHttpGet</code> (OpenSearch domain ARN), <code>kms:Decrypt</code>, <code>kms:GenerateDataKey</code> (specific KMS key ARNs), <code>logs:CreateLogGroup</code>, <code>logs:PutLogEvents</code>, <code>sqs:SendMessage</code> (DLQ ARN)</td>
+<td>Resource ARNs for each specific table, bucket prefix, OpenSearch domain, and KMS key. No wildcard resources.</td>
+</tr>
+<tr>
+<td><strong>SageMaker Execution Role</strong></td>
+<td><code>s3:GetObject</code> (frames bucket, model artifacts bucket), <code>s3:PutObject</code> (features bucket), <code>s3:ListBucket</code> (frames bucket), <code>kms:Decrypt</code>, <code>kms:GenerateDataKey</code> (volume encryption key), <code>logs:CreateLogGroup</code>, <code>logs:PutLogEvents</code></td>
+<td>Scoped to specific S3 bucket ARNs and prefixes. No DynamoDB, no OpenSearch, no Lambda invoke.</td>
 </tr>
 </tbody>
 </table>
@@ -836,6 +879,11 @@
         model_version   = current model version identifier
 
     // Index in OpenSearch for cross-procedure search.
+    // IMPORTANT: Store only the pseudonymized surgeon identifier in the
+    // general search index. The real surgeon_id lives in a separate
+    // restricted lookup table with its own access controls.
+    pseudonym = lookup_or_create_pseudonym(metadata.surgeon_id)
+
     // Flatten the timeline into searchable documents.
     FOR each phase in analysis_results.phase_timeline:
         index in OpenSearch &quot;procedure-phases&quot;:
@@ -846,7 +894,7 @@
             duration      = phase.duration
             confidence    = phase.confidence
             procedure_type = metadata.procedure_type
-            surgeon_id    = metadata.surgeon_id
+            surgeon_pseudonym = pseudonym
             procedure_date = metadata.procedure_date
 
     FOR each event in analysis_results.events:
@@ -857,7 +905,7 @@
             confidence    = event.confidence
             phase_context = event.context
             procedure_type = metadata.procedure_type
-            surgeon_id    = metadata.surgeon_id
+            surgeon_pseudonym = pseudonym
 
     // Update the procedure registry status.
     update DynamoDB &quot;procedure-registry&quot; where procedure_id:
@@ -865,6 +913,113 @@
         completed_at = current UTC timestamp
 
     RETURN success
+</code></pre>
+<p><strong>Access control model for surgeon-identifiable performance data.</strong> Surgical video analysis produces data that, when aggregated, becomes individual performance measurement. This is legally and ethically sensitive. Many states have peer review protection statutes that shield quality improvement data from legal discovery, but only if the data is handled through proper peer review channels. Your access control model must account for this:</p>
+<ol>
+<li>
+<p><strong>Pseudonymize surgeon identity in the search index.</strong> The OpenSearch indices above store a <code>surgeon_pseudonym</code> (a random, stable identifier) rather than the actual surgeon_id. This allows population-level queries (&quot;average dissection time across all surgeons&quot;) without exposing individual identity to everyone with search access.</p>
+</li>
+<li>
+<p><strong>Separate restricted lookup table.</strong> A DynamoDB table (or a dedicated IAM-protected API) maps <code>surgeon_pseudonym</code> to the actual <code>surgeon_id</code>. Access to this table requires an additional IAM role that only designated roles hold (department chair, quality committee members, credentialing staff).</p>
+</li>
+<li>
+<p><strong>Role-based access tiers:</strong></p>
+<ul>
+<li><em>General analytics access:</em> Can search procedures by type, phase, event, and date. Sees pseudonymized surgeon identifiers only. Sufficient for quality improvement dashboards and aggregate reporting.</li>
+<li><em>Peer review access:</em> Can resolve surgeon pseudonyms to real identifiers. Limited to credentialed peer reviewers operating under the institution's peer review committee charter. Access grants are time-bounded and tied to specific review activities.</li>
+<li><em>Administrative access:</em> Full access for system administrators who manage the pipeline. Does not imply clinical peer review authority.</li>
+</ul>
+</li>
+<li>
+<p><strong>Audit logging for identity resolution.</strong> Every query that resolves a surgeon pseudonym to a real identity must be logged via CloudTrail. The audit log captures who resolved the identity, when, and under what authorization context (which peer review committee meeting, which credentialing action). This audit trail is essential for maintaining peer review protection.</p>
+</li>
+<li>
+<p><strong>Legal counsel review required.</strong> Peer review protection statutes vary significantly by state. Some states protect only data generated through formal peer review processes; others extend protection to quality improvement data more broadly. Your institution's legal counsel must review the access control model and confirm that the data handling qualifies for protection under applicable state law before the system goes live. This is not optional, and it is not something your engineering team should interpret independently.</p>
+</li>
+</ol>
+<p><strong>OpenSearch index mappings.</strong> For the two indices referenced above, here are the field mappings that support the temporal query patterns this pipeline needs:</p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;procedure-phases&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;mappings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;procedure_id&quot;</span><span class="p">:</span><span class="w">       </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;phase_name&quot;</span><span class="p">:</span><span class="w">         </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;procedure_type&quot;</span><span class="p">:</span><span class="w">     </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;surgeon_pseudonym&quot;</span><span class="p">:</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;procedure_date&quot;</span><span class="p">:</span><span class="w">     </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;yyyy-MM-dd&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;start_time&quot;</span><span class="p">:</span><span class="w">         </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;end_time&quot;</span><span class="p">:</span><span class="w">           </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;duration&quot;</span><span class="p">:</span><span class="w">           </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w">         </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;procedure-events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;mappings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;procedure_id&quot;</span><span class="p">:</span><span class="w">       </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;event_type&quot;</span><span class="p">:</span><span class="w">         </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;procedure_type&quot;</span><span class="p">:</span><span class="w">     </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;surgeon_pseudonym&quot;</span><span class="p">:</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;procedure_date&quot;</span><span class="p">:</span><span class="w">     </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;yyyy-MM-dd&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w">         </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;phase_context&quot;</span><span class="p">:</span><span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;keyword&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The temporal query pattern (&quot;find events that occurred within a specific phase's time range&quot;) works because each event carries its <code>phase_context</code> as a keyword field. You can query directly on <code>phase_context</code> rather than doing a range join between the two indices. For more complex temporal queries (events within a custom time window that doesn't align with phase boundaries), use <code>timestamp</code> range filters on the <code>procedure-events</code> index.</p>
+<p><strong>Failure handling and recovery.</strong> Long-running pipelines fail. MediaConvert jobs time out, SageMaker instances get preempted, Lambda functions hit memory limits on unusually long procedures. Your Step Functions state machine needs a catch-all error state that handles any unrecoverable failure:</p>
+<pre class="code code-plain"><code>// Step Functions Catch-All Error Handler (applied to the state machine)
+ON ANY unhandled error in any state:
+    // Write the failure details to a Dead Letter Queue.
+    // This captures the procedure_id, the failed step, and the error message
+    // so an operator (or automated retry) can investigate.
+    send to SQS DLQ &quot;surgical-pipeline-dlq&quot;:
+        procedure_id  = execution_input.procedure_id
+        failed_step   = current_state_name
+        error_type    = error.type
+        error_message = error.message
+        failed_at     = current UTC timestamp
+        execution_arn = current execution ARN
+
+    // Update the procedure registry so the status reflects the failure.
+    update DynamoDB &quot;procedure-registry&quot; where procedure_id:
+        status = &quot;failed&quot;
+        failure_step = current_state_name
+        failure_message = error.message
+        failed_at = current UTC timestamp
+
+// CloudWatch Alarm on DLQ depth.
+// If messages accumulate in the DLQ, the pipeline has a systemic issue.
+ALARM: &quot;surgical-pipeline-failures&quot;
+    metric: ApproximateNumberOfMessagesVisible on DLQ
+    threshold: &gt;= 3 over 15 minutes
+    action: notify on-call via SNS
+
+// Scheduled Lambda: scan for stuck procedures.
+// Runs every 30 minutes. Catches cases where Step Functions itself hangs
+// (rare but possible with service disruptions).
+FUNCTION scan_stuck_procedures():
+    stuck = query DynamoDB &quot;procedure-registry&quot; WHERE:
+        status IN (&quot;ingested&quot;, &quot;extracting_frames&quot;, &quot;analyzing&quot;)
+        AND last_updated &lt; (now - 2 hours)
+
+    FOR each stuck procedure:
+        IF retry_count &lt; 3:
+            // Re-trigger the pipeline from the stuck step.
+            restart Step Functions execution for procedure_id
+            increment retry_count in registry
+        ELSE:
+            // Exhausted retries. Send to DLQ for manual investigation.
+            send to SQS DLQ with reason = &quot;exceeded_max_retries&quot;
 </code></pre>
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter09.09-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
@@ -994,6 +1149,15 @@
 <li>Instrument detection fails when instruments are partially occluded or when multiple instruments overlap visually.</li>
 <li>Generalization across surgeons is imperfect. A model trained primarily on right-handed surgeons may perform worse on left-handed technique.</li>
 </ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This architecture shows the complete shape of a surgical video analysis pipeline, but several gaps remain between this design and a deployment processing real patient video:</p>
+<p><strong>No trained models ship with this recipe.</strong> The feature extraction backbone and temporal model require hundreds of annotated surgical videos and weeks of GPU training time. The Cholec80 research dataset is a starting point for cholecystectomy, but your institution needs local fine-tuning for its specific cameras, lighting conditions, and patient population. Budget 2-4 months just for initial model training and validation.</p>
+<p><strong>De-identification is described but not implemented.</strong> The preprocessing section outlines the four PHI vectors in surgical video (audio, pre-incision footage, monitor overlays, file metadata), but detecting and redacting these requires additional ML models (face detection, OCR for overlay text) that add complexity and potential failure modes. Each must be validated before you process real patient video.</p>
+<p><strong>Surgeon identity access controls need institutional buy-in.</strong> The pseudonymization scheme and role-based access model described above require policy decisions, legal review, and governance committee approval that can't be solved with code alone. These often take longer than the engineering work.</p>
+<p><strong>No annotation tooling for model improvement.</strong> Over time, you'll find cases where the model fails (unusual anatomy, new instruments, different camera angles). Correcting these requires a feedback loop: surgical domain experts review predictions, flag errors, and correct annotations. That annotation interface and the retraining pipeline around it are a full sub-project.</p>
+<p><strong>Single procedure type.</strong> The pseudocode targets laparoscopic cholecystectomy. Each additional procedure type requires its own phase definitions, event taxonomy, training data, and validation. The infrastructure generalizes, but the model layer does not.</p>
+<p><strong>No integration with clinical systems.</strong> The pipeline stores results in DynamoDB and OpenSearch, but connecting those to the institution's quality dashboards, credentialing systems, or EMR requires interface work and likely HL7/FHIR integration that is outside the scope of this recipe.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Real-time phase display.</strong> For a lighter-weight version, deploy only the phase recognition model on an edge device in the OR. Display the current phase on a monitor. This doesn't require the full post-hoc pipeline and provides immediate value for OR scheduling (knowing when a case is approaching completion helps with room turnover planning). Latency requirement: under 500 ms. Use a smaller model (MobileNet backbone instead of ResNet-50) and process at 1 fps.</p>

@@ -511,27 +511,514 @@
 <hr />
 <h2 id="the-aws-implementation">The AWS Implementation</h2>
 <h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Bedrock for the LLM and embeddings.</strong> Same selection criteria as recipes 11.1 through 11.9. The recruitment conversationalist specifically benefits from a model with strong instruction-following for IRB-language faithfulness, strong tool-use for the eligibility-prescreen and coordinator-handoff orchestration, citation-grounding discipline for trial-specific assertions, and good multilingual support. Claude Sonnet-class models or comparable frontier models for orchestration; smaller models (Haiku-class) for intent classification, eligibility-prefilter, and summarization. Bedrock provides HIPAA-eligible deployment under BAA.</p>
+<p><strong>Amazon Bedrock Knowledge Bases for IRB-approved-content RAG.</strong> The per-trial IRB-approved content corpus (protocol summary, eligibility criteria, recruitment FAQ, visit-schedule summary, study-procedure summary, sponsor-and-investigator information) and the institutional recruitment-conversation pattern library are the assistant's grounded retrieval sources. Knowledge Bases provides the managed RAG layer with metadata-filtered retrieval (trial_id, content_type, IRB-review-version, language, reading-level). Strict per-trial filtering at retrieval time enforces per-trial isolation.</p>
+<p><strong>Amazon Bedrock Agents for tool orchestration.</strong> The assistant's tools (trial_context_retrieve, eligibility_criterion_evaluate, recruitment_faq_retrieve, trial_state_check, prescreen_capture, coordinator_handoff_schedule, representativeness_record, emergency_route, out_of_scope_route, provenance_retrieve) are defined as Agents action groups with OpenAPI schemas. The Agent's traces preserve tool-call audit trails for the recruitment-decision-record journal.</p>
+<p><strong>Amazon Bedrock Guardrails for recruitment-specific denied topics.</strong> Configured with restricted-topic filters for recommendation-language (&quot;you should join&quot;, &quot;this trial is right for you&quot;), trial-comparison-language across multiple trials, off-protocol-trial-information beyond the IRB-approved recruitment scope, clinical-decision-attempted (routes to patient's existing care team), prescription-attempted (routes to recipe 11.3 pathway), benefits-quote-attempted (routes to recipe 11.5 pathway), triage-attempted (routes to recipe 11.6 pathway), and therapy-attempted (routes to recipe 11.8 pathway).</p>
+<p><strong>Amazon OpenSearch Serverless for vector and lexical retrieval.</strong> The IRB-approved trial corpus, the recruitment-FAQ library, and the conversation history benefit from vector retrieval with per-trial metadata filtering.</p>
+<p><strong>Amazon DynamoDB for per-trial state, prescreen state, and recruitment-funnel instrumentation.</strong> Twelve tables: trial-context-store, trial-state-store, eligibility-rule-store, recruitment-faq-store, prescreen-record-store, conversation-state, conversation-metadata, tool-call-ledger, recruitment-decision-record-journal, representativeness-store, handoff-queue-state, and consent-record. All trial-specific records carry a trial_id partition key with per-trial KMS encryption context.</p>
+<p><strong>AWS Step Functions for trial-state-and-amendment workflows.</strong> The trial-onboarding workflow (IRB-approved-content authoring, eligibility-rule encoding, FAQ population, coordinator-team training, post-launch monitoring) and the IRB-amendment-application workflow (content update, IRB review routing, amendment application to active trial-context, clinical-leadership signoff) each run as audited Step Functions state machines.</p>
+<p><strong>AWS Lambda for per-stage compute.</strong> The chat handler, input-screening function, trial-context-loading function, eligibility-evaluator function, output-screening function, coordinator-handoff-orchestration function, recruitment-decision-record-persistence function, representativeness-recording function, per-trial reporting function, and outcome-correlation function are separate Lambdas with independent IAM roles, error handling, retries, and DLQs.</p>
+<p><strong>Amazon SQS for the coordinator-handoff queue with throughput control.</strong> The handoff queue routes qualified-and-still-interested prospects to the coordinator team. Queue depth monitoring drives the throughput-control primitive: when the queue exceeds the configured throughput floor, the assistant transitions to the &quot;coordinator-team-busy&quot; flow rather than continuing to enqueue handoffs that age out.</p>
+<p><strong>Amazon EventBridge for trial-state-change events and recruitment-funnel events.</strong> Events including trial_enrollment_opened, trial_enrollment_paused, trial_enrollment_closed, irb_amendment_submitted, irb_amendment_approved, prescreen_completed, handoff_scheduled, handoff_accepted, representativeness_alert, emergency_routed.</p>
+<p><strong>Amazon Connect and Amazon Pinpoint for SMS/voice channels.</strong> Connect provides the warm-handoff channel to human research coordinators with conversation context attached. Pinpoint provides proactive recruitment-event-triggered messaging (prescreen-completion confirmation, coordinator-follow-up timing confirmation) where the IRB-approved recruitment plan permits.</p>
+<p><strong>Amazon Comprehend Medical (optional) for de-identification of free-text patient-reported information.</strong> When the prospective participant reports medication names, symptoms, or condition details in free text during the prescreen, Comprehend Medical extracts structured terms for the eligibility-rule engine and de-identifies the free-text record for the audit archive.</p>
+<p>Where the trial is FDA-regulated, the recruitment platform's audit trail is subject to 21 CFR Part 11 electronic-record-and-signature requirements. The architecture supports Part-11-compliant audit logging, electronic-signature workflows for IRB-approved-content version sign-off, and inspection-ready audit-trail export.</p>
 <hr />
 <h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Channels
+      WEB[Web Chat]
+      SMS[SMS via Pinpoint]
+      VOICE[Voice via Connect]
+      PORTAL[Patient Portal]
+    end
+
+    subgraph &quot;Input Safety Layer&quot;
+      APIGW[API Gateway + WAF]
+      INPUT_SAFETY[Input Safety Lambda]
+      EMERGENCY[Emergency Screening]
+    end
+
+    subgraph &quot;Trial Context (Per-Trial Isolated)&quot;
+      TRIAL_STATE[Trial State Store - DynamoDB]
+      IRB_CORPUS[&quot;IRB-Approved Corpus (S3, per-trial keyed)&quot;]
+      KB[Bedrock Knowledge Bases]
+      ELIG_RULES[Eligibility Rule Store - DynamoDB]
+    end
+
+    subgraph &quot;Conversation Engine&quot;
+      AGENT[Bedrock Agent with Tools]
+      GUARDRAIL[Bedrock Guardrails]
+      OUTPUT_SAFETY[Output Safety Lambda]
+    end
+
+    subgraph &quot;Prescreen + Handoff&quot;
+      PRESCREEN[Eligibility Evaluator Lambda]
+      HANDOFF_Q[Coordinator Handoff Queue - SQS]
+      CONNECT[Amazon Connect - Coordinator]
+    end
+
+    subgraph &quot;Instrumentation + Audit&quot;
+      REPRESENT[Representativeness Store - DynamoDB]
+      DECISION_JOURNAL[&quot;Decision Record Journal (S3 Object Lock)&quot;]
+      EVENTS[EventBridge - Recruitment Events]
+      CW[CloudWatch Metrics]
+    end
+
+    subgraph &quot;Workflows&quot;
+      SFN_ONBOARD[Step Functions - Trial Onboarding]
+      SFN_AMEND[Step Functions - Amendment Application]
+    end
+
+    WEB --&gt; APIGW
+    SMS --&gt; APIGW
+    VOICE --&gt; APIGW
+    PORTAL --&gt; APIGW
+    APIGW --&gt; INPUT_SAFETY
+    INPUT_SAFETY --&gt; EMERGENCY
+    INPUT_SAFETY --&gt; AGENT
+    AGENT --&gt; KB
+    KB --&gt; IRB_CORPUS
+    AGENT --&gt; TRIAL_STATE
+    AGENT --&gt; ELIG_RULES
+    AGENT --&gt; PRESCREEN
+    AGENT --&gt; GUARDRAIL
+    GUARDRAIL --&gt; OUTPUT_SAFETY
+    PRESCREEN --&gt; HANDOFF_Q
+    HANDOFF_Q --&gt; CONNECT
+    OUTPUT_SAFETY --&gt; APIGW
+    AGENT --&gt; REPRESENT
+    AGENT --&gt; DECISION_JOURNAL
+    AGENT --&gt; EVENTS
+    EVENTS --&gt; CW
+    SFN_ONBOARD --&gt; IRB_CORPUS
+    SFN_ONBOARD --&gt; ELIG_RULES
+    SFN_AMEND --&gt; TRIAL_STATE
+    SFN_AMEND --&gt; IRB_CORPUS
+</pre>
+<p>Key architectural boundaries: (1) Per-trial isolation enforced through partition keys and per-trial KMS encryption context across all trial-specific stores. (2) IRB-approved-content corpus stored as a separately-keyed asset class. (3) Recruitment-decision-record journal stored with a distinct customer-managed KMS key for blast-radius containment. (4) Cross-class read paths between research-data principals and clinical-care principals are explicitly disallowed at the IAM-policy level.</p>
 <hr />
 <h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS Services</td>
+<td>Bedrock (Claude models), Bedrock Agents, Bedrock Knowledge Bases, Bedrock Guardrails, OpenSearch Serverless, DynamoDB, S3 (with Object Lock), Lambda, Step Functions, SQS, EventBridge, API Gateway, WAF, Connect, Pinpoint, CloudWatch, CloudTrail, KMS, Secrets Manager, Kinesis Data Firehose</td>
+</tr>
+<tr>
+<td>IAM Permissions</td>
+<td>Per-Lambda least-privilege roles scoped to specific resource ARNs; separate roles for chat handler, eligibility evaluator, coordinator-handoff orchestrator, trial-onboarding worker, and audit-archive writer</td>
+</tr>
+<tr>
+<td>BAA</td>
+<td>AWS Business Associate Agreement signed covering all services processing PHI</td>
+</tr>
+<tr>
+<td>Encryption</td>
+<td>Customer-managed KMS keys: general recruitment workload key, separately-managed decision-record-journal key, separately-managed conversation-archive key, separately-managed IRB-approved-corpus key</td>
+</tr>
+<tr>
+<td>VPC</td>
+<td>VPC endpoints for Bedrock, Bedrock Agents, Bedrock Knowledge Bases, S3, DynamoDB, Secrets Manager, Step Functions, KMS, CloudWatch Logs, Comprehend Medical, Connect, Pinpoint; TLS 1.2 minimum (1.3 preferred) at every external boundary</td>
+</tr>
+<tr>
+<td>Network Egress</td>
+<td>ClinicalTrials.gov integration over public TLS with no PHI on the outbound path; WAF in front of the chat endpoint with managed rule sets for SQL-injection, XSS, prompt-injection-pattern detection, and rate-limiting</td>
+</tr>
+<tr>
+<td>CloudTrail</td>
+<td>Organization-wide trail with management events and data events for S3, DynamoDB, Lambda, and KMS; log-file integrity validation enabled</td>
+</tr>
+<tr>
+<td>Sample Data</td>
+<td>Synthetic trial protocol, synthetic eligibility criteria (10-15 criteria across all four categories), synthetic IRB-approved FAQ (20-30 entries), synthetic visit schedule, synthetic coordinator queue</td>
+</tr>
+<tr>
+<td>Cost Estimate</td>
+<td>~$8-25 per qualified prescreen at moderate volume; ~$2,000-5,000/month fixed infrastructure for a single-trial deployment; per-trial onboarding cost dominated by clinical-content authoring, not cloud spend</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Role in This Recipe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Amazon Bedrock (Claude Sonnet)</td>
+<td>Orchestration model: tool-use loop, conversational eligibility prescreen, patient-question handling with IRB-citation discipline</td>
+</tr>
+<tr>
+<td>Amazon Bedrock (Claude Haiku)</td>
+<td>Intent classification, eligibility-prefilter, prescreen summarization for coordinator handoff</td>
+</tr>
+<tr>
+<td>Amazon Bedrock Knowledge Bases</td>
+<td>Managed RAG over per-trial IRB-approved corpus and institutional recruitment-conversation pattern library</td>
+</tr>
+<tr>
+<td>Amazon Bedrock Agents</td>
+<td>Tool orchestration with action groups defining the ten recruitment tools</td>
+</tr>
+<tr>
+<td>Amazon Bedrock Guardrails</td>
+<td>Restricted-topic filters blocking recommendation-language, trial-comparison, clinical-decision attempts</td>
+</tr>
+<tr>
+<td>Amazon OpenSearch Serverless</td>
+<td>Vector and lexical retrieval index for IRB-approved content with per-trial metadata filtering</td>
+</tr>
+<tr>
+<td>Amazon DynamoDB</td>
+<td>Twelve tables for trial context, trial state, eligibility rules, FAQ, prescreen records, conversation state/metadata, tool-call ledger, decision journal, representativeness, handoff queue state, consent</td>
+</tr>
+<tr>
+<td>Amazon S3 (Object Lock)</td>
+<td>Recruitment-decision-record journal, conversation archive, IRB-approved-content corpus (each separately keyed)</td>
+</tr>
+<tr>
+<td>AWS Lambda</td>
+<td>Per-stage compute: input screening, trial-context loading, eligibility evaluation, output screening, coordinator handoff, decision-record persistence, representativeness recording, reporting</td>
+</tr>
+<tr>
+<td>AWS Step Functions</td>
+<td>Trial-onboarding workflow, IRB-amendment-application workflow with clinical-leadership signoff</td>
+</tr>
+<tr>
+<td>Amazon SQS</td>
+<td>Coordinator-handoff queue with throughput-control monitoring</td>
+</tr>
+<tr>
+<td>Amazon EventBridge</td>
+<td>Trial-state-change events, recruitment-funnel events, representativeness alerts</td>
+</tr>
+<tr>
+<td>Amazon Connect</td>
+<td>Warm-handoff channel to human research coordinators</td>
+</tr>
+<tr>
+<td>Amazon Pinpoint</td>
+<td>Proactive recruitment-event-triggered messaging (confirmation, timing)</td>
+</tr>
+<tr>
+<td>AWS WAF + API Gateway</td>
+<td>Public chat endpoint with rate-limiting, prompt-injection-pattern detection</td>
+</tr>
+<tr>
+<td>AWS KMS</td>
+<td>Customer-managed keys: general workload, decision-record journal (separate), conversation archive (separate), IRB corpus (separate)</td>
+</tr>
+<tr>
+<td>AWS Secrets Manager</td>
+<td>CTMS credentials, EHR-prescreen-query credentials, sponsor-recruitment-feed credentials</td>
+</tr>
+<tr>
+<td>Amazon CloudWatch</td>
+<td>Operational metrics: prescreen-yield-by-cohort, handoff-accept-rate, citation-coverage-rate, IRB-faithfulness-rate, escalation-rate</td>
+</tr>
+<tr>
+<td>AWS CloudTrail</td>
+<td>Management and data events for regulatory audit</td>
+</tr>
+<tr>
+<td>Amazon Kinesis Data Firehose</td>
+<td>Conversation-audit archive delivery</td>
+</tr>
+<tr>
+<td>Amazon Comprehend Medical (optional)</td>
+<td>Medical NER for patient-reported free-text during eligibility prescreen</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h3 id="pseudocode-walkthrough">Pseudocode Walkthrough</h3>
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter11.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<pre class="code code-plain"><code>STEP 1: Load and version IRB-approved trial corpus and eligibility rules
+  - Retrieve trial-context from DynamoDB by trial_id
+  - Verify trial-state is OPEN_FOR_ENROLLMENT
+  - If trial closed or paused: return TRIAL_CLOSED_OR_PAUSED disposition
+  - Snapshot trial-context-version for mid-conversation amendment detection
+  - Load eligibility-rule definitions (per-criterion: category, evaluation logic,
+    clinical-leadership owner, IRB-review version)
+
+STEP 2: Track trial-state and IRB-amendment status
+  - On every conversation turn: re-fetch trial-state, compare against snapshot
+  - If material amendment detected: branch to IRB-approved re-disclosure flow
+  - If non-material amendment: continue on snapshot, stamp version-history
+  - If trial transitions to PAUSED or CLOSED mid-conversation: route to
+    appropriate closure flow
+
+STEP 3: Receive conversation turn with input safety and context loading
+  - Run continuous emergency screening (regex patterns + ML classifier)
+  - If emergency detected: route to 911/988/institutional crisis line,
+    emit EMERGENCY_ROUTED disposition, halt recruitment conversation
+  - Run prompt-injection detection
+  - Run out-of-scope classification (clinical advice, trial recommendation,
+    benefits quote, prescription request)
+  - If out-of-scope: route to appropriate alternative pathway
+  - Classify identity posture (adult-self, parent-guardian, surrogate)
+  - Load trial context: IRB-approved corpus, FAQ corpus, eligibility criteria
+  - On first turn: deliver required IRB disclosures
+
+STEP 4: Run agent tool-use loop with IRB-citation discipline
+  - Construct system prompt with: trial context, population posture,
+    language preference, conversation history, tool definitions
+  - Submit to Bedrock Agent (or custom orchestration loop)
+  - Agent produces tool calls: trial_context_retrieve, recruitment_faq_retrieve,
+    eligibility_criterion_evaluate, prescreen_capture, etc.
+  - Enforce citation-coverage floor: every trial-specific assertion must cite
+    an IRB-approved source document
+  - If question falls outside IRB-approved FAQ: route to coordinator rather
+    than improvise
+
+STEP 5: Execute conversational eligibility prescreen
+  - For each criterion the conversation has addressed:
+    - SIMPLE_STRUCTURED: evaluate deterministically from patient response
+    - COMPLEX_STRUCTURED: capture as patient-reported, tag for coordinator
+      verification
+    - CLINICAL_JUDGMENT: flag for coordinator review, capture patient report
+      as input not determination
+    - VERIFICATION_ONLY: capture, defer to coordinator
+  - Compute overall disposition:
+    - Any hard exclusion met -&gt; DISQUALIFIED
+    - All simple criteria met, complex/clinical pending -&gt; UNCERTAIN_PENDING
+    - High confidence across simple and complex -&gt; LIKELY_ELIGIBLE
+    - Patient declined -&gt; DECLINED_BY_PATIENT
+
+STEP 6: Run output safety with IRB-language faithfulness verification
+  - Apply Bedrock Guardrail (recommendation-language, trial-comparison,
+    clinical-decision filters)
+  - Verify IRB-language faithfulness: each trial-specific statement cross-
+    referenced against IRB-approved corpus
+  - Verify interest-vs-consent distinction: no output implies consent
+    has been collected
+  - Verify required disclosures were surfaced (first turn)
+  - If violations detected: regenerate with corrected constraints or
+    substitute safe template
+
+STEP 7: Orchestrate coordinator handoff with throughput control
+  - Check coordinator-queue depth against throughput floor
+  - If queue depth exceeds floor: deliver &quot;coordinator-team-busy&quot; flow
+    with trial materials and timing expectation
+  - If within floor: capture patient&#x27;s preferred follow-up channel and time,
+    generate structured prescreen summary, enqueue handoff in SQS,
+    confirm handoff arrangement with patient
+  - Emit HANDOFF_SCHEDULED event to EventBridge
+  - Route to Amazon Connect for coordinator pickup
+
+STEP 8: Capture per-cohort representativeness instrumentation
+  - Record funnel-stage progression: ENTERED -&gt; DISCLOSURE_ACCEPTED -&gt;
+    FAQ_ENGAGED -&gt; PRESCREEN_STARTED -&gt; PRESCREEN_COMPLETED -&gt;
+    HANDOFF_SCHEDULED
+  - Capture demographic dimensions per IRB-approved data-collection plan
+    (patient self-report only; no demographic inference)
+  - Write to representativeness store with trial_id and cohort dimensions
+  - If under-recruitment alert threshold crossed for any cohort:
+    emit representativeness_alert event
+
+STEP 9: Persist recruitment-decision record to research-grade retention
+  - Assemble decision record: session metadata, model/prompt versions,
+    IRB-content versions, tool-call audit trail, prescreen result,
+    handoff disposition, timestamps
+  - Write to S3 with Object Lock (compliance mode) using the separately-
+    managed decision-record KMS key
+  - Write conversation transcript to conversation-archive bucket using the
+    separately-managed conversation-archive KMS key
+  - Retention sized to the longest applicable obligation
+
+STEP 10: Generate per-trial reporting and outcome correlation
+  - Aggregate per-trial funnel metrics: entry volume, prescreen-completion
+    rate, prescreen-yield by cohort, handoff volume and accept rate,
+    time-to-coordinator-contact, coordinator-time-saved estimate
+  - Outcome correlation (accumulates over trial timeline): consent rate
+    per handoff, randomization rate per consent, per-cohort representation
+    vs diversity-action-plan targets
+  - Emit CloudWatch metrics for operational monitoring dashboards
+  - Emit EventBridge events for downstream reporting consumers
+</code></pre>
 <hr />
 <h3 id="expected-results">Expected Results</h3>
+<p>Sample structured output from a completed recruitment prescreen conversation:</p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;session_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sess-9f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;trial_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;NCT05123456&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;trial_context_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v2.3.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;participant_id_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a7b3c9d2e1f04a8b&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;identity_posture&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADULT_SELF_DECISION&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en-US&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;web_chat&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;referral_source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clinician_referral&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;site_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SITE_TX_042&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;prescreen_disposition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LIKELY_ELIGIBLE_PENDING_COORDINATOR&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;criteria_evaluated&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;criterion_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INC-01&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SIMPLE_STRUCTURED&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MET&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value_reported&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;52&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rule_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v1.0&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;criterion_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INC-02&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SIMPLE_STRUCTURED&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MET&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value_reported&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;female&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rule_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v1.0&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;criterion_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INC-03&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;COMPLEX_STRUCTURED&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INDETERMINATE&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value_reported&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient unsure of most recent value&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rule_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v1.1&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;criterion_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EXC-01&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SIMPLE_STRUCTURED&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MET&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value_reported&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no active malignancy&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rule_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v1.0&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;criterion_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EXC-05&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CLINICAL_JUDGMENT&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;REQUIRES_COORDINATOR_REVIEW&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value_reported&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;stable on current regimen per patient report&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rule_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v1.0&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;handoff_disposition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HANDOFF_SCHEDULED&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;coordinator_queue_depth_at_handoff&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_preferred_channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;phone&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_preferred_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;weekday_afternoon&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;citation_coverage_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;irb_faithfulness_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;disclosures_delivered&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;DISC.ASSISTANT_NOT_PERSON&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;DISC.NOT_COORDINATOR&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;DISC.CANNOT_ENROLL&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;DISC.PROVIDING_INFO_ONLY&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;DISC.CAN_STOP_ANY_TIME&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;DISC.DATA_RETENTION_NOTICE&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;DISC.REQUEST_COORDINATOR_ANY_TIME&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;emergency_triggered&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;out_of_scope_routed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;conversation_turns&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;elapsed_minutes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">11.3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anthropic.claude-3-5-sonnet-20241022-v2:0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;guardrail_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timestamp_utc&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-15T14:32:07Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (target):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prescreen yield (eligible/total screened)</td>
+<td>35-55%</td>
+<td>Varies by trial complexity and population</td>
+</tr>
+<tr>
+<td>Citation coverage rate</td>
+<td>&gt; 85%</td>
+<td>Percentage of trial-specific assertions with IRB-corpus citation</td>
+</tr>
+<tr>
+<td>IRB-language faithfulness rate</td>
+<td>&gt; 99%</td>
+<td>Percentage of outputs with no unsupported trial-specific assertions</td>
+</tr>
+<tr>
+<td>Coordinator-handoff accept rate</td>
+<td>&gt; 80%</td>
+<td>Percentage of handoffs that coordinator team accepts without rejection</td>
+</tr>
+<tr>
+<td>Time-to-coordinator-contact</td>
+<td>&lt; 2 business days</td>
+<td>From handoff-scheduled to coordinator first contact</td>
+</tr>
+<tr>
+<td>Emergency-escalation rate</td>
+<td>&lt; 1%</td>
+<td>Expected low given recruitment population</td>
+</tr>
+<tr>
+<td>Conversation completion rate</td>
+<td>60-75%</td>
+<td>Percentage of conversations reaching prescreen-completed or declined-by-patient</td>
+</tr>
+<tr>
+<td>Mean conversation duration</td>
+<td>8-15 minutes</td>
+<td>Varies by trial complexity and patient question depth</td>
+</tr>
+<tr>
+<td>Throughput-control activation</td>
+<td>&lt; 10% of sessions</td>
+<td>If frequently activated, coordinator capacity is undersized</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and the Python companion demonstrate the architectural shape. A production deployment requires substantial additional work in several categories:</p>
+<p><strong>IRB governance integration.</strong> The entire IRB-content-review-and-approval workflow, the amendment-application workflow with clinical-leadership and IRB-coordinator signoff, the per-trial change-management process, and the IRB-audit-readiness posture are institutional-process integrations that the demo mocks entirely.</p>
+<p><strong>Per-trial content authoring.</strong> The IRB-approved trial corpus (protocol summary, eligibility criteria, recruitment FAQ, visit schedule, study procedures, sponsor information) is multi-week clinical work per trial. The content authoring, clinical-leadership review, IRB submission, and IRB approval cycle are not software tasks.</p>
+<p><strong>Coordinator-team workflow integration.</strong> The handoff format, queue routing, coordinator-side tooling, and feedback loop are co-designed with the coordinator team. The demo assumes a simple queue; production deployments integrate with the institution's clinical-trial-management system (CTMS).</p>
+<p><strong>Deterministic eligibility-rule encoding with clinical-leadership ownership.</strong> Each criterion requires named clinical-leadership ownership, formal encoding of evaluation logic, edge-case documentation, and version-controlled signoff. The demo uses illustrative rules; production rules are institutional clinical content.</p>
+<p><strong>Real VPC topology with endpoints and egress control.</strong> The demo runs without VPC constraints; production requires VPC endpoints for all AWS services, no public internet egress for PHI-carrying traffic, and WAF with prompt-injection-pattern detection at the chat endpoint.</p>
+<p><strong>Real IAM least-privilege with per-Lambda role scoping.</strong> The demo uses broad permissions; production requires per-Lambda roles scoped to the specific DynamoDB tables, S3 prefixes, KMS keys, and EventBridge buses each function touches.</p>
+<p><strong>Real KMS key management with separate key policies for research-data classes.</strong> The decision-record journal, the conversation archive, and the IRB-approved corpus each require separately-managed customer-managed keys with distinct key policies and distinct key-administrator principals.</p>
+<p><strong>Multi-language support with clinically-validated translations.</strong> The demo operates in English; production recruitment for diverse populations requires clinically-validated translations of the IRB-approved corpus reviewed by the institution's community-research-engagement teams.</p>
+<p><strong>21 CFR Part 11 compliance for FDA-regulated trials.</strong> Electronic-record-and-signature requirements, audit-trail integrity, electronic-signature workflows for content sign-off, and inspection-ready export are not implemented in the demo.</p>
+<p><strong>Load testing and graceful degradation.</strong> The demo does not handle concurrent-session load, upstream-service failures, or degradation scenarios. Production requires defined graceful-degradation paths and capacity planning calibrated to the recruitment population.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Pediatric recruitment with assent-and-parental-permission identity model.</strong> Pediatric trials require parental permission and age-appropriate pediatric assent per the IRB-approved process and 45 CFR 46 Subpart D. The identity layer distinguishes the parent or guardian as the primary recruitment-conversation participant, with the child's assent collected per the IRB-approved assent process at the coordinator-mediated consent step. The assistant's language, tone, and information depth are calibrated to the parent or guardian's role. Where the institution permits direct engagement with older adolescents (per state-specific age-of-consent provisions and IRB approval), the assistant supports an adolescent-self-decision posture with parental notification per protocol.</p>
+<p><strong>Multilingual recruitment with culturally-appropriate content and community-research-engagement-team review.</strong> Multilingual deployment requires per-language versions of the entire IRB-approved corpus (protocol summary, eligibility criteria, FAQ, disclosures) with clinically-validated translations reviewed by the institution's community-research-engagement teams and approved by the IRB as language-specific recruitment materials. The assistant's language detection, language preference capture, and per-language content retrieval are architectural primitives. Cultural-adaptation beyond literal translation (trust-building language, community-specific concerns, research-mistrust acknowledgment) is reviewed by community stakeholders before deployment.</p>
+<p><strong>Decentralized-trial recruitment with home-visit-and-telehealth visit-schedule communication.</strong> Decentralized and hybrid trial designs change the recruitment conversation's content scope: the visit schedule includes home visits, telehealth visits, local-lab visits, and shipped-kit procedures in addition to (or instead of) site-based visits. The assistant communicates the decentralized visit logistics (what happens at home, what requires travel, what is shipped, what is via video) using the IRB-approved decentralized-trial recruitment language. The coordinator-handoff includes logistics preferences (home-visit availability, telehealth access, shipping address for study materials) in addition to the standard prescreen summary.</p>
 <hr />
 <h2 id="additional-resources">Additional Resources</h2>
+<p><strong>Regulatory and clinical-trial governance:</strong></p>
+<ul>
+<li>ClinicalTrials.gov (trial registration and patient-facing listings)</li>
+<li>ICH E6(R3) Good Clinical Practice guidelines (2025 update with risk-based and quality-by-design framing)</li>
+<li>21 CFR Part 50 (Protection of Human Subjects: Informed Consent)</li>
+<li>21 CFR Part 11 (Electronic Records; Electronic Signatures)</li>
+<li>45 CFR 46 (Protection of Human Subjects, including Subparts B, C, D)</li>
+<li>FDORA Section 3601 (Diversity Action Plans for Clinical Studies, codified 2022)</li>
+<li>FDA Final Guidance on Diversity Action Plans for Clinical Studies (2024)</li>
+</ul>
+<p><strong>AWS services and healthcare resources:</strong></p>
+<ul>
+<li>AWS HIPAA Eligible Services list</li>
+<li>Amazon Bedrock documentation (Agents, Knowledge Bases, Guardrails)</li>
+<li>Amazon Bedrock Knowledge Bases developer guide</li>
+<li>Amazon Connect administrator guide (contact flows, chat)</li>
+<li>Amazon Pinpoint developer guide (messaging channels)</li>
+<li>AWS Solutions Library healthcare entries</li>
+<li>AWS HealthLake documentation</li>
+</ul>
+<p><strong>Clinical-trial recruitment operations:</strong></p>
+<ul>
+<li>Tufts CSDD publications on clinical-trial enrollment performance</li>
+<li>FDA guidance on decentralized clinical trials</li>
+<li>EMA reflection paper on decentralized clinical trials</li>
+</ul>
 <hr />
 <h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Single trial in a well-characterized therapeutic area, single language (English), single channel (web chat), single site, basic eligibility-rule encoding (10-15 criteria), basic IRB-approved-corpus load, basic coordinator-handoff queue, basic per-cohort representativeness monitoring, basic recruitment-decision-record persistence, named clinical-leadership ownership, IRB review of recruitment content, coordinator-team co-design of handoff format</td>
+<td>6-9 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Multi-trial portfolio (5-20 active trials across therapeutic areas), multi-channel (web chat, SMS, voice), multi-language (English plus Spanish at minimum with clinically-validated translations), multi-site with per-site operational configuration, full eligibility-rule library with named per-criterion clinical-leadership ownership, full IRB-amendment-application workflow with Step Functions, full coordinator-handoff integration with CTMS, full per-cohort representativeness instrumentation with diversity-action-plan reporting, full 21 CFR Part 11 compliance for FDA-regulated trials, full research-grade retention with separate KMS keying, full VPC topology with endpoints and WAF, equity-targeted channel diversification, community-research-engagement-team review of multilingual content, outcome-correlation pipeline</td>
+<td>12-24 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Pediatric-recruitment variant with assent-and-parental-permission identity model, multilingual deployment beyond English plus Spanish with culturally-appropriate content, decentralized-trial recruitment with home-visit-and-telehealth logistics, surrogate-decision-maker variant, multi-institutional deployment with shared platform and per-institution governance, ClinicalTrials.gov deep integration with registry-data validation, voice-channel recruitment with accessibility considerations, community-based-organization partnership integration, sponsor-recruitment-vendor coexistence model, continuous-improvement loop with per-trial onboarding velocity optimization</td>
+<td>12-18 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <p><em>← <a href="chapter11.10-clinical-trial-recruitment-conversationalist.html">Main Recipe 11.10</a> · <a href="chapter11.10-python-example.html">Python Example</a> · <a href="chapter11-preface.html">Chapter Preface</a></em></p>
 

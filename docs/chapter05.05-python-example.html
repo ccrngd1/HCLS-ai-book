@@ -1544,27 +1544,13 @@
         <span class="n">p_street</span> <span class="o">=</span> <span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;line1&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="n">p_zip_match</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1.0&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">q_zip</span> <span class="ow">and</span> <span class="n">q_zip</span> <span class="o">==</span> <span class="n">p_zip</span> <span class="k">else</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.0&quot;</span><span class="p">)</span>
         <span class="n">p_street_sim</span> <span class="o">=</span> <span class="n">_to_decimal</span><span class="p">(</span><span class="n">_jaro_winkler</span><span class="p">(</span><span class="n">q_street</span><span class="p">,</span> <span class="n">p_street</span><span class="p">))</span>
-        <span class="c1"># TODO (TechWriter): Code review Finding 1 (WARNING).</span>
-        <span class="c1"># The parentheses below put the 0.9 multiplier only on</span>
-        <span class="c1"># the street component. Python&#39;s operator precedence</span>
-        <span class="c1"># binds * tighter than +, so the expression evaluates</span>
-        <span class="c1"># as (p_zip_match * 0.5) + ((p_street_sim * 0.5) * 0.9)</span>
-        <span class="c1"># rather than ((p_zip_match * 0.5) + (p_street_sim *</span>
-        <span class="c1"># 0.5)) * 0.9. The 0.9 &quot;matching prior over current&quot;</span>
-        <span class="c1"># penalty therefore does not apply to the zip_match</span>
-        <span class="c1"># component and a recently-moved patient who still</span>
-        <span class="c1"># lives in the same ZIP gets an inflated prior-address</span>
-        <span class="c1"># score. The demo&#39;s expected output is unaffected (no</span>
-        <span class="c1"># demo trigger exercises the prior-address fallback</span>
-        <span class="c1"># path), but the fix is one set of parentheses:</span>
-        <span class="c1">#   prior_score = (</span>
-        <span class="c1">#       (p_zip_match * Decimal(&quot;0.5&quot;))</span>
-        <span class="c1">#       + (p_street_sim * Decimal(&quot;0.5&quot;))</span>
-        <span class="c1">#   ) * Decimal(&quot;0.9&quot;)</span>
-        <span class="n">prior_score</span> <span class="o">=</span> <span class="p">((</span><span class="n">p_zip_match</span> <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.5&quot;</span><span class="p">))</span>
-                          <span class="o">+</span> <span class="p">(</span><span class="n">p_street_sim</span> <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.5&quot;</span><span class="p">))</span>
-                          <span class="c1"># Slight penalty for matching prior over current.</span>
-                          <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.9&quot;</span><span class="p">))</span>
+        <span class="c1"># Slight penalty for matching against a prior address rather</span>
+        <span class="c1"># than current. The penalty applies to the full prior-address</span>
+        <span class="c1"># composite (ZIP + street), not just street.</span>
+        <span class="n">prior_score</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">p_zip_match</span> <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.5&quot;</span><span class="p">))</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">p_street_sim</span> <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.5&quot;</span><span class="p">))</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.9&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">prior_score</span> <span class="o">&gt;</span> <span class="n">best_prior_score</span><span class="p">:</span>
             <span class="n">best_prior_score</span> <span class="o">=</span> <span class="n">prior_score</span>
 
@@ -1916,22 +1902,12 @@
     <span class="c1"># Discoverability check: in some frameworks, even</span>
     <span class="c1"># acknowledging the patient is in our system requires</span>
     <span class="c1"># consent.</span>
-    <span class="c1"># TODO (TechWriter): Code review Finding 3 (NOTE). The</span>
-    <span class="c1"># discoverability-NO_MATCH masking only fires when</span>
-    <span class="c1"># decision[&quot;reason&quot;] == &quot;consent_does_not_permit&quot;. The</span>
-    <span class="c1"># consent_expired and consent_registry_unavailable branches</span>
-    <span class="c1"># fall through to MATCHED_NOT_RELEASABLE (or</span>
-    <span class="c1"># TEMPORARY_UNAVAILABLE), which reveals the patient is in</span>
-    <span class="c1"># our system. Pseudocode&#39;s intent (also flagged in expert-</span>
-    <span class="c1"># review A3) is to apply the discoverability-first masking</span>
-    <span class="c1"># before checking specific reason codes. Fix:</span>
-    <span class="c1">#   if not consent_summary.get(&quot;discoverability_permitted&quot;, False):</span>
-    <span class="c1">#       return {&quot;match_status&quot;: &quot;NO_MATCH&quot;}</span>
-    <span class="c1"># placed before any of the reason-specific branches, with a</span>
-    <span class="c1"># fail-closed default (False when the field is absent).</span>
+    <span class="c1"># Fail-closed discoverability: unless discoverability_permitted</span>
+    <span class="c1"># is affirmatively True, mask as NO_MATCH. This catches</span>
+    <span class="c1"># consent_does_not_permit, consent_expired, and</span>
+    <span class="c1"># consent_registry_unavailable branches uniformly.</span>
     <span class="n">consent_summary</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;consent_state_summary&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">decision</span><span class="p">[</span><span class="s2">&quot;reason&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;consent_does_not_permit&quot;</span>
-            <span class="ow">and</span> <span class="ow">not</span> <span class="n">consent_summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;discoverability_permitted&quot;</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">consent_summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;discoverability_permitted&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;match_status&quot;</span><span class="p">:</span> <span class="s2">&quot;NO_MATCH&quot;</span><span class="p">}</span>
 
     <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;reason&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;consent_does_not_permit&quot;</span><span class="p">,</span>
@@ -1960,17 +1936,13 @@
     <span class="n">decision</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="s2">&quot;release_decision&quot;</span><span class="p">]</span>
     <span class="n">response_payload</span> <span class="o">=</span> <span class="n">_build_response_payload</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
 
-    <span class="c1"># TODO (TechWriter): Expert review A1 (HIGH). Wrap the</span>
-    <span class="c1"># audit-log put, the S3 audit archive, the EventBridge</span>
-    <span class="c1"># emit, and the response transmission in a TransactWriteItems</span>
-    <span class="c1"># plus an outbox row drained by a separate Lambda or</span>
-    <span class="c1"># DynamoDB Streams consumer so partial failures cannot</span>
-    <span class="c1"># leave the audit log out of sync with the released</span>
-    <span class="c1"># response. Same chapter pattern as 5.1, 5.2, 5.3, 5.4</span>
-    <span class="c1"># Finding A1; the consequence here is sharper because the</span>
-    <span class="c1"># audit log is the legal record of what was exchanged, and</span>
-    <span class="c1"># any divergence between what was sent and what the audit</span>
-    <span class="c1"># log claims was sent is a compliance incident.</span>
+    <span class="c1"># Production: wrap the audit-log put, S3 archive, EventBridge</span>
+    <span class="c1"># emit, and response transmission in a TransactWriteItems plus</span>
+    <span class="c1"># an outbox row drained by DynamoDB Streams. This guarantees</span>
+    <span class="c1"># the audit log never diverges from what was actually sent.</span>
+    <span class="c1"># The demo performs these sequentially for readability; the</span>
+    <span class="c1"># transactional guarantee is critical in production because the</span>
+    <span class="c1"># audit log is the legal record of what was exchanged.</span>
 
     <span class="c1"># 5A: write the audit record. Append-only via the</span>
     <span class="c1"># condition_expression below; production extends with</span>
@@ -2315,22 +2287,13 @@
             <span class="p">],</span>
         <span class="p">},</span>
         <span class="c1"># 3. Med-confidence path: Alex Johnson with mismatched</span>
-        <span class="c1"># address (moved). Sensitivity filter blocks</span>
-        <span class="c1"># behavioral_health_notes.</span>
-        <span class="c1"># TODO (TechWriter): Code review Finding 2 (NOTE). This</span>
-        <span class="c1"># trigger does not actually exercise the med-confidence</span>
-        <span class="c1"># path. The composite score lands at ~0.78 (between</span>
-        <span class="c1"># AUTO_REJECT and AUTO_ACCEPT_MED), so the matcher</span>
-        <span class="c1"># routes the case to NO_MATCH_DEFERRED_REVIEW and</span>
-        <span class="c1"># apply_consent_and_sensitivity short-circuits before</span>
-        <span class="c1"># the sensitivity filter ever runs. The closing prose</span>
-        <span class="c1"># paragraph correctly identifies this as the deferred-</span>
-        <span class="c1"># review path; the inline comment should match. Either</span>
-        <span class="c1"># rewrite this comment as a deferred-review trigger,</span>
-        <span class="c1"># or change the trigger inputs (current address,</span>
-        <span class="c1"># supplied phone) so the composite lands at MED with</span>
-        <span class="c1"># behavioral_health_notes in requested categories so</span>
-        <span class="c1"># the sensitivity-filter block actually fires.</span>
+        <span class="c1"># address (moved). The composite score lands in the</span>
+        <span class="c1"># deferred-review band (~0.78, between AUTO_REJECT and</span>
+        <span class="c1"># AUTO_ACCEPT_MED), so the matcher routes this to</span>
+        <span class="c1"># NO_MATCH_DEFERRED_REVIEW. The sensitivity filter does</span>
+        <span class="c1"># not run on deferred-review cases (consent-and-sensitivity</span>
+        <span class="c1"># short-circuits on no-match outcomes). This trigger</span>
+        <span class="c1"># exercises the deferred-review queue path specifically.</span>
         <span class="p">{</span>
             <span class="s2">&quot;label&quot;</span><span class="p">:</span>          <span class="s2">&quot;med-confidence + sensitivity-filter path&quot;</span><span class="p">,</span>
             <span class="s2">&quot;source&quot;</span><span class="p">:</span>         <span class="s2">&quot;api_gateway_fhir_match&quot;</span><span class="p">,</span>

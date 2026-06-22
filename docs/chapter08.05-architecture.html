@@ -513,7 +513,7 @@
 <h3 id="why-these-services">Why These Services</h3>
 <p><strong>Amazon Comprehend Medical for clinical NER and assertion detection.</strong> Comprehend Medical's <code>DetectEntitiesV2</code> API extracts medical conditions (category: MEDICAL_CONDITION) with associated traits including NEGATION, SYMPTOM, SIGN, and DIAGNOSIS differentiation. It also returns assertion traits (NEGATION, HYPOTHETICAL) and attributes like ACUITY (chronic vs. acute). For condition-to-code mapping, the <code>InferICD10CM</code> and <code>InferSNOMEDCT</code> APIs take clinical text and return ranked terminology codes with confidence scores. Together, these three APIs handle extraction, assertion, and normalization as managed services.</p>
 <p><strong>Amazon S3 for note storage and results.</strong> Clinical notes arrive from HL7 feeds, EHR exports, or ADT messages. S3 provides encrypted staging for incoming notes, archival for extraction results, and a trigger mechanism (S3 event notifications) for automated processing.</p>
-<p><strong>AWS Lambda for extraction orchestration.</strong> Each note goes through a stateless pipeline: receive text, detect sections, call Comprehend Medical APIs, assemble structured output. Lambda's request-based scaling handles both real-time single-note processing and burst loads during batch operations.</p>
+<p><strong>AWS Lambda for extraction orchestration.</strong> Each note goes through a stateless pipeline: receive text, detect sections, call Comprehend Medical APIs, assemble structured output. Lambda's request-based scaling handles both real-time single-note processing and burst loads during batch operations. An SQS dead-letter queue (DLQ) catches invocation failures (throttled events, unhandled exceptions) so no note silently disappears. A CloudWatch alarm on <code>ApproximateNumberOfMessagesVisible</code> in the DLQ fires when depth exceeds zero, giving operations early warning of systemic extraction failures.</p>
 <p><strong>Amazon DynamoDB for problem list storage.</strong> Extracted problems need fast lookups by patient ID (for reconciliation views) and by problem code (for population-level queries). DynamoDB supports both with a composite key design: patient ID as partition key, problem code as sort key.</p>
 <p><strong>AWS Step Functions for batch reconciliation.</strong> When running extraction against a historical note corpus to identify problem list gaps across a patient panel, Step Functions coordinates the parallel processing, handles retries on throttling, and tracks completion status.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
@@ -528,12 +528,15 @@
     F --&gt;|SNOMED Codes| C
     C --&gt;|Reconcile| G[DynamoDB\npatient-problems]
     C --&gt;|Full Results| H[S3\nresults/]
+    C -.-&gt;|Failures| I[SQS DLQ]
+    I -.-&gt;|Alarm| J[CloudWatch Alarm\nDLQ Depth &gt; 0]
 
     style B fill:#f9f,stroke:#333
     style D fill:#ff9,stroke:#333
     style E fill:#ff9,stroke:#333
     style F fill:#ff9,stroke:#333
     style G fill:#9ff,stroke:#333
+    style I fill:#f99,stroke:#333
 </pre>
 <h3 id="prerequisites">Prerequisites</h3>
 <table>
@@ -546,7 +549,7 @@
 <tbody>
 <tr>
 <td><strong>AWS Services</strong></td>
-<td>Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions (for batch)</td>
+<td>Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SQS (DLQ), AWS Step Functions (for batch)</td>
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
@@ -619,6 +622,10 @@
 <td><strong>Amazon CloudWatch</strong></td>
 <td>Logs, metrics, alarms for extraction failures and API throttling</td>
 </tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Dead-letter queue for failed Lambda invocations; enables reprocessing and alerting</td>
+</tr>
 </tbody>
 </table>
 <h3 id="code">Code</h3>
@@ -669,6 +676,7 @@
     RETURN sections
 </code></pre>
 <p><strong>Step 2: Extract clinical problems.</strong> Send each relevant section to the NER service for entity extraction. We're specifically looking for entities of category MEDICAL_CONDITION, which covers diagnoses, symptoms, signs, and disease mentions. The service returns each entity with its text span, confidence score, and traits (like NEGATION or SIGN vs. DIAGNOSIS). We filter to MEDICAL_CONDITION entities and carry forward the section context from Step 1 so we know where each problem was found. Skip this step and you have no raw material for the rest of the pipeline.</p>
+<p><strong>Important limit:</strong> Comprehend Medical's DetectEntitiesV2 accepts a maximum of 20,000 UTF-8 characters per request. Most note sections fall well under this, but discharge summaries and operative notes can exceed it. When a section is longer than 20,000 characters, chunk it at sentence boundaries and reassemble results with offset correction. Splitting mid-sentence risks breaking negation scope (the &quot;no&quot; in &quot;no evidence of malignancy&quot; might land in a different chunk than &quot;malignancy&quot;), so sentence-boundary chunking is not optional.</p>
 <pre class="code code-plain"><code>FUNCTION extract_problems(sections):
     // Process each section through the NER service.
     // We only send sections that could contain relevant problem mentions.
@@ -785,7 +793,25 @@
 
     // 1. Find problems mentioned as active in notes but missing from the list.
     FOR each extracted in active_extracted:
-        IF extracted.snomed[0].Code not in current_list codes:
+        // Check all top-3 SNOMED candidates, not just top-1.
+        // A condition might map to a code already on the list under a different
+        // top-1 candidate. Checking only top-1 produces false ADD_CANDIDATE
+        // recommendations for problems already present under a synonym code.
+        // Ideally, also use SNOMED hierarchy traversal: if extracted code is a
+        // child or parent of an existing code, treat as a match (or a specificity upgrade).
+        extracted_codes = [c.Code for c in extracted.snomed]  // all top-3 candidates
+        match_found = false
+
+        FOR each code in extracted_codes:
+            IF code in current_list codes:
+                match_found = true
+                BREAK
+            // Optional: check SNOMED is-a hierarchy.
+            // IF code is_child_of any current_list code OR any current_list code is_child_of code:
+            //     match_found = true (handle as specificity upgrade instead)
+            //     BREAK
+
+        IF not match_found:
             // Potential gap: documented in note but not on problem list.
             append to recommendations: {
                 type: &quot;ADD_CANDIDATE&quot;,
@@ -839,9 +865,17 @@
 
     // Store actionable recommendations in DynamoDB for clinician review.
     FOR each rec in recommendations:
-        write to DynamoDB table &quot;problem-list-recommendations&quot;:
+        // Deterministic recommendation_id enables idempotent reprocessing.
+        // If the same note is processed twice, it produces the same IDs and
+        // the conditional write prevents duplicate recommendations.
+        recommendation_id = hash(note_id + rec.snomed.Code + rec.type)
+
+        write to DynamoDB table &quot;problem-list-recommendations&quot;
+            with condition: attribute_not_exists(recommendation_id)
+            // If the item already exists, the conditional write fails silently.
+            // This prevents duplicate recommendations on reprocessing.
             patient_id       = patient_id              // partition key
-            recommendation_id = generate unique ID     // sort key
+            recommendation_id = recommendation_id      // sort key (deterministic)
             type             = rec.type                // ADD_CANDIDATE, RESOLVE_CANDIDATE, etc.
             problem_text     = rec.problem
             snomed_code      = rec.snomed.Code
@@ -957,6 +991,15 @@
 <li>Specialty-specific shorthand (orthopedic notes are particularly terse)</li>
 <li>Combination/compound conditions: &quot;diabetes with nephropathy and retinopathy&quot; is one problem or three?</li>
 </ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This pipeline extracts problems and produces recommendations. But several gaps sit between &quot;works on a single note&quot; and &quot;deployed in a health system with clinicians relying on it&quot;:</p>
+<p><strong>No clinician review UI.</strong> Recommendations land in DynamoDB with status PENDING_REVIEW, but there's no interface for clinicians to accept, reject, or modify them. Without a review workflow integrated into the EHR, recommendations pile up unseen. Building this UI is often harder than building the extraction pipeline itself.</p>
+<p><strong>No feedback loop.</strong> When clinicians reject recommendations (or accept them with modifications), that signal should feed back into the system to improve assertion accuracy and reduce false positives over time. Without feedback, the same bad recommendations keep appearing. This requires both a data collection mechanism and a retraining or threshold-adjustment pipeline.</p>
+<p><strong>No multi-note aggregation.</strong> This pipeline processes one note at a time. A problem mentioned in 5 of the last 8 notes is much stronger evidence than a single mention. Longitudinal aggregation across notes (with recency weighting) dramatically improves precision, especially for distinguishing truly active problems from incidental mentions.</p>
+<p><strong>No handling of conflicting assertions across notes.</strong> One note says &quot;diabetes, well-controlled.&quot; Another says &quot;denies diabetes.&quot; When assertions conflict across notes, which wins? Production systems need conflict resolution logic (typically: most recent clinical note from the treating provider wins, with confidence weighting).</p>
+<p><strong>No SNOMED hierarchy-aware deduplication.</strong> The reconciliation logic checks code equality, but &quot;Type 2 diabetes mellitus&quot; (44054006) and &quot;Type 2 diabetes mellitus with diabetic chronic kidney disease&quot; (721000119107) are related concepts in the SNOMED hierarchy. Without hierarchy traversal, the system might recommend adding a child concept when the parent is already on the list (or vice versa). A production system needs access to SNOMED relationship tables to detect is-a relationships between codes.</p>
+<p><strong>No DLQ reprocessing workflow.</strong> The SQS DLQ catches failed invocations, but there's no automated mechanism to inspect failures, fix the root cause, and replay messages. In practice, you need a separate Lambda or Step Functions workflow that triages DLQ messages by error type and either retries (for transient failures) or routes to human review (for malformed notes).</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Multi-note longitudinal extraction.</strong> Instead of processing one note at a time, aggregate problem mentions across all recent notes for a patient and use frequency/recency signals to strengthen confidence. A problem mentioned in 5 of the last 8 notes is much more likely to be truly active than one mentioned once. This approach also helps detect resolved conditions: if &quot;pneumonia&quot; was mentioned in notes 6 months ago but absent from all recent documentation, it's likely resolved.</p>

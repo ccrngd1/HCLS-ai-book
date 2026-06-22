@@ -513,7 +513,7 @@
 <hr />
 <h2 id="setup">Setup</h2>
 <p>You'll need the AWS SDK for Python and a few image processing libraries:</p>
-<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>pillow
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>pillow<span class="w"> </span>scipy
 </pre></div>
 
 <p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
@@ -551,7 +551,7 @@
 <span class="n">FEATURE_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;pathology-features&quot;</span>
 <span class="n">RESULTS_TABLE</span> <span class="o">=</span> <span class="s2">&quot;pathology-analysis-results&quot;</span>
 <span class="n">METADATA_TABLE</span> <span class="o">=</span> <span class="s2">&quot;pathology-slide-metadata&quot;</span>
-<span class="n">ANALYSIS_QUEUE</span> <span class="o">=</span> <span class="s2">&quot;pathology-analysis-queue&quot;</span>
+<span class="n">ANALYSIS_QUEUE_URL</span> <span class="o">=</span> <span class="s2">&quot;https://sqs.us-east-1.amazonaws.com/123456789012/pathology-analysis-queue&quot;</span>  <span class="c1"># replace with your queue URL</span>
 <span class="n">SAGEMAKER_MODEL_NAME</span> <span class="o">=</span> <span class="s2">&quot;pathology-feature-extractor&quot;</span>
 
 <span class="c1"># Stain normalization reference values (Macenko method).</span>
@@ -655,7 +655,7 @@
 
     <span class="c1"># Queue for analysis</span>
     <span class="n">sqs_client</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span>
-        <span class="n">QueueUrl</span><span class="o">=</span><span class="n">ANALYSIS_QUEUE</span><span class="p">,</span>
+        <span class="n">QueueUrl</span><span class="o">=</span><span class="n">ANALYSIS_QUEUE_URL</span><span class="p">,</span>
         <span class="n">MessageBody</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
             <span class="s2">&quot;slide_id&quot;</span><span class="p">:</span> <span class="n">slide_id</span><span class="p">,</span>
             <span class="s2">&quot;s3_path&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -704,7 +704,6 @@
     <span class="c1"># Background glass (white/clear) has near-zero saturation.</span>
     <span class="c1"># This is more robust than simple grayscale thresholding because it</span>
     <span class="c1"># handles slides with varying brightness levels.</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImageFilter</span>
 
     <span class="n">hsv_image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;HSV&quot;</span><span class="p">)</span>
     <span class="n">hsv_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hsv_image</span><span class="p">)</span>
@@ -1015,21 +1014,24 @@
 <span class="sd">    The output is a numpy array of shape [num_patches, FEATURE_DIM].</span>
 <span class="sd">    Each row is the feature vector for one patch.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># List all output files in the features directory</span>
+    <span class="c1"># List all output files in the features directory.</span>
+    <span class="c1"># Use a paginator because list_objects_v2 returns at most 1000 keys per call.</span>
+    <span class="c1"># A slide with 30,000+ patches may produce more than 1000 output files.</span>
     <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;features/</span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">/&quot;</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">list_objects_v2</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span> <span class="n">Prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+    <span class="n">paginator</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_paginator</span><span class="p">(</span><span class="s2">&quot;list_objects_v2&quot;</span><span class="p">)</span>
 
     <span class="n">all_features</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Contents&quot;</span><span class="p">,</span> <span class="p">[]):</span>
-        <span class="c1"># Read each output file (SageMaker may split across multiple files)</span>
-        <span class="n">body</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Key&quot;</span><span class="p">])[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span>
-        <span class="n">content</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">paginator</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span> <span class="n">Prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">page</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Contents&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="c1"># Read each output file (SageMaker may split across multiple files)</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Key&quot;</span><span class="p">])[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Each line is a JSON array representing one feature vector</span>
-        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
-                <span class="n">feature_vector</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-                <span class="n">all_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_vector</span><span class="p">)</span>
+            <span class="c1"># Each line is a JSON array representing one feature vector</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">feature_vector</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                    <span class="n">all_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_vector</span><span class="p">)</span>
 
     <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded features: shape </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -1081,6 +1083,7 @@
     <span class="n">attention_weights</span> <span class="o">=</span> <span class="n">exp_attention</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">exp_attention</span><span class="p">)</span>
 
     <span class="c1"># Weighted aggregation: slide-level representation</span>
+    <span class="c1"># 1D @ 2D in numpy: equivalent to np.dot(attention_weights, features), produces shape [FEATURE_DIM]</span>
     <span class="n">slide_representation</span> <span class="o">=</span> <span class="n">attention_weights</span> <span class="o">@</span> <span class="n">features</span>  <span class="c1"># [FEATURE_DIM]</span>
 
     <span class="c1"># Classification head: slide representation -&gt; class probabilities</span>
@@ -1171,7 +1174,11 @@
     <span class="n">confidence</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">predicted_class</span><span class="p">]</span>
 
     <span class="c1"># Extract just the ROI patches for the summary (full heatmap stored separately)</span>
-    <span class="n">top_regions</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">heatmap</span> <span class="k">if</span> <span class="n">h</span><span class="p">[</span><span class="s2">&quot;is_roi&quot;</span><span class="p">]]</span>
+    <span class="c1"># Convert float attention values to Decimal for DynamoDB compatibility</span>
+    <span class="n">top_regions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="o">**</span><span class="n">h</span><span class="p">,</span> <span class="s2">&quot;attention&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]))}</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">heatmap</span> <span class="k">if</span> <span class="n">h</span><span class="p">[</span><span class="s2">&quot;is_roi&quot;</span><span class="p">]</span>
+    <span class="p">]</span>
 
     <span class="c1"># Store the full heatmap as a separate S3 object (too large for DynamoDB item)</span>
     <span class="n">heatmap_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;heatmaps/</span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">/attention-heatmap.json&quot;</span>

@@ -1630,6 +1630,9 @@
                 <span class="o">+</span> <span class="p">(</span><span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;secondary_diagnoses_icd10&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]))</span>
             <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;cluster_role&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_infer_role</span><span class="p">(</span><span class="n">claim</span><span class="p">,</span> <span class="n">existing_cluster</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Build the cluster shell first, score the role, THEN</span>
+            <span class="c1"># add the claim so _infer_role&#39;s &quot;is any OTHER facility</span>
+            <span class="c1"># claim already here&quot; check works correctly.</span>
             <span class="n">new_cluster</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;encounter_cluster_id&quot;</span><span class="p">:</span> <span class="n">_generate_cluster_id</span><span class="p">(</span>
                     <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;resolved_local_patient_id&quot;</span><span class="p">],</span>
@@ -1639,7 +1642,7 @@
                 <span class="s2">&quot;encounter_class&quot;</span><span class="p">:</span>      <span class="n">encounter_class</span><span class="p">,</span>
                 <span class="s2">&quot;cluster_window_start&quot;</span><span class="p">:</span> <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;service_from_date&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;cluster_window_end&quot;</span><span class="p">:</span>   <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;service_through_date&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;constituent_claims&quot;</span><span class="p">:</span>   <span class="p">[</span><span class="n">claim</span><span class="p">],</span>
+                <span class="s2">&quot;constituent_claims&quot;</span><span class="p">:</span>   <span class="p">[],</span>
                 <span class="s2">&quot;aggregate_diagnoses&quot;</span><span class="p">:</span>  <span class="nb">set</span><span class="p">(</span>
                     <span class="p">[</span><span class="n">claim</span><span class="p">[</span><span class="s2">&quot;primary_diagnosis_icd10&quot;</span><span class="p">]]</span>
                     <span class="o">+</span> <span class="p">(</span><span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;secondary_diagnoses_icd10&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])),</span>
@@ -1649,6 +1652,7 @@
                     <span class="k">if</span> <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;claim_type&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;facility_&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;cluster_role&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_infer_role</span><span class="p">(</span><span class="n">claim</span><span class="p">,</span> <span class="n">new_cluster</span><span class="p">)</span>
+            <span class="n">new_cluster</span><span class="p">[</span><span class="s2">&quot;constituent_claims&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">claim</span><span class="p">)</span>
             <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_cluster</span><span class="p">)</span>
 
     <span class="c1"># 3D: post-cluster reconciliation. Aggregate the cluster&#39;s</span>
@@ -1754,9 +1758,12 @@
     <span class="n">exact_overlap</span> <span class="o">=</span> <span class="n">cluster_full</span> <span class="o">&amp;</span> <span class="n">ehr_full</span>
     <span class="n">hier_overlap</span> <span class="o">=</span> <span class="n">cluster_hier</span> <span class="o">&amp;</span> <span class="n">ehr_hier</span>
     <span class="k">if</span> <span class="n">exact_overlap</span><span class="p">:</span>
-        <span class="c1"># Exact code match scores higher than chapter-only match.</span>
+        <span class="c1"># Exact code match scores higher than chapter-only match,</span>
+        <span class="c1"># but the score is normalized to stay in [0, 1] for</span>
+        <span class="c1"># comparability with the other features.</span>
         <span class="n">union</span> <span class="o">=</span> <span class="n">cluster_full</span> <span class="o">|</span> <span class="n">ehr_full</span>
-        <span class="k">return</span> <span class="n">_to_decimal</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exact_overlap</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">union</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">jaccard</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exact_overlap</span><span class="p">))</span> <span class="o">/</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">union</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">_to_decimal</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1.0&quot;</span><span class="p">),</span> <span class="n">jaccard</span> <span class="o">+</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.3&quot;</span><span class="p">)))</span>
     <span class="k">if</span> <span class="n">hier_overlap</span><span class="p">:</span>
         <span class="n">union</span> <span class="o">=</span> <span class="n">cluster_hier</span> <span class="o">|</span> <span class="n">ehr_hier</span>
         <span class="k">return</span> <span class="n">_to_decimal</span><span class="p">(</span><span class="mf">0.4</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hier_overlap</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">union</span><span class="p">))))</span>
@@ -1885,7 +1892,11 @@
                 <span class="s2">&quot;link_status&quot;</span><span class="p">:</span>               <span class="s2">&quot;LINKED_HIGH_CONFIDENCE&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;linked_clinical_encounter_id&quot;</span><span class="p">:</span> <span class="n">best</span><span class="p">[</span><span class="s2">&quot;encounter&quot;</span><span class="p">][</span><span class="s2">&quot;encounter_id&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;link_confidence&quot;</span><span class="p">:</span>           <span class="n">best</span><span class="p">[</span><span class="s2">&quot;composite&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;link_method&quot;</span><span class="p">:</span>               <span class="s2">&quot;probabilistic_high_confidence&quot;</span><span class="p">}</span>
+                <span class="s2">&quot;link_method&quot;</span><span class="p">:</span>               <span class="s2">&quot;probabilistic_high_confidence&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;matched_clinical_encounter_diagnoses&quot;</span><span class="p">:</span>
+                    <span class="n">best</span><span class="p">[</span><span class="s2">&quot;encounter&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;encounter_diagnoses&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;matched_clinical_encounter_drg&quot;</span><span class="p">:</span>
+                    <span class="n">best</span><span class="p">[</span><span class="s2">&quot;encounter&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drg_code&quot;</span><span class="p">)}</span>
     <span class="k">if</span> <span class="n">best</span><span class="p">[</span><span class="s2">&quot;composite&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ENCOUNTER_LINK_MED_THRESHOLD</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">base</span><span class="p">,</span>
                 <span class="s2">&quot;link_status&quot;</span><span class="p">:</span>               <span class="s2">&quot;LINKED_MED_CONFIDENCE&quot;</span><span class="p">,</span>
@@ -1893,7 +1904,11 @@
                 <span class="s2">&quot;link_confidence&quot;</span><span class="p">:</span>           <span class="n">best</span><span class="p">[</span><span class="s2">&quot;composite&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;link_method&quot;</span><span class="p">:</span>               <span class="s2">&quot;probabilistic_med_confidence&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;usage_caveat&quot;</span><span class="p">:</span>
-                    <span class="s2">&quot;use_with_confidence_filter_in_quality_measurement&quot;</span><span class="p">}</span>
+                    <span class="s2">&quot;use_with_confidence_filter_in_quality_measurement&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;matched_clinical_encounter_diagnoses&quot;</span><span class="p">:</span>
+                    <span class="n">best</span><span class="p">[</span><span class="s2">&quot;encounter&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;encounter_diagnoses&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;matched_clinical_encounter_drg&quot;</span><span class="p">:</span>
+                    <span class="n">best</span><span class="p">[</span><span class="s2">&quot;encounter&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drg_code&quot;</span><span class="p">)}</span>
     <span class="k">if</span> <span class="n">best</span><span class="p">[</span><span class="s2">&quot;composite&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">ENCOUNTER_LINK_REJECT_THRESHOLD</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">base</span><span class="p">,</span>
                 <span class="s2">&quot;link_status&quot;</span><span class="p">:</span>          <span class="s2">&quot;NO_LINK&quot;</span><span class="p">,</span>
@@ -2073,7 +2088,13 @@
     <span class="n">coverage</span> <span class="o">=</span> <span class="p">(</span><span class="n">Decimal</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line_item_attributions</span><span class="p">))</span> <span class="o">/</span> <span class="n">Decimal</span><span class="p">(</span><span class="n">total</span><span class="p">)</span>
                   <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_emit_metric</span><span class="p">(</span><span class="s2">&quot;AttributionCoverage&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">coverage</span><span class="p">))</span>
+        <span class="n">cohort_bucket</span> <span class="o">=</span> <span class="n">SYNTHETIC_LOCAL_MPI</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">linked_cluster</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;local_patient_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cohort_bucket&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+        <span class="n">_emit_metric</span><span class="p">(</span><span class="s2">&quot;AttributionCoverage&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">coverage</span><span class="p">),</span>
+                      <span class="n">dimensions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;CohortBucket&quot;</span><span class="p">:</span> <span class="n">cohort_bucket</span><span class="p">,</span>
+                                    <span class="s2">&quot;EncounterClass&quot;</span><span class="p">:</span>
+                                        <span class="n">clinical_encounter</span><span class="p">[</span><span class="s2">&quot;encounter_class&quot;</span><span class="p">]})</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;encounter_cluster_id&quot;</span><span class="p">:</span>     <span class="n">cluster_id</span><span class="p">,</span>
@@ -2107,8 +2128,18 @@
         <span class="s2">&quot;cluster_window_end&quot;</span><span class="p">:</span>        <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;cluster_window_end&quot;</span><span class="p">],</span>
         <span class="s2">&quot;constituent_claim_ids&quot;</span><span class="p">:</span>     <span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;claim_id&quot;</span><span class="p">]</span>
                                           <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;constituent_claims&quot;</span><span class="p">]],</span>
-        <span class="s2">&quot;primary_diagnoses&quot;</span><span class="p">:</span>         <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;aggregate_diagnoses&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;drg_code&quot;</span><span class="p">:</span>                  <span class="n">cluster</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drg_code&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;primary_diagnoses_claim&quot;</span><span class="p">:</span>   <span class="nb">sorted</span><span class="p">({</span>
+            <span class="n">c</span><span class="p">[</span><span class="s2">&quot;primary_diagnosis_icd10&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;constituent_claims&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;primary_diagnosis_icd10&quot;</span><span class="p">)}),</span>
+        <span class="s2">&quot;secondary_diagnoses_claim&quot;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span>
+            <span class="n">d</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;constituent_claims&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;secondary_diagnoses_icd10&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])}),</span>
+        <span class="s2">&quot;primary_diagnoses_ehr&quot;</span><span class="p">:</span>
+            <span class="n">linkage_decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;matched_clinical_encounter_diagnoses&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="s2">&quot;drg_code_claim&quot;</span><span class="p">:</span>            <span class="n">cluster</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drg_code&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;drg_code_ehr&quot;</span><span class="p">:</span>
+            <span class="n">linkage_decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;matched_clinical_encounter_drg&quot;</span><span class="p">),</span>
         <span class="s2">&quot;cluster_charge_total&quot;</span><span class="p">:</span>      <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;cluster_charge_total&quot;</span><span class="p">],</span>
         <span class="s2">&quot;cluster_paid_total&quot;</span><span class="p">:</span>        <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;cluster_paid_total&quot;</span><span class="p">],</span>
         <span class="s2">&quot;link_status&quot;</span><span class="p">:</span>               <span class="n">linkage_decision</span><span class="p">[</span><span class="s2">&quot;link_status&quot;</span><span class="p">],</span>
@@ -2129,6 +2160,16 @@
         <span class="s2">&quot;matcher_config_version&quot;</span><span class="p">:</span>    <span class="n">MATCHER_CONFIG_VERSION</span><span class="p">,</span>
         <span class="s2">&quot;vocabulary_versions&quot;</span><span class="p">:</span>       <span class="n">vocabulary_map</span><span class="o">.</span><span class="n">versions_used</span><span class="p">(),</span>
         <span class="s2">&quot;resolved_at&quot;</span><span class="p">:</span>               <span class="n">_now_iso</span><span class="p">(),</span>
+        <span class="c1"># NOTE: Demo writes one item per cluster keyed on</span>
+        <span class="c1"># encounter_cluster_id only. The pseudocode&#39;s</span>
+        <span class="c1"># next_version_for(...) pattern requires a composite</span>
+        <span class="c1"># (encounter_cluster_id, version) key on the production</span>
+        <span class="c1"># table; the ConditionExpression below would change to</span>
+        <span class="c1"># attribute_not_exists(version) so re-links after</span>
+        <span class="c1"># invalidation append rather than fail. Production:</span>
+        <span class="c1"># extend the table schema to include version as a sort</span>
+        <span class="c1"># key, replace version=1 with next_version_for(cluster_id),</span>
+        <span class="c1"># and update the ConditionExpression accordingly.</span>
         <span class="s2">&quot;version&quot;</span><span class="p">:</span>                   <span class="mi">1</span><span class="p">,</span>
     <span class="p">})</span>
 
@@ -2153,6 +2194,16 @@
         <span class="s2">&quot;emitted_at&quot;</span><span class="p">:</span>   <span class="kc">None</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Production: wrap both writes in a TransactWriteItems</span>
+        <span class="c1"># call so the linkage table and outbox stay consistent on</span>
+        <span class="c1"># partial failure. The demo uses two separate put_item</span>
+        <span class="c1"># calls because the in-memory fallback tables do not</span>
+        <span class="c1"># support transact_write_items. The mechanics:</span>
+        <span class="c1">#   dynamodb.meta.client.transact_write_items(TransactItems=[</span>
+        <span class="c1">#       {&quot;Put&quot;: {&quot;TableName&quot;: LINKAGE_TABLE, &quot;Item&quot;: ...,</span>
+        <span class="c1">#                &quot;ConditionExpression&quot;: &quot;...&quot;}},</span>
+        <span class="c1">#       {&quot;Put&quot;: {&quot;TableName&quot;: OUTBOX_TABLE, &quot;Item&quot;: ...}},</span>
+        <span class="c1">#   ])</span>
         <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">LINKAGE_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
             <span class="n">Item</span><span class="o">=</span><span class="n">linkage_record</span><span class="p">,</span>
             <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;attribute_not_exists(encounter_cluster_id)&quot;</span><span class="p">,</span>
@@ -2205,7 +2256,10 @@
 
     <span class="n">_emit_metric</span><span class="p">(</span><span class="s2">&quot;LinkageOutcome&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span>
                   <span class="n">dimensions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Status&quot;</span><span class="p">:</span> <span class="n">linkage_decision</span><span class="p">[</span><span class="s2">&quot;link_status&quot;</span><span class="p">],</span>
-                                <span class="s2">&quot;EncounterClass&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;encounter_class&quot;</span><span class="p">]})</span>
+                                <span class="s2">&quot;EncounterClass&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;encounter_class&quot;</span><span class="p">],</span>
+                                <span class="s2">&quot;CohortBucket&quot;</span><span class="p">:</span> <span class="n">SYNTHETIC_LOCAL_MPI</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                    <span class="n">cluster</span><span class="p">[</span><span class="s2">&quot;local_patient_id&quot;</span><span class="p">],</span> <span class="p">{}</span>
+                                <span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cohort_bucket&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)})</span>
     <span class="k">return</span> <span class="n">linkage_record</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">invalidate_on_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>

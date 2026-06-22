@@ -514,6 +514,7 @@
 <p><strong>Amazon Location Service for geocoding.</strong> Location Service provides a managed geocoding API that converts addresses to coordinates without requiring you to run your own geocoding infrastructure. It supports high-throughput geocoding (important when you're processing 200,000 addresses), returns confidence scores, and operates within the AWS compliance boundary. Before sending patient addresses to Location Service, verify that it appears on the current <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services list</a>. The eligible services list is updated periodically; check at implementation time. If Location Service is not listed when you implement, geocode using a self-hosted solution (e.g., Pelias or Nominatim on EC2 within your VPC) or use a geocoding provider with whom you have a BAA.</p>
 <p><strong>Amazon S3 for data storage.</strong> Patient address extracts, geocoded coordinates, and cluster results all need durable, encrypted storage. S3 with SSE-KMS provides the encryption at rest, and S3's integration with every other AWS service makes it the natural data lake layer.</p>
 <p><strong>AWS Lambda for orchestration and clustering logic.</strong> The geocoding and clustering steps are batch workloads that run periodically (weekly or monthly refresh). Lambda handles the orchestration: trigger the geocoding batch, run the clustering algorithm, write results. For datasets under ~500,000 points, the clustering algorithm itself runs comfortably within Lambda's memory and timeout limits.</p>
+<p><strong>AWS Step Functions for large geocoding batches.</strong> When your address list exceeds 50,000 records, a single Lambda invocation risks hitting the 15-minute timeout during the geocoding loop (each address requires an individual API call). Use a Step Functions Map state to fan out geocoding across parallel Lambda invocations. Split your address file into chunks of 5,000-10,000 records, let the Map state invoke a geocoding Lambda per chunk in parallel (up to your concurrency limit), then collect results in a subsequent state that merges the geocoded outputs into S3. This keeps each individual Lambda well within its timeout budget and lets you tune concurrency to stay under Location Service rate limits.</p>
 <p><strong>Amazon SageMaker for large-scale clustering.</strong> If your patient population exceeds what Lambda can handle in memory (roughly 500K+ points with enrichment data), SageMaker provides managed compute for running scikit-learn or custom clustering jobs. SageMaker Processing Jobs give you ephemeral compute that spins up, runs the algorithm, writes results to S3, and shuts down. For datasets exceeding 500K points or requiring GPU-accelerated HDBSCAN, replace the clustering Lambda with a SageMaker Processing Job. The job reads from the same S3 geocoded/ prefix, runs the same algorithm, and writes to the same cluster-results/ prefix. The only difference is compute: SageMaker provides instances with more memory and optional GPU. Use the <code>sklearn</code> container or bring your own.</p>
 <p><strong>Amazon QuickSight for visualization.</strong> QuickSight supports geospatial visualizations (point maps, filled maps, heat maps) and connects directly to S3 or Athena. For the &quot;show me where the clusters are&quot; question that executives ask, QuickSight delivers without requiring a custom mapping application.</p>
 <p><strong>Amazon DynamoDB for cluster metadata.</strong> Once clusters are computed, downstream systems need fast lookups: &quot;which cluster does this patient belong to?&quot; or &quot;what are the characteristics of cluster 7?&quot; DynamoDB provides single-digit-millisecond reads for these access patterns. Restrict DynamoDB access to the cluster-results tables using IAM policies scoped to specific roles (the pipeline write role and the dashboard read role). Use an opaque patient identifier (not MRN) as the partition key; maintain the MRN mapping in a separate, more tightly controlled identity service. The patient-clusters table contains home location data for your entire active population; treat it as a high-sensitivity asset.</p>
@@ -545,7 +546,7 @@
 <tbody>
 <tr>
 <td><strong>AWS Services</strong></td>
-<td>Amazon Location Service, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon QuickSight (optional), Amazon SageMaker (for large datasets)</td>
+<td>Amazon Location Service, Amazon S3, AWS Lambda, AWS Step Functions (for large batches), Amazon DynamoDB, Amazon QuickSight (optional), Amazon SageMaker (for large datasets)</td>
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
@@ -597,6 +598,10 @@
 <tr>
 <td><strong>AWS Lambda</strong></td>
 <td>Orchestrates geocoding batches and runs clustering for moderate datasets</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Fans out geocoding across parallel Lambda invocations for datasets over 50K addresses</td>
 </tr>
 <tr>
 <td><strong>Amazon SageMaker</strong></td>
@@ -827,6 +832,7 @@ FUNCTION cluster_patients(cleaned_records):
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter06.01-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<p><strong>S3 lifecycle policy for cluster snapshots.</strong> Each pipeline run writes a date-prefixed snapshot to S3 containing patient coordinates and cluster assignments. This is PHI. Every retained snapshot increases your exposure surface if the bucket is ever compromised. Configure an S3 Lifecycle rule on the <code>cluster-results/</code> prefix to retain the current snapshot and one previous snapshot (for rollback), then expire older snapshots after 6-12 months. If your compliance framework requires longer retention for audit purposes, move older snapshots to S3 Glacier with a separate, more restrictive access policy. The goal is minimizing the number of &quot;live&quot; copies of your entire patient population's home locations.</p>
 <h3 id="expected-results">Expected Results</h3>
 <p><strong>Sample cluster metadata output:</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
@@ -892,6 +898,14 @@ FUNCTION cluster_patients(cleaned_records):
 <li>Apartment complexes and nursing homes create artificial density spikes. 500 patients at one address looks like a cluster core but represents a single building, not a neighborhood.</li>
 <li>Seasonal populations (snowbirds, college students) shift dramatically between summer and winter. A single snapshot misses this.</li>
 </ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This pipeline produces correct, useful cluster output. But &quot;produces correct output on a good day&quot; and &quot;runs reliably in production every month without human intervention&quot; are different things. Here's where the gaps live:</p>
+<p><strong>No automated parameter tuning.</strong> The DBSCAN epsilon and min_samples values are hardcoded. In production, your service area likely spans urban cores and rural fringes that need different density thresholds. You'd want either an automated parameter sweep (run multiple parameter combinations, select based on a stability metric) or HDBSCAN (which handles varying density natively). Without this, someone manually picks parameters and hopes they stay reasonable as the population shifts.</p>
+<p><strong>No drive-time validation.</strong> Clusters are computed using straight-line (Haversine) distance, which is fast and cheap but misleading near geographic barriers. A cluster that looks compact on a map might span a 45-minute drive if a river or highway interchange sits in the middle. Before making facility placement decisions, validate top candidate clusters against actual drive-time isochrones from a routing API.</p>
+<p><strong>No CI/CD pipeline.</strong> There's no automated testing, no deployment mechanism, no rollback strategy. If the clustering logic changes (new enrichment fields, different algorithm), someone manually updates the Lambda/SageMaker code. A production system has unit tests for the clustering logic with known synthetic inputs, integration tests against Location Service, and an automated deployment path with canary metrics.</p>
+<p><strong>No data drift monitoring.</strong> Patient populations shift over time, and the pipeline has no mechanism to detect when its output is becoming stale or when input data quality is degrading. You'd want alerts on: geocoding failure rate exceeding a threshold (suggests data quality drop), cluster count changing dramatically between runs (suggests population shift or parameter staleness), and cluster membership stability falling below a threshold (suggests high churn that might invalidate downstream decisions).</p>
+<p><strong>No graceful handling of Location Service outages.</strong> If Location Service is unavailable or throttling heavily during a geocoding run, the pipeline either fails entirely or produces partial results with no clear indication of what's missing. Production needs circuit-breaker logic that detects sustained failures, pauses the run, alerts operators, and resumes when the service recovers.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Drive-time isochrone analysis.</strong> Instead of clustering by straight-line distance, use a routing service to compute actual drive times from each patient to existing facilities. Identify patients outside a 20-minute drive-time threshold. This is more expensive (requires a routing API call per patient-facility pair) but dramatically more accurate for access analysis, especially in areas with geographic barriers like rivers, mountains, or highway configurations.</p>

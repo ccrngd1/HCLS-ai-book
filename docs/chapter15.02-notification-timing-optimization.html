@@ -576,6 +576,25 @@
 <li>Deploy the learned policy with a small exploration rate to continue improving</li>
 </ol>
 <p>The key challenge with offline learning is coverage. If you've never sent messages at 10pm, you have zero data about 10pm engagement. The offline model can't learn about time slots it's never observed. This is why you need some online exploration after deployment, even if the initial policy is trained offline.</p>
+<h3 id="offline-policy-evaluation-ope-knowing-before-you-deploy">Offline Policy Evaluation (OPE): Knowing Before You Deploy</h3>
+<p>Before you push a new timing policy to production, you want to answer one question: &quot;Will this new policy actually perform better than what we're doing now?&quot; Offline policy evaluation (OPE) lets you estimate a new policy's performance using only historical data, without sending a single message under the new strategy.</p>
+<p><strong>Why this matters for notification timing:</strong> Your historical policy is almost certainly deterministic (or close to it). You always sent refill reminders at 9am. That means your logged data covers a narrow slice of the action space. OPE must account for this limited coverage honestly, or you'll get dangerously overconfident estimates.</p>
+<p><strong>Doubly-robust estimation</strong> is the standard approach for deterministic (or near-deterministic) historical policies. It combines two estimators:</p>
+<ol>
+<li>A direct model estimate: train a reward predictor on historical data, then use it to estimate what the new policy would achieve.</li>
+<li>An inverse propensity score (IPS) correction: re-weight observed outcomes by how likely the new policy would have taken the same action the historical policy took.</li>
+</ol>
+<p>The &quot;doubly-robust&quot; property means the estimate is consistent if either the reward model or the propensity model is correctly specified. You don't need both to be perfect, just one. In practice, this gives you much more reliable estimates than either approach alone.</p>
+<p><strong>Coverage limitations are the hard constraint.</strong> If your historical policy never sent messages at 7pm, you have zero data about 7pm outcomes. No amount of statistical cleverness can fill that gap. OPE can only evaluate the new policy on the portions of the action space where historical data exists. If the new policy heavily favors time slots with no historical coverage, your OPE estimate will have wide confidence intervals (or be undefined entirely). This is why the offline training phase should include at least some exploration (even 5-10% random sends) to build coverage across time slots.</p>
+<p><strong>Confidence intervals tell you what you don't know.</strong> A point estimate (&quot;the new policy will achieve 18% open rate&quot;) is useless without uncertainty bounds. Compute bootstrap confidence intervals on the doubly-robust estimate. If the 95% confidence interval for the new policy overlaps with the current policy's performance, you don't have enough evidence that the new policy is actually better. Don't deploy on hope.</p>
+<p><strong>Deployment gates tie OPE to your release process.</strong> Set a concrete rule: only deploy a new timing policy if the OPE estimate exceeds the current policy's measured performance by a statistically significant margin (e.g., the lower bound of the 95% CI is above the current policy's mean). This prevents you from shipping models that look good on average but could easily be worse. In practice:</p>
+<ul>
+<li>Compute the doubly-robust estimate with 1,000 bootstrap samples.</li>
+<li>Calculate the 95% confidence interval.</li>
+<li>Compare the lower bound of the CI against the current policy's trailing 30-day engagement rate.</li>
+<li>Only deploy if lower_bound_new &gt; mean_current. Otherwise, collect more data or increase exploration to improve coverage.</li>
+</ul>
+<p>This gate should be automated in your retraining pipeline. Every time Personalize produces a new model version or your custom bandit retrains, run OPE against the last 30 days of logged interactions. If the gate passes, promote to canary. If not, keep the current policy and flag for review.</p>
 <h3 id="safety-constraints-for-healthcare-notifications">Safety Constraints for Healthcare Notifications</h3>
 <p>Even though notification timing is low-stakes compared to clinical RL, there are real constraints:</p>
 <p><strong>Quiet hours.</strong> Never send between 9pm and 7am unless the patient has explicitly opted in to late notifications. This is both a regulatory consideration (TCPA for SMS) and a respect consideration. Hard constraint, not learnable.</p>

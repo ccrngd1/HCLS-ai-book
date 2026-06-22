@@ -529,12 +529,16 @@
     C --&gt;|Raw Extractions| G[S3\nsdoh-results/]
     F --&gt;|Query| H[Care Management\nPlatform]
     G --&gt;|Analytics| I[Population Health\nDashboard]
+    B --&gt;|Failed Messages| J[SQS DLQ\nsdoh-notes-dlq]
+    J --&gt;|Alarm on Depth| K[CloudWatch Alarm]
 
     style B fill:#f9f,stroke:#333
     style D fill:#ff9,stroke:#333
     style E fill:#ff9,stroke:#333
     style F fill:#9ff,stroke:#333
+    style J fill:#f66,stroke:#333
 </pre>
+<p>Configure the main SQS queue (<code>sdoh-notes-inbox</code>) with a dead letter queue (<code>sdoh-notes-dlq</code>) and a redrive policy (e.g., maxReceiveCount of 3). Attach a CloudWatch alarm on the DLQ's <code>ApproximateNumberOfMessagesVisible</code> metric. If the DLQ depth rises above zero, something is failing silently. Notes stuck in the DLQ represent patients whose SDOH needs aren't being captured, so treat DLQ depth as a high-priority operational alert.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <table>
 <thead>
@@ -571,6 +575,14 @@
 <tr>
 <td><strong>DynamoDB PITR</strong></td>
 <td>Enable Point-in-Time Recovery for the SDOH profiles table</td>
+</tr>
+<tr>
+<td><strong>DynamoDB GSI</strong></td>
+<td>Population-level queries (&quot;all patients with active food insecurity in my panel&quot;) require a Global Secondary Index. Use <code>domain#assertion</code> as the partition key and <code>note_date</code> as the sort key. This enables queries like &quot;all active housing_instability findings in the last 90 days&quot; without scanning the entire table. Without this GSI, population health dashboards must rely on the S3-based analytics path or full table scans.</td>
+</tr>
+<tr>
+<td><strong>DynamoDB Access Control</strong></td>
+<td>Restrict <code>sdoh-profiles</code> table read access to care management roles only. SDOH data is sensitive even within the organization (not every clinician needs to see a patient's housing or financial situation). Consider storing only metadata (domain, assertion, codes, note_id) in the DynamoDB item and omitting the <code>source_text</code> field. Authorized reviewers who need the original sentence can look it up via <code>note_id</code> in the source system. This minimizes PHI exposure in the fast-lookup layer while preserving traceability.</td>
 </tr>
 <tr>
 <td><strong>Training Data</strong></td>
@@ -629,7 +641,7 @@
 <blockquote>
 <p><strong>Reference implementations:</strong> The following AWS sample repos demonstrate patterns used in this recipe:</p>
 <ul>
-<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: Healthcare NLP pipeline integrating Comprehend Medical with FHIR for structured clinical data extraction</li>
+<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: Healthcare NLP pipeline integrating Comprehend Medical with FHIR for structured clinical data extraction (archived July 2024; still useful as a reference pattern)</li>
 <li><a href="https://github.com/aws-samples/amazon-comprehend-examples"><code>amazon-comprehend-examples</code></a>: Custom classification and entity recognition examples for Amazon Comprehend</li>
 </ul>
 </blockquote>
@@ -992,6 +1004,19 @@ FUNCTION classify_sdoh_sentences(segmented_sentences, negation_spans):
 <li>Very short notes with minimal context (one-liner social history: &quot;Social: lives alone&quot;)</li>
 </ul>
 <hr />
+<h3 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h3>
+<p>The pseudocode above gets you extraction results. These gaps will bite you in production.</p>
+<p><strong>Custom classifier training is the project.</strong> The pseudocode assumes a trained Comprehend custom classifier endpoint exists. Training that classifier requires annotated data: at minimum 1,000 labeled sentences across SDOH domains, ideally 3,000+. Public datasets (MIMIC, i2b2/n2c2 SDOH shared task corpora) get you started, but your local documentation patterns differ from academic medical center notes. Plan a local annotation round with clinical social workers and care managers. Expect two to three annotation iterations before precision crosses 80%.</p>
+<p><strong>Assertion classification needs real depth.</strong> The rule-based <code>determine_assertion</code> heuristic (keyword matching for &quot;resolved,&quot; &quot;at risk,&quot; etc.) is fragile. Production systems need a second classifier or a sequence-labeling model trained specifically on assertion status. Temporal reasoning is the hard part: &quot;was homeless last year but now in stable housing&quot; has both an active resolved assertion and a historical active one. The keyword approach catches neither reliably.</p>
+<p><strong>Dead letter queue and poison-message handling.</strong> The architecture diagram shows the DLQ, but the pseudocode doesn't handle DLQ replay or alerting. Production needs: a redrive policy (3 attempts before DLQ), a CloudWatch alarm on DLQ depth, and a replay runbook for reprocessing failed notes after a fix is deployed. Notes that repeatedly fail (malformed encoding, extreme length, unsupported languages) need a quarantine path separate from transient failures.</p>
+<p><strong>Note chunking for long documents.</strong> Comprehend Medical's DetectEntitiesV2 accepts up to 20,000 UTF-8 characters per request. Social work assessments, psychiatric evaluations, and discharge summaries routinely exceed this. Production code splits long notes at sentence boundaries with overlap, processes chunks independently, and merges results with proper offset tracking so negation spans align correctly across chunk boundaries.</p>
+<p><strong>Source text storage and PHI minimization.</strong> The pseudocode stores <code>source_text</code> (the original sentence) directly in DynamoDB. In production, evaluate whether the fast-lookup layer needs the raw sentence at all. Storing only structured metadata (domain, assertion, codes) with a <code>note_id</code> reference lets authorized reviewers retrieve the original sentence from the source system when needed, while reducing the PHI footprint of the SDOH profiles table.</p>
+<p><strong>Feedback loop for classifier improvement.</strong> When care managers act on or dismiss SDOH findings, that signal is training data. &quot;False positive: this wasn't actually food insecurity&quot; and &quot;missed: patient mentioned utility shut-off but it wasn't flagged&quot; both improve the classifier. Without this loop, the system never improves beyond its initial training. Build the feedback capture from day one, even if you don't retrain immediately.</p>
+<p><strong>Multi-language support.</strong> The pipeline assumes English-language notes. Patient populations with significant non-English documentation (Spanish, Mandarin, Vietnamese, Arabic) need either multilingual models, a translation preprocessing step, or language-specific classifiers. Amazon Translate can preprocess, but translation errors compound with classification errors. Evaluate whether the combined error rate is acceptable for your population.</p>
+<p><strong>Idempotency on note reprocessing.</strong> Clinical notes get amended, addended, and corrected. The same note_id may arrive multiple times with different content. Without idempotency logic, you'll create duplicate SDOH findings or (worse) retain findings from a note version that was later corrected. Use a conditional write on <code>patient_id + domain + note_id</code> to upsert rather than insert, and track the note version that produced each finding.</p>
+<p><strong>Confidence calibration.</strong> The 0.75 threshold in the pseudocode is arbitrary. In production, calibrate the threshold against your labeled validation set by plotting precision-recall curves per domain. Housing and food insecurity may calibrate differently than social isolation or education barriers. A single global threshold leaves performance on the table for well-performing domains and accepts too many errors for poorly-performing ones.</p>
+<p><strong>Human review workflow.</strong> Findings below the confidence threshold are dropped in the pseudocode. Production routes low-confidence findings (between 0.5 and 0.75, say) to a review queue where clinical staff confirm or reject them. This provides both quality assurance and a continuous annotation pipeline for model improvement.</p>
+<hr />
 <h3 id="variations-and-extensions">Variations and Extensions</h3>
 <p><strong>Screening questionnaire integration.</strong> Combine NLP-extracted SDOH data with structured screening results (PRAPARE, AHC-HRSN, or proprietary tools). Structured screenings have higher precision but lower coverage (only administered during specific encounters). NLP extraction has broader coverage but lower precision. Merging both gives you the best of each: use structured results as ground truth when available, NLP as gap-filling when no screening was administered.</p>
 <p><strong>Community resource matching.</strong> Connect identified needs to available resources automatically. When food insecurity is detected, query a community resource database (like 211 or Aunt Bertha/findhelp.org integrations) for food banks, SNAP enrollment assistance, or meal delivery programs in the patient's zip code. Output a suggested referral for care manager review rather than auto-generating referrals (the human-in-the-loop prevents inappropriate referrals for resolved needs).</p>
@@ -1008,7 +1033,7 @@ FUNCTION classify_sdoh_sentences(segmented_sentences, negation_spans):
 </ul>
 <p><strong>AWS Sample Repos:</strong></p>
 <ul>
-<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: End-to-end pipeline integrating Comprehend Medical entity extraction with FHIR resource generation</li>
+<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: End-to-end pipeline integrating Comprehend Medical entity extraction with FHIR resource generation (archived July 2024; still useful as a reference pattern)</li>
 <li><a href="https://github.com/aws-samples/amazon-comprehend-examples"><code>amazon-comprehend-examples</code></a>: Custom classifier training and deployment examples for Amazon Comprehend</li>
 </ul>
 <p><strong>Industry Standards and References:</strong></p>

@@ -900,11 +900,22 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown override type: </span><span class="si">{</span><span class="n">override_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Update state with optimistic locking (same pattern as update_posteriors).</span>
-    <span class="c1"># In production, DSMB overrides should also use conditional writes to prevent</span>
-    <span class="c1"># a concurrent posterior update from silently overwriting the override.</span>
+    <span class="c1"># DSMB overrides are rare, but a concurrent posterior update could silently</span>
+    <span class="c1"># overwrite the override without this condition check.</span>
     <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
-    <span class="c1"># TODO (TechWriter): Code review Issue 1 (WARNING). Add ConditionExpression here to match update_posteriors pattern. Currently simplified for readability.</span>
-    <span class="n">state_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">state</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">state_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+            <span class="n">Item</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;version = :expected_version&quot;</span><span class="p">,</span>
+            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;:expected_version&quot;</span><span class="p">:</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">state_table</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConditionalCheckFailedException</span><span class="p">:</span>
+        <span class="c1"># Concurrent update detected. DSMB overrides are critical, so retry</span>
+        <span class="c1"># immediately rather than failing silently.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Concurrent update detected during DSMB override. Retry needed.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span>
 
     <span class="c1"># Log the override in the audit trail</span>
     <span class="n">override_record</span> <span class="o">=</span> <span class="p">{</span>

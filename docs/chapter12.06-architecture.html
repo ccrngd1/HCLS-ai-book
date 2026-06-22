@@ -512,27 +512,432 @@
 </blockquote>
 <hr />
 <h2 id="why-these-services">Why These Services</h2>
+<p><strong>Amazon S3 for raw feeds, harmonized data, curve artifacts, and forecast outputs.</strong> Raw 837 claim files, raw 835 remittance files, 277/277CA claim-status feeds, and contract metadata all land in S3 first. Separate prefixes for each data class: raw-837, raw-835, harmonized AR ledger, per-payer curve artifacts, per-claim sample trajectories, weekly forecast outputs, and model artifacts. All prefixes encrypted with customer-managed KMS keys (one key per data class for blast-radius isolation). S3 is the canonical durable store that everything reads from and writes to; it decouples each pipeline stage and makes reruns idempotent.</p>
+<p><strong>AWS Glue for AR ingestion and harmonization (Stage 1).</strong> The unglamorous but critical work of reconciling 835 remittance records against 837 claim submissions, normalizing payer identifiers to the contract level, joining against the contract-effective-date registry, and producing the harmonized AR ledger. Glue runs as a nightly PySpark job that reads new 835 files, updates the harmonized AR ledger partitioned by payer and submission month, and handles the data-quality checks that catch clearinghouse formatting drift. The Glue service role has scoped read access to the raw prefixes and write access to the harmonized prefix, with no DynamoDB or SageMaker permissions.</p>
+<p><strong>Amazon SageMaker for per-payer curve fitting (Stage 2).</strong> The weekly survival-curve training job reads the harmonized AR ledger, fits per-payer payment-time distributions (Kaplan-Meier for simple per-payer curves, Cox proportional-hazards or gradient-boosted survival when claim-level features matter, DeepAR for hierarchical multi-payer forecasts on small-volume payers), serializes curve artifacts to S3, and registers new model versions in the SageMaker Model Registry. Promotion is gated on backtest comparison: a candidate must beat the champion on calibration metrics (mean error, MAPE, prediction-interval coverage) on held-out historical weeks. Training runs in private VPC subnets with VPC endpoints to S3, KMS, and CloudWatch Logs.</p>
+<p><strong>AWS Lambda for Monte Carlo simulation (Stage 3).</strong> The per-claim Monte Carlo simulation samples N payment-date draws per open claim from the fitted curves. For a typical 80,000-claim AR ledger with 1,000 samples, this runs in under five minutes on a Lambda with 3GB of memory. For larger health systems, AWS Batch or EMR Serverless replaces Lambda. The simulation Lambda has read access to the curve artifacts and the harmonized AR ledger, plus write access to the sample-trajectory prefix and the DynamoDB forecast table. No raw-claim permissions.</p>
+<p><strong>AWS Step Functions for weekly orchestration.</strong> The weekly pipeline cycle (harmonize, fit curves, simulate, aggregate, deliver) is a Step Functions state machine with explicit Retry and Catch blocks for transient failures, a Parallel state for concurrent per-payer fitting, and an overall execution timeout. The state machine emits ExecutionFailed events to CloudWatch so on-call gets paged when the pipeline fails before the Monday treasury meeting.</p>
+<p><strong>Amazon DynamoDB for forecast serving.</strong> The per-week, per-payer forecast records land in DynamoDB for single-digit-millisecond lookup by the treasury dashboard and AR prioritization tools. Partition key is <code>forecast_week</code> (type S), sort key is <code>payer_id</code> (type S). Encryption at rest with customer-managed key, point-in-time recovery enabled, on-demand billing for the bursty Monday-morning query pattern.</p>
+<p><strong>Amazon EventBridge for scheduling and lifecycle events.</strong> An EventBridge schedule triggers the Step Functions state machine weekly (Sunday 22:00 UTC, customizable). The pipeline also emits lifecycle events (run started, curves fit, simulation completed, forecast written, drift alarm raised) to a dedicated event bus so downstream consumers (dashboards, alerting, audit trail) can react.</p>
+<p><strong>Amazon CloudWatch for monitoring.</strong> Metrics: per-payer forecast-vs-actual variance, pipeline runtime per stage, DynamoDB write throttling, SageMaker training success rate, AR aging bucket shifts, and the prediction-interval coverage rate (did actuals land within P10-P90?). Alarms fire when forecast spread exceeds calibrated tolerance, when pipeline execution exceeds the SLA window, or when per-payer variance indicates curve drift.</p>
 <hr />
 <h2 id="architecture-diagram">Architecture Diagram</h2>
+<pre class="mermaid">flowchart LR
+    A[837 Claims Feed&lt;br/&gt;Clearinghouse] --&gt;|SFTP/VPN| B[S3 Bucket&lt;br/&gt;raw-837/]
+    C[835 Remittance&lt;br/&gt;Feed] --&gt;|SFTP/VPN| D[S3 Bucket&lt;br/&gt;raw-835/]
+    E[277/277CA&lt;br/&gt;Claim Status] --&gt;|SFTP/VPN| F[S3 Bucket&lt;br/&gt;raw-277/]
+    G[Contract Metadata&lt;br/&gt;Registry] --&gt; H[S3 Bucket&lt;br/&gt;contracts/]
+
+    B --&gt; I[Glue ETL&lt;br/&gt;Harmonize AR]
+    D --&gt; I
+    F --&gt; I
+    H --&gt; I
+    I --&gt;|Harmonized AR| J[S3 Bucket&lt;br/&gt;ar-ledger/]
+
+    K[EventBridge Schedule&lt;br/&gt;Weekly Sunday 22:00] --&gt;|Trigger| L[Step Functions&lt;br/&gt;Weekly Pipeline]
+    L --&gt;|Step 1| I
+    L --&gt;|Step 2| M[SageMaker Training&lt;br/&gt;Per-Payer Curve Fit]
+    J --&gt; M
+    M --&gt;|Curve artifacts| N[S3 Bucket&lt;br/&gt;payer-curves/]
+
+    L --&gt;|Step 3| O[Lambda&lt;br/&gt;Monte Carlo Simulation]
+    J --&gt; O
+    N --&gt; O
+    O --&gt;|Sample trajectories| P[S3 Bucket&lt;br/&gt;trajectories/]
+    O --&gt;|Per-week forecasts| Q[DynamoDB&lt;br/&gt;cash-flow-forecasts]
+
+    L --&gt;|Step 5| R[EventBridge Bus&lt;br/&gt;Lifecycle Events]
+    Q --&gt;|Query| S[Treasury Dashboard /&lt;br/&gt;AR Prioritization /&lt;br/&gt;Working Capital Tools]
+    L --&gt;|Errors / metrics| T[CloudWatch&lt;br/&gt;Alarms + SNS]
+
+    style I fill:#ff9,stroke:#333
+    style O fill:#9f9,stroke:#333
+    style Q fill:#9ff,stroke:#333
+</pre>
 <hr />
 <h2 id="prerequisites">Prerequisites</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon S3, AWS Glue, Amazon SageMaker, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon EventBridge, AWS KMS, Amazon CloudWatch, AWS Secrets Manager</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td><code>s3:GetObject</code>, <code>s3:PutObject</code> (scoped to specific prefixes per stage), <code>glue:StartJobRun</code>, <code>glue:GetJobRun</code>, <code>sagemaker:CreateTrainingJob</code>, <code>sagemaker:DescribeTrainingJob</code>, <code>lambda:InvokeFunction</code>, <code>dynamodb:BatchWriteItem</code>, <code>dynamodb:Query</code>, <code>dynamodb:PutItem</code>, <code>states:StartExecution</code>, <code>events:PutEvents</code>, <code>cloudwatch:PutMetricData</code>, <code>kms:Decrypt</code>, <code>kms:GenerateDataKey</code>, <code>secretsmanager:GetSecretValue</code> (per-Lambda scoped)</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Revenue-cycle data is PHI by association: 837/835/277/277CA carry patient identifiers, service dates, diagnosis codes, procedure codes. Even aggregated forecasts derived from claim-level joins retain PHI upstream. BAA coverage also required for clearinghouse vendors (Change Healthcare/Availity/Waystar/Optum/Experian Health), payer-portal vendors, and denial-management vendors.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed CMKs split by data class (raw 837/835/277, harmonized AR ledger, curve artifacts, sample trajectories, forecast outputs, model artifacts). DynamoDB: encryption at rest with customer-managed CMK. SageMaker: encrypted EBS volumes and KMS-encrypted output. CloudWatch log groups: explicit KMS encryption. Secrets Manager: KMS encryption for clearinghouse credentials with automatic rotation. TLS 1.2 minimum at every boundary.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Private subnets for all compute (Glue, SageMaker, Lambda). VPC endpoints for S3 (gateway), KMS, DynamoDB (gateway), SageMaker, Lambda, Step Functions, EventBridge, CloudWatch Logs, Secrets Manager. Restrictive egress (no public internet). Dedicated VPN or SFTP-over-IPSec to the clearinghouse for 837/835/277 file transfer. No public endpoints.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Data events on all PHI-bearing S3 prefixes and the DynamoDB forecast table. Management events for SageMaker, Glue, Step Functions, EventBridge, Lambda, DynamoDB, and KMS. CloudTrail logs in a dedicated bucket with Object Lock in compliance mode.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthetic AR ledgers generated by the Python companion's demo. <a href="https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files">CMS Public Use Files</a> provide de-identified claim-level structure for development. <a href="https://x12.org/products/transaction-sets">X12 837/835 transaction set documentation</a> defines the upstream data formats. Never use real PHI in dev.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>~$500-$2,000/month per hospital, scaling with AR ledger size and payer count. S3 storage + Glue ETL: ~$80-$200/month. SageMaker weekly training: ~$50-$150/month. Lambda simulation: ~$30-$100/month. DynamoDB: ~$30-$80/month. Step Functions + EventBridge + CloudWatch: ~$20-$50/month. KMS + Secrets Manager: ~$10-$30/month. Multi-hospital systems scale linearly with claim volume.</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="ingredients">Ingredients</h2>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Durable store for raw 837/835/277 feeds, harmonized AR ledger, per-payer curve artifacts, Monte Carlo sample trajectories, weekly forecast outputs, and model artifacts. Partitioned by data class and encrypted per-prefix with customer-managed KMS keys.</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Nightly PySpark ETL that reconciles 835 remittance records against 837 claim submissions, normalizes payer identifiers, joins contract metadata, and produces the harmonized AR ledger.</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Weekly training jobs that fit per-payer payment-time survival distributions (Kaplan-Meier, Cox, or DeepAR) with right-censoring for open claims. Model Registry gates promotion on backtest metrics.</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Runs the per-claim Monte Carlo simulation: N payment-date samples per open claim from the fitted curves, composed into per-week trajectories. Scales with AR ledger size.</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the weekly cycle (harmonize, fit, simulate, aggregate, deliver) with Retry/Catch blocks and execution timeout.</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Serves per-week, per-payer forecast records (P10, P50, P90) to the treasury dashboard and AR prioritization tools at low latency.</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Weekly schedule trigger plus lifecycle event bus for pipeline observability.</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed keys per data class. Separate keys for raw PHI, harmonized data, model artifacts, and forecast outputs.</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Logs, metrics, alarms for pipeline health, forecast accuracy, curve drift, and AR aging shifts.</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Stores clearinghouse SFTP credentials with automatic rotation, KMS encryption, and per-Lambda scoped access.</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="pseudocode-walkthrough">Pseudocode Walkthrough</h2>
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter12.06-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<h3 id="step-1-ingest-and-harmonize-the-ar-ledger">Step 1: Ingest and Harmonize the AR Ledger</h3>
+<p>The pipeline starts by consuming the raw revenue-cycle feeds and producing a canonical AR ledger. Skip this step and you fit curves on misaligned data (payer A's claims mixed with payer B's because the clearinghouse coded them identically).</p>
+<pre class="code code-plain"><code>FUNCTION harmonize_ar_ledger(raw_835_prefix, raw_837_prefix,
+                             contract_registry, as_of_date):
+    // Read new 835 remittance files since last run.
+    new_remits = read_new_files(raw_835_prefix, since=last_run_ts)
+
+    // For each remittance record, reconcile against the original
+    // 837 claim submission to get the full picture: billed amount,
+    // allowed amount, denial flag, adjustment reason codes.
+    FOR each remit IN new_remits:
+        claim = lookup_original_837(remit.claim_id, raw_837_prefix)
+        payer_contract = resolve_payer_contract(
+            remit.payer_id, claim.service_date, contract_registry)
+
+        canonical_record = {
+            claim_id:              claim.id,
+            payer_id:              payer_contract.canonical_id,
+            payer_class:           payer_contract.class,
+            contract_effective:    payer_contract.effective_date,
+            submitted_date:        claim.submitted_ts,
+            service_date:          claim.service_date,
+            billed_amount:         claim.billed_amount,
+            expected_allowed:      payer_contract.expected_allowed(claim),
+            payment_received_ts:   remit.payment_ts OR NULL,
+            denial_flag:           remit.is_denied,
+            denial_reason_code:    remit.reason_code OR NULL,
+        }
+        upsert_to_ar_ledger(canonical_record)
+
+    RETURN count_of_new_records
+</code></pre>
+<h3 id="step-2-fit-per-payer-payment-time-curves">Step 2: Fit Per-Payer Payment-Time Curves</h3>
+<p>For each payer-contract combination, fit a survival curve on the historical payment-lag data. Skip this step and you sample from a stale curve that does not reflect the payer's current payment behavior.</p>
+<pre class="code code-plain"><code>FUNCTION fit_payer_curves(ar_ledger, contract_registry, as_of_date):
+    curves = {}
+    FOR each payer IN distinct_payers(ar_ledger):
+        contract = get_active_contract(payer, contract_registry)
+
+        // Only train on data after the contract took effect.
+        // Otherwise the curve averages pre- and post-contract behavior.
+        training_window_start = contract.effective_date
+        training_window_end   = as_of_date
+
+        // Collect (duration, event) pairs for the survival estimator.
+        // duration = days from submission to payment (for paid claims)
+        //          = days from submission to as_of_date (for open claims)
+        // event    = 1 if paid, 0 if still open (right-censored)
+        durations, events = extract_survival_pairs(
+            ar_ledger, payer,
+            window_start=training_window_start,
+            window_end=training_window_end)
+
+        curve = fit_kaplan_meier(durations, events,
+                                smooth_bandwidth=3)
+
+        // Divergence check: compare curve median to the live
+        // median from the last 30 days. Alert if drift &gt; 2 days.
+        live_median = compute_live_median(ar_ledger, payer, last_30_days)
+        IF abs(curve.median - live_median) &gt; 2:
+            emit_drift_alert(payer, curve.median, live_median)
+
+        curves[payer] = curve
+
+    RETURN curves
+</code></pre>
+<h3 id="step-3-monte-carlo-per-claim-simulation">Step 3: Monte Carlo Per-Claim Simulation</h3>
+<p>For every open claim, sample N payment dates from the payer's curve. Seasonality is applied per sample. Skip this step and you have curves but no forecast.</p>
+<pre class="code code-plain"><code>FUNCTION simulate_cash_flow(open_ar, curves, n_samples=1000,
+                            horizon_weeks=13, as_of_date):
+    // per_week_samples[(payer, week_idx)] = list of N totals
+    per_week_samples = defaultdict(list_of_N_zeros)
+
+    FOR each claim IN open_ar:
+        curve = curves[claim.payer_id]
+        IF curve IS NULL:
+            log_warning(&quot;No curve for payer; claim skipped&quot;)
+            CONTINUE
+
+        FOR sample_idx IN range(n_samples):
+            // Sample a payment day from the payer&#x27;s survival curve.
+            // The curve absorbs the denial-and-recovery cohort by
+            // construction; no separate denial branch needed here.
+            sampled_day = curve.sample_payment_day(
+                max_days=horizon_weeks * 7)
+            IF sampled_day IS NULL:
+                CONTINUE  // claim does not pay within horizon
+
+            pay_date = as_of_date + sampled_day
+            week_idx = (pay_date - as_of_date).days / 7
+
+            // Apply seasonality multiplier for that week.
+            seasonal = seasonality_factor(week_of_year(pay_date))
+            amount   = claim.expected_allowed * random(0.88, 1.0)
+
+            per_week_samples[(claim.payer_id, week_idx)][sample_idx]
+                += amount * seasonal
+
+    RETURN per_week_samples
+</code></pre>
+<h3 id="step-4-aggregate-to-per-week-percentile-forecasts">Step 4: Aggregate to Per-Week Percentile Forecasts</h3>
+<p>Take the N per-claim per-week trajectories and compute percentiles. Skip this step and you have raw samples with no usable summary for the finance team.</p>
+<pre class="code code-plain"><code>FUNCTION aggregate_forecasts(per_week_samples, horizon_weeks, as_of_date):
+    forecasts = []
+
+    // Per-payer, per-week percentiles.
+    FOR each (payer, week_idx) IN per_week_samples:
+        samples = per_week_samples[(payer, week_idx)]
+        forecasts.append({
+            forecast_week: as_of_date + (week_idx * 7),
+            payer_id:      payer,
+            p10:           percentile(samples, 10),
+            p50:           percentile(samples, 50),
+            p90:           percentile(samples, 90),
+            expected:      mean(samples),
+        })
+
+    // All-payer rollup: sample-wise summing preserves correlation.
+    FOR week_idx IN range(horizon_weeks):
+        all_payer_samples = zeros(n_samples)
+        FOR each payer IN distinct_payers:
+            payer_samples = per_week_samples[(payer, week_idx)]
+            all_payer_samples += payer_samples  // element-wise
+        forecasts.append({
+            forecast_week: as_of_date + (week_idx * 7),
+            payer_id:      &quot;ALL_PAYERS&quot;,
+            p10:           percentile(all_payer_samples, 10),
+            p50:           percentile(all_payer_samples, 50),
+            p90:           percentile(all_payer_samples, 90),
+            expected:      mean(all_payer_samples),
+        })
+
+    RETURN forecasts
+</code></pre>
+<h3 id="step-5-deliver-forecasts-and-backtest">Step 5: Deliver Forecasts and Backtest</h3>
+<p>Load the forecasts to the serving store and compare against last week's actuals. Skip this step and the forecast exists in S3 but nobody can query it, and nobody knows when it is wrong.</p>
+<pre class="code code-plain"><code>FUNCTION deliver_and_backtest(forecasts, sample_trajectories,
+                              actuals_last_week, as_of_date):
+    // Write per-week forecasts to DynamoDB for dashboard queries.
+    batch_write_to_dynamodb(forecasts, table=FORECAST_TABLE)
+
+    // Write sample trajectories to S3 for variance analysis.
+    write_to_s3(sample_trajectories,
+                prefix=TRAJECTORY_PREFIX,
+                partition_key=as_of_date)
+
+    // Backtest: compare last week&#x27;s forecast against realized cash.
+    IF actuals_last_week IS NOT NULL:
+        last_week_forecast = query_dynamodb(
+            forecast_week=last_week, table=FORECAST_TABLE)
+        accuracy = compute_accuracy(last_week_forecast, actuals_last_week)
+        emit_metric(&quot;ForecastAccuracy&quot;, accuracy.mape)
+        emit_metric(&quot;IntervalCoverage&quot;, accuracy.in_band_rate)
+
+        // Per-payer stratified accuracy for drift detection.
+        FOR each payer IN actuals_last_week:
+            payer_accuracy = compute_payer_accuracy(
+                last_week_forecast, actuals_last_week, payer)
+            emit_metric(&quot;PayerAccuracy&quot;, payer_accuracy.mape,
+                        dimensions={payer: payer})
+
+    // Emit lifecycle event for downstream consumers.
+    emit_event(&quot;ForecastDelivered&quot;, {
+        forecast_week: as_of_date,
+        payer_count:   count_distinct_payers(forecasts),
+        claim_count:   len(open_ar),
+    })
+</code></pre>
 <hr />
 <h2 id="expected-results">Expected Results</h2>
+<p>A typical weekly run for a 380-bed community hospital with 75,000 open claims across five payer classes produces output like:</p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;forecast_week&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-06-22&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;payer_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ALL_PAYERS&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;expected_cash&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4127340.50</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;p10_cash&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3412890.25</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;p50_cash&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4098210.00</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;p90_cash&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4721560.75</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sample_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;pipeline_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cash-flow-v1.3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;generated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-06-21T22:34:12Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pipeline runtime (end-to-end)</td>
+<td>15-35 minutes</td>
+</tr>
+<tr>
+<td>Glue harmonization</td>
+<td>5-12 minutes</td>
+</tr>
+<tr>
+<td>SageMaker curve fitting (5 payers)</td>
+<td>3-8 minutes</td>
+</tr>
+<tr>
+<td>Lambda Monte Carlo (75K claims, 1K samples)</td>
+<td>3-6 minutes</td>
+</tr>
+<tr>
+<td>DynamoDB write (78 forecast records)</td>
+<td>&lt; 2 seconds</td>
+</tr>
+<tr>
+<td>Forecast accuracy (MAPE, all-payer)</td>
+<td>6-12% at 1-week horizon</td>
+</tr>
+<tr>
+<td>Prediction-interval coverage (P10-P90)</td>
+<td>78-85% of weeks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong> Weeks with clearinghouse disruptions, payer-system outages, or sudden denial-rate spikes produce realized cash that falls outside the prediction interval. The model knows what it knows (the current AR ledger and the historical curves) but cannot anticipate exogenous disruptions that have not yet manifested in the data.</p>
 <hr />
 <h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p><strong>Clearinghouse outage detection.</strong> The pipeline has no explicit &quot;clearinghouse health&quot; input. When a clearinghouse goes down (the Change Healthcare scenario), payment batches are delayed but the model still expects them on their historical schedule. Production needs an external signal (API health check, file-arrival cadence monitoring, or manual operator toggle) that shifts the payer curves when the intermediary is disrupted.</p>
+<p><strong>Contract-version drift.</strong> The demo carries a single contract effective date per payer. Production tracks contract changes at the plan level, triggers re-fits when a new contract takes effect, and surfaces elevated uncertainty during the transition period when the new curve has limited training data.</p>
+<p><strong>Self-pay tail mis-estimation.</strong> The demo treats self-pay as another payer with a wider distribution. Production models self-pay separately with a dedicated survival curve conditioned on statement-cycle, payment-plan enrollment, and prior-payment history. Without this, the 26-to-52-week forecast systematically over-estimates patient-responsibility collections.</p>
+<p><strong>Denial-reason-code distribution shifts.</strong> When a payer changes its edit rules or a new pre-authorization requirement takes effect, the denial-reason-code distribution shifts. The headline denial rate might stay flat while the composition changes (fewer eligibility denials, more medical-necessity denials, which have different appeal timelines). The demo does not decompose denials by reason code.</p>
+<p><strong>Per-Lambda IAM scoping.</strong> The Python companion flags this explicitly: each Lambda in the production pipeline needs its own IAM role scoped to the specific S3 prefixes and DynamoDB tables it touches. The demo runs everything in-process with a single credential set. A serious IAM review would fail this immediately.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Joint multi-entity forecasting.</strong> For health systems with multiple hospitals, fit a hierarchical model (SageMaker DeepAR or a hierarchical Kaplan-Meier) that shares strength across entities. Small facilities with low claim volume for specific payers benefit from borrowing the payment-curve shape from larger sibling facilities. The system-level cash-flow forecast then aggregates across entities with correlated uncertainty (they share payers, so a payer delay hits all facilities simultaneously).</p>
+<p><strong>Denial-prevention feedback loop.</strong> Use claim-level features to predict denial probability before submission. Feed the predicted denial rate into the cash-flow forecast as a forward-looking adjustment: claims with high denial probability contribute less expected cash in the near term and more in the appeal-recovery window. This couples the forecasting pipeline with the pre-submission edit-check system and produces forecasts that react to claim-quality changes before the denials actually arrive.</p>
+<p><strong>Payer-contract-renewal scenario modeling.</strong> When a major contract is up for renewal, the finance team wants to know: &quot;If the new contract shifts the fee schedule by -5% and extends the payment timeline by 4 days, what does our quarterly cash flow look like?&quot; Expose the curve parameters as adjustable inputs and run the Monte Carlo simulation under the proposed contract terms. This turns the forecast into a scenario-planning tool, not just a prediction tool.</p>
 <hr />
 <h2 id="additional-resources">Additional Resources</h2>
+<h3 id="aws-documentation">AWS Documentation</h3>
+<ul>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a>: Authoritative list of services that can be used under a BAA for PHI workloads. All services in this recipe (S3, Glue, SageMaker, Lambda, Step Functions, DynamoDB, EventBridge, CloudWatch, KMS, Secrets Manager) are on this list.</li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA Security and Compliance on AWS</a>: Reference architecture for PHI handling patterns used throughout this recipe.</li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html">Amazon SageMaker DeepAR Forecasting Algorithm</a>: Hierarchical multi-payer forecasting that shares strength across small-volume payers.</li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a>: Orchestration with Retry, Catch, and Parallel states for the weekly pipeline.</li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a>: Low-latency serving for the treasury dashboard.</li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Developer Guide</a>: ETL for 837/835 ingestion and AR harmonization.</li>
+</ul>
+<h3 id="external-resources">External Resources</h3>
+<ul>
+<li><a href="https://lifelines.readthedocs.io/">lifelines (Python survival analysis library)</a>: Production-grade Kaplan-Meier, Cox proportional-hazards, and competing-risks models.</li>
+<li><a href="https://scikit-survival.readthedocs.io/">scikit-survival</a>: Gradient-boosted survival models for claim-level feature conditioning.</li>
+<li><a href="https://x12.org/products/transaction-sets">X12 837/835 Transaction Set Standards</a>: Specifications for the claim and remittance transactions that feed the pipeline.</li>
+<li><a href="https://www.hfma.org/">HFMA (Healthcare Financial Management Association)</a>: Industry benchmarks for revenue-cycle metrics (DSO, denial rates, collection rates).</li>
+<li><a href="https://otexts.com/fpp3/">Forecasting: Principles and Practice (Hyndman &amp; Athanasopoulos)</a>: Free online textbook covering hierarchical forecasting and prediction intervals.</li>
+</ul>
+<p><em>Note: AWS documentation and blog links should be re-verified close to publication. X12, lifelines, scikit-survival, HFMA, and OTexts links are stable.</em></p>
 <hr />
 <h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Timeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Basic</strong></td>
+<td>Single-payer proof of concept. One payer, simplified harmonization (single clearinghouse feed), KM curve fitting, Monte Carlo simulation, DynamoDB output. No contract versioning, no backtest loop, no production IAM scoping.</td>
+<td>3-4 weeks</td>
+</tr>
+<tr>
+<td><strong>Production-ready</strong></td>
+<td>Full payer catalog, contract-version awareness, per-payer drift alerts, backtest loop with accuracy scorecard, production IAM (per-Lambda roles), KMS encryption per data class, VPC endpoints, CloudTrail data events, EventBridge lifecycle events, CloudWatch dashboards and alarms.</td>
+<td>10-14 weeks</td>
+</tr>
+<tr>
+<td><strong>With variations</strong></td>
+<td>Add hierarchical multi-entity forecasting (DeepAR), denial-prevention feedback loop, payer-contract-renewal scenario modeling, dedicated self-pay sub-model, and real-time intra-week refresh on 835 file arrival.</td>
+<td>16-22 weeks</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <p><em>← <a href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">Main Recipe: Revenue Cycle Cash Flow Forecasting</a> · <a href="chapter12.06-python-example.html">Python Example</a> · <a href="chapter12-preface.html">Chapter 12 Index</a></em></p>
 

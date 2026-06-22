@@ -521,6 +521,102 @@
 <p><strong>AWS Step Functions plus a simple web app (API Gateway + Lambda + a static S3-hosted SPA) for the review queue UI.</strong> The review queue UI is the operational face of the system. Most production deployments use a purpose-built internal tool that pulls candidates from <code>review-queue</code>, presents the side-by-side comparison, and writes the decision back. API Gateway exposes the read/write endpoints, Cognito (or the institution's identity provider) handles HIM-team authentication, and Lambda backs the API. Audit events fire on every reviewer action.</p>
 <p><strong>Amazon QuickSight for the operational and equity dashboards.</strong> Daily duplicate-detection rates, review-queue depth by reviewer, auto-match vs review-routing rates, false-positive feedback from unmerges, and cohort-stratified accuracy by race / ethnicity / language / age band / geographic region. QuickSight on Athena over the Glue-cataloged audit data, with row-level security for cohort-specific access where institutional policy requires it.</p>
 <p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Customer-managed keys for the S3 buckets, the DynamoDB tables, the OpenSearch domain, and the Lambda log groups. CloudTrail data events on the MPI tables and the audit S3 buckets (every read of these is a PHI access and needs to be audited). CloudWatch alarms on review-queue depth (excessive growth signals reviewer staffing problems), on auto-match rate drift (significant changes in rate signal upstream data quality issues), on cohort-stratified accuracy disparity threshold crossings (equity guard rail), and on Lambda or Glue job failures.</p>
+<h3 id="identity-boundaries-and-access-control">Identity Boundaries and Access Control</h3>
+<p><strong>Kinesis registration-events stream.</strong> The producer IAM role (<code>arn:aws:iam::&lt;account&gt;:role/registration-source-&lt;env&gt;</code>) is the only principal authorized to PutRecord. Each event carries a signed envelope (HMAC-SHA256 with a shared secret rotated quarterly); the normalize Lambda validates the signature before processing and rejects unsigned or mis-signed events to a rejected-events DLQ. An allowed-list of <code>source_system</code> values gates acceptance. An idempotency window (DynamoDB TTL-backed, 24 hours) prevents duplicate-event processing from Kinesis retry behavior.</p>
+<p><strong>Review-queue API.</strong> Amazon Cognito authenticates HIM-team members (SAML federation with the institution's identity provider). An authorization layer enforces: (1) reviewer-to-queue assignment (a reviewer can only act on pairs assigned to their queue segment), (2) conflict-of-interest checks (the reviewer is not a relative of or the patient in the candidate pair, verified against an exclusion list maintained by HIM leadership). Every API invocation is logged at both the API Gateway and Lambda layers with the authenticated principal, the action taken, and the candidate-pair ID.</p>
+<p><strong>apply_merge caller validation.</strong> The <code>invocation_source</code> enum (<code>auto_match_pipeline</code>, <code>review_queue_decision</code>, <code>backfill_pipeline</code>) maps to a per-source caller IAM role. The merge Lambda validates the caller's assumed role ARN against the expected role for the declared invocation source; mismatches are rejected with a <code>identity_boundary_rejection</code> CloudWatch metric emission and a logged security event.</p>
+<p><strong>Unmerge governance.</strong> Unmerge requires: (1) an institution-defined reason from a controlled vocabulary, (2) second-operator approval for merges that affected medication records or recent clinical notes (gated on a DynamoDB flag set at merge time), (3) routing to the privacy-office restricted-review track for any unmerge involving no-link-flag cohorts (see No-Link Flags below). The unmerge event emits to EventBridge so downstream consumers can react.</p>
+<h3 id="networking-and-egress">Networking and Egress</h3>
+<p><strong>API Gateway for the review-queue API.</strong> Deployed as a private API with a VPC endpoint; the VPC endpoint resource policy restricts access to the institutional VPC. AWS WAF rules enforce SQL/command-injection protection and rate limiting per authenticated principal. Optional mTLS available for institutional environments that require certificate-based client authentication. The HIM Review UI is served from S3 plus CloudFront with a WAF web ACL; if the UI is publicly addressable, API calls route through the institutional VPN or PrivateLink.</p>
+<p><strong>Kinesis producer connectivity.</strong> Producers access Kinesis through a PrivateLink endpoint within the institutional VPC. PutRecord calls use SIGv4 signing with a dedicated IAM role. Cross-account delivery (if the registration system runs in a separate AWS account) uses PrivateLink with explicit endpoint policies. TLS 1.2+ is enforced on all connections. Server-side encryption uses customer-managed KMS keys.</p>
+<p><strong>External egress for address standardization.</strong> Outbound HTTPS to address-standardization vendors (SmartyStreets, Melissa, USPS API) routes through a dedicated outbound proxy in VPC with allow-listed destination domains. VPC Flow Logs and CloudWatch Logs capture every outbound connection from the proxy. Each vendor must be BAA-covered before any PHI flows to it; review the BAA list annually.</p>
+<h3 id="data-governance-lake-formation-and-retention">Data Governance: Lake Formation and Retention</h3>
+<p><strong>Lake Formation access control.</strong> Lake Formation is the access-control layer over the Glue Data Catalog. Column-level permissions restrict <code>cohort_features</code>, <code>field_comparisons</code>, and <code>per_field_log_ratios</code> columns to entity-resolution analytics roles. Demographic-snapshot columns are restricted to HIM-leadership for forensic investigation. Row-level filtering supports cohort-stratified analytics (analysts see only their assigned cohorts). QuickSight inherits Lake Formation grants; direct Athena access uses the same grants. CloudTrail logs Athena query execution; a periodic review ensures access patterns match authorized roles.</p>
+<p><strong>Retention floor.</strong> Audit logs are retained for the longer of: (1) 7 years (clinical-record minimum), (2) the institution's documented medical-record retention policy, (3) the applicable state-specific medical-record retention statute, (4) the state-specific minor-records floor for pediatric patients. Audit logs reside in a dedicated S3 bucket with Object Lock in Compliance mode for immutability; a lifecycle policy transitions objects to S3 Glacier Deep Archive after 90 days. CloudTrail data events are forwarded to a dedicated audit AWS account in the institution's organization. The retention floor is enforced at the bucket-policy and Object-Lock-configuration level. Reference: HIPAA 45 CFR section 164.530(j).</p>
+<h3 id="cohort-equity-metrics">Cohort Equity Metrics</h3>
+<p><strong>Metric emission privacy.</strong> When emitting cohort dimensions on CloudWatch metrics, use bucketed non-reversible cohort labels (<code>cohort_race_eth_bucket</code> = A, B, C, D, E, unknown) rather than raw demographic attributes. The cohort-label-to-attribute mapping lives in a separate access-controlled DynamoDB table loaded only at dashboard-render time by authorized QuickSight roles. This prevents demographic inference from CloudWatch metric streams.</p>
+<p><strong>Disparity alert thresholds.</strong> The equity monitoring system computes per-cohort ratios on a daily cadence and alerts when any ratio crosses threshold:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Threshold</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Match-rate disparity</td>
+<td><code>MATCH_RATE_DISPARITY_THRESHOLD = 0.10</code></td>
+<td>Worst-cohort recall / best-cohort recall</td>
+</tr>
+<tr>
+<td>Auto-match precision ratio</td>
+<td><code>0.10</code></td>
+<td>Worst-cohort precision / best-cohort precision</td>
+</tr>
+<tr>
+<td>Post-merge unmerge rate ratio</td>
+<td><code>0.15</code></td>
+<td>Worst-cohort unmerge rate / population unmerge rate</td>
+</tr>
+<tr>
+<td>Review-queue depth-per-FTE ratio</td>
+<td><code>2.0</code></td>
+<td>Worst-cohort queue items per FTE / average queue items per FTE</td>
+</tr>
+</tbody>
+</table>
+<p>Per-axis override is available via the equity-review committee (documented in a governance policy table). When a cohort sample size falls below <code>MIN_COHORT_SAMPLE_SIZE = 50</code>, chronic suppression of alerts for that cohort is itself a fairness signal: the system logs <code>cohort_below_minimum_sample</code> and the equity-review committee examines whether the cohort's representation in the gold set is adequate. A cohort-stratified gold-set construction discipline ensures each cohort has proportional (or over-sampled) representation.</p>
+<p>When an alert fires, the documented diagnose-and-address workflow activates: (1) identify the specific comparator or blocking pass contributing to the gap, (2) evaluate cohort-specific m/u tuning or supplementary blocking passes, (3) submit a remediation plan to the equity-review committee, (4) implement and validate against the cohort-stratified gold set, (5) promote after committee approval.</p>
+<h3 id="no-link-flags">No-Link Flags</h3>
+<p>The <code>no_link_flags</code> table is keyed on <code>(mpi_id_or_record_id, flag_type)</code> and covers safety-sensitive populations where linking records could endanger the patient or violate legal protections:</p>
+<table>
+<thead>
+<tr>
+<th>Flag Type</th>
+<th>Context</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>address_confidentiality_program</code></td>
+<td>State ACP / Safe at Home programs</td>
+</tr>
+<tr>
+<td><code>witness_protection</code></td>
+<td>Federal Witness Security Program (WITSEC)</td>
+</tr>
+<tr>
+<td><code>adoption_sealed</code></td>
+<td>Sealed adoption records</td>
+</tr>
+<tr>
+<td><code>patient_requested_separation</code></td>
+<td>Gender transition, protected name change, legal name-change privacy</td>
+</tr>
+<tr>
+<td><code>care_segmentation</code></td>
+<td>42 CFR Part 2 (SUD records), behavioral health segmentation</td>
+</tr>
+<tr>
+<td><code>family_relationship_explicit</code></td>
+<td>Twin, parent-infant, siblings sharing demographics</td>
+</tr>
+<tr>
+<td><code>no_link_pairwise</code></td>
+<td>Explicit &quot;never link these two records&quot; directive</td>
+</tr>
+</tbody>
+</table>
+<p>The pipeline consults no-link flags at three stages:</p>
+<ol>
+<li><strong>Candidate generation (filter).</strong> Records carrying any no-link flag are excluded from the standard blocking passes. They participate only in a restricted matching path visible to the privacy office.</li>
+<li><strong>Threshold routing.</strong> Any candidate pair containing a flagged record bypasses the auto-match path entirely, regardless of score, and routes to a privacy-office restricted-review track.</li>
+<li><strong>Review-queue assignment.</strong> Flagged-record pairs route to a separate restricted queue staffed exclusively by privacy-office and HIM-leadership roles.</li>
+</ol>
+<p>Flags are write-protected to privacy-office and HIM-leadership IAM roles. The flag table uses a separate customer-managed KMS key with a restricted key policy. CloudTrail data events on every read/write of the flag table provide forensic visibility.</p>
+<p><strong>Family-aware blocking.</strong> The <code>family_relationship_explicit</code> flag drives a supplementary blocking-pass rule: when two records are explicitly flagged as family members (twin, parent-infant), the pipeline skips their comparison entirely in standard passes and down-weights comparator scores on shared-family fields (address, phone, insurance) for any pair that does enter scoring through other blocking passes. This prevents the common failure mode where twins with the same birthday, address, and last name auto-merge.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
 <pre class="mermaid">flowchart LR
     subgraph Sources
@@ -984,15 +1080,21 @@
     // decision_metadata is the audit context: who or what decided
     // (auto-match with score X, or human reviewer with ID Y), the
     // score, the routing path, the model version, the timestamp.
-    //
-    // TODO (TechWriter): Expert review S1 (HIGH). Add identity-boundary
-    // checks at the top of this function: validate caller role matches
-    // decision_metadata.invocation_source (auto_match_pipeline,
-    // review_queue_decision, backfill_pipeline), validate the named
-    // reviewer was authorized for the pair (queue assignment,
-    // conflict-of-interest list), reject with logged metric on
-    // mismatch. See AWS Implementation TODO for the chapter-pattern
-    // identity-boundary specification.
+
+    // Identity-boundary validation: verify the caller is authorized
+    // for this merge path before any state-changing operation.
+    VALIDATE caller_role IN ALLOWED_ROLES[decision_metadata.invocation_source]
+    // invocation_source is one of: auto_match_pipeline,
+    // review_queue_decision, backfill_pipeline
+    IF decision_metadata.invocation_source == &quot;review_queue_decision&quot;:
+        VALIDATE decision_metadata.reviewer_id is assigned to the queue
+            containing this candidate pair
+        VALIDATE decision_metadata.reviewer_id NOT IN conflict_of_interest_list
+            for either record (reviewer is not a relative or the patient)
+    IF validation fails:
+        emit_metric(&quot;identity_boundary_rejection&quot;, 1,
+                    dimensions={source: decision_metadata.invocation_source})
+        REJECT with logged identity-boundary violation
 
     // Step 5A: identify the existing MPI assignments for both source
     // records. There are three cases:
@@ -1058,19 +1160,17 @@
     // Step 5E: persist the merged master and update all cross-
     // references in the deprecated cluster to point to the survivor.
     //
-    // TODO (TechWriter): Expert review A1 (HIGH). Wrap the master
-    // PutItem, the xref UpdateItems, and the deprecated-cluster
-    // tombstone in a single TransactWriteItems call so the merge is
-    // atomic. For clusters &gt; 95 members (above the 100-item
-    // TransactWriteItems cap), use a staging-table pattern: write
-    // intended state to merge-staging, apply changes in atomic
-    // batches with progress tracking, and reconcile staged-but-not-
-    // committed merges via a periodic job. Audit-archive write
-    // happens after the master+xref state is consistent;
-    // EventBridge merge event emit follows the audit-archive write.
-    // Each step has DLQ routing for terminal failures so half-
-    // applied merges surface for engineering investigation rather
-    // than silently producing inconsistent state.
+    // Use TransactWriteItems to make the master write, xref updates,
+    // and deprecated-cluster tombstone atomic. For clusters exceeding
+    // 95 members (above the 100-item TransactWriteItems cap), use a
+    // staging-table pattern: write intended state to merge-staging,
+    // apply changes in atomic batches with progress tracking, and
+    // reconcile staged-but-not-committed merges via a periodic job.
+    // Audit-archive write happens after the master+xref state is
+    // consistent; EventBridge merge event follows the audit-archive
+    // write. Each step has DLQ routing for terminal failures so
+    // half-applied merges surface for engineering investigation
+    // rather than silently producing inconsistent state.
     DynamoDB.PutItem(&quot;mpi-master&quot;, merged_master)
     FOR each member in cluster_a_members + cluster_b_members:
         DynamoDB.UpdateItem(&quot;mpi-xref&quot;,
@@ -1370,6 +1470,94 @@ FUNCTION unmerge(merge_id, reason, operator_id):
 <p><strong>Idempotency and retry semantics.</strong> Real-time matching is event-driven; the pipeline must handle duplicate-event-delivery without producing duplicate merges. Use the (<code>source_system</code>, <code>source_record_id</code>) as the idempotency key for normalize-and-route operations; use the <code>merge_id</code> as the idempotency key for merge-application operations. Lambda invocations should be idempotent at these keys. Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to a DLQ for human investigation.</p>
 <p><strong>Audit-log retention and access control.</strong> The audit log is highly sensitive: it contains every patient-identification decision the system has made, including the historical states of source records and the rationales. Apply the institution's clinical-record retention policy to the audit log (typically several years to decades). Apply tighter access control than for general analytics: the audit log is a forensic-grade artifact and should be queryable only by named auditors, compliance staff, and HIM leadership, with every read logged.</p>
 <p><strong>Backfill strategy for historical records.</strong> When the matcher launches, it has to process the existing patient base (potentially millions of records) before steady-state operation begins. The backfill is a separate engineering and operational project: generate the candidate pairs in batch, score them all, route through the review queue, ramp HIM-team capacity for the initial review wave, and accept that the cleanup will take weeks to months. Plan the backfill explicitly; do not assume the matcher will absorb it as part of normal operation.</p>
+<h3 id="operational-architecture-mu-re-estimation-pipeline">Operational Architecture: M/U Re-estimation Pipeline</h3>
+<p>The m/u probabilities drift as the underlying population and registration practices change. A Step Functions workflow runs on a quarterly cadence (plus on-demand triggers after major data-quality events such as system mergers or registration-system upgrades). The workflow schedules a Glue job that re-estimates the m and u parameters using the current labeled gold set plus unlabeled data via expectation-maximization. The validation gate before promotion: per-cohort precision and recall reported on the held-out gold set, no per-cohort regression beyond a documented threshold (typically 2% absolute), equity-review committee approval. Approved models are promoted by writing a new <code>MODEL_VERSION</code> configuration entry to a DynamoDB config table; the threshold-router Lambda and the batch Glue job read the current model version on each invocation. The pipeline emits a <code>model_version_updated</code> event on EventBridge with prior and new version IDs so analytics dashboards can partition queries on <code>model_version</code> rather than computing across the version boundary.</p>
+<h3 id="operational-architecture-latency-primitives">Operational Architecture: Latency Primitives</h3>
+<p>Real-time matching at registration has a sub-second latency budget. The architecture uses:</p>
+<ul>
+<li><strong>ElastiCache (Redis) in-memory blocking-key index</strong> for the most common access patterns, seeded by a periodic Glue job that refreshes the index from the normalized-records store.</li>
+<li><strong>Per-pass candidate cap</strong> (N=50 typical, configurable) so no single blocking pass produces an unbounded candidate set.</li>
+<li><strong>SQS-queued asynchronous-follow-up Lambda</strong> for borderline pairs that did not resolve within the latency budget. The registration desk proceeds; the follow-up Lambda scores and routes asynchronously.</li>
+<li><strong>OpenSearch failover:</strong> when OpenSearch is unavailable, the candidate-generator falls back to ElastiCache alone with a logged metric <code>opensearch_fallback_invoked</code>. If both are unavailable, the record routes to a &quot;queued for matching&quot; DLQ that the next batch-matching cycle processes. A CloudWatch alarm fires on chronic fallback so degraded matching freshness does not go unnoticed.</li>
+</ul>
+<h3 id="operational-architecture-cross-system-reconciliation">Operational Architecture: Cross-System Reconciliation</h3>
+<p>Downstream systems emit reconciliation events back to the matcher:</p>
+<table>
+<thead>
+<tr>
+<th>Event Type</th>
+<th>Source</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chart_linkage_observed</code></td>
+<td>EHR</td>
+<td>The EHR linked two charts based on its own logic</td>
+</tr>
+<tr>
+<td><code>account_linkage_observed</code></td>
+<td>Billing</td>
+<td>The billing system consolidated two accounts</td>
+</tr>
+<tr>
+<td><code>outreach_consolidated</code></td>
+<td>Patient communication</td>
+<td>The outreach system merged two contact records</td>
+</tr>
+</tbody>
+</table>
+<p>A reconciliation Lambda compares the downstream linkage state to the MPI's <code>mpi_id</code> assignment. Divergence routes to a <code>cross-system-divergence-queue</code> with the source-system linkage evidence preserved. HIM-leadership roles adjudicate; resolution either updates the MPI to match downstream reality or pushes a corrective linkage event back to the source system. Cross-system divergence rates per system are dashboarded; chronic divergence indicates either a matcher gap or a downstream data-quality issue that needs investigation.</p>
+<h3 id="operational-architecture-data-quality-feedback-loop">Operational Architecture: Data Quality Feedback Loop</h3>
+<p>The normalize Lambda emits <code>data_quality_observed</code> events on EventBridge for each record's quality flags (implausible DOB, invalid SSN pattern, USPS-unstandardizable address, phone with extension formatting issues). The registration system subscribes to these events and surfaces aggregate patterns on a front-desk training dashboard. The feedback is aggregate (weekly summaries by registration-desk location and time-of-day), not individual-patient, so it does not create a PHI exposure. The goal is upstream quality improvement: every percentage-point improvement in DOB capture reduces the matcher's unresolvable-pair rate by more than a percentage point.</p>
+<h3 id="operational-architecture-dlq-and-idempotency-coverage">Operational Architecture: DLQ and Idempotency Coverage</h3>
+<p>Every Lambda in the pipeline has a configured DLQ (SQS) for terminal failures. The DLQ triggers a CloudWatch alarm after one message; engineering investigates DLQ items within 24 hours as a standard operating procedure.</p>
+<p>Idempotency keys on every write path:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Idempotency Key</th>
+<th>Consequence of Duplicate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>normalize-and-route</td>
+<td><code>(source_system, source_record_id)</code></td>
+<td>No-op; record already normalized</td>
+</tr>
+<tr>
+<td>score-and-route</td>
+<td><code>(record_a_id, record_b_id, model_version)</code></td>
+<td>No-op; pair already scored at this model version</td>
+</tr>
+<tr>
+<td>apply_merge</td>
+<td><code>merge_id</code></td>
+<td>Critical: duplicate merge could re-apply survivorship with potentially different source-record states. Guard with conditional PutItem on <code>merge_id</code> not-exists.</td>
+</tr>
+</tbody>
+</table>
+<p>The fall-back-to-no-action pattern: when matching fails partway through (e.g., OpenSearch timeout during candidate generation), the pipeline records the incomplete attempt, does not produce a partial routing decision, and either retries (for transient failures) or routes to DLQ (for terminal failures). A partial merge is never committed; the TransactWriteItems pattern ensures all-or-nothing semantics.</p>
+<h3 id="operational-architecture-cross-recipe-orchestration-contract">Operational Architecture: Cross-Recipe Orchestration Contract</h3>
+<p>This recipe establishes the shared substrate for downstream Chapter 5 recipes:</p>
+<ol>
+<li>
+<p><strong>MPI-as-shared-substrate contract.</strong> Every downstream consumer holding an <code>mpi_id</code> from a prior write resolves it through the <code>mpi-xref</code> cross-reference table at read time to handle subsequent merges. Stale <code>mpi_id</code> references are common and expected; the resolution pattern is: query <code>mpi-xref</code> for the current <code>mpi_id</code>, follow the <code>merged_into</code> chain if the master is inactive.</p>
+</li>
+<li>
+<p><strong>Matching-primitives library boundary.</strong> Blocking passes, per-field comparators, and the Fellegi-Sunter combiner are packaged as a Lambda layer (or Glue Python library) with explicit version coupling. Downstream recipes (5.5 cross-facility, 5.6 claims-to-clinical, 5.7 longitudinal, 5.8 privacy-preserving, 5.9 TEFCA, 5.10 deceased-patient resolution) import the primitives at a pinned version rather than duplicating them.</p>
+</li>
+<li>
+<p><strong>Audit-archive shared-substrate.</strong> The same S3 partition scheme (<code>audit/{decision_type}/{YYYY}/{MM}/{DD}/{uuid}.json</code>) is consumed by all Chapter 5 recipes. Downstream recipes write to their own decision-type partitions but read from the shared archive for lineage queries.</p>
+</li>
+</ol>
+<h3 id="operational-architecture-backfill-primitives">Operational Architecture: Backfill Primitives</h3>
+<p>The backfill pipeline uses a separate review queue (<code>review-queue-backfill</code>) distinct from the real-time queue. Routing priority: real-time pairs are reviewed first; backfill pairs are served only when real-time queue depth permits. Backfill routing pauses when combined queue depth exceeds the configured ceiling (typically 2x daily decision throughput) and resumes below the hysteresis threshold (typically 1.5x). A backfill dashboard tracks projected completion timeline against HIM throughput; ramp-up and ramp-down decisions are made on dashboard signal rather than calendar. The transition to baseline staffing happens when projected steady-state queue depth at baseline FTE ratio falls below the maintenance threshold.</p>
+<h3 id="operational-architecture-patient-facing-data-disclosure">Operational Architecture: Patient-Facing Data Disclosure</h3>
+<p>Before surfacing stored demographic data to the patient in a self-service portal, gate on a data-disclosure policy review. Data sourced from the patient directly (registration self-attestation, portal submissions) is appropriate to display. Data sourced from third-party feeds (insurance eligibility responses, claims, partner-organization shares) may carry separate disclosure-and-consent requirements. The policy framework must address these before the self-service feature surfaces third-party-sourced data to the patient. Implementation: a <code>data_source</code> attribute on each field in <code>mpi-master</code> drives the disclosure-eligibility check at render time.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Active-learning-driven labeling for the gold set.</strong> Rather than randomly sampling pairs for HIM review during gold-set construction, prioritize pairs near the decision boundary (medium scores) or pairs in cohorts where the model is least certain. Active learning can reduce the labeling effort to build a useful gold set by 50% or more, which materially reduces the upfront HIM-team load. Libraries like dedupe implement this pattern. The tradeoff is that active-learning samples are biased toward the boundary, so the gold set is not directly usable for unbiased accuracy measurement; you need a separate, randomly-sampled validation set for that.</p>

@@ -856,6 +856,66 @@ FUNCTION hybrid_decision(claim, primary_score, novelty_result):
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter07.12-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<p><strong>Error Handling for the Hybrid Decision Engine.</strong> The Lambda orchestrator calls two external services (OpenSearch for kNN, SageMaker for embeddings) and either can fail transiently. The pattern:</p>
+<pre class="code code-plain"><code>// Error handling wrapper for the hybrid decision engine
+// Principle: graceful degradation over hard failure
+
+FUNCTION score_claim_with_resilience(claim):
+    // Step A: Compute embedding (SageMaker endpoint)
+    TRY with retry(max_attempts=3, backoff=exponential, base=200ms):
+        embedding = sagemaker.invoke_endpoint(claim_features)
+    ON FAILURE:
+        // If embedding fails, we cannot run kNN at all.
+        // Fall back to primary model only; flag the gap.
+        primary_score = invoke_xgboost(claim_features)
+        RETURN {
+            &quot;final_denial_probability&quot;: primary_score,
+            &quot;confidence&quot;: &quot;degraded&quot;,
+            &quot;recommendation&quot;: &quot;review_suggested&quot;,
+            &quot;explanation&quot;: &quot;Similarity layer unavailable. Using primary model only.&quot;,
+            &quot;similarity_available&quot;: false
+        }
+
+    // Step B: Query OpenSearch for neighbors
+    TRY with retry(max_attempts=3, backoff=exponential, base=200ms):
+        neighbors = opensearch.knn_query(embedding, k=20)
+    ON FAILURE:
+        // OpenSearch is down or circuit-breaker tripped.
+        // Fall back to primary model only.
+        primary_score = invoke_xgboost(claim_features)
+        RETURN {
+            &quot;final_denial_probability&quot;: primary_score,
+            &quot;confidence&quot;: &quot;degraded&quot;,
+            &quot;recommendation&quot;: &quot;review_suggested&quot;,
+            &quot;explanation&quot;: &quot;Vector search unavailable. Using primary model only.&quot;,
+            &quot;similarity_available&quot;: false
+        }
+
+    // Step C: Normal hybrid logic (both services responded)
+    TRY:
+        result = hybrid_decision(claim, embedding, neighbors)
+        RETURN result
+    ON FAILURE:
+        // Logic error or unexpected data shape. Send to DLQ for investigation.
+        sqs.send_message(DLQ_URL, {
+            &quot;claim_id&quot;: claim.id,
+            &quot;error&quot;: exception.message,
+            &quot;timestamp&quot;: now(),
+            &quot;embedding_available&quot;: true,
+            &quot;neighbors_returned&quot;: len(neighbors)
+        })
+        RETURN {
+            &quot;final_denial_probability&quot;: null,
+            &quot;confidence&quot;: &quot;failed&quot;,
+            &quot;recommendation&quot;: &quot;human_review&quot;,
+            &quot;explanation&quot;: &quot;Scoring pipeline error. Routed to manual review.&quot;
+        }
+
+// CloudWatch alarm: trigger when DLQ depth exceeds 100 messages in 5 minutes.
+// This catches sustained failures (not one-off transient errors) and pages
+// the on-call engineer before the backlog becomes unmanageable.
+</code></pre>
+<p>The key principle: never let a transient infrastructure failure block claim processing. The primary XGBoost model (Recipe 7.11) can always produce a score independently. The similarity layer adds confidence and explanation; when it's unavailable, you lose those signals but claims still flow. The SQS dead-letter queue captures claims that fail all retries so nothing is silently dropped.</p>
 <h3 id="expected-results">Expected Results</h3>
 <p>Sample hybrid decision output:</p>
 <div class="code"><pre><span></span><span class="p">{</span>
@@ -939,6 +999,23 @@ FUNCTION hybrid_decision(claim, primary_score, novelty_result):
 <li>Payers that change rules mid-year. Historical neighbors reflect old rules; the current claim faces new rules. Stale precedent.</li>
 <li>Very high cardinality interactions (specific procedure + specific payer + specific modifier combination) where even with 500K claims, the neighborhood is sparse.</li>
 <li>Embedding drift: as your claim population shifts (new procedure codes, new patient demographics), old embeddings become less representative. Requires periodic re-embedding and re-indexing.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This architecture handles the happy path and basic error recovery, but a production deployment needs several additional layers:</p>
+<ul>
+<li>
+<p><strong>No automated embedding-drift detection.</strong> The system has no mechanism to notice when the claim population shifts enough that old embeddings become unreliable. You'd need a monitoring job that tracks the distribution of nearest-neighbor distances over time and alerts when average distances creep upward (indicating the embedding space is losing discriminative power).</p>
+</li>
+<li>
+<p><strong>No circuit-breaker for OpenSearch outages.</strong> The error-handling pseudocode retries and degrades gracefully, but there's no circuit-breaker pattern that stops sending queries after repeated failures. Without one, a degraded OpenSearch cluster gets hammered with retries from every Lambda invocation, deepening the problem. Implement a circuit-breaker (e.g., via a DynamoDB flag or Lambda environment variable toggled by a CloudWatch alarm) that short-circuits to primary-model-only mode during extended outages.</p>
+</li>
+<li>
+<p><strong>No A/B framework for kNN-vs-primary model allocation.</strong> The hybrid decision logic uses fixed thresholds to decide when to trust the primary model vs. kNN. You can't currently measure whether the similarity layer is actually improving outcomes without a controlled experiment. An A/B framework (randomly assign a percentage of claims to &quot;primary only&quot; vs. &quot;hybrid&quot;) lets you measure the lift from the similarity layer and justify the infrastructure cost.</p>
+</li>
+<li>
+<p><strong>No automated threshold recalibration.</strong> The novelty threshold (0.4) and disagreement threshold (0.25) are calibrated once at deployment. As your claim population and payer mix evolve, these thresholds drift out of calibration. You'd need a periodic job that re-evaluates threshold performance against recent outcomes and adjusts (or at minimum alerts when accuracy at the current threshold drops below a floor).</p>
+</li>
 </ul>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>

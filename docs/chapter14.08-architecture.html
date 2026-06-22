@@ -519,6 +519,82 @@
 <p><strong>Amazon SageMaker for demand forecasting.</strong> The demand forecast model (predicting where calls will come from in the next few hours) is a time-series ML model trained on historical call data. SageMaker hosts the trained model behind a real-time endpoint that the repositioning optimizer queries.</p>
 <p><strong>Amazon Kinesis Data Streams for GPS ingestion.</strong> Ambulance GPS units report location every 5 to 15 seconds. That's a high-throughput stream of small messages. Kinesis ingests these, and a Lambda consumer updates the fleet state in DynamoDB. This decouples the GPS feed from the state store and handles burst traffic gracefully.</p>
 <p><strong>Amazon EventBridge for hospital status updates.</strong> Hospitals publish diversion status, ED census, and bed availability through various mechanisms. EventBridge provides a clean event bus for these updates, routing them to the appropriate consumers (the hospital selection component of the dispatch optimizer).</p>
+<h3 id="failover-and-degradation-strategy">Failover and Degradation Strategy</h3>
+<p>This is a life-safety system. The optimization layer must never become a single point of failure for dispatch operations. The CAD system retains its native proximity-based dispatch capability at all times, and the optimizer operates as an advisory overlay.</p>
+<p><strong>Timeout-triggered fallback.</strong> If the dispatch optimizer Lambda does not return a recommendation within 3 seconds, the CAD system automatically falls back to its native dispatch logic (closest available unit by straight-line or pre-computed road distance). The 3-second threshold is aggressive by design: a Priority 1 cardiac arrest cannot wait for a retry loop.</p>
+<p><strong>Graceful degradation by component:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Component Down</th>
+<th>Fallback Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ElastiCache (travel time cache)</td>
+<td>Lambda calls Location Service directly (adds 200-500ms latency, still within budget)</td>
+</tr>
+<tr>
+<td>Amazon Location Service</td>
+<td>Use last-known cached travel times (stale but usable) or Haversine distance with speed estimate</td>
+</tr>
+<tr>
+<td>DynamoDB (fleet state)</td>
+<td>Lambda maintains a 30-second in-memory snapshot; dispatch from snapshot, flag as degraded</td>
+</tr>
+<tr>
+<td>SageMaker (demand forecast)</td>
+<td>Repositioning optimizer pauses; dispatch continues unaffected (it doesn't depend on forecast)</td>
+</tr>
+<tr>
+<td>Kinesis (GPS stream)</td>
+<td>Fleet positions go stale; after 60 seconds without update, flag units as &quot;position uncertain&quot; and widen the candidate pool</td>
+</tr>
+<tr>
+<td>Full optimizer outage</td>
+<td>CAD system dispatches natively using proximity; alert on-call engineering team</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Monitoring and alerting:</strong></p>
+<ul>
+<li><strong>Fallback rate</strong>: Track the percentage of dispatches that hit the 3-second timeout and fall back to CAD-native logic. Target: &lt; 0.1% in steady state. Alert if fallback rate exceeds 1% over a 5-minute window.</li>
+<li><strong>Component health</strong>: CloudWatch alarms on each dependency (ElastiCache hit rate, DynamoDB throttles, Location Service error rate, Lambda duration P99). Any alarm triggers a page to the on-call team.</li>
+<li><strong>Degraded mode flag</strong>: When operating in any degraded state, tag all dispatch decisions with a <code>degraded_components</code> field listing which services are impaired. This supports post-incident quality review.</li>
+</ul>
+<p>The principle: the system should always produce an answer. A slightly suboptimal dispatch (proximity-based) is infinitely better than no dispatch while waiting for the optimizer to recover.</p>
+<h3 id="dispatcher-in-the-loop">Dispatcher-in-the-Loop</h3>
+<p>The architecture diagram shows the optimizer sending assignments directly to the MDT (Mobile Data Terminal). In practice, dispatch decisions flow through a human dispatcher who accepts or overrides the recommendation. This is not optional for a life-safety system.</p>
+<p><strong>Operating modes by call priority:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Mode</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 (life-threatening)</td>
+<td>Auto-dispatch with confirmation</td>
+<td>System dispatches the top-ranked unit immediately AND presents the recommendation to the dispatcher console. Dispatcher can override within 15 seconds; after that, the assignment stands. This preserves speed for cardiac arrest while allowing the dispatcher to catch obvious errors.</td>
+</tr>
+<tr>
+<td>2-3 (urgent, non-critical)</td>
+<td>Recommendation mode</td>
+<td>System presents top 3 candidates on the dispatcher console with scores, travel times, and coverage impact. Dispatcher selects one and confirms. Timeout: 30 seconds before auto-selecting the top candidate.</td>
+</tr>
+<tr>
+<td>4-5 (non-emergency)</td>
+<td>Recommendation mode</td>
+<td>Same as Priority 2-3 but no timeout. Dispatcher selects at their own pace.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Dispatcher console component:</strong> The dispatcher sees a ranked list of candidate units with travel time estimates, capability match, coverage impact indicator, and any flags (unit near end-of-shift, position uncertain, etc.). Accept/reject is a single click. If the dispatcher overrides, they select a reason code: &quot;local knowledge,&quot; &quot;crew request,&quot; &quot;unit condition,&quot; &quot;other.&quot;</p>
+<p><strong>Override tracking for model improvement:</strong> Every dispatcher accept/reject action is logged to the dispatch audit table. Fields include: <code>recommended_unit_id</code>, <code>dispatched_unit_id</code>, <code>override_reason_code</code>, <code>dispatcher_id</code>, <code>decision_latency_ms</code>. Aggregate override data feeds a monthly model review: if dispatchers consistently override in a specific scenario (e.g., always rejecting Unit X for calls near the river), the model is missing information that should be incorporated.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
 <pre class="mermaid">flowchart TB
     subgraph &quot;Real-Time Dispatch (&lt; 2 sec)&quot;
@@ -528,11 +604,14 @@
         C --&gt;|Travel Times| E[ElastiCache: Route Matrix]
         C --&gt;|Fallback| F[Amazon Location Service]
         C --&gt;|Hospital Status| G[DynamoDB: Hospital Status]
-        C --&gt;|Assignment| H[CAD System / MDT]
+        C --&gt;|Recommendation| DC[Dispatcher Console]
+        DC --&gt;|Accept/Override| H[CAD System / MDT]
+        C -.-&gt;|Auto-dispatch P1 + confirm| H
     end
 
     subgraph &quot;Fleet Tracking&quot;
-        I[Ambulance GPS] --&gt;|Location Stream| J[Kinesis Data Streams]
+        I[Ambulance GPS] --&gt;|Authenticated API| AG[API Gateway: GPS Ingress]
+        AG --&gt;|Validated Events| J[Kinesis Data Streams]
         J --&gt; K[Lambda: GPS Processor]
         K --&gt;|Update Position| D
     end
@@ -551,9 +630,15 @@
         R --&gt; G
     end
 
+    subgraph &quot;Audit&quot;
+        C --&gt;|Decision Record| AT[DynamoDB: Audit Trail]
+        DC --&gt;|Accept/Reject| AT
+    end
+
     style C fill:#ff9,stroke:#333
     style D fill:#9ff,stroke:#333
     style N fill:#f9f,stroke:#333
+    style AT fill:#fcc,stroke:#333
 </pre>
 <h3 id="prerequisites">Prerequisites</h3>
 <table>
@@ -655,6 +740,14 @@
 </table>
 <h3 id="pseudocode-walkthrough">Pseudocode Walkthrough</h3>
 <p><strong>Step 1: Ingest fleet GPS and maintain state.</strong> Every ambulance reports its GPS position every 5 to 15 seconds. These positions flow through Kinesis into a Lambda processor that updates the fleet state table. The state table is the single source of truth for &quot;where is every unit right now and what are they doing?&quot; Without this real-time state, the dispatch optimizer is working with stale information, and stale information in EMS means sending a unit that's actually 15 minutes away instead of the one that's 3 minutes away. The state table also tracks unit status transitions: available, dispatched, en route, on scene, transporting, at hospital, returning. Each transition updates the record and potentially triggers a coverage recalculation.</p>
+<p><strong>GPS device authentication and data validation.</strong> GPS/AVL (Automatic Vehicle Location) devices on ambulances typically connect through a vendor gateway (the AVL vendor's cloud platform) that forwards position reports to your infrastructure. The vendor gateway authenticates to your GPS ingress API Gateway using API keys or IAM auth (SigV4). Each device has a registered identifier tied to a known unit in your fleet roster. The GPS processor Lambda validates every incoming position fix before updating fleet state:</p>
+<ul>
+<li><strong>Coordinate bounds check:</strong> Latitude and longitude must fall within your service area bounding box (with a generous buffer for mutual aid runs). Reject coordinates that are clearly impossible (e.g., latitude 0, longitude 0 - a common GPS device default when it loses signal lock).</li>
+<li><strong>Speed plausibility:</strong> Compare the reported speed (or calculate speed from consecutive positions) against physical limits. An ambulance cannot travel at 300 km/h. If computed speed exceeds a threshold (say, 200 km/h), flag the fix as suspect and log it, but do not update fleet state with it.</li>
+<li><strong>Timestamp recency:</strong> Reject GPS fixes with timestamps more than 60 seconds old. Stale positions being treated as current is a common failure mode when network connectivity is intermittent.</li>
+<li><strong>Impossible movement detection:</strong> If a unit's position jumps more than 5 km between consecutive fixes (within a 15-second reporting interval), flag it as a potential device malfunction or GPS spoofing. Hold the previous known-good position and alert the fleet operations team. Two consecutive implausible fixes from the same device should trigger a device health investigation.</li>
+</ul>
+<p>These validations run before the DynamoDB write. Invalid fixes are logged to a separate &quot;GPS anomalies&quot; table for fleet maintenance to review (battery issues, antenna problems, device firmware bugs).</p>
 <pre class="code code-plain"><code>FUNCTION process_gps_update(gps_event):
     // GPS event contains: unit_id, latitude, longitude, timestamp, speed, heading
     unit_id   = gps_event.unit_id
@@ -864,6 +957,78 @@
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter14.08-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<h3 id="dispatch-decision-audit-trail">Dispatch Decision Audit Trail</h3>
+<p>Every dispatch decision must be logged as an immutable audit record. In EMS, dispatch records are legal documents. They may be subpoenaed in malpractice cases, reviewed by medical directors for quality assurance, or examined by regulatory bodies during accreditation audits. The audit trail is not optional.</p>
+<p><strong>What gets logged (full decision payload):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>call_id</code></td>
+<td>Unique identifier from the CAD system</td>
+</tr>
+<tr>
+<td><code>call_priority</code></td>
+<td>Priority level at time of dispatch</td>
+</tr>
+<tr>
+<td><code>call_location</code></td>
+<td>GPS coordinates of the incident</td>
+</tr>
+<tr>
+<td><code>nature_code</code></td>
+<td>Dispatch nature code (chest pain, trauma, etc.)</td>
+</tr>
+<tr>
+<td><code>all_candidate_scores</code></td>
+<td>Every unit evaluated, with individual score components (travel time, coverage impact, fatigue, workload)</td>
+</tr>
+<tr>
+<td><code>fleet_state_snapshot</code></td>
+<td>Positions and statuses of all units at decision time</td>
+</tr>
+<tr>
+<td><code>travel_times_used</code></td>
+<td>The travel time values that informed scoring (and their source: cache hit vs. Location Service call)</td>
+</tr>
+<tr>
+<td><code>assigned_unit_id</code></td>
+<td>Which unit the optimizer recommended</td>
+</tr>
+<tr>
+<td><code>dispatcher_action</code></td>
+<td>Accept, override, or auto-dispatched (Priority 1)</td>
+</tr>
+<tr>
+<td><code>override_reason_code</code></td>
+<td>If overridden, why (local knowledge, crew request, etc.)</td>
+</tr>
+<tr>
+<td><code>dispatcher_id</code></td>
+<td>Who made the final dispatch decision</td>
+</tr>
+<tr>
+<td><code>decision_timestamp</code></td>
+<td>When the optimizer produced the recommendation</td>
+</tr>
+<tr>
+<td><code>confirmation_timestamp</code></td>
+<td>When the dispatcher confirmed (or when auto-dispatch timeout expired)</td>
+</tr>
+<tr>
+<td><code>recommended_hospital</code></td>
+<td>Hospital recommendation at dispatch time</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Storage:</strong> DynamoDB table with partition key <code>call_id</code> and sort key <code>decision_timestamp</code>. Enable DynamoDB point-in-time recovery. For immutability, use an IAM policy that denies <code>dynamodb:DeleteItem</code> and <code>dynamodb:UpdateItem</code> on the audit table for all principals except a break-glass administrative role. Alternatively, export audit records to S3 with Object Lock (Governance or Compliance mode) for tamper-evident long-term storage.</p>
+<p><strong>Retention:</strong> Minimum 7 to 10 years. State EMS record retention requirements vary (California requires 7 years, New York requires 6 years from last patient contact, others vary). Default to 10 years to cover the most stringent state requirements plus a buffer for late-filed litigation. Use DynamoDB TTL for the active table combined with automated export to S3 Glacier Deep Archive after 12 months. The S3 bucket uses Object Lock in Compliance mode, meaning nobody (including root) can delete records before the retention period expires.</p>
+<p><strong>Access control:</strong> The audit table is write-once from the dispatch Lambda and the dispatcher console. Read access is restricted to: medical director role, quality assurance team, legal/compliance team, and system administrators. All reads are logged via CloudTrail. Any bulk export requires a formal request through your compliance workflow.</p>
 <h3 id="expected-results">Expected Results</h3>
 <p><strong>Sample dispatch decision output:</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
@@ -942,6 +1107,15 @@
 <li><strong>Rapid demand spikes.</strong> A sudden weather event or large-scale accident can generate a burst of calls that exceeds fleet capacity. The optimizer can only assign units that exist; it can't create new ones.</li>
 <li><strong>Inter-agency coordination.</strong> Many metro areas have overlapping EMS jurisdictions (fire department, private ambulance, hospital-based EMS). The optimizer only controls units it can see. Mutual aid decisions still require human coordination.</li>
 </ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This architecture gives you a working dispatch optimization system in a sandbox. Here's what stands between this and handling real 911 calls:</p>
+<p><strong>Simulation environment.</strong> You cannot test dispatch optimization changes on live emergency calls. Before deploying any change to scoring weights, coverage thresholds, or solver parameters, you need a discrete-event simulator that replays months of historical call patterns against your fleet model. Compare response time distributions between the old and new logic across thousands of simulated days. This simulator is a prerequisite for production, not an enhancement.</p>
+<p><strong>Dispatcher UI and workflow integration.</strong> The architecture defines the dispatcher-in-the-loop mechanism, but building the actual dispatcher console (real-time candidate ranking, one-click accept/override, coverage map visualization, override reason tracking) is a significant frontend and UX effort. Dispatchers work under extreme time pressure; the UI must be faster and more intuitive than their existing workflow or they will reject it.</p>
+<p><strong>CAD system integration testing.</strong> The optimizer must integrate with your CAD vendor's system (Tyler New World, Hexagon, Motorola PremierOne, or similar). These are proprietary platforms with their own APIs, message formats, and latency characteristics. Integration testing and certification with the CAD vendor is typically a 3 to 6 month effort involving the vendor's professional services team.</p>
+<p><strong>Regulatory and medical direction approval.</strong> An optimization system that influences which ambulance responds to a cardiac arrest requires approval from your EMS medical director (who has legal authority over clinical protocols), your governing EMS authority (state or regional), and potentially your accreditation body. This is not a rubber stamp. Expect a structured evaluation period where the system runs in shadow mode (recommendations logged but not acted on) for 60 to 90 days while clinical leadership reviews decision quality.</p>
+<p><strong>Travel time model calibration.</strong> The Haversine or even Location Service travel times are starting points. Production accuracy requires calibrating against your fleet's actual GPS trace history: how long does it really take your ambulances to get from point A to point B at 3 PM on a Tuesday? Build this calibration from 6+ months of historical run data before trusting the optimizer's time estimates for patient-care decisions.</p>
+<p><strong>Failover load testing.</strong> The fallback paths described in the Failover section must be tested under realistic failure conditions. Inject faults (kill ElastiCache, throttle DynamoDB, black-hole Location Service) and verify the system degrades gracefully and the CAD system takes over within the 3-second timeout. Run these tests monthly.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <h3 id="multi-agency-coordination">Multi-Agency Coordination</h3>

@@ -2110,8 +2110,9 @@
                 <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
                     <span class="s2">&quot;SET #s = :recommended, recommended_run_date = :rd, &quot;</span>
                     <span class="s2">&quot;allocation_reason = :ar, allocation_stage = :stg, &quot;</span>
-                    <span class="s2">&quot;policy_version = :pv &quot;</span>
-                    <span class="s2">&quot;ADD state_history :history_event&quot;</span>
+                    <span class="s2">&quot;policy_version = :pv, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :history_event)&quot;</span>
                 <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
@@ -2120,6 +2121,7 @@
                     <span class="s2">&quot;:ar&quot;</span><span class="p">:</span>          <span class="n">row</span><span class="p">[</span><span class="s2">&quot;allocation_reason&quot;</span><span class="p">],</span>
                     <span class="s2">&quot;:stg&quot;</span><span class="p">:</span>         <span class="n">row</span><span class="p">[</span><span class="s2">&quot;stage_name&quot;</span><span class="p">],</span>
                     <span class="s2">&quot;:pv&quot;</span><span class="p">:</span>          <span class="n">POLICY_VERSION</span><span class="p">,</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>       <span class="p">[],</span>
                     <span class="s2">&quot;:history_event&quot;</span><span class="p">:</span> <span class="p">[{</span>
                         <span class="s2">&quot;event&quot;</span><span class="p">:</span>             <span class="s2">&quot;transitioned_eligible_to_recommended&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>         <span class="n">run_date</span><span class="p">,</span>
@@ -2396,13 +2398,15 @@
             <span class="n">state_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
                 <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
                 <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
-                    <span class="s2">&quot;SET #s = :outreach, outreach_id = :oid &quot;</span>
-                    <span class="s2">&quot;ADD state_history :history_event&quot;</span>
+                    <span class="s2">&quot;SET #s = :outreach, outreach_id = :oid, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :history_event)&quot;</span>
                 <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                     <span class="s2">&quot;:outreach&quot;</span><span class="p">:</span>      <span class="s2">&quot;outreach_in_progress&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;:oid&quot;</span><span class="p">:</span>           <span class="n">outreach_id</span><span class="p">,</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>         <span class="p">[],</span>
                     <span class="s2">&quot;:history_event&quot;</span><span class="p">:</span> <span class="p">[{</span>
                         <span class="s2">&quot;event&quot;</span><span class="p">:</span>       <span class="s2">&quot;transitioned_recommended_to_outreach&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>   <span class="n">run_date</span><span class="p">,</span>
@@ -2674,6 +2678,38 @@
                                         <span class="s2">&quot;should read chart context before outreach.&quot;</span><span class="p">,</span>
     <span class="p">}</span>
 
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_decrement_outreach_counter</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decrement the rolling 30-day outreach counter on the patient profile.</span>
+<span class="sd">    Called when an outreach attempt results in a terminal-unreachable,</span>
+<span class="sd">    declined, or deferred outcome: the slot didn&#39;t produce the intended</span>
+<span class="sd">    enrollment conversation, so it should not count against the patient&#39;s</span>
+<span class="sd">    future outreach budget.</span>
+
+<span class="sd">    Uses SET with subtraction (not ADD, which only supports Number and Set</span>
+<span class="sd">    types) and a ConditionExpression to prevent going below zero.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">)</span>
+    <span class="n">profile_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">PATIENT_PROFILE_TABLE</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">profile_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+            <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">},</span>
+            <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
+                <span class="s2">&quot;SET cm_outreach_recent_30d_count = &quot;</span>
+                <span class="s2">&quot;cm_outreach_recent_30d_count - :one&quot;</span>
+            <span class="p">),</span>
+            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;:one&quot;</span><span class="p">:</span>  <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;:zero&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+            <span class="p">},</span>
+            <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;cm_outreach_recent_30d_count &gt; :zero&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="c1"># Condition check fails if counter is already 0; safe to ignore.</span>
+        <span class="k">pass</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">record_outreach_attempt</span><span class="p">(</span><span class="n">outreach_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">attempt_result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
                               <span class="n">run_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -2731,12 +2767,14 @@
                 <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
                 <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
                     <span class="s2">&quot;SET #s = :enrolled, &quot;</span>
-                    <span class="s2">&quot;enrollment_metadata = :em &quot;</span>
-                    <span class="s2">&quot;ADD state_history :history_event&quot;</span>
+                    <span class="s2">&quot;enrollment_metadata = :em, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :history_event)&quot;</span>
                 <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                     <span class="s2">&quot;:enrolled&quot;</span><span class="p">:</span>      <span class="s2">&quot;enrolled&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>         <span class="p">[],</span>
                     <span class="s2">&quot;:em&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">&quot;enrolled_at&quot;</span><span class="p">:</span>           <span class="n">_now_iso</span><span class="p">(),</span>
                         <span class="s2">&quot;consent_form_id&quot;</span><span class="p">:</span>        <span class="n">consent_id</span><span class="p">,</span>
@@ -2758,10 +2796,15 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">state_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
                 <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
-                <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET #s = :declined ADD state_history :he&quot;</span><span class="p">,</span>
+                <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">&quot;SET #s = :declined, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :he)&quot;</span>
+                <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                     <span class="s2">&quot;:declined&quot;</span><span class="p">:</span> <span class="s2">&quot;declined&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>    <span class="p">[],</span>
                     <span class="s2">&quot;:he&quot;</span><span class="p">:</span> <span class="p">[{</span>
                         <span class="s2">&quot;event&quot;</span><span class="p">:</span>         <span class="s2">&quot;transitioned_outreach_to_declined&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>     <span class="n">_now_iso</span><span class="p">(),</span>
@@ -2774,6 +2817,11 @@
                 <span class="s2">&quot;Failed to persist decline for </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">patient_id</span><span class="p">,</span> <span class="n">program_id</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="c1"># Decrement the outreach budget: a declined outreach did not</span>
+        <span class="c1"># produce the intended enrollment conversation. Without this,</span>
+        <span class="c1"># the counter accumulates phantom consumption that silences</span>
+        <span class="c1"># the patient from future enrollment outreach for 30 days.</span>
+        <span class="n">_decrement_outreach_counter</span><span class="p">(</span><span class="n">patient_id</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">result</span> <span class="o">==</span> <span class="s2">&quot;unreachable&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">attempt_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attempt_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MAX_OUTREACH_ATTEMPTS</span><span class="p">:</span>
@@ -2782,10 +2830,15 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">state_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
                     <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
-                    <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET #s = :failed ADD state_history :he&quot;</span><span class="p">,</span>
+                    <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
+                        <span class="s2">&quot;SET #s = :failed, &quot;</span>
+                        <span class="s2">&quot;state_history = list_append(&quot;</span>
+                        <span class="s2">&quot;if_not_exists(state_history, :empty), :he)&quot;</span>
+                    <span class="p">),</span>
                     <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                     <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                         <span class="s2">&quot;:failed&quot;</span><span class="p">:</span> <span class="s2">&quot;outreach_failed&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>  <span class="p">[],</span>
                         <span class="s2">&quot;:he&quot;</span><span class="p">:</span> <span class="p">[{</span>
                             <span class="s2">&quot;event&quot;</span><span class="p">:</span>     <span class="s2">&quot;transitioned_outreach_to_failed&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">_now_iso</span><span class="p">(),</span>
@@ -2801,18 +2854,7 @@
             <span class="c1"># Decrement the CM outreach budget when the attempt</span>
             <span class="c1"># terminates unreachable; the slot didn&#39;t actually result</span>
             <span class="c1"># in a patient-facing conversation.</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">profile_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
-                    <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">},</span>
-                    <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
-                        <span class="s2">&quot;ADD cm_outreach_recent_30d_count :neg &quot;</span>
-                    <span class="p">),</span>
-                    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:neg&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;-1&quot;</span><span class="p">)},</span>
-                    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;cm_outreach_recent_30d_count &gt; :zero&quot;</span><span class="p">,</span>
-                    <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="k">pass</span>
+            <span class="n">_decrement_outreach_counter</span><span class="p">(</span><span class="n">patient_id</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">new_outreach_state</span> <span class="o">=</span> <span class="s2">&quot;unreachable_pending_retry&quot;</span>
             <span class="n">new_program_state</span> <span class="o">=</span> <span class="kc">None</span>    <span class="c1"># state stays outreach_in_progress</span>
@@ -2824,13 +2866,15 @@
             <span class="n">state_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
                 <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
                 <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
-                    <span class="s2">&quot;SET #s = :deferred, deferred_until = :du &quot;</span>
-                    <span class="s2">&quot;ADD state_history :he&quot;</span>
+                    <span class="s2">&quot;SET #s = :deferred, deferred_until = :du, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :he)&quot;</span>
                 <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                     <span class="s2">&quot;:deferred&quot;</span><span class="p">:</span> <span class="s2">&quot;deferred&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;:du&quot;</span><span class="p">:</span>       <span class="n">attempt_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;defer_until&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>    <span class="p">[],</span>
                     <span class="s2">&quot;:he&quot;</span><span class="p">:</span> <span class="p">[{</span>
                         <span class="s2">&quot;event&quot;</span><span class="p">:</span>        <span class="s2">&quot;transitioned_outreach_to_deferred&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>    <span class="n">_now_iso</span><span class="p">(),</span>
@@ -2844,6 +2888,11 @@
                 <span class="s2">&quot;Failed to persist deferral for </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">patient_id</span><span class="p">,</span> <span class="n">program_id</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="c1"># Decrement the outreach budget: a deferred outreach did not</span>
+        <span class="c1"># produce the intended enrollment conversation. The counter</span>
+        <span class="c1"># will be re-incremented when the deferred outreach is</span>
+        <span class="c1"># re-attempted after defer_until.</span>
+        <span class="n">_decrement_outreach_counter</span><span class="p">(</span><span class="n">patient_id</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unknown outreach result: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
         <span class="k">return</span>
@@ -2956,10 +3005,15 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">state_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
                 <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
-                <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET #s = :st ADD state_history :he&quot;</span><span class="p">,</span>
+                <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">&quot;SET #s = :st, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :he)&quot;</span>
+                <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                     <span class="s2">&quot;:st&quot;</span><span class="p">:</span> <span class="n">new_state</span><span class="p">,</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span> <span class="p">[],</span>
                     <span class="s2">&quot;:he&quot;</span><span class="p">:</span> <span class="p">[{</span>
                         <span class="s2">&quot;event&quot;</span><span class="p">:</span>            <span class="sa">f</span><span class="s2">&quot;transitioned_to_</span><span class="si">{</span><span class="n">new_state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>        <span class="n">_now_iso</span><span class="p">(),</span>
@@ -3327,12 +3381,14 @@
                 <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
                 <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
                     <span class="s2">&quot;SET #s = :graduated, &quot;</span>
-                    <span class="s2">&quot;graduation_metadata = :gm &quot;</span>
-                    <span class="s2">&quot;ADD state_history :he&quot;</span>
+                    <span class="s2">&quot;graduation_metadata = :gm, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :he)&quot;</span>
                 <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                     <span class="s2">&quot;:graduated&quot;</span><span class="p">:</span> <span class="s2">&quot;graduated&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>     <span class="p">[],</span>
                     <span class="s2">&quot;:gm&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">&quot;graduated_at&quot;</span><span class="p">:</span> <span class="n">_now_iso</span><span class="p">(),</span>
                         <span class="s2">&quot;post_graduation_observation_window&quot;</span><span class="p">:</span>
@@ -3387,13 +3443,15 @@
                 <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
                     <span class="s2">&quot;SET #s = :extended, &quot;</span>
                     <span class="s2">&quot;enrollment_metadata.target_duration = &quot;</span>
-                    <span class="s2">&quot;enrollment_metadata.target_duration + :ext &quot;</span>
-                    <span class="s2">&quot;ADD state_history :he&quot;</span>
+                    <span class="s2">&quot;enrollment_metadata.target_duration + :ext, &quot;</span>
+                    <span class="s2">&quot;state_history = list_append(&quot;</span>
+                    <span class="s2">&quot;if_not_exists(state_history, :empty), :he)&quot;</span>
                 <span class="p">),</span>
                 <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
                 <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                     <span class="s2">&quot;:extended&quot;</span><span class="p">:</span> <span class="s2">&quot;enrolled_extended&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;:ext&quot;</span><span class="p">:</span>      <span class="n">EXTENSION_DAYS</span><span class="p">,</span>
+                    <span class="s2">&quot;:empty&quot;</span><span class="p">:</span>    <span class="p">[],</span>
                     <span class="s2">&quot;:he&quot;</span><span class="p">:</span> <span class="p">[{</span>
                         <span class="s2">&quot;event&quot;</span><span class="p">:</span>       <span class="s2">&quot;extended&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>   <span class="n">_now_iso</span><span class="p">(),</span>
@@ -3444,13 +3502,15 @@
         <span class="n">state_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
             <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;program_id&quot;</span><span class="p">:</span> <span class="n">program_id</span><span class="p">},</span>
             <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
-                <span class="s2">&quot;SET #s = :st, disenrollment_metadata = :dm &quot;</span>
-                <span class="s2">&quot;ADD state_history :he&quot;</span>
+                <span class="s2">&quot;SET #s = :st, disenrollment_metadata = :dm, &quot;</span>
+                <span class="s2">&quot;state_history = list_append(&quot;</span>
+                <span class="s2">&quot;if_not_exists(state_history, :empty), :he)&quot;</span>
             <span class="p">),</span>
             <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
             <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">_to_decimal_dict</span><span class="p">({</span>
                 <span class="s2">&quot;:st&quot;</span><span class="p">:</span> <span class="n">new_state</span><span class="p">,</span>
                 <span class="s2">&quot;:dm&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">,</span>
+                <span class="s2">&quot;:empty&quot;</span><span class="p">:</span> <span class="p">[],</span>
                 <span class="s2">&quot;:he&quot;</span><span class="p">:</span> <span class="p">[{</span>
                     <span class="s2">&quot;event&quot;</span><span class="p">:</span>       <span class="sa">f</span><span class="s2">&quot;transitioned_to_</span><span class="si">{</span><span class="n">new_state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>   <span class="n">_now_iso</span><span class="p">(),</span>
@@ -3531,6 +3591,57 @@
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">record</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">sweep_stale_pending_outreach</span><span class="p">(</span><span class="n">run_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hourly sweep: for outreach-state rows where state is &#39;queued&#39; or</span>
+<span class="sd">    &#39;outreach_in_progress&#39; and created_at is more than 7 days ago</span>
+<span class="sd">    with no engagement-event activity, mark state as</span>
+<span class="sd">    &#39;stale_no_activity&#39; and decrement the outreach counter.</span>
+
+<span class="sd">    This catches outreach dispatched but never reached the patient</span>
+<span class="sd">    (care-manager attrition, queue overflow, system errors). Without</span>
+<span class="sd">    this sweep, phantom counter consumption silences the patient from</span>
+<span class="sd">    future enrollment outreach.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">)</span>
+    <span class="n">outreach_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">OUTREACH_STATE_TABLE</span><span class="p">)</span>
+    <span class="n">cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">run_date</span><span class="p">)</span>
+              <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="c1"># In production, use a GSI on state + created_at for efficient</span>
+    <span class="c1"># scanning. This example uses a full scan for simplicity.</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">outreach_table</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+        <span class="n">FilterExpression</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;(#s = :queued OR #s = :in_progress) AND created_at &lt; :cutoff&quot;</span>
+        <span class="p">),</span>
+        <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
+        <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;:queued&quot;</span><span class="p">:</span>      <span class="s2">&quot;queued&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;:in_progress&quot;</span><span class="p">:</span> <span class="s2">&quot;outreach_in_progress&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;:cutoff&quot;</span><span class="p">:</span>      <span class="n">cutoff</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">outreach_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+                <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;outreach_id&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;outreach_id&quot;</span><span class="p">]},</span>
+                <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET #s = :stale&quot;</span><span class="p">,</span>
+                <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;state&quot;</span><span class="p">},</span>
+                <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:stale&quot;</span><span class="p">:</span> <span class="s2">&quot;stale_no_activity&quot;</span><span class="p">},</span>
+            <span class="p">)</span>
+            <span class="n">_decrement_outreach_counter</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">])</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Marked stale outreach </span><span class="si">%s</span><span class="s2"> for </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">&quot;outreach_id&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;program_id&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Failed to mark stale outreach </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">&quot;outreach_id&quot;</span><span class="p">],</span> <span class="n">exc</span><span class="p">,</span>
+            <span class="p">)</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">post_graduation_observation</span><span class="p">(</span><span class="n">run_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -4171,8 +4282,8 @@
 <p><strong>Synthetic data and testing.</strong> There are no tests in this example. A production pipeline needs unit tests for the denominator/inclusion/exclusion logic per program; the per-program response and engagement scoring functions; the multi-stage allocator with capacity and equity floors; the engagement scorer with decline-pattern classification; the disenrollment-decision policy; the cross-program-transition recommender; integration tests against a synthetic Synthea-generated patient population across cohort axes; regression tests that confirm hard exclusion rules (hospice, palliative care) are never bypassed; load tests at expected volumes (250K eligible patients, 5+ programs, 1,400 active enrollments, weekly enrollment cycle); chaos tests that drop a SageMaker job mid-pipeline and verify Step Functions resumes from the right state. Never use real PHI in non-production environments. <a href="https://github.com/synthetichealth/synthea">Synthea</a> generates synthetic FHIR patients with realistic conditions and procedures suitable for the eligibility pipeline.</p>
 <p><strong>Cohort fairness review process.</strong> The architecture emits cohort-sliced metrics, but a dashboard nobody reviews is useless. Establish a quarterly review with a cross-functional committee (data science, equity lead, medical director, program leadership, operations lead). Watch for: enrollment-rate parity by cohort, per-cohort uplift versus per-cohort enrollment rate, per-cohort engagement and graduation rates, per-cohort disenrollment-for-cause rates, per-cohort outcome (post-program admissions, ED, total cost). Each finding produces an action item with an owner.</p>
 <p><strong>Cold-start handling for new programs.</strong> The example assumes every program has trained response, likelihood, and engagement models. A brand-new program has none. Cold-start strategy: launch new programs with rule-based scoring only (no supervised model), run a randomized pilot for the first 1-2 cycles to bootstrap training data, fall back to baseline scoring if the model is underfitting, document explicitly in the recommendation log that the program is in &quot;calibrating&quot; mode. Mirrors the cold-start pattern from 4.6.</p>
-<p><strong>Data-quality flag propagation.</strong> The <code>data_quality_flag</code> is set per (patient, program) but downstream consumers in this example don't gate on it. Production should: skip outreach when the flag is <code>cross_provider_fragmentation</code> (the patient may have care relationships that the registry doesn't see); de-prioritize when the flag is <code>sparse_history</code>; escalate to clinical-informatics review when the flag is <code>multi_source_disagreement</code> and the priority is high. A confidently &quot;eligible&quot; recommendation on a patient with <code>cross_provider_fragmentation</code> is a confidently mis-calibrated recommendation if the patient is already enrolled in care management at a different system.</p>
-<p><strong>Idempotency and retry semantics.</strong> Each stage's outputs are addressed by deterministic keys (run_date, patient_id, program_id) and writes should be conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The example uses <code>put_item</code> and <code>update_item</code> without conditions on most paths; production adds <code>ConditionExpression</code> to the relevant writes (e.g., <code>attribute_not_exists(briefing_id)</code> on the briefings put) so reattempted writes converge.</p>
+<p><strong>Data-quality flag propagation.</strong> The <code>data_quality_flag</code> is set per (patient, program) but downstream consumers in this example don't gate on it. Production must gate at these sites: (1) the disenrollment evaluator must route <code>cross_provider_fragmentation</code> and <code>multi_source_disagreement</code> patients through a <code>verify_engagement_first</code> action before any <code>disenroll_for_no_engagement</code> recommendation (as now specified in the architecture pseudocode); (2) the response-enrichment step should widen the uplift confidence interval on non-complete data-quality cases; (3) the orchestrator should route fragmented-data patients through a verification-first allocation path; (4) the briefing generator should include a <code>data_quality_caveat</code> in <code>confidence_notes</code>; (5) the engagement scorer should widen CI on the engagement score and require multi-source consistency for <code>is_at_risk = true</code>; (6) the cross-program transition recommender should flag recommendations with a <code>data_quality_caveat</code>. A confidently &quot;eligible&quot; recommendation on a patient with <code>cross_provider_fragmentation</code> is a confidently mis-calibrated recommendation if the patient is already enrolled in care management at a different system. Disenrolling on incomplete data has civil-rights implications when it concentrates in protected cohorts.</p>
+<p><strong>Idempotency and retry semantics.</strong> Each stage's outputs are addressed by deterministic keys (run_date, patient_id, program_id) and writes should be conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The example uses <code>put_item</code> and <code>update_item</code> without conditions on most paths; production adds <code>ConditionExpression</code> to the relevant writes (e.g., <code>attribute_not_exists(briefing_id)</code> on the briefings put) so reattempted writes converge. A DynamoDB gotcha: appending to a List attribute requires the <code>list_append(if_not_exists(state_history, :empty), :new_event)</code> pattern in the <code>UpdateExpression</code>, not the <code>ADD</code> action (which only supports Number and Set data types). All state-transition sites in this example use the correct <code>list_append</code> + <code>if_not_exists</code> pattern.</p>
 <p><strong>Mid-program clinical-deterioration detection.</strong> The example uses a synthetic flag (<code>_DEMO_DETERIORATION</code>). Production: a continuous monitor over the engagement-event stream and the clinical-event feeds that detects deterioration during enrollment (new admission, abnormal lab, condition progression, sharp engagement drop concurrent with clinical signals) and triggers the disenrollment-and-cross-program-transition path immediately rather than waiting for the weekly disenrollment cycle. Latency between deterioration and escalation is a clinical-quality metric; minutes-to-hours is the target, not days.</p>
 <p><strong>Re-engagement-after-disenrollment cycle.</strong> The example codes the re-eligibility window for disenrollment-for-cause but doesn't ship a re-engagement mechanism. Production: an EventBridge rule fires when the re-eligibility window ends, the eligibility evaluator runs against the patient, and if eligibility is restored a re-engagement recommendation enters the next enrollment cycle with explicit context that the patient was previously disenrolled-for-cause. The re-engagement attempt typically uses a different care manager and a different modality than the original; the deterministic policy can encode this.</p>
 <p><strong>Real-time post-discharge enrollment.</strong> The example treats all programs on the same daily eligibility cycle. Production: an EventBridge rule fires on incoming discharge events and immediately runs transitional-care eligibility for that patient outside the daily cycle. The 30-day TCM window is time-sensitive; reducing the time-to-outreach from days to hours captures more of the high-leverage early window. The pseudocode emits an <code>eligibility_acquired</code> event tagged <code>time_sensitive</code>; production wires that to a dedicated state machine that runs steps 2-4 for the single patient on demand.</p>

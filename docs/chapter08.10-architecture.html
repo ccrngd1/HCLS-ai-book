@@ -515,7 +515,7 @@
 <p><strong>Amazon S3 for clinical document storage.</strong> De-identified or appropriately consented clinical notes land in S3, organized by patient and encounter. S3 provides the data lake for the phenotyping pipeline, with encryption, access logging, and lifecycle policies for research data governance.</p>
 <p><strong>AWS Step Functions for pipeline orchestration.</strong> Phenotype extraction is a multi-step, per-patient pipeline with branching logic (different criteria may require different extraction approaches), error handling (a single note's processing failure shouldn't invalidate an entire patient), and checkpointing (you want to resume from where you left off, not start over). Step Functions provides visual workflow orchestration with built-in retry, error handling, and state management.</p>
 <p><strong>AWS Lambda for per-document processing.</strong> Each clinical note gets processed independently: extract entities, classify assertions, pull attributes. Lambda's pay-per-invocation model fits perfectly with the embarrassingly parallel nature of document-level NLP. Process 100,000 notes across 5,000 patients by fanning out to concurrent Lambda invocations.</p>
-<p><strong>Amazon DynamoDB for evidence accumulation.</strong> As per-document extraction results come in, they accumulate in DynamoDB keyed by patient ID and criterion. DynamoDB's fast writes and flexible schema handle the heterogeneous evidence payloads (medication attributes vs. lab values vs. diagnosis assertions all look different). The aggregation step queries by patient to pull all evidence for classification.</p>
+<p><strong>Amazon DynamoDB for evidence accumulation.</strong> As per-document extraction results come in, they accumulate in DynamoDB keyed by patient ID and criterion. DynamoDB's fast writes and flexible schema handle the heterogeneous evidence payloads (medication attributes vs. lab values vs. diagnosis assertions all look different). The aggregation step queries by patient to pull all evidence for classification. Enable DynamoDB TTL on evidence records to enforce data retention schedules. Intermediate NLP artifacts (raw entity extractions, partial evidence) should expire after 90 days since they can be regenerated from source notes. Final classification records in S3 follow your institution's research data retention policy (typically 7-10 years for funded studies). Set the TTL attribute (<code>expires_at</code>) at write time based on record type: short-lived for processing artifacts, long-lived (or omitted entirely) for audit-critical evidence linked to published cohorts.</p>
 <p><strong>Amazon SageMaker for custom model hosting (optional).</strong> If your phenotype requires extraction capabilities beyond what Comprehend Medical provides natively (e.g., a custom classifier for &quot;treatment resistance&quot; assertions, or a domain-specific entity type not in Comprehend Medical's ontology), SageMaker hosts the custom model behind an endpoint that Lambda calls as part of the pipeline.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
 <pre class="mermaid">flowchart TD
@@ -705,22 +705,53 @@
 
 <p><strong>Step 2: Process each clinical note through entity extraction.</strong> For every note in the patient's record, send it through Comprehend Medical to pull out medical entities with their assertions, attributes, and normalized codes. The key insight here is that you're not processing the note generically: you're processing it with your phenotype criteria in mind. Not every entity in the note matters. A phenotype for depression doesn't care about the patient's knee replacement (usually). But you extract everything at the document level because filtering happens in the next step, and you don't want to re-process notes if you add criteria later. Think of this as building an evidence index for the patient's record.</p>
 <pre class="code code-plain"><code>FUNCTION process_note(patient_id, note_id, note_text, note_metadata):
-    // Send the clinical note to Comprehend Medical for entity extraction.
-    // DetectEntitiesV2 returns medical conditions, medications, tests, procedures,
-    // anatomy mentions, and temporal expressions, each with:
-    //   - Text span (what was found)
-    //   - Category (MEDICAL_CONDITION, MEDICATION, TEST_TREATMENT_PROCEDURE, etc.)
-    //   - Type (more specific: DX_NAME, GENERIC_NAME, TEST_NAME, etc.)
-    //   - Traits (NEGATION, DIAGNOSIS, SIGN, SYMPTOM, etc.)
-    //   - Attributes (linked properties like dosage, frequency, test value)
-    //   - Score (confidence 0.0 to 1.0)
+    // Comprehend Medical has a hard 20,000-character limit per API call.
+    // Clinical notes occasionally exceed this (operative reports, H&amp;Ps with
+    // extensive history). Split oversized notes at sentence boundaries before
+    // the limit, process each chunk independently, then merge and deduplicate.
     
-    entities = call ComprehendMedical.DetectEntitiesV2(Text = note_text)
+    chunks = chunk_text_if_needed(note_text, max_chars = 18000)
+    // Use 18,000 (not 20,000) to leave margin for sentence completion.
+    // chunk_text_if_needed splits at the last sentence-ending punctuation
+    // (period, question mark) before the max_chars boundary. If no sentence
+    // boundary is found within the last 2,000 characters, fall back to the
+    // nearest whitespace. Each chunk overlaps the previous by 200 characters
+    // to avoid splitting entities that span a boundary.
     
-    // Also run specialized detections for medications and diagnoses
-    // to get normalized codes (RxNorm CUIs, ICD-10 codes)
-    rx_entities = call ComprehendMedical.InferRxNorm(Text = note_text)
-    icd_entities = call ComprehendMedical.InferICD10CM(Text = note_text)
+    all_entities = empty list
+    all_rx_entities = empty list
+    all_icd_entities = empty list
+    
+    FOR each chunk, chunk_offset in chunks:
+        // Send the clinical note chunk to Comprehend Medical for entity extraction.
+        // DetectEntitiesV2 returns medical conditions, medications, tests, procedures,
+        // anatomy mentions, and temporal expressions, each with:
+        //   - Text span (what was found)
+        //   - Category (MEDICAL_CONDITION, MEDICATION, TEST_TREATMENT_PROCEDURE, etc.)
+        //   - Type (more specific: DX_NAME, GENERIC_NAME, TEST_NAME, etc.)
+        //   - Traits (NEGATION, DIAGNOSIS, SIGN, SYMPTOM, etc.)
+        //   - Attributes (linked properties like dosage, frequency, test value)
+        //   - Score (confidence 0.0 to 1.0)
+        
+        entities = call ComprehendMedical.DetectEntitiesV2(Text = chunk)
+        rx_entities = call ComprehendMedical.InferRxNorm(Text = chunk)
+        icd_entities = call ComprehendMedical.InferICD10CM(Text = chunk)
+        
+        // Adjust offsets back to the original document coordinate space.
+        // This ensures downstream section detection uses correct positions.
+        FOR each entity in entities.Entities:
+            entity.BeginOffset = entity.BeginOffset + chunk_offset
+            entity.EndOffset = entity.EndOffset + chunk_offset
+        
+        append entities.Entities to all_entities
+        append rx_entities.Entities to all_rx_entities
+        append icd_entities.Entities to all_icd_entities
+    
+    // Deduplicate entities that appear in overlapping regions.
+    // Two entities with the same adjusted offsets and same text are duplicates.
+    entities = deduplicate_by_offset(all_entities)
+    rx_entities = deduplicate_by_offset(all_rx_entities)
+    icd_entities = deduplicate_by_offset(all_icd_entities)
     
     // Determine assertion status for each entity.
     // Comprehend Medical provides &quot;Traits&quot; including NEGATION.
@@ -869,6 +900,31 @@ FUNCTION filter_entities(entities, target_categories, target_terms, required_ass
         ELSE:
             // Standard aggregation: count positive evidence instances
             positive_evidence = filter criterion_evidence where assertion == &quot;POSITIVE&quot;
+            negative_evidence = filter criterion_evidence where assertion == &quot;NEGATIVE&quot;
+            
+            // Temporal conflict resolution: when both positive and negative evidence
+            // exist for the same criterion, apply the phenotype&#x27;s temporal semantics.
+            // Two common interpretations:
+            //   &quot;current-status&quot; phenotypes: most recent note wins. If the latest
+            //       documentation negates the criterion, it overrides earlier positives.
+            //   &quot;ever-had&quot; phenotypes: any positive evidence is sufficient regardless
+            //       of later negations (e.g., &quot;history of stroke&quot; is permanent).
+            // The phenotype definition specifies which interpretation applies.
+            // Default to &quot;current-status&quot; if unspecified.
+            
+            IF negative_evidence is not empty AND positive_evidence is not empty:
+                temporal_mode = criterion.get(&quot;temporal_semantics&quot;, &quot;current-status&quot;)
+                
+                IF temporal_mode == &quot;current-status&quot;:
+                    // Most recent note takes priority for determining current state.
+                    most_recent_negative = max(negative_evidence, by note_date)
+                    // Keep only positive evidence that is more recent than the latest negation.
+                    positive_evidence = filter positive_evidence where note_date &gt; most_recent_negative.note_date
+                
+                ELSE IF temporal_mode == &quot;ever-had&quot;:
+                    // Any positive evidence suffices; negations don&#x27;t override.
+                    // positive_evidence remains unchanged.
+                    PASS
             
             // Apply evidence threshold from phenotype definition
             threshold_met = evaluate_threshold(
@@ -1031,6 +1087,14 @@ FUNCTION filter_entities(entities, target_categories, target_terms, required_ass
 <li>Historical note scans with OCR artifacts that degrade NLP accuracy</li>
 <li>Phenotypes that require negation of a negation (&quot;patient no longer denies suicidal ideation&quot;)</li>
 </ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This implementation demonstrates the pipeline structure and the core NLP-to-classification flow. Here's what's missing before you'd trust it for an actual research cohort:</p>
+<p><strong>No drift detection for phenotype accuracy over time.</strong> NLP model behavior shifts with service updates (Comprehend Medical periodically retrains underlying models). A pipeline that validated at 92% PPV in January might quietly degrade to 85% by June without any visible error. Production systems need periodic re-validation against a held-out gold standard, with alerts when metrics drop below threshold.</p>
+<p><strong>No automated re-validation when NLP model versions change.</strong> When AWS updates Comprehend Medical (they don't always announce minor model updates), your previously validated phenotype might produce slightly different extractions. You need a regression test suite: a set of known-classification patients that you re-run after any service change to confirm outputs haven't drifted.</p>
+<p><strong>No clinician-in-the-loop adjudication workflow.</strong> The PROBABLE classification bucket inevitably grows. Without a structured workflow for a clinician to review edge cases, those patients sit in limbo. A production system routes low-confidence classifications to a review queue, captures the clinician's adjudication decision, and feeds those decisions back into the rule refinement process.</p>
+<p><strong>No cross-institution portability testing.</strong> A phenotype algorithm that achieves 93% PPV at your institution might drop to 75% at another site with different documentation conventions, abbreviation patterns, or clinical workflows. Before publishing a phenotype for multi-site use, you need validation data from at least 2-3 external sites confirming acceptable performance.</p>
+<p><strong>No pre-filter cost optimization.</strong> The walkthrough processes every note for every patient. At scale (50,000 candidates), this means millions of API calls and hundreds of thousands of dollars in NLP costs. Production systems first screen patients using cheap structured data queries (ICD codes, medication lists) to narrow the candidate pool by 80-90% before running expensive NLP. That pre-filter step isn't optional.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Multi-site federated phenotyping.</strong> Instead of centralizing data from multiple institutions, deploy the phenotype extraction pipeline at each site and aggregate only the classifications (not the underlying notes). This respects data governance boundaries while enabling multi-site research. AWS HealthLake or a shared phenotype definition in S3 can coordinate the algorithm version across sites while each site processes its own data.</p>

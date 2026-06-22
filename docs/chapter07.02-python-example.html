@@ -1044,6 +1044,12 @@
 <span class="sd">    adjust them based on your staff capacity, payment plan costs, and</span>
 <span class="sd">    financial assistance policies.</span>
 
+<span class="sd">    Includes a randomization holdout: ~7% of balances get randomly assigned</span>
+<span class="sd">    to a strategy regardless of their score. This creates counterfactual data</span>
+<span class="sd">    to validate that model-driven routing actually outperforms random assignment</span>
+<span class="sd">    and prevents self-fulfilling prophecy (if you never contact low-score patients,</span>
+<span class="sd">    you can never learn whether they would have paid with outreach).</span>
+
 <span class="sd">    In production, this function runs in Lambda and writes routing decisions</span>
 <span class="sd">    to an SQS queue or directly updates the collection workflow system.</span>
 
@@ -1052,19 +1058,43 @@
 <span class="sd">                     balance_id, propensity_score, balance_amount, etc.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Summary dict with counts per strategy queue.</span>
+<span class="sd">        Summary dict with counts per strategy queue and holdout count.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">routing_summary</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;standard_statements&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;payment_plan_offer&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;financial_counselor_outreach&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;financial_assistance_screening&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="p">}</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+
+    <span class="n">HOLDOUT_RATE</span> <span class="o">=</span> <span class="mf">0.07</span>  <span class="c1"># 7% of balances get random assignment</span>
+    <span class="n">ALL_STRATEGIES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;standard_statements&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payment_plan_offer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;financial_counselor_outreach&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;financial_assistance_screening&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">routing_summary</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ALL_STRATEGIES</span><span class="p">}</span>
+    <span class="n">routing_summary</span><span class="p">[</span><span class="s2">&quot;holdout_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">score_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
     <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">:</span>
         <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="s2">&quot;propensity_score&quot;</span><span class="p">])</span>
         <span class="n">amount</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="s2">&quot;balance_amount&quot;</span><span class="p">])</span>
         <span class="n">balance_id</span> <span class="o">=</span> <span class="n">pred</span><span class="p">[</span><span class="s2">&quot;balance_id&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Deterministic holdout assignment: hash(balance_id + date) ensures</span>
+        <span class="c1"># the same balance gets the same holdout decision if re-run on the</span>
+        <span class="c1"># same day, but different decisions across days.</span>
+        <span class="n">holdout_hash</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">balance_id</span><span class="si">}{</span><span class="n">score_date</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span>
+        <span class="n">is_holdout</span> <span class="o">=</span> <span class="n">holdout_hash</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HOLDOUT_RATE</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_holdout</span><span class="p">:</span>
+            <span class="n">strategy</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">ALL_STRATEGIES</span><span class="p">)</span>
+            <span class="n">routing_summary</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">routing_summary</span><span class="p">[</span><span class="s2">&quot;holdout_count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Balance </span><span class="si">%s</span><span class="s2"> (score=</span><span class="si">%.3f</span><span class="s2">) -&gt; </span><span class="si">%s</span><span class="s2"> [HOLDOUT]&quot;</span><span class="p">,</span>
+                         <span class="n">balance_id</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
+            <span class="k">continue</span>
 
         <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">HIGH_PROPENSITY_THRESHOLD</span><span class="p">:</span>
             <span class="c1"># High propensity: standard statement cadence.</span>

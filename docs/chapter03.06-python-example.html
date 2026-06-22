@@ -519,7 +519,7 @@
 
 <p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
 <ul>
-<li><code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code>, <code>dynamodb:BatchGetItem</code> on the <code>resolved-entities</code>, <code>case-state</code>, and <code>suppression-registry</code> tables</li>
+<li><code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code>, <code>dynamodb:BatchGetItem</code> on the <code>resolved-entities</code> and <code>case-state</code> tables</li>
 <li><code>s3:GetObject</code> on the claims-lake, resolved-entities, and model-artifacts buckets, <code>s3:PutObject</code> on the case-outcomes and subgraph-artifacts buckets</li>
 <li><code>sagemaker-featurestore-runtime:GetRecord</code>, <code>sagemaker-featurestore-runtime:BatchGetRecord</code>, <code>sagemaker-featurestore-runtime:PutRecord</code> on the <code>provider-features</code> and <code>peer-group-baselines</code> feature groups</li>
 <li><code>events:PutEvents</code> on the <code>fwa-flags</code> and <code>fwa-workflow</code> buses</li>
@@ -534,7 +534,7 @@
 <ul>
 <li><strong>No real 837/835 or EDI parsing.</strong> Parsing X12 837 professional/institutional claims, 835 remittance advice, and 270/271 eligibility transactions is a substantial engineering task and belongs in a maintained library (vendor toolkits from Edifecs, Availity, Change Healthcare, or open-source libraries like <code>pyx12</code>). This example starts from a claim dict in the shape produced by a normalizer. In production, a Lambda triggered by a Kinesis record or an S3 <code>ObjectCreated</code> event on the clearinghouse drop calls the parsing library and feeds the parsed claim into the normalization step.</li>
 <li><strong>NetworkX instead of Neptune, for teaching only.</strong> The main recipe runs the graph on Amazon Neptune with billions of nodes and edges. That does not fit in a teaching example you can run in a notebook. We use <code>networkx</code> in-process so the Louvain community detection and the referral-concentration queries are visible in a handful of lines. In production, every <code>graph.add_node</code>, <code>graph.add_edge</code>, and traversal call in this file maps to a Gremlin upsert or query against Neptune, usually wrapped in <code>gremlinpython</code>. The shape of the data and the queries is identical; only the runtime changes.</li>
-<li><strong>DynamoDB table schemas.</strong> <code>resolved-entities</code> is keyed on <code>canonical_id</code> (partition key only). <code>case-state</code> uses a composite key: <code>target_entity_id</code> (partition) and <code>case_id</code> (sort), with a GSI on <code>status</code> for the investigator queue. <code>suppression-registry</code> is keyed on <code>entity_id</code> (partition) and <code>rule_id</code> (sort) with TTL on <code>expires_at</code>. You create these once, up front; this file does not do that for you.</li>
+<li><strong>DynamoDB table schemas.</strong> <code>resolved-entities</code> is keyed on <code>canonical_id</code> (partition key only). <code>case-state</code> uses a composite key: <code>target_entity_id</code> (partition) and <code>case_id</code> (sort), with a GSI on <code>status</code> for the investigator queue. The main recipe also describes a <code>suppression-registry</code> table (keyed on <code>entity_id</code> partition and <code>rule_id</code> sort with TTL on <code>expires_at</code>); it is not exercised in this teaching example. You create these once, up front; this file does not do that for you.</li>
 <li><strong>All numeric values must be Decimal going into DynamoDB.</strong> DynamoDB rejects Python <code>float</code> for numeric attributes. A dollar exposure of <code>287450.00</code> becomes <code>Decimal(&quot;287450.00&quot;)</code> on the way in and back to float on the way out. The helper functions below handle this so you see the pattern. For a fraud pipeline the precision discipline matters: a dollar exposure stored as <code>287449.9999999</code> from float drift, compared against a <code>100000</code> high-severity cut, produces the correct routing today and might not tomorrow when the threshold moves.</li>
 <li><strong>All example claim, provider, patient, and ownership data is synthetic.</strong> NPIs, EINs, patient IDs, claim IDs, and entity IDs in the sample data are illustrative and do not refer to any real entities. CPT codes used (99213/99214/99215 for E&amp;M, 80307 for drug testing, E1390 for oxygen concentrator DME) are real CPT/HCPCS identifiers. Use <a href="https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files">CMS SynPUF</a> for synthetic Medicare claims, <a href="https://github.com/synthetichealth/synthea">Synthea</a> for synthetic patient and provider data, and the public LEIE, SAM, and Open Payments downloads for reference data. Never use real PHI in a teaching example.</li>
 <li><strong>Legal privilege is not modeled here.</strong> In production, depending on the SIU's organizational structure, the case store and subgraph exports may live in an AWS account isolated from general analytics, with access controlled by general counsel. This example keeps everything in one notional account so the code is readable.</li>
@@ -544,10 +544,10 @@
 <hr />
 <h2 id="configuration-and-constants">Configuration and Constants</h2>
 <p>Everything that is configuration rather than logic lives here: thresholds, code maps, resource names, and lookup tables. These are the knobs that move most often between dev, test, and production, and between SIU playbook revisions. Keep them at the top of the file so a reviewer can see the levers without wading through function bodies.</p>
-<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hmac</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
@@ -570,6 +570,13 @@
     <span class="n">HAS_LOUVAIN</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">HAS_LOUVAIN</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Visible when running this file directly; Lambda configures its own handler</span>
+<span class="c1"># and this becomes a no-op there.</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+    <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2"> </span><span class="si">%(name)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="c1"># Structured logging. Ship JSON records to CloudWatch Logs Insights. Claim,</span>
 <span class="c1"># provider, and patient data is PHI-adjacent (an NPI plus a date range plus a</span>
@@ -603,7 +610,12 @@
 <span class="c1"># Fill in with your actual resource names. These are placeholders.</span>
 <span class="n">RESOLVED_ENTITIES_TABLE</span> <span class="o">=</span> <span class="s2">&quot;resolved-entities&quot;</span>
 <span class="n">CASE_STATE_TABLE</span> <span class="o">=</span> <span class="s2">&quot;case-state&quot;</span>
-<span class="n">SUPPRESSION_REGISTRY_TABLE</span> <span class="o">=</span> <span class="s2">&quot;suppression-registry&quot;</span>
+<span class="c1"># NOTE: The suppression-registry DynamoDB table (described in the main recipe)</span>
+<span class="c1"># is not exercised in this teaching example. The suppression workflow requires</span>
+<span class="c1"># the case management UI to capture suppression_requested and suppression_window</span>
+<span class="c1"># from the investigator at outcome-capture time, plus a per-flag pre-emit check</span>
+<span class="c1"># in the rules and statistical layers. Both are out of scope for the sketchpad</span>
+<span class="c1"># version; see the main recipe&#39;s Alert Fatigue subsection for the design.</span>
 
 <span class="n">PROVIDER_FEATURES_FG</span> <span class="o">=</span> <span class="s2">&quot;provider-features&quot;</span>
 <span class="n">PEER_GROUP_BASELINES_FG</span> <span class="o">=</span> <span class="s2">&quot;peer-group-baselines&quot;</span>
@@ -613,6 +625,17 @@
 <span class="n">MODEL_ARTIFACTS_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-fwa-model-artifacts&quot;</span>
 <span class="n">CASE_OUTCOMES_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-fwa-case-outcomes&quot;</span>
 <span class="n">SUBGRAPH_ARTIFACTS_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-fwa-subgraph-exports&quot;</span>
+
+<span class="c1"># Customer-managed KMS key ARN for the case-outcomes bucket. Separate key per</span>
+<span class="c1"># bucket so rotation and grants can be scoped independently. The labels-bucket</span>
+<span class="c1"># key gets stricter access policy than the general-claims-lake key because</span>
+<span class="c1"># labels carry adjudication outcomes subject to discovery in FCA proceedings.</span>
+<span class="n">CASE_OUTCOMES_CMK_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:kms:us-east-1:123456789012:key/YOUR-KEY-ID-HERE&quot;</span>
+
+<span class="c1"># Stable salt for patient-ID hashing in graph nodes. In production, load this</span>
+<span class="c1"># from Secrets Manager at module init and rotate on a documented schedule</span>
+<span class="c1"># (annually or per SIU policy). A static placeholder here for teaching only.</span>
+<span class="n">PATIENT_HASH_SALT</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;REPLACE-WITH-SECRETS-MANAGER-VALUE&quot;</span>
 
 <span class="n">FWA_FLAGS_BUS</span> <span class="o">=</span> <span class="s2">&quot;fwa-flags&quot;</span>
 <span class="n">FWA_WORKFLOW_BUS</span> <span class="o">=</span> <span class="s2">&quot;fwa-workflow&quot;</span>
@@ -678,6 +701,43 @@
     <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="o">.</span><span class="n">quantize</span><span class="p">(</span><span class="n">Decimal</span><span class="p">(</span><span class="n">precision</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_floats_to_decimal</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively convert Python floats in a dict/list tree to Decimal.</span>
+
+<span class="sd">    DynamoDB rejects Python float for numeric attributes; the resource-API</span>
+<span class="sd">    serializer raises TypeError at put time. Apply this to any structured</span>
+<span class="sd">    payload at the put-item boundary so flag dicts produced by sklearn or</span>
+<span class="sd">    by Python ratio math can be persisted without per-call-site coercion.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_floats_to_decimal</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_floats_to_decimal</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">obj</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_hash_patient_id</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">salt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stable HMAC-SHA256 hash for patient identifiers used as graph node IDs.</span>
+
+<span class="sd">    The FWA graph crosses provider, payment, and ownership data with patient</span>
+<span class="sd">    connections. An investigator (or a downstream system, or a subpoena</span>
+<span class="sd">    response) traversing the graph should see the structural relationship,</span>
+<span class="sd">    not a re-identifiable patient pointer. The hash is one-way for the</span>
+<span class="sd">    pipeline&#39;s purposes; a downstream system that needs to look up the</span>
+<span class="sd">    underlying patient (the case management UI surfacing the patient&#39;s full</span>
+<span class="sd">    record to an investigator with appropriate access) does the reverse</span>
+<span class="sd">    lookup through the patient master, not by reversing the hash.</span>
+
+<span class="sd">    The salt must be stable across runs so the same patient produces the same</span>
+<span class="sd">    node ID across batches; rotate on a long cadence (annually or per SIU</span>
+<span class="sd">    policy), not per-run.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">salt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">salt</span> <span class="o">=</span> <span class="n">PATIENT_HASH_SALT</span>
+    <span class="k">return</span> <span class="n">hmac</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">salt</span><span class="p">,</span> <span class="n">patient_id</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+                    <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">16</span><span class="p">]</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_redact_for_logs</span><span class="p">(</span><span class="n">canonical_claim</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produce a log-safe structural summary of a claim.</span>
@@ -900,7 +960,7 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;patient_id&quot;</span><span class="p">):</span>
-            <span class="n">patient_node</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PATIENT:</span><span class="si">{</span><span class="n">claim</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">patient_node</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PATIENT:</span><span class="si">{</span><span class="n">_hash_patient_id</span><span class="p">(</span><span class="n">claim</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">patient_node</span><span class="p">,</span> <span class="n">node_type</span><span class="o">=</span><span class="s2">&quot;patient&quot;</span><span class="p">)</span>
             <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">patient_node</span><span class="p">,</span> <span class="n">claim_node</span><span class="p">,</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;patient_of&quot;</span><span class="p">,</span>
                            <span class="n">service_date</span><span class="o">=</span><span class="n">claim</span><span class="p">[</span><span class="s2">&quot;service_date&quot;</span><span class="p">])</span>
@@ -926,7 +986,17 @@
     <span class="c1"># common-ownership cascades (one LLC owning ten clinics that all refer</span>
     <span class="c1"># to the same DME supplier, for example).</span>
     <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ownership_edges</span> <span class="ow">or</span> <span class="p">[]):</span>
-        <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="s2">&quot;parent&quot;</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;child&quot;</span><span class="p">],</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;owns&quot;</span><span class="p">,</span>
+        <span class="n">parent_id</span> <span class="o">=</span> <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;parent&quot;</span><span class="p">]</span>
+        <span class="n">child_id</span> <span class="o">=</span> <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;child&quot;</span><span class="p">]</span>
+        <span class="c1"># Create endpoint nodes with node_type=&quot;organization&quot; so the</span>
+        <span class="c1"># OWNERSHIP_CASCADE detector in Step 6 can find them. In production,</span>
+        <span class="c1"># entity resolution (Step 2) writes organization nodes alongside</span>
+        <span class="c1"># providers; this branch is the teaching-example shortcut.</span>
+        <span class="k">if</span> <span class="n">parent_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">node_type</span><span class="o">=</span><span class="s2">&quot;organization&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">child_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">child_id</span><span class="p">,</span> <span class="n">node_type</span><span class="o">=</span><span class="s2">&quot;organization&quot;</span><span class="p">)</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">,</span> <span class="n">edge_type</span><span class="o">=</span><span class="s2">&quot;owns&quot;</span><span class="p">,</span>
                        <span class="n">percentage</span><span class="o">=</span><span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;percentage&quot;</span><span class="p">))</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;graph refreshed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
@@ -998,8 +1068,12 @@
                 <span class="p">),</span>
             <span class="p">})</span>
 
-    <span class="c1"># Rule 3: LEIE exclusion. Any claim touching a LEIE-excluded provider</span>
-    <span class="c1"># gets the critical tier. (The exclusion flags were computed in Step 2.)</span>
+    <span class="c1"># Rule 3: Unresolved provider role. The actual LEIE/SAM exclusion check</span>
+    <span class="c1"># ran in Step 2 (resolve_providers returns exclusion_flags); the pipeline</span>
+    <span class="c1"># driver concatenates those into rule_flags. Here we surface the</span>
+    <span class="c1"># data-quality flag for any provider role that fell through entity</span>
+    <span class="c1"># resolution, which is worth investigating separately (missing from NPPES</span>
+    <span class="c1"># can indicate credential issues, practice closure, or data-entry errors).</span>
     <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;rendering_provider_npi&quot;</span><span class="p">,</span> <span class="s2">&quot;billing_provider_npi&quot;</span><span class="p">,</span>
                  <span class="s2">&quot;referring_provider_npi&quot;</span><span class="p">,</span> <span class="s2">&quot;facility_npi&quot;</span><span class="p">]:</span>
         <span class="n">npi</span> <span class="o">=</span> <span class="n">canonical_claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
@@ -1077,6 +1151,13 @@
 <span class="sd">    reference mean exceeds h standard deviations. None if no detection.</span>
 <span class="sd">    Tracks when a provider&#39;s own rate started drifting upward (level-5 E&amp;M</span>
 <span class="sd">    rate creeping up, drug-test units per patient climbing, and so on).</span>
+
+<span class="sd">    NOTE: This teaching implementation uses the full series mean as the</span>
+<span class="sd">    reference value. Production CUSUM uses an explicit baseline window (e.g.,</span>
+<span class="sd">    the first half of the series) or a target mean from the SIU&#39;s process</span>
+<span class="sd">    spec. The full-series-mean approach is structurally less sensitive to</span>
+<span class="sd">    shifts because the shift itself pulls the reference up. See Recipe 3.3</span>
+<span class="sd">    for the billing-code-drift detection pattern with an explicit baseline.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
     <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="ow">or</span> <span class="mf">1.0</span>
@@ -1327,6 +1408,21 @@
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;queue&quot;</span><span class="p">:</span> <span class="s2">&quot;priority&quot;</span><span class="p">,</span> <span class="s2">&quot;notify&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;lead-investigator&quot;</span><span class="p">]}</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;queue&quot;</span><span class="p">:</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;notify&quot;</span><span class="p">:</span> <span class="p">[]}</span>
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_derive_case_id</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">rule_ids</span><span class="p">,</span> <span class="n">window_key</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deterministic case_id so retries collapse to the same record.</span>
+
+<span class="sd">    window_key is a coarse bucket like &#39;year=2026/week=20&#39;. It collapses</span>
+<span class="sd">    retries within a detection window to a single case while letting a</span>
+<span class="sd">    week-over-week recurrence open a new case.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">key_material</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="n">entity_id</span><span class="p">,</span>
+        <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">rule_ids</span><span class="p">))),</span>
+        <span class="n">window_key</span><span class="p">,</span>
+    <span class="p">])</span>
+    <span class="n">digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">key_material</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CASE:</span><span class="si">{</span><span class="n">digest</span><span class="p">[:</span><span class="mi">24</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
 <span class="k">def</span><span class="w"> </span><span class="nf">aggregate_flags_to_cases</span><span class="p">(</span><span class="n">all_flags</span><span class="p">,</span> <span class="n">claim_exposure_by_entity</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Group flags by target entity, compute case severity and exposure,</span>
 <span class="sd">    and write case records to DynamoDB.</span>
@@ -1364,7 +1460,23 @@
         <span class="n">exposure</span> <span class="o">=</span> <span class="n">claim_exposure_by_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">))</span>
         <span class="n">routing</span> <span class="o">=</span> <span class="n">_determine_routing</span><span class="p">(</span><span class="n">overall</span><span class="p">,</span> <span class="n">exposure</span><span class="p">)</span>
 
-        <span class="n">case_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;CASE:</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="c1"># Deterministic case_id derived from entity, rules, and time window.</span>
+        <span class="c1"># On retry (Step Functions retries a transient DynamoDB throttle), the</span>
+        <span class="c1"># function produces the same case_id, and the ConditionExpression</span>
+        <span class="c1"># below catches the duplicate write. This is real retry idempotency,</span>
+        <span class="c1"># not the uuid-per-call pattern that silently creates duplicates.</span>
+        <span class="n">window_key</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;year=%Y/week=%V&quot;</span><span class="p">)</span>
+        <span class="n">case_id</span> <span class="o">=</span> <span class="n">_derive_case_id</span><span class="p">(</span>
+            <span class="n">entity_id</span><span class="o">=</span><span class="n">entity_id</span><span class="p">,</span>
+            <span class="n">rule_ids</span><span class="o">=</span><span class="p">[</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;rule_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">],</span>
+            <span class="n">window_key</span><span class="o">=</span><span class="n">window_key</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># DynamoDB rejects Python float for numeric attributes; the</span>
+        <span class="c1"># resource-API serializer raises TypeError at put time. Coerce</span>
+        <span class="c1"># numeric fields to Decimal at the type boundary for nested payloads</span>
+        <span class="c1"># like evidence_summary (which contains z-scores, isolation scores,</span>
+        <span class="c1"># and referral concentrations from sklearn and Python ratio math).</span>
         <span class="n">case_record</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;target_entity_id&quot;</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">,</span>
             <span class="s2">&quot;case_id&quot;</span><span class="p">:</span> <span class="n">case_id</span><span class="p">,</span>
@@ -1373,7 +1485,7 @@
             <span class="s2">&quot;exposure_amount&quot;</span><span class="p">:</span> <span class="n">_to_decimal</span><span class="p">(</span><span class="n">exposure</span><span class="p">),</span>
             <span class="s2">&quot;num_flags&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">flags</span><span class="p">),</span>
             <span class="s2">&quot;flag_types&quot;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;rule_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">)),</span>
-            <span class="s2">&quot;evidence_summary&quot;</span><span class="p">:</span> <span class="n">flags</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span>   <span class="c1"># top-20 for the case viewer</span>
+            <span class="s2">&quot;evidence_summary&quot;</span><span class="p">:</span> <span class="n">_floats_to_decimal</span><span class="p">(</span><span class="n">flags</span><span class="p">[:</span><span class="mi">20</span><span class="p">]),</span>
             <span class="s2">&quot;routing_queue&quot;</span><span class="p">:</span> <span class="n">routing</span><span class="p">[</span><span class="s2">&quot;queue&quot;</span><span class="p">],</span>
             <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
             <span class="s2">&quot;case_bundle_s3_uri&quot;</span><span class="p">:</span> <span class="p">(</span>
@@ -1381,14 +1493,20 @@
             <span class="p">),</span>
         <span class="p">}</span>
 
-        <span class="c1"># ConditionExpression prevents overwriting an existing case record</span>
-        <span class="c1"># when Step Functions retries a transient failure after the case was</span>
-        <span class="c1"># already written. Treat ConditionalCheckFailedException as success</span>
-        <span class="c1"># in production (the case is there, we do not need to write again).</span>
-        <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
-            <span class="n">Item</span><span class="o">=</span><span class="n">case_record</span><span class="p">,</span>
-            <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;attribute_not_exists(case_id)&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="c1"># ConditionExpression with a deterministic case_id means retries</span>
+        <span class="c1"># hit the condition and fail closed. Catch the exception and treat</span>
+        <span class="c1"># as success: the case is already there from the first attempt.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+                <span class="n">Item</span><span class="o">=</span><span class="n">_floats_to_decimal</span><span class="p">(</span><span class="n">case_record</span><span class="p">),</span>
+                <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;attribute_not_exists(case_id)&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">table</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Error&quot;</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ConditionalCheckFailedException&quot;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;case already exists; idempotent retry&quot;</span><span class="p">,</span>
+                            <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;case_id&quot;</span><span class="p">:</span> <span class="n">case_id</span><span class="p">,</span> <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">})</span>
+                <span class="k">continue</span>
+            <span class="k">raise</span>
         <span class="n">cases_written</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">case_record</span><span class="p">)</span>
 
         <span class="c1"># Publish to the flags EventBridge bus so the evidence-aggregator,</span>
@@ -1417,7 +1535,7 @@
                     <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">,</span>
                     <span class="s2">&quot;exposure&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exposure</span><span class="p">),</span>
                     <span class="s2">&quot;flag_types&quot;</span><span class="p">:</span> <span class="n">case_record</span><span class="p">[</span><span class="s2">&quot;flag_types&quot;</span><span class="p">],</span>
-                <span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+                <span class="p">}),</span>
             <span class="p">)</span>
 
     <span class="n">_emit_metric</span><span class="p">(</span><span class="s2">&quot;CasesCreated&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cases_written</span><span class="p">))</span>
@@ -1534,12 +1652,23 @@
     <span class="k">if</span> <span class="n">outcome</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_outcomes</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid outcome: </span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+    <span class="c1"># Input validation: catch obvious bad inputs before any side effects.</span>
+    <span class="k">if</span> <span class="n">recovery_amount</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">recovery_amount</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;recovery_amount must be non-negative; got </span><span class="si">{</span><span class="n">recovery_amount</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">case_id</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">case_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;CASE:&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;case_id must be a CASE: prefixed identifier; got </span><span class="si">{</span><span class="n">case_id</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">entity_id</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;entity_id is required&quot;</span><span class="p">)</span>
+
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CASE_STATE_TABLE</span><span class="p">)</span>
 
-    <span class="c1"># Version attribute for optimistic locking. EventBridge delivers at</span>
-    <span class="c1"># least once, so the same outcome event may arrive multiple times.</span>
-    <span class="c1"># Increment the version atomically and fail-closed if the case no</span>
-    <span class="c1"># longer exists.</span>
+    <span class="c1"># Atomic write counter for audit. The version attribute increments on</span>
+    <span class="c1"># every outcome write so retroactive review can tell whether the outcome</span>
+    <span class="c1"># was overwritten and how many times. ConditionExpression ensures we never</span>
+    <span class="c1"># write to a case that has been deleted. EventBridge at-least-once</span>
+    <span class="c1"># delivery is fine here because outcome writes are terminal and</span>
+    <span class="c1"># idempotent; if a real concurrent-writer scenario emerges, switch to</span>
+    <span class="c1"># read-modify-write with a version check on the ConditionExpression.</span>
     <span class="n">table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
         <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_entity_id&quot;</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">,</span> <span class="s2">&quot;case_id&quot;</span><span class="p">:</span> <span class="n">case_id</span><span class="p">},</span>
         <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
@@ -1564,7 +1693,16 @@
     <span class="c1"># the label back to the exact feature vector that was scored at case</span>
     <span class="c1"># creation. The label derivation is organization-specific; revisit the</span>
     <span class="c1"># mapping with SIU leadership quarterly.</span>
-    <span class="n">label_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;labels/</span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">.json&quot;</span>
+    <span class="c1"># Date-partitioned key so Athena and Glue can prune at the partition level</span>
+    <span class="c1"># when reading labels for retraining; case_id uniqueness inside the</span>
+    <span class="c1"># partition is preserved by the deterministic case_id.</span>
+    <span class="n">decision_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="n">label_key</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;labels/year=</span><span class="si">{</span><span class="n">decision_dt</span><span class="o">.</span><span class="n">year</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">/&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;month=</span><span class="si">{</span><span class="n">decision_dt</span><span class="o">.</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">/&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;day=</span><span class="si">{</span><span class="n">decision_dt</span><span class="o">.</span><span class="n">day</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">/&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">case_id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.json&quot;</span>
+    <span class="p">)</span>
     <span class="n">label_record</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;case_id&quot;</span><span class="p">:</span> <span class="n">case_id</span><span class="p">,</span>
         <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">,</span>
@@ -1572,13 +1710,14 @@
                                   <span class="s2">&quot;REFERRED_TO_REGULATOR&quot;</span><span class="p">}</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
         <span class="s2">&quot;outcome_raw&quot;</span><span class="p">:</span> <span class="n">outcome</span><span class="p">,</span>
         <span class="s2">&quot;recovery_amount&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">_to_decimal</span><span class="p">(</span><span class="n">recovery_amount</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)),</span>
-        <span class="s2">&quot;labeled_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;labeled_at&quot;</span><span class="p">:</span> <span class="n">decision_dt</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
     <span class="p">}</span>
     <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
         <span class="n">Bucket</span><span class="o">=</span><span class="n">CASE_OUTCOMES_BUCKET</span><span class="p">,</span>
         <span class="n">Key</span><span class="o">=</span><span class="n">label_key</span><span class="p">,</span>
         <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">label_record</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
         <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="n">SSEKMSKeyId</span><span class="o">=</span><span class="n">CASE_OUTCOMES_CMK_ARN</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Publish the outcome to the workflow bus. Consumers include the</span>
@@ -1587,7 +1726,7 @@
     <span class="n">eventbridge</span><span class="o">.</span><span class="n">put_events</span><span class="p">(</span><span class="n">Entries</span><span class="o">=</span><span class="p">[{</span>
         <span class="s2">&quot;Source&quot;</span><span class="p">:</span> <span class="s2">&quot;fwa.workflow&quot;</span><span class="p">,</span>
         <span class="s2">&quot;DetailType&quot;</span><span class="p">:</span> <span class="s2">&quot;CaseClosed&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Detail&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">label_record</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+        <span class="s2">&quot;Detail&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">label_record</span><span class="p">),</span>
         <span class="s2">&quot;EventBusName&quot;</span><span class="p">:</span> <span class="n">FWA_WORKFLOW_BUS</span><span class="p">,</span>
     <span class="p">}])</span>
 

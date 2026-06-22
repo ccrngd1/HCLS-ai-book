@@ -1067,6 +1067,14 @@
 <li>Genetic polymorphism interactions (CYP2D6 poor metabolizers) when genotype data is unavailable</li>
 </ul>
 <hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p><strong>Alert fatigue tuning requires clinical governance.</strong> The significance scoring thresholds in the pseudocode are starting points, not production values. Every hospital's Pharmacy and Therapeutics (P&amp;T) committee will want different sensitivity levels for different clinical contexts (ICU vs. outpatient vs. oncology). You need a governance workflow where pharmacists can adjust thresholds per clinical setting, review suppressed alerts, and audit override rates. Without this, you'll either drown clinicians in low-value alerts or miss genuinely dangerous interactions.</p>
+<p><strong>Source data reconciliation is ongoing work.</strong> DrugBank, RxNorm, DailyMed, and MED-RT don't always agree on interaction severity or mechanism. When two sources contradict each other (one says &quot;major&quot; and another says &quot;moderate&quot;), you need a reconciliation policy. The pseudocode takes the highest severity, but a production system needs pharmacist review of discrepancies, version tracking of source updates, and an audit trail showing which source contributed each edge in the graph.</p>
+<p><strong>EHR integration requires HL7 FHIR or CDS Hooks.</strong> The pseudocode shows a standalone API, but real clinical decision support fires inside the prescribing workflow. That means implementing CDS Hooks (specifically the <code>order-select</code> hook) so the interaction check triggers when a clinician adds a medication to the order. Response time budgets are tight (under 500ms round-trip), and you need to handle the EHR's specific card rendering format. Each EHR vendor (Epic, Cerner/Oracle Health, MEDITECH) has slightly different CDS Hooks implementations.</p>
+<p><strong>Graph versioning and rollback.</strong> When a weekly source update introduces bad data (it happens), you need to roll back to the previous graph version within minutes, not hours. Neptune doesn't have built-in point-in-time graph snapshots at the edge level. You'll need to implement your own versioning scheme (effective dates on every edge, a &quot;current version&quot; pointer, and a promotion workflow that validates new data before swapping it into the live query path).</p>
+<p><strong>Multi-drug interaction combinatorics.</strong> The pairwise approach in the pseudocode checks each drug pair independently. But some dangerous interactions only emerge with three or more drugs (Drug A inhibits the enzyme that metabolizes Drug B, and Drug C competes for the same protein binding site as the now-elevated Drug B). Detecting these requires multi-hop traversals that grow combinatorially. A patient on 15 medications generates 105 pairs but over 450 triples. You need query timeout guards and a strategy for which higher-order combinations to check.</p>
+<p><strong>Audit logging for clinical liability.</strong> Every interaction alert (fired or suppressed) needs to be logged with the exact graph state, scoring parameters, and patient medication list at the moment of the check. If a patient experiences an adverse drug event, the legal and quality teams will want to know exactly what the system said, when, and whether the clinician saw and overrode the alert. This audit trail has retention requirements (typically 7-10 years) and must be tamper-evident.</p>
+<hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <h3 id="variation-1-pharmacogenomic-aware-interaction-checking">Variation 1: Pharmacogenomic-Aware Interaction Checking</h3>
 <p>Add genetic polymorphism data to the patient context. If a patient is a CYP2D6 poor metabolizer, interactions involving CYP2D6 substrates become more significant (the drug is already accumulating due to reduced metabolism; adding an inhibitor compounds the effect). This requires:</p>
@@ -1134,7 +1142,6 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <hr />
 <p><em>← <a href="chapter13.04-drug-drug-interaction-knowledge-base.html">Main Recipe 13.4</a> · <a href="chapter13.04-python-example.html">Python Example</a> · <a href="chapter13-preface.html">Chapter Preface</a></em></p>
 

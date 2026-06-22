@@ -1074,11 +1074,34 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict with findings, metadata, and confidence information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
     <span class="n">findings</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Input validation: reject malformed inputs before they reach Neptune.</span>
+    <span class="c1"># This prevents injection, catches upstream data quality issues early,</span>
+    <span class="c1"># and produces clean audit logs.</span>
+    <span class="c1"># Note: In production, raw variant data (VCF) is validated at an earlier</span>
+    <span class="c1"># pipeline step. By this point, variants are already resolved to</span>
+    <span class="c1"># gene + diplotype form. We validate the gene is a known pharmacogene</span>
+    <span class="c1"># and the medication has a valid RxNorm CUI format.</span>
+    <span class="n">validated_variants</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">patient_variants</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">variant</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gene&quot;</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">CPIC_PHARMACOGENES</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [SKIP] Gene not in known pharmacogenes list: </span><span class="si">{</span><span class="n">variant</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;gene&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">validated_variants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+
+    <span class="n">validated_medications</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">medication</span> <span class="ow">in</span> <span class="n">current_medications</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^\d+$&quot;</span><span class="p">,</span> <span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rxnorm_cui&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [SKIP] Invalid RxNorm CUI format: </span><span class="si">{</span><span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rxnorm_cui&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">validated_medications</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">medication</span><span class="p">)</span>
 
     <span class="c1"># Step 5a: Determine patient phenotypes from their variants</span>
     <span class="n">patient_phenotypes</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">patient_variants</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">validated_variants</span><span class="p">:</span>
         <span class="n">gene</span> <span class="o">=</span> <span class="n">variant</span><span class="p">[</span><span class="s2">&quot;gene&quot;</span><span class="p">]</span>
         <span class="n">diplotype</span> <span class="o">=</span> <span class="n">variant</span><span class="p">[</span><span class="s2">&quot;diplotype&quot;</span><span class="p">]</span>
 
@@ -1088,7 +1111,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">gene</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">diplotype</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">phenotype_result</span><span class="p">[</span><span class="s1">&#39;phenotype&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Step 5b: Check each medication against patient phenotypes</span>
-    <span class="k">for</span> <span class="n">medication</span> <span class="ow">in</span> <span class="n">current_medications</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">medication</span> <span class="ow">in</span> <span class="n">validated_medications</span><span class="p">:</span>
         <span class="n">interactions</span> <span class="o">=</span> <span class="n">find_gene_drug_interactions</span><span class="p">(</span>
             <span class="n">medication</span><span class="p">[</span><span class="s2">&quot;rxnorm_cui&quot;</span><span class="p">],</span> <span class="n">evidence_threshold</span>
         <span class="p">)</span>
@@ -1117,7 +1140,7 @@
 
     <span class="c1"># Step 5c: Check for phenoconversion</span>
     <span class="k">for</span> <span class="n">gene</span><span class="p">,</span> <span class="n">phenotype</span> <span class="ow">in</span> <span class="n">patient_phenotypes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">phenoconversion</span> <span class="o">=</span> <span class="n">check_phenoconversion</span><span class="p">(</span><span class="n">current_medications</span><span class="p">,</span> <span class="n">gene</span><span class="p">,</span> <span class="n">phenotype</span><span class="p">)</span>
+        <span class="n">phenoconversion</span> <span class="o">=</span> <span class="n">check_phenoconversion</span><span class="p">(</span><span class="n">validated_medications</span><span class="p">,</span> <span class="n">gene</span><span class="p">,</span> <span class="n">phenotype</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">phenoconversion</span><span class="p">:</span>
             <span class="n">findings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phenoconversion</span><span class="p">)</span>
 
@@ -1134,7 +1157,7 @@
         <span class="s2">&quot;genes_with_phenotype&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">patient_phenotypes</span><span class="p">),</span>
         <span class="s2">&quot;findings&quot;</span><span class="p">:</span> <span class="n">findings</span><span class="p">,</span>
         <span class="s2">&quot;medications_without_findings&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="n">m</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">current_medications</span>
+            <span class="n">m</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">validated_medications</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;medication&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">findings</span><span class="p">)</span>
         <span class="p">],</span>
     <span class="p">}</span>
@@ -1273,14 +1296,14 @@
 <p><strong>Entity resolution at scale.</strong> The cross-reference tables shown here have a handful of entries. The real version needs mappings for thousands of genes, tens of thousands of drugs, and millions of variants. You'd use UMLS (Unified Medical Language System) as a backbone, supplemented by source-specific mapping files from PharmGKB and DrugBank. The Glue ETL job that builds these mappings is typically the largest single piece of engineering in the project.</p>
 <p><strong>Neptune IAM authentication.</strong> This example uses plain HTTPS to Neptune. Production systems enable IAM database authentication, which means every request must be signed with SigV4. The <code>boto3</code> SigV4 signer or the <code>amazon-neptune-sigv4</code> library handles this, but it adds complexity to every query call.</p>
 <p><strong>Error handling and retries.</strong> Neptune queries can timeout under load. The bulk loader can fail partway through. Source downloads can be corrupted. Every external call needs try/except with specific handling for throttling (HTTP 429), timeouts, and malformed responses. Use exponential backoff with jitter for retries.</p>
-<p><strong>Graph versioning and blue-green deployment.</strong> This example loads data into a single Neptune cluster. Production systems use either Neptune's cloning feature or a blue-green deployment pattern: load the new version into a clone, run integration tests, then swap the DNS endpoint. This prevents a bad load from corrupting the live graph.</p>
+<p><strong>Graph versioning and blue-green deployment.</strong> This example loads data into a single Neptune cluster. Production systems use Neptune's <code>cloneCluster</code> API for zero-downtime updates: clone the production cluster, bulk load new data into the clone, run integration tests against it, swap the reader endpoint to the clone, then terminate the old cluster. This prevents queries from seeing an inconsistent graph state during the load window.</p>
 <p><strong>Diplotype calling.</strong> This example assumes diplotypes are provided as input. In reality, you receive raw variant calls (VCF format) from the sequencing lab and must translate them into star allele diplotypes. This translation is gene-specific and complex, especially for CYP2D6 (which has structural variants, gene deletions, and duplications). Tools like Stargazer or PharmCAT handle this, but integrating them adds a significant pipeline step.</p>
 <p><strong>Audit logging.</strong> Every clinical recommendation must be traceable. Which graph version was queried? Which evidence threshold was applied? What was the patient's variant data at query time? CloudTrail captures API calls, but you also need application-level audit logs that record the full query context and result for each patient interaction.</p>
 <p><strong>VPC and network isolation.</strong> Neptune runs in a VPC. Lambda functions that query it must be in the same VPC. S3 access from within the VPC requires a VPC endpoint. All of this is standard AWS networking, but it means your deployment is more complex than &quot;upload a Lambda function.&quot;</p>
 <p><strong>Clinical validation.</strong> Before connecting to a CDS system, the graph's recommendations must be validated against known pharmacogenomic cases. You need a test suite of patients with known genotypes and known correct recommendations (from CPIC guidelines). If the graph returns the wrong recommendation for any validated case, it doesn't go live.</p>
 <p><strong>Phenoconversion completeness.</strong> This example only models CYP2D6 strong and moderate inhibitors. Production systems also model CYP2C19 inhibitors (omeprazole, fluconazole), CYP3A4 inhibitors/inducers (a huge list), and other enzyme systems. The inhibitor lists must be maintained as new drugs are approved.</p>
 <p><strong>Population-specific frequency filtering.</strong> The graph should flag when a variant is common in the patient's ancestral population (not clinically surprising) versus rare (potentially more significant). This requires the patient's self-reported ancestry or inferred genetic ancestry, plus population-stratified allele frequency data from gnomAD or similar databases.</p>
-<p><strong>KMS encryption key management.</strong> All data at rest (S3 objects, Neptune storage) should use customer-managed KMS keys with automatic rotation. The Neptune cluster, S3 bucket, and any intermediate storage must all reference the same key policy. Key usage should be logged via CloudTrail for compliance auditing.</p>
+<p><strong>KMS encryption key management.</strong> All data at rest (S3 objects, Neptune storage, CloudWatch Logs) should use a single customer-managed KMS key (CMK) with automatic annual rotation. Neptune encryption is set at cluster creation and cannot be changed later, so plan this before your first deployment. Key usage should be logged via CloudTrail for compliance auditing.</p>
 <hr />
 <p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter13.07-disease-gene-drug-relationship-graph.html">Recipe 13.7</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
 

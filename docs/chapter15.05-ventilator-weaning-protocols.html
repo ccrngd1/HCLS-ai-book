@@ -577,6 +577,8 @@
 <p>The state representation is another hidden challenge. I described a clean state vector above, but in practice, ICU data is a mess. Vital signs are recorded at irregular intervals. Lab values are missing for hours. Nursing assessments are free-text. Ventilator modes change in ways that aren't cleanly captured in discrete features. The gap between &quot;the data you wish you had&quot; and &quot;the data you actually have&quot; is substantial.</p>
 <p>The reward function is where clinical judgment meets engineering, and it's surprisingly contentious. Is a patient who gets extubated at 72 hours and reintubated at 74 hours worse off than a patient who stays on the vent until 120 hours and extubates successfully? Most clinicians would say yes (reintubation is traumatic and risky), but how much worse? The reward weights encode clinical values, and reasonable clinicians disagree on those values.</p>
 <p>What I'd do differently if starting over: I'd spend 80% of my time on data quality and state representation, and 20% on the RL algorithm. The algorithm choice matters less than the quality of the state signal and the reward definition. I'd also start with a much simpler action space (binary: &quot;ready for SBT&quot; vs. &quot;not ready&quot;) before attempting the full multi-action formulation.</p>
+<p>Model rollback is something you need to plan for before you deploy, not after something goes wrong. Run new models in shadow mode first: both old and new policies receive the same patient states and generate recommendations, but only the old model's recommendations reach clinicians. Monitor the agreement rate between old and new. If the new model diverges dramatically (say, clinician override rate exceeds 50% for 48 hours), that's your rollback trigger. You want to detect degradation before patients are affected, not after.</p>
+<p>Operational monitoring is the other piece people underestimate. Track feature distributions against your training data statistics. If the input features drift beyond two standard deviations for sustained periods, your model is seeing patients it wasn't trained on. Track the safety filter override rate: if it starts climbing, the model's recommendations are increasingly unsafe. Track clinician agreement rate over time as a proxy for recommendation quality. If clinicians used to follow 70% of recommendations and now follow 40%, something changed, and you need to investigate whether it's the model degrading or the patient population shifting.</p>
 <hr />
 <h2 id="related-recipes">Related Recipes</h2>
 <ul>
@@ -586,6 +588,10 @@
 <li><strong>Recipe 7.9 (Mortality Risk Scoring, ICU):</strong> The risk scores from this recipe could serve as features in the RL state representation.</li>
 </ul>
 <hr />
+<h2 id="tags">Tags</h2>
+<p><code>reinforcement-learning</code> · <code>icu</code> · <code>ventilator</code> · <code>weaning</code> · <code>offline-rl</code> · <code>clinical-decision-support</code> · <code>sequential-decisions</code> · <code>safety-constraints</code> · <code>sagemaker</code></p>
+<hr />
+<p><em>← <a href="chapter15.04-sepsis-treatment-optimization.html">Recipe 15.4: Sepsis Treatment Optimization</a> · <a href="chapter15-preface.html">Chapter 15 Index</a> · <a href="chapter15.06-glucose-control-icu.html">Recipe 15.6: Glucose Control in ICU →</a></em></p>
 
       </article>
       <footer class="page-footer">

@@ -1879,16 +1879,29 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_batch_get_exposure</span><span class="p">(</span><span class="n">provider_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Batch lookup of rolling exposure aggregates.</span>
+<span class="sd">    Batch lookup of rolling exposure aggregates using bucketed counters.</span>
 
 <span class="sd">    Returns {provider_id: {&quot;impressions_at_top_3_24h&quot;: int, ...}}.</span>
 <span class="sd">    Missing providers default to empty dict.</span>
+
+<span class="sd">    The exposure-aggregates table stores hourly buckets in maps</span>
+<span class="sd">    (impressions_map, top3_map, clicks_map). This function sums the</span>
+<span class="sd">    last 24 hour-buckets to produce the rolling window value. Results</span>
+<span class="sd">    are cached in a per-container LRU (not shown here) with a TTL of</span>
+<span class="sd">    60-120 seconds. One-to-two minute lag is acceptable since the cap</span>
+<span class="sd">    is a fairness lever, not a correctness boundary.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">provider_ids</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
+    <span class="c1"># Build the list of hour-bucket keys for the last 24 hours.</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="n">hour_keys</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">24</span><span class="p">):</span>
+        <span class="n">bucket_time</span> <span class="o">=</span> <span class="n">now</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+        <span class="n">hour_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bucket_time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H&quot;</span><span class="p">))</span>
+
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">EXPOSURE_TABLE</span><span class="p">)</span>
-    <span class="c1"># DynamoDB BatchGetItem caps at 100 keys per request; chunk if needed.</span>
     <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">chunk_size</span> <span class="o">=</span> <span class="mi">100</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">provider_ids</span><span class="p">),</span> <span class="n">chunk_size</span><span class="p">):</span>
@@ -1900,11 +1913,18 @@
                 <span class="p">}</span>
             <span class="p">})</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Responses&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">EXPOSURE_TABLE</span><span class="p">,</span> <span class="p">[]):</span>
-                <span class="n">out</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;provider_id&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">item</span>
+                <span class="n">pid</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;provider_id&quot;</span><span class="p">]</span>
+                <span class="c1"># Sum hourly buckets across the 24-hour window.</span>
+                <span class="n">top3_map</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;top3_map&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{}</span>
+                <span class="n">impressions_map</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;impressions_map&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{}</span>
+                <span class="n">top3_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">top3_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hour_keys</span><span class="p">)</span>
+                <span class="n">impressions_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">impressions_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hour_keys</span><span class="p">)</span>
+                <span class="n">out</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;impressions_at_top_3_24h&quot;</span><span class="p">:</span> <span class="n">top3_sum</span><span class="p">,</span>
+                    <span class="s2">&quot;impressions_total_24h&quot;</span><span class="p">:</span> <span class="n">impressions_sum</span><span class="p">,</span>
+                <span class="p">}</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Exposure batch lookup failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
-            <span class="c1"># Safe default: no exposure data, no caps fire. The cohort</span>
-            <span class="c1"># dashboard should alarm if this is happening at meaningful rates.</span>
             <span class="k">continue</span>
     <span class="k">return</span> <span class="n">out</span>
 
@@ -2214,36 +2234,44 @@
     <span class="p">)</span>
 
     <span class="c1"># ---- Update rolling exposure aggregates ----</span>
-    <span class="c1"># Increment counters atomically so concurrent events don&#39;t trample</span>
-    <span class="c1"># each other.</span>
+    <span class="c1"># Bucketed-counter approach: write to an hourly bucket so counts age</span>
+    <span class="c1"># out naturally. DynamoDB TTL removes items older than 48 hours. The</span>
+    <span class="c1"># fairness re-ranker (Step 6) sums the most recent 24 hour-buckets</span>
+    <span class="c1"># at read time. Use if_not_exists for cold-start initialization.</span>
     <span class="n">exposure_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">EXPOSURE_TABLE</span><span class="p">)</span>
+    <span class="n">hour_bucket</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;search_impression&quot;</span><span class="p">:</span>
-        <span class="n">update_expr</span> <span class="o">=</span> <span class="s2">&quot;ADD impressions_total_24h :one&quot;</span>
-        <span class="n">expr_values</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)}</span>
+        <span class="n">update_expr</span> <span class="o">=</span> <span class="s2">&quot;SET impressions_map.#bucket = if_not_exists(impressions_map.#bucket, :zero) + :one&quot;</span>
+        <span class="n">expr_names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;#bucket&quot;</span><span class="p">:</span> <span class="n">hour_bucket</span><span class="p">}</span>
+        <span class="n">expr_values</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">),</span> <span class="s2">&quot;:zero&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)}</span>
         <span class="k">if</span> <span class="n">position_in_results</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">update_expr</span> <span class="o">+=</span> <span class="s2">&quot;, impressions_at_top_3_24h :one&quot;</span>
+            <span class="n">update_expr</span> <span class="o">+=</span> <span class="s2">&quot;, top3_map.#bucket = if_not_exists(top3_map.#bucket, :zero) + :one&quot;</span>
         <span class="n">exposure_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
             <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="n">provider_id</span><span class="p">},</span>
             <span class="n">UpdateExpression</span><span class="o">=</span><span class="n">update_expr</span><span class="p">,</span>
+            <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="n">expr_names</span><span class="p">,</span>
             <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="n">expr_values</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;search_click&quot;</span><span class="p">:</span>
         <span class="n">exposure_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
             <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="n">provider_id</span><span class="p">},</span>
-            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;ADD clicks_total_24h :one&quot;</span><span class="p">,</span>
-            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)},</span>
+            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET clicks_map.#bucket = if_not_exists(clicks_map.#bucket, :zero) + :one&quot;</span><span class="p">,</span>
+            <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#bucket&quot;</span><span class="p">:</span> <span class="n">hour_bucket</span><span class="p">},</span>
+            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">),</span> <span class="s2">&quot;:zero&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)},</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;provider_call_initiated&quot;</span><span class="p">:</span>
         <span class="n">exposure_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
             <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="n">provider_id</span><span class="p">},</span>
-            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;ADD calls_initiated_24h :one&quot;</span><span class="p">,</span>
-            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)},</span>
+            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET calls_map.#bucket = if_not_exists(calls_map.#bucket, :zero) + :one&quot;</span><span class="p">,</span>
+            <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#bucket&quot;</span><span class="p">:</span> <span class="n">hour_bucket</span><span class="p">},</span>
+            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">),</span> <span class="s2">&quot;:zero&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)},</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;appointment_booked&quot;</span><span class="p">:</span>
         <span class="n">exposure_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
             <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;provider_id&quot;</span><span class="p">:</span> <span class="n">provider_id</span><span class="p">},</span>
-            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;ADD appointments_booked_24h :one&quot;</span><span class="p">,</span>
-            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)},</span>
+            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET bookings_map.#bucket = if_not_exists(bookings_map.#bucket, :zero) + :one&quot;</span><span class="p">,</span>
+            <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#bucket&quot;</span><span class="p">:</span> <span class="n">hour_bucket</span><span class="p">},</span>
+            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:one&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">),</span> <span class="s2">&quot;:zero&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)},</span>
         <span class="p">)</span>
 
     <span class="c1"># ---- Special handling: directory complaints ----</span>
@@ -2703,6 +2731,7 @@
 <h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
 <p>Run this end-to-end against a populated OpenSearch index, a seeded DynamoDB pair, and a Location Service place index and you'll see the pattern: providers indexed, patient context assembled, query parsed, candidates retrieved, features joined, ranked, re-ranked, results returned with explanations, and engagement events flowing back. The distance between this and a real health-plan deployment is significant. Here's where it lives.</p>
 <p><strong>Provider data ingestion is its own engineering project.</strong> The example treats the provider event as a clean dict with an <code>npi</code> field. In reality, provider data arrives from credentialing systems on a multi-week cycle (in proprietary formats), claims feeds daily (in 837/835 EDI formats), self-attestation portals on demand, and third-party network rosters periodically. Each source has its own data model, its own update cadence, and its own quality issues. Build the ingestion as a Step Functions workflow with explicit Lambdas for match, validate, annotate, embed, and index, each routing failures to a DLQ keyed on <code>(provider_id, stage, failure_reason)</code>. Underinvest here and the catalog accumulates ghost providers faster than the search ranker can compensate.</p>
+<p><strong>Multi-location providers.</strong> The example indexes one location per provider. Multi-location is the common case in primary care, pediatrics, and most specialty groups: a family-medicine doc with three offices needs to be findable from any of them. Production indexes at <code>(provider_id, location_id)</code> granularity (one OpenSearch doc per location) and deduplicates in result assembly to the closest location per provider. The architecture companion describes this pattern in full.</p>
 <p><strong>NPPES verification is a recurring task, not a one-time check.</strong> The example checks <code>validation[&quot;specialty_known&quot;]</code> against an in-memory dict. Production verifies NPI status against the <a href="https://npiregistry.cms.hhs.gov/">NPPES Public API</a>, and does so on a schedule (nightly for high-priority providers, weekly for the rest). When NPPES reports a deactivated NPI, the catalog must demote or remove the provider. This is the one external API the ingestion pipeline reliably calls, and it's worth wiring up with proper error handling and rate limiting; NPPES is a public service and not designed to absorb burst traffic from every health plan in the country.</p>
 <p><strong>Phone reachability is a periodic sweep.</strong> The example checks phone format. Production sweeps the catalog quarterly with an automated dialer (or a third-party validation service) and demotes providers whose phone numbers bounce, are disconnected, or route to numbers unrelated to the practice. Ghost-provider complaints are the leading indicator that a phone-number sweep is overdue. Treat phone-reachability rate as a top-line catalog quality metric.</p>
 <p><strong>Embedding model versioning.</strong> When you upgrade Titan v2 to v3 (or to a different family), every embedding in the index becomes incompatible with new query embeddings. The migration: re-embed the entire catalog under the new model, build a parallel index, run shadow queries to validate retrieval quality doesn't regress, switch traffic, retire the old index. Plan for at least one of these per year. Pin the model ID in config (Parameter Store / AppConfig) and never silently roll it forward.</p>

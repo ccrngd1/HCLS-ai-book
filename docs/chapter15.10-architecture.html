@@ -566,7 +566,7 @@
 </tr>
 <tr>
 <td>IAM Permissions</td>
-<td>sagemaker:CreateTrainingJob, sagemaker:CreateModel, kinesis:GetRecords, dynamodb:PutItem/GetItem, lambda:InvokeFunction, s3:GetObject/PutObject, states:StartExecution</td>
+<td>sagemaker:CreateTrainingJob, sagemaker:CreateModel, sagemaker:DescribeTrainingJob, kinesis:GetRecords, kinesis:DescribeStream, kinesis:GetShardIterator, dynamodb:PutItem/GetItem, lambda:InvokeFunction, s3:GetObject/PutObject, states:StartExecution, kms:Decrypt, kms:GenerateDataKey (scoped to CMK ARN), cloudwatch:PutMetricData, logs:CreateLogGroup, logs:PutLogEvents, execute-api:Invoke. All permissions should use resource-level ARN restrictions rather than wildcards.</td>
 </tr>
 <tr>
 <td>BAA</td>
@@ -578,7 +578,7 @@
 </tr>
 <tr>
 <td>VPC</td>
-<td>Training and inference in private subnets. VPC endpoints for S3, DynamoDB, SageMaker. No public internet access for PHI-containing workloads.</td>
+<td>Training and inference in private subnets. VPC endpoints for S3, DynamoDB, SageMaker, Kinesis Streams, Step Functions, CloudWatch, CloudWatch Logs, and API Gateway (or configure as private API). NAT Gateway is acceptable as fallback for services without VPC endpoint support, but VPC endpoints are preferred for PHI workloads to keep traffic off the public internet.</td>
 </tr>
 <tr>
 <td>CloudTrail</td>
@@ -637,6 +637,33 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="pseudocode-walkthrough">Pseudocode Walkthrough</h2>
+<p>The full pseudocode walkthrough for this recipe (state vector construction, simulator definition, PPO training with Lagrangian constraints, offline policy evaluation, and decision support inference) lives in the main recipe's &quot;Code: Pseudocode Walkthrough&quot; section. See <a href="chapter15.10-hospital-resource-allocation-uncertainty.html">Recipe 15.10 main recipe</a> for the step-by-step pseudocode with business-level explanations and inline comments.</p>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter15.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h2 id="expected-results">Expected Results</h2>
+<p>See the main recipe's <a href="chapter15.10-hospital-resource-allocation-uncertainty.html">Expected Results section</a> for sample recommendation JSON output, performance benchmark tables (ED boarding reduction, surgical cancellation improvements, staffing violation metrics), and a discussion of where the system struggles.</p>
+<p>Key numbers from simulation-based evaluation:</p>
+<ul>
+<li>ED boarding hours reduced ~33% vs. human-only baseline</li>
+<li>Surgical cancellations reduced ~34%</li>
+<li>Staffing ratio violations reduced ~57%</li>
+<li>Recommendation latency under 800ms (Lambda cold start)</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This architecture shows the structural components, but a production deployment needs:</p>
+<ul>
+<li><strong>Simulator calibration.</strong> The hospital simulator must be fitted to 2+ years of your facility's ADT, staffing, and equipment data. Generic parameters produce generic (wrong) policies.</li>
+<li><strong>Proper OPE pipeline.</strong> The offline evaluation step needs multiple estimators (importance sampling, doubly-robust, fitted Q-evaluation) cross-checked against each other. A single estimator can be misleading.</li>
+<li><strong>Human factors integration.</strong> The dashboard needs UX research with actual charge nurses and bed coordinators. Recommendation acceptance tracking, override reason collection, and interface iteration based on real usage patterns.</li>
+<li><strong>Continuous monitoring.</strong> Model drift detection (is the policy still performing well as hospital patterns change?), data quality alerting (are source systems sending stale data?), and automated fallback to human-only mode if confidence drops.</li>
+<li><strong>Operational runbook.</strong> What happens when the model disagrees with the charge nurse? When the system goes down during a surge? When a new unit opens or staffing models change? These operational procedures are not engineering problems but they determine whether the system actually gets used.</li>
+<li><strong>IRB/compliance review.</strong> The reward function encodes value judgments about patient prioritization. This requires ethical review, not just technical validation.</li>
+</ul>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <h3 id="1-multi-hospital-system-coordination">1. Multi-Hospital System Coordination</h3>

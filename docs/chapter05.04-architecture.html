@@ -514,7 +514,7 @@
 <p><strong>Amazon S3 for the eligibility data lake.</strong> Three zones: raw (every 270 inquiry payload and every 271 response payload as received, partitioned by payer and date for audit and replay), curated (parsed, normalized eligibility match outcomes keyed on inquiry hash with full provenance), and derived (cohort-stratified accuracy reports, payer-quality metrics, charity-care screening summaries). S3 is HIPAA-eligible under BAA with SSE-KMS encryption. The raw 270/271 payloads are retained for the regulatory audit window; the curated outcomes power both the real-time lookup path (via cache and DynamoDB) and the analytics path (via Athena).</p>
 <p><strong>Amazon DynamoDB for the eligibility-match store.</strong> One main table keyed on <code>(patient_id, payer_id, service_date)</code>, with a global secondary index on <code>(matched_member_id, payer_id)</code> for the reverse lookup (given a payer-side member ID, which patient records have matched against it). Item attributes hold the parsed coverage state, the financial-responsibility detail, the match confidence, the match method, and the inquiry-and-response provenance. DynamoDB's single-digit-millisecond reads support the front-desk-experience target of sub-second eligibility lookup at registration. The on-demand capacity handles the bursty pattern of morning registration peaks plus the steady volume of scheduled pre-warm.</p>
 <p><strong>Amazon ElastiCache (Redis) for the real-time cache.</strong> The freshness regime requires a fast cache layer in front of DynamoDB for the registration-flow path. Redis holds parsed eligibility state with TTLs that match the freshness policy (24 hours for future service dates, 1 year for past). Cache hits return in under 5ms and skip the DynamoDB read entirely; cache misses fall through to DynamoDB, then to a re-inquiry if no record exists.</p>
-<p><strong>Amazon SQS for the inquiry queues.</strong> Two queues: a high-priority queue for real-time registration inquiries (with a short visibility timeout and aggressive retry), and a standard-priority queue for scheduled pre-warm and batch reconciliation. Separating the queues prevents a flood of pre-warm inquiries from delaying the real-time path. Both queues feed Lambda consumers that submit inquiries through the configured connectivity layer.</p>
+<p><strong>Amazon SQS for the inquiry queues.</strong> Two Standard queues: a high-priority queue for real-time registration inquiries (with a short visibility timeout and aggressive retry), and a standard-priority queue for scheduled pre-warm and batch reconciliation. SQS Standard (not FIFO) because subscriber and dependent inquiries are independently resolvable; idempotency is enforced at the inquiry hash via DynamoDB conditional writes rather than through FIFO deduplication. Separating the queues prevents a flood of pre-warm inquiries from delaying the real-time path. Both queues feed Lambda consumers that submit inquiries through the configured connectivity layer.</p>
 <p><strong>AWS Lambda for the per-inquiry processing.</strong> Lambda is the right substrate because each inquiry is short-lived, mostly I/O-bound (clearinghouse or payer API call plus DynamoDB writes), and benefits from on-demand scaling for the bursty registration-time pattern. Separate Lambdas per pipeline stage: <code>normalize-inquiry</code>, <code>submit-inquiry</code>, <code>evaluate-response</code>, <code>persist-match</code>, <code>invalidate-cache</code>. Each is in VPC with VPC endpoints for downstream services. Connectivity outbound to clearinghouses or direct payer endpoints uses NAT Gateway with allow-listed egress (most clearinghouses do not offer AWS PrivateLink, though some larger payers and clearinghouses do at high volume tiers).</p>
 <p><strong>AWS Glue for the batch reconciliation and analytics jobs.</strong> The monthly payer roster reconciliation runs as a Glue/Spark job that joins the payer's member roster (typically delivered as a flat file via SFTP or an X12 834 enrollment file) against the institution's eligibility-match store, producing reconciliation reports. The cohort-stratified accuracy job runs as a separate Glue job over the curated S3 zone. Glue Data Catalog tracks the schema across raw, curated, and derived zones; Athena queries the catalog for ad-hoc analytics.</p>
 <p><strong>AWS Step Functions for orchestration.</strong> Three workflows: a real-time-inquiry workflow (normalize, submit, evaluate, persist, propagate; with timeouts and retries calibrated to the registration-flow latency budget), a scheduled-pre-warm workflow (run nightly across tomorrow's appointments, queue the inquiries for off-peak processing, populate the cache by morning), and a batch-reconciliation workflow (run monthly to compare the payer roster against the institution's match store and surface discrepancies). The workflows are visible in Step Functions' execution history for operational debugging.</p>
@@ -524,6 +524,232 @@
 <p><strong>Amazon QuickSight for operational and quality dashboards.</strong> Per-payer match success rate, per-cohort match success rate, real-time-vs-batch volume, review-queue depth and aging, claim-denial rate cross-referenced to eligibility match outcomes, payer-response quality distribution, charity-care eligibility-determination cycle time.</p>
 <p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Customer-managed keys for the S3 buckets, the DynamoDB tables, the ElastiCache cluster, the Lambda log groups. CloudTrail data events on the eligibility-match table and on the audit S3 buckets. CloudWatch alarms on real-time inquiry success rate, on per-payer error spikes (often the first signal of a payer-side outage), on review-queue depth, on cohort-stratified disparities, on cache-hit-rate drops (often a sign of a cache-invalidation storm or a config issue).</p>
 <p><strong>AWS Secrets Manager for clearinghouse and direct-payer credentials.</strong> API keys, certificates, mutual-TLS credentials, SFTP credentials. Stored with KMS encryption at rest, IAM-controlled access, rotation support where the partner supports it. Many clearinghouses use mutual TLS or signed JWTs that rotate periodically; the secret store handles the rotation lifecycle without requiring redeploys.</p>
+<h3 id="operational-specifications">Operational Specifications</h3>
+<h4 id="latency-budget">Latency Budget</h4>
+<p>The real-time eligibility lookup API serves the registration workflow. The latency budget:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>P50 Target</th>
+<th>P95 Target</th>
+<th>P99 Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cache hit (Redis)</td>
+<td>&lt; 10ms</td>
+<td>&lt; 25ms</td>
+<td>&lt; 50ms</td>
+</tr>
+<tr>
+<td>Cache miss, DynamoDB hit</td>
+<td>&lt; 50ms</td>
+<td>&lt; 100ms</td>
+<td>&lt; 200ms</td>
+</tr>
+<tr>
+<td>Cache miss, DynamoDB miss, trigger async</td>
+<td>&lt; 200ms</td>
+<td>&lt; 500ms</td>
+<td>&lt; 2s</td>
+</tr>
+</tbody>
+</table>
+<p>The &quot;verification in progress&quot; response is the fail-open pattern: the registration workflow continues with a degraded-but-useful answer while the actual 270/271 round-trip happens asynchronously. The CAQH CORE Phase II SLA allows up to 20 seconds for the underlying 271; the cache-and-async pattern decouples registration latency from that round-trip. CloudWatch alarms fire when the async-resolution queue depth exceeds 500 records or persists more than 10 minutes (in steady state, the backlog should drain quickly).</p>
+<h4 id="identity-boundary-policy">Identity-Boundary Policy</h4>
+<p>Each pipeline stage has a scoped trust boundary:</p>
+<p><strong>Inquiry-submission Lambda.</strong> Accepts a <code>caller_context.invocation_source</code> enum: <code>registration_event</code>, <code>scheduled_pre_warm</code>, <code>batch_reconciliation</code>, <code>charity_care_screening</code>, <code>refresh_on_invalidation</code>. Each source maps to a caller IAM role; the Lambda validates the role before processing. Per-source rate limits prevent a runaway batch job from consuming registration-flow capacity (registration: 100 TPS ceiling; batch reconciliation: 50 TPS ceiling; others: 20 TPS ceiling).</p>
+<p><strong>Response-evaluation Lambda.</strong> Verifies the cryptographic signature (where the partner signs the 271) or the TLS session identity on the clearinghouse response. Rejects replays by checking <code>(control_number, transaction_set_id)</code> against a DynamoDB dedup table with a 7-day TTL. A replayed or unsigned 271 routes to the DLQ with a logged <code>response_integrity_violation</code> metric.</p>
+<p><strong>Persist-eligibility-match function.</strong> Validates that the <code>matched_member_id</code> in the response corresponds to the payer the inquiry targeted; a mismatch (wrong payer returned, or response routed to wrong inquiry) is rejected with a logged metric and DLQ routing. The conditional write uses <code>inquiry_hash</code> to enforce idempotency.</p>
+<p><strong>Eligibility-lookup read endpoint.</strong> Applies privacy-suppression-on-read for patients with active privacy flags (42 CFR Part 2 patients, domestic-violence-sensitive records, VIP patients per institutional policy). Audit-logs every read with the caller identity, the patient_id, and the timestamp. The raw 271 audit payload is accessible only through a separate access-controlled path restricted to payer-relations and audit teams; clinical and revenue-cycle staff see the parsed coverage view only.</p>
+<h4 id="cohort-stratified-accuracy-monitoring">Cohort-Stratified Accuracy Monitoring</h4>
+<p>Metrics are sourced from the institutional cohort registry (no ad-hoc demographic enumeration in code). Three metrics, each computed weekly or monthly:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Cadence</th>
+<th>Disparity Threshold</th>
+<th>Alarm Severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Per-cohort eligibility-match success rate (percent of inquiries returning AUTO_ACCEPT)</td>
+<td>Weekly</td>
+<td>&gt; 0.05 absolute difference between best-rate and worst-rate cohort</td>
+<td>MEDIUM</td>
+</tr>
+<tr>
+<td>Per-cohort review-queue rate (percent routed to human review)</td>
+<td>Weekly</td>
+<td>&gt; 0.05</td>
+<td>MEDIUM</td>
+</tr>
+<tr>
+<td>Per-cohort claim-denial-for-eligibility rate (downstream metric tying matcher quality to revenue impact)</td>
+<td>Monthly</td>
+<td>&gt; 0.03</td>
+<td>HIGH</td>
+</tr>
+</tbody>
+</table>
+<p>Alarms route to revenue-cycle and data-quality teams with a 5-business-day SLA. Remediation options: per-cohort threshold tuning, payer-specific normalization rules for affected naming patterns, registration-staff training on data capture for affected cohorts. All remediations documented in a cohort-disparity ledger and reviewed quarterly by the equity-monitoring committee.</p>
+<h4 id="cross-recipe-event-contract">Cross-Recipe Event Contract</h4>
+<p>Eligibility events conform to the chapter-wide schema:</p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eligibility-matching&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detail_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eligibility_resolved | eligibility_invalidated | eligibility_discrepancy_detected&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detail&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;previous_state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;new_state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Downstream consumers subscribe to specific <code>detail_type</code> values:</p>
+<ul>
+<li><strong>Recipe 5.1 (patient matcher):</strong> subscribes to <code>eligibility_resolved</code> when the match surfaces a previously unknown duplicate-patient signal (same member ID matched to two patient_ids).</li>
+<li><strong>Recipe 5.5 (cross-facility HIE):</strong> subscribes to <code>eligibility_resolved</code> when eligibility data from one facility's payer affects record reconciliation at another.</li>
+<li><strong>Recipe 5.6 (claims-to-clinical linkage):</strong> subscribes to <code>eligibility_resolved</code> and <code>eligibility_invalidated</code> because eligibility state at time of service constrains claim-to-encounter joining.</li>
+<li><strong>Revenue-cycle pipeline:</strong> subscribes to <code>eligibility_resolved</code> and <code>eligibility_invalidated</code> for claim-coverage refresh.</li>
+<li><strong>Charity-care workflow:</strong> subscribes to <code>eligibility_resolved</code> for coverage-absent confirmation.</li>
+<li><strong>Care-management pipeline:</strong> subscribes to <code>eligibility_resolved</code> for high-deductible flagging.</li>
+<li><strong>Patient-portal pipeline:</strong> subscribes to <code>eligibility_resolved</code> for benefits-view refresh.</li>
+</ul>
+<p>Each consumer acknowledges processing via a CloudWatch metric (<code>{consumer}.events_processed</code>). Unacknowledged events older than 15 minutes trigger an alarm for the consuming team.</p>
+<h4 id="idempotency-keys-and-dlq-topology">Idempotency Keys and DLQ Topology</h4>
+<p>Each pipeline stage has a recipe-specific idempotency key and a dedicated DLQ:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Idempotency Key</th>
+<th>DLQ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>normalize-inquiry</td>
+<td><code>inquiry_hash</code></td>
+<td><code>normalize-inquiry-dlq</code></td>
+</tr>
+<tr>
+<td>submit-inquiry</td>
+<td><code>inquiry_hash</code> + <code>clearinghouse_idempotency_key</code></td>
+<td><code>submit-inquiry-dlq</code></td>
+</tr>
+<tr>
+<td>evaluate-response</td>
+<td><code>(inquiry_id, response_payload_hash)</code></td>
+<td><code>evaluate-response-dlq</code></td>
+</tr>
+<tr>
+<td>persist-and-propagate</td>
+<td><code>(patient_id, payer_id, service_date, resolved_at_minute_bucket)</code></td>
+<td><code>persist-match-dlq</code></td>
+</tr>
+<tr>
+<td>invalidate-on-coverage-change</td>
+<td><code>(change_event_source, change_event_id)</code></td>
+<td><code>invalidate-cache-dlq</code></td>
+</tr>
+</tbody>
+</table>
+<p>Step Functions Catch states route terminal failures to the stage-specific DLQ. CloudWatch alarms on DLQ depth surface stuck workflows within 15 minutes of accumulation. The operations team reviews DLQ contents daily; unresolvable items escalate to engineering within 24 hours.</p>
+<h4 id="api-gateway-and-waf-posture">API Gateway and WAF Posture</h4>
+<p>The eligibility-lookup API is a Private API with a VPC endpoint resource policy. Institutional consumers (registration system, PMS, revenue-cycle applications) reach the API through the VPC endpoint; no public internet path exists.</p>
+<p>AWS WAF is attached with rule groups for: SQL injection prevention, command injection prevention, request rate limiting per source-IP (1000 req/min) and per Cognito principal (500 req/min), and request-size limiting (16 KB max body). Blocked requests emit a CloudWatch metric for security-team review.</p>
+<h4 id="elasticache-cluster-sizing">ElastiCache Cluster Sizing</h4>
+<p>At a medium-volume institution doing 150K verifications per month, the rolling 12 months of past entries plus the 30-day forward window totals approximately 3-4 GB at 1-2 KB per match-outcome JSON. Starting point: <code>cache.r6g.large</code> (approximately 13 GB memory) with two read replicas and a <code>volatile-lfu</code> eviction policy. The past-service-date TTL of 1 year is conservative; institutions optimizing for cache cost may shorten to 30-90 days with on-demand re-fetch from DynamoDB on the rare past-date read.</p>
+<p>CloudWatch alarms: memory utilization &gt; 80% signals undersizing; per-day eviction count above 1000 signals either undersizing or a cache-invalidation storm. Cost: approximately $400-800/month for <code>cache.r6g.large</code> with replicas at the stated volumes.</p>
+<h4 id="lake-formation-access-controls">Lake Formation Access Controls</h4>
+<p>Three audiences need different views of the eligibility data:</p>
+<table>
+<thead>
+<tr>
+<th>Audience</th>
+<th>Data Scope</th>
+<th>Access Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Payer-relations and audit teams</td>
+<td>Raw 271 payloads (full coverage and financial-responsibility detail)</td>
+<td>Lake Formation column-level grant on raw zone; restricted IAM role</td>
+</tr>
+<tr>
+<td>Clinical and revenue-cycle staff</td>
+<td>Parsed coverage state (plan active/inactive, copay, deductible status)</td>
+<td>Lake Formation column-level grant on curated zone; standard operational IAM role</td>
+</tr>
+<tr>
+<td>Leadership and equity-monitoring committees</td>
+<td>Cohort-aggregated metrics (no individual patient detail)</td>
+<td>Lake Formation row-level filter on derived zone; read-only dashboard IAM role</td>
+</tr>
+</tbody>
+</table>
+<p>Direct Athena query path uses the same Lake Formation grants. Access logged via CloudTrail data events on the Glue Catalog and underlying S3 buckets.</p>
+<h4 id="cohort-bucketed-metric-dimensions">Cohort-Bucketed Metric Dimensions</h4>
+<p>When emitting cohort dimensions on CloudWatch metrics, use bucketed non-reversible cohort labels (<code>cohort_bucket</code> = A, B, C, D, E, unknown) rather than raw demographic attributes. The cohort-label-to-attribute mapping lives in a separate access-controlled DynamoDB table loaded only at dashboard-render time by the equity-monitoring committee's IAM role. This prevents demographic re-identification from CloudWatch metric dimensions.</p>
+<h4 id="clearinghouse-data-handling-commitments">Clearinghouse Data-Handling Commitments</h4>
+<p>The clearinghouse BAA and trading-partner agreement must specify:</p>
+<ol>
+<li>The partner will not retain submitted patient data beyond a documented operational window (typical clearinghouse retention is 7 years for HIPAA audit purposes; operational caches are typically days-to-weeks and must be specified separately).</li>
+<li>The partner will disclose all sub-processors that may handle PHI in the eligibility-verification flow.</li>
+<li>The partner will notify the institution within 72 hours of any data incident affecting the eligibility transaction data.</li>
+<li>The institution retains the right to audit the partner's controls annually.</li>
+</ol>
+<p>The 270 inquiry contains full patient demographics plus the patient_id. The patient_id is a partner-shared identifier under BAA (not a public identifier); document this in the inquiry-submission code as a de-identification-posture annotation so future engineers understand why the patient_id travels to the partner.</p>
+<h4 id="clearinghouse-egress-configuration">Clearinghouse Egress Configuration</h4>
+<p>Clearinghouse egress and direct-payer egress use distinct outbound proxy rules with non-overlapping allow-lists scoped to compute roles. Each Lambda role allows only the specific partner endpoints it must call. Per-role rate limits are set below the partner's published rate limits (prevent a single consumer from exhausting the partner's allocation). Egress connections are CloudWatch-logged for chargeback and forensic auditing. At eligibility-inquiry volumes (millions per month for medium institutions), evaluate the partner's PrivateLink endpoints where available.</p>
+<h4 id="review-queue-audit-posture">Review-Queue Audit Posture</h4>
+<p>Every review decision records:</p>
+<ul>
+<li>The reviewer's identity (authenticated via Cognito or institutional SSO)</li>
+<li>The decision: accept, reject, escalate, or request-info</li>
+<li>The reviewer's stated reason (free text)</li>
+<li>The timestamp</li>
+<li>The <code>THRESHOLDS_VERSION</code> active at the time of the match</li>
+<li>Any reviewer-supplied additional demographic context (for example, &quot;patient confirmed maiden name was Garcia, married name is Smith&quot;)</li>
+</ul>
+<p>The audit trail supports forensic reconstruction when a wrong match is later traced back to a reviewer decision. It also supports periodic gold-set re-evaluation that catches systematic reviewer biases (for example, a reviewer who auto-accepts all search matches above 0.70 without reading the address comparator). Review decisions feed the active-learning loop for periodic threshold re-calibration.</p>
+<h4 id="records-retention-policy">Records Retention Policy</h4>
+<p>Retention floor: the longer of 7 years (HIPAA records-retention minimum), 10 years (Medicare claims retention where applicable), the institution's documented eligibility-data retention policy, the value-based-care contract retention requirement (where applicable), and any state-specific Medicaid retention requirement.</p>
+<p>Implementation: audit logs in a dedicated S3 bucket with Object Lock in Compliance mode for immutability. Lifecycle policy transitions objects to S3 Glacier Deep Archive after 90 days. CloudTrail data events forwarded to a dedicated audit AWS account in the institution's organization, isolating the audit substrate from the production data plane. The retention floor is enforced at the bucket-policy and Object-Lock-configuration level, not at application logic.</p>
+<h4 id="threshold-calibration-governance">Threshold Calibration Governance</h4>
+<p>The thresholds (<code>AUTO_ACCEPT_THRESHOLD</code>, <code>AUTO_REJECT_THRESHOLD</code>, per-feature weights in the composite score) live in a versioned configuration table in DynamoDB. Re-calibration runs annually or on detection of cohort-stratified disparity above 0.05, whichever comes first. The re-calibration process:</p>
+<ol>
+<li>Produces a candidate threshold set from the current gold-set evaluation.</li>
+<li>Institutional review (revenue-cycle leadership, compliance, equity-monitoring committee) reviews the confusion matrix and the cohort-disparity impact.</li>
+<li>Approved candidates promote to production with a new <code>THRESHOLDS_VERSION</code>.</li>
+<li>Each match outcome records the configuration version and threshold values active at inference time.</li>
+</ol>
+<p>Change without governance is the failure mode that produces silent regressions in both accuracy and equity.</p>
+<h4 id="scoped-resource-arn-examples">Scoped Resource ARN Examples</h4>
+<p>Highest-stakes actions use scoped Resource ARNs:</p>
+<pre class="code code-plain"><code>dynamodb:UpdateItem  on arn:aws:dynamodb:&lt;region&gt;:&lt;account&gt;:table/eligibility-match
+s3:PutObject         on arn:aws:s3:::&lt;env&gt;-eligibility-raw/audit/*
+events:PutEvents     on arn:aws:events:&lt;region&gt;:&lt;account&gt;:event-bus/eligibility-events
+secretsmanager:GetSecretValue on arn:aws:secretsmanager:&lt;region&gt;:&lt;account&gt;:secret:clearinghouse/*
+</code></pre>
+<p>Never use <code>*</code> resource ARNs in production. Each Lambda role receives only the specific table, bucket prefix, event bus, and secret path it requires.</p>
+<h4 id="backfill-discipline">Backfill Discipline</h4>
+<p>The initial backfill at launch follows the chapter pattern from recipes 5.1, 5.2, and 5.3:</p>
+<ol>
+<li>Negotiate bulk pricing with the clearinghouse before backfill (batch transaction pricing is 5-10x cheaper than real-time).</li>
+<li>Run as a Glue job with controlled concurrency below the clearinghouse's rate limit.</li>
+<li>Suppress <code>eligibility_resolved</code> event emission during backfill; downstream consumers refresh from a single <code>eligibility_backfill_complete</code> marker.</li>
+<li>Emit one <code>eligibility_backfill_complete</code> event when done, with the cohort-stratified accuracy report attached.</li>
+<li>Plan the backfill timeline in coordination with downstream consumers (PMS, revenue cycle, charity care) so the change in eligibility-data quality lands on a known date.</li>
+</ol>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
 <pre class="mermaid">flowchart LR
     subgraph Triggers
@@ -639,7 +865,7 @@
 </tr>
 <tr>
 <td><strong>CloudTrail</strong></td>
-<td>Enabled with data events on the eligibility-match table and on the audit S3 buckets. API Gateway and Lambda invocations logged. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy.</td>
+<td>Enabled with data events on the eligibility-match table and on the audit S3 buckets. API Gateway and Lambda invocations logged. CloudTrail logs encrypted with KMS and retained per the records-retention floor (the longer of 7 years HIPAA minimum, 10 years Medicare where applicable, the institution's documented policy, and any state-specific Medicaid requirement). Audit logs stored in a dedicated S3 bucket with Object Lock in Compliance mode; lifecycle policy transitions to Glacier Deep Archive after 90 days. CloudTrail data events forwarded to a dedicated audit AWS account in the institution's organization, isolating the audit substrate from the production data plane.</td>
 </tr>
 <tr>
 <td><strong>Clearinghouse Selection</strong></td>
@@ -651,7 +877,7 @@
 </tr>
 <tr>
 <td><strong>Cost Estimate</strong></td>
-<td>At a medium-sized health system with ~50,000 monthly registrations and corresponding scheduled-pre-warm volume (~150,000 eligibility verifications per month total): clearinghouse transaction fees roughly $0.05-0.25 per real-time 270/271 transaction depending on volume tier, batch transactions $0.005-0.02 per record. Monthly clearinghouse cost ~$2,000-$15,000. AWS infrastructure: SQS, Lambda, DynamoDB, ElastiCache, S3, EventBridge, API Gateway, Athena, QuickSight, KMS combined typically $1,000-3,500/month at this volume, dominated by ElastiCache (a small Redis cluster runs $200-600/month) and Lambda (volume-driven). Estimated total: $3,000-18,500/month, dominated by clearinghouse fees.</td>
+<td>At a medium-sized health system with ~50,000 monthly registrations and corresponding scheduled-pre-warm volume (~150,000 eligibility verifications per month total): clearinghouse transaction fees roughly $0.05-0.25 per real-time 270/271 transaction depending on volume tier, batch transactions $0.005-0.02 per record. Monthly clearinghouse cost ~$2,000-$15,000. AWS infrastructure: SQS, Lambda, DynamoDB, ElastiCache, S3, EventBridge, API Gateway, Athena, QuickSight, KMS combined typically $1,500-4,000/month at this volume, dominated by ElastiCache (<code>cache.r6g.large</code> with replicas runs $400-800/month) and Lambda (volume-driven). Estimated total: $3,500-19,000/month, dominated by clearinghouse fees.</td>
 </tr>
 </tbody>
 </table>
@@ -678,7 +904,7 @@
 </tr>
 <tr>
 <td><strong>Amazon SQS</strong></td>
-<td>Buffers real-time and pre-warm inquiry workloads on separate queues so pre-warm cannot starve real-time</td>
+<td>Buffers real-time and pre-warm inquiry workloads on separate Standard queues so pre-warm cannot starve real-time; idempotency at inquiry hash via DynamoDB conditional writes</td>
 </tr>
 <tr>
 <td><strong>AWS Lambda</strong></td>
@@ -781,38 +1007,24 @@
         inquiry.service_date,
         sorted(inquiry.service_type_codes)))
 
-    // Route to the right SQS queue by priority. The real-time
-    // queue has aggressive retry and short visibility timeout;
-    // the standard queue has gentler settings.
+    // Route to the right SQS Standard queue by priority.
+    // SQS Standard (not FIFO) because subscriber and dependent
+    // inquiries are independently resolvable, and a per-payer
+    // FIFO MessageGroupId would serialize a horizontally-
+    // scalable workload through a bottleneck that cannot meet
+    // the latency budget during concentrated morning-registration
+    // load from national payers. Idempotency is enforced at
+    // the inquiry_hash: the persist_eligibility_match function
+    // uses a DynamoDB conditional write on (patient_id, payer_id,
+    // service_date, inquiry_hash) so duplicate deliveries from
+    // SQS Standard&#x27;s at-least-once semantics produce no
+    // duplicate work or duplicate clearinghouse charges.
     queue_url = select_queue(inquiry.priority)
     SQS.SendMessage(queue_url, inquiry,
-        MessageDeduplicationId=inquiry.inquiry_hash,
-        MessageGroupId=inquiry.payer_id)
-            // FIFO MessageGroupId per payer ensures inquiries
-            // for the same payer process in order, which matters
-            // for correctly handling subscriber-then-dependent
-            // sequenced inquiries.
-            // TODO (TechWriter): Expert review A3 (HIGH). The
-            // FIFO-with-MessageGroupId-per-payer pattern serializes
-            // a horizontally-scalable workload through a per-payer
-            // bottleneck (SQS FIFO is bounded at 300 msg/sec per
-            // MessageGroupId, 3000/sec with batching and high-
-            // throughput mode). At a medium-volume institution
-            // doing 150K verifications/month, a single national
-            // payer (Aetna, Cigna, UnitedHealth) commonly produces
-            // concentrated morning-registration load that cannot
-            // fit the latency budget through one MessageGroupId.
-            // The stated rationale (subscriber-then-dependent
-            // ordering) is also incorrect; subscriber and
-            // dependent inquiries are independently resolvable.
-            // Switch to SQS Standard with idempotency at the
-            // inquiry hash, or use a finer-grained MessageGroupId
-            // (per (payer_id, subscriber_id) for the rare cases
-            // that genuinely need ordering, or per inquiry_hash
-            // for parallelism with idempotent delivery).
-            // Reference 5.1 / 5.2 / 5.3 chapter pattern (those
-            // recipes use SQS Standard or Step Functions, not
-            // FIFO with payer-grouping).
+        MessageAttributes={
+            &quot;inquiry_hash&quot;: inquiry.inquiry_hash,
+            &quot;payer_id&quot;: inquiry.payer_id
+        })
 
     RETURN inquiry
 </code></pre>
@@ -1126,21 +1338,23 @@
              payer_payer_service_date_sort:
                 &quot;{payer_id}#{service_date}&quot;})
 
-    // TODO (TechWriter): Expert review A1 (HIGH). Wrap the
-    // DynamoDB write, the cache write, the S3 archive, and the
-    // EventBridge emit in a TransactWriteItems plus an outbox
-    // row drained by a separate Lambda or DynamoDB Streams
-    // consumer so partial failures do not leave the eligibility
-    // store out of sync with downstream consumers. Regulatory
-    // consequence here is sharper than 5.1/5.2/5.3 because the
-    // eligibility outcome directly drives revenue-cycle (claim
-    // submission with wrong coverage = denial), charity-care
-    // (false-negative coverage = wrongful denial of eligibility),
-    // and patient financial responsibility (point-of-service
-    // collection). Same chapter pattern as 5.1 / 5.2 / 5.3
-    // Finding A1.
-
-    // Step 5B: write the current match outcome.
+    // Step 5B: write the current match outcome using a
+    // transactional-outbox pattern. A DynamoDB TransactWriteItems
+    // call atomically writes the match-outcome item AND an outbox
+    // row in the same table (partition key &quot;OUTBOX#&lt;inquiry_id&gt;&quot;).
+    // A DynamoDB Streams consumer drains the outbox: it writes
+    // the S3 audit archive, sets the Redis cache, and emits the
+    // EventBridge event. If any downstream step fails, the outbox
+    // row remains; a periodic reconciler retries un-drained rows.
+    // This prevents partial failures from leaving the eligibility
+    // store out of sync with downstream consumers. The regulatory
+    // consequence is sharp: the eligibility outcome directly
+    // drives revenue-cycle (claim submission with wrong coverage
+    // produces a denial), charity-care (false-negative coverage
+    // produces wrongful denial of financial assistance), and
+    // patient financial responsibility (point-of-service
+    // collection based on stale data). Same chapter pattern as
+    // recipes 5.1, 5.2, 5.3.
     item = {
         patient_id: inquiry.patient_id,
         payer_payer_service_date_sort:
@@ -1506,13 +1720,13 @@
 <p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
 <p><strong>Clearinghouse selection and trading-partner agreements.</strong> The clearinghouse is a major operational dependency. Run a real procurement: short-list two or three CAQH CORE Phase II-compliant clearinghouses with healthcare references at similar volume, run a proof-of-concept against synthetic and a small slice of real PHI under a temporary BAA, evaluate transaction success rate and latency across the institution's payer mix, evaluate the clearinghouse's ability to support FHIR-based eligibility for payers offering it, and pick on the combination of payer coverage breadth, transaction quality, BAA terms, and pricing rather than on pricing alone. Trading-partner agreements with each clearinghouse and each direct-payer connection define the operational contract; treat the agreements as part of the architecture, not as an afterthought.</p>
 <p><strong>Per-payer configuration and the gold-set discipline.</strong> Each payer's normalization rules, response interpretation rules, and connectivity quirks live in a configuration table. The configuration is not stable; it gets refined as operational experience accumulates and as the payers update their systems. Build a gold-set of labeled inquiry-response pairs per payer, evaluate the matcher's accuracy against the gold set on a periodic cadence (monthly to quarterly), and update the configuration when accuracy drifts. The gold-set construction is a significant ongoing operational discipline; budget for it.</p>
-<p><strong>Threshold calibration and approval governance.</strong> The auto-accept and auto-reject thresholds are calibrated against the gold set. Re-calibration runs annually or on detection of cohort-stratified disparity above the institutional threshold, whichever first. Re-calibration produces a candidate threshold set; institutional review (revenue-cycle leadership, compliance, equity-monitoring committee) reviews the confusion matrix and the cohort-disparity impact before promoting the candidate to production. Each match outcome records the configuration version and threshold values active at the time of the match. Change without governance is the failure mode that produces silent regressions in both accuracy and equity.</p>
+<p><strong>Threshold calibration and approval governance.</strong> The auto-accept and auto-reject thresholds are calibrated against the gold set. The full governance process (annual re-calibration, institutional review, versioned configuration) is documented in the Operational Specifications section above. In production, the first calibration pass requires a labeled gold set of at least 500 inquiry-response pairs spanning the institution's cohort distribution; plan 2-4 weeks for gold-set construction before the first threshold can be set with confidence.</p>
 <p><strong>Review queue tooling.</strong> The matcher's value depends on the review queue's quality. Reviewers need a workflow tool that surfaces the inquiry, the candidate(s), the score breakdown, the supporting demographic context, and the decision options (accept the match, reject the match, escalate, request additional information from the patient). The tool emits the reviewer's decision back into the matcher's training signal for periodic threshold re-calibration. Build the review tool with attention: it is the system that the operational staff will spend hours per day in, and a clunky tool produces clunky decisions.</p>
 <p><strong>Coordination of benefits logic.</strong> The recipe handles identity match and basic coverage status; full COB resolution is a separate, payer-specific module. The institution's COB rules apply state-specific Medicaid/Medicare hierarchies, the &quot;birthday rule&quot; for pediatric coverage, the order of liability for liability-and-workers-comp cases, and the institution's contractual rules. The COB module reads the multiple match outcomes for the same patient/service-date and produces a primary-secondary-tertiary determination that the revenue-cycle workflow consumes.</p>
 <p><strong>Network status integration.</strong> The matcher returns the payer's network indicator from the 271 response, but the institution may have its own provider-network table that supplements (or contradicts) the payer's. A patient seen by a provider who is contracted directly through the institution's value-based-care arrangement may be in-network in the institution's records and out-of-network in the payer's. The integration layer reconciles the two and surfaces conflicts to revenue cycle.</p>
 <p><strong>Patient-facing eligibility view in the portal.</strong> The patient portal benefits from a &quot;what is my coverage right now&quot; view backed by the same eligibility-match store. The portal call goes through the API Gateway with the patient-id-from-Cognito-token validated against the request, returns the parsed coverage and financial-responsibility state, and surfaces any &quot;verification pending&quot; status when the cache is stale. This is downstream of the matcher but a high-value patient-experience win.</p>
-<p><strong>Initial backfill operation.</strong> A one-time pass over the existing patient population at launch, populating the cache with eligibility for all upcoming appointments. Considerations: (a) negotiate a one-time bulk pricing tier with the clearinghouse (typical batch transaction pricing is 5-10x cheaper than real-time); (b) run the backfill as a Glue job with controlled concurrency to stay below the clearinghouse's rate limit; (c) suppress the eligibility-resolved event emission during backfill (downstream consumers refresh from a single backfill_complete marker rather than 100K individual events); (d) emit one eligibility_backfill_complete event when done with the cohort-stratified accuracy report attached. Plan the backfill timeline in coordination with downstream consumers (PMS, revenue cycle, charity care) so the change in eligibility-data quality lands in their workflows on a known date.</p>
-<p><strong>Idempotency and retry semantics.</strong> The pipeline must handle duplicate-event delivery without producing duplicate work, duplicate clearinghouse charges, or inconsistent state. Use the inquiry hash as the idempotency key for inquiry submission. Use <code>(patient_id, payer_id, service_date)</code> as the idempotency key for persistence. Use Lambda invocations idempotent at these keys; configure DLQs on every Lambda path; Step Functions Catch states route terminal failures to the DLQ so stuck workflows are visible.</p>
+<p><strong>Initial backfill operation.</strong> A one-time pass over the existing patient population at launch, populating the cache with eligibility for all upcoming appointments. The full backfill discipline (bulk pricing, controlled concurrency, event suppression, completion marker) is documented in the Operational Specifications section above. In production, coordinate the backfill timeline with downstream consumers 2-4 weeks in advance so the change in eligibility-data quality lands in their workflows on a known date.</p>
+<p><strong>Idempotency and retry semantics.</strong> The pipeline handles duplicate-event delivery without producing duplicate work, duplicate clearinghouse charges, or inconsistent state. The per-stage idempotency keys are documented in the Operational Specifications section above. In production, verify that each Lambda's conditional writes correctly reject duplicates under concurrent execution, and that the DLQ drain process does not re-introduce duplicates when retrying failed items.</p>
 <p><strong>Clearinghouse cost monitoring.</strong> Clearinghouse transaction fees are the dominant cost. Tag every inquiry with the workflow that originated it (registration, pre-warm, batch, charity-care, refresh). Aggregate the inquiries per workflow per month. Detect cost anomalies (a runaway pre-warm job, a cache-invalidation storm forcing re-inquiries, a configuration change that increases the percentage of search-match inquiries). Alert on cost thresholds. The clearinghouse cost can spiral fast if a downstream system starts looping.</p>
 <p><strong>Compliance and operational ownership.</strong> Eligibility matching sits at the intersection of revenue cycle, registration, compliance, and IT. Establish clear operational ownership: who tunes the thresholds, who reviews the cohort-disparity reports, who handles the per-payer config updates, who responds to clearinghouse incidents, who owns the relationship with each direct-payer connection. The matcher works only when the operational ownership is clear and funded.</p>
 <hr />

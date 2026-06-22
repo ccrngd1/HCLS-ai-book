@@ -531,7 +531,8 @@
 <hr />
 <h2 id="configuration-and-constants">Configuration and Constants</h2>
 <p>Everything that's configuration rather than logic lives here. The two knowledge base IDs, the model choice, and the S3 bucket names are the knobs you'll change most often between environments.</p>
-<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
@@ -648,8 +649,48 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated case_id (a UUID string).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Idempotency check: duplicate PA submissions happen (EHR retries on</span>
+    <span class="c1"># perceived timeout, user double-click, duplicate HL7 ADT events).</span>
+    <span class="c1"># Derive a deterministic fingerprint from the request&#39;s natural key</span>
+    <span class="c1"># and use a conditional write to prevent duplicate pipeline runs.</span>
+    <span class="n">fingerprint_input</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="n">request</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+        <span class="n">request</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">],</span>
+        <span class="n">request</span><span class="p">[</span><span class="s2">&quot;service_code&quot;</span><span class="p">],</span>
+        <span class="n">request</span><span class="p">[</span><span class="s2">&quot;diagnosis_code&quot;</span><span class="p">],</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;order_datetime&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">])</span>
+    <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">fingerprint_input</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+    <span class="n">fingerprint_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="s2">&quot;pa-request-fingerprints&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">fingerprint_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+            <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;fingerprint&quot;</span><span class="p">:</span> <span class="n">fingerprint</span><span class="p">,</span>
+                <span class="s2">&quot;case_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pending&quot;</span><span class="p">,</span>  <span class="c1"># placeholder until we have the real case_id</span>
+                <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="p">},</span>
+            <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;attribute_not_exists(fingerprint)&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConditionalCheckFailedException</span><span class="p">:</span>
+        <span class="c1"># This exact request already exists. Return the existing case_id.</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="n">fingerprint_table</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fingerprint&quot;</span><span class="p">:</span> <span class="n">fingerprint</span><span class="p">})</span>
+        <span class="n">existing_case_id</span> <span class="o">=</span> <span class="n">existing</span><span class="p">[</span><span class="s2">&quot;Item&quot;</span><span class="p">][</span><span class="s2">&quot;case_id&quot;</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Duplicate PA request detected (fingerprint=</span><span class="si">%s</span><span class="s2">). Returning existing case_id=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">fingerprint</span><span class="p">[:</span><span class="mi">12</span><span class="p">],</span> <span class="n">existing_case_id</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">existing_case_id</span>
+
     <span class="n">case_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
     <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+    <span class="c1"># Update the fingerprint record with the real case_id</span>
+    <span class="n">fingerprint_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+        <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fingerprint&quot;</span><span class="p">:</span> <span class="n">fingerprint</span><span class="p">},</span>
+        <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET case_id = :cid&quot;</span><span class="p">,</span>
+        <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:cid&quot;</span><span class="p">:</span> <span class="n">case_id</span><span class="p">},</span>
+    <span class="p">)</span>
 
     <span class="c1"># Expedited cases have tighter deadlines under most payer contracts</span>
     <span class="c1"># (24-48 hours vs. 72 hours for standard). CMS-0057-F tightens this</span>
@@ -1724,9 +1765,9 @@
 <p><strong>Submission automation.</strong> The example ends at a validated draft. Actual submission to the payer varies: PDF portal upload (most common), fax (shockingly still common), HL7 DaVinci PAS for payers that support FHIR-based PA, or email with attachments for small payers. Build the PDF-over-portal path first since it works for virtually every payer, then add FHIR PAS for the handful of early adopters. Submission status tracking feeds back into the case record so the ops team knows what's approved, denied, or pending.</p>
 <p><strong>Attestation and provider accountability.</strong> Every letter is submitted under a physician's name and license. They are legally responsible for its contents. The review step is load-bearing. Design the UI to make the review meaningful (surface the claims and sources) without being unusable (don't force re-reading every word). Track who signed which letter, when, and what (if anything) they edited. Audit trails matter when a payer disputes a submission.</p>
 <p><strong>Denial rate measurement.</strong> The metric that matters is not &quot;letter quality&quot; (subjective) but payer approval rate. Track approval rate for AI-generated letters vs. hand-composed letters for the same service and payer combination. If generated letters get denied more, something is wrong with your criteria extraction, your fact mapping, or your prose. If they get approved at the same rate, you've saved time. If they get approved at a higher rate, your structured criteria mapping is outperforming unstructured human writing. All three outcomes happen, and you need the measurement to know which one you're in.</p>
-<p><strong>VPC, encryption, and audit.</strong> This example makes API calls without VPC configuration. A production Lambda runs in private subnets with VPC endpoints for S3, Bedrock Runtime, Bedrock Agent Runtime (yes, both endpoints), DynamoDB, Step Functions, and CloudWatch Logs. S3 buckets use SSE-KMS with customer-managed keys. DynamoDB uses a CMK for encryption at rest. Every Bedrock invocation and every KB retrieval gets logged to CloudTrail with data events enabled, because an audit will eventually ask &quot;what did the model see for case X?&quot; and you need to answer that definitively. Key lifecycle policies and rotation belong in your security design from day one, not retrofitted.</p>
+<p><strong>VPC, encryption, and audit.</strong> This example makes API calls without VPC configuration. A production Lambda runs in private subnets with VPC endpoints for S3, Bedrock Runtime, Bedrock Agent Runtime (yes, both endpoints), KMS, Textract, HealthLake, CloudWatch Logs, CloudWatch Monitoring, Secrets Manager, Step Functions, and DynamoDB. S3 buckets use SSE-KMS with customer-managed keys. DynamoDB uses a CMK for encryption at rest. If Bedrock model-invocation-logging is enabled (recommended for quality monitoring), the log destination must be KMS-encrypted and access-controlled equivalently to your primary PHI stores, since logged prompts contain extracted clinical facts. Every Bedrock invocation and every KB retrieval gets logged to CloudTrail with data events enabled, because an audit will eventually ask &quot;what did the model see for case X?&quot; and you need to answer that definitively. Key lifecycle policies and rotation belong in your security design from day one, not retrofitted.</p>
 <p><strong>Testing with synthetic cases.</strong> There are no tests here. A production pipeline has: unit tests for validation logic (hallucination detection must be reliable), integration tests with synthetic patient cases covering your top 20 services by volume, regression tests ensuring known-good policies still produce correct criteria extractions after prompt changes, and load tests validating throughput against realistic burst patterns (mornings, end-of-clinic). Generate synthetic patient records using tools like Synthea so the test corpus never contains real PHI.</p>
-<p><strong>Cost monitoring.</strong> At ~$0.10-0.30 per letter and a mid-sized practice processing 600 letters per week, you're looking at $60-180/week in direct model costs. Not huge, but enough to want visibility. Set CloudWatch billing alarms on Bedrock usage, track cost per case in the DynamoDB record, and watch for runaway loops (validation failing, triggering regeneration, triggering validation failing) that multiply the cost per case. One buggy prompt can 10x your costs overnight if you're not watching.</p>
+<p><strong>Cost monitoring.</strong> At ~$1.50-2.50 per letter (22+ Bedrock calls for a typical 10-criterion PA) and a mid-sized practice processing 600 letters per week, you're looking at $900-1,500/week in direct model costs. Meaningful enough to want visibility. Set CloudWatch billing alarms on Bedrock usage, track cost per case in the DynamoDB record, and watch for runaway loops (validation failing, triggering regeneration, triggering validation failing) that multiply the cost per case. One buggy prompt can 10x your costs overnight if you're not watching.</p>
 <hr />
 <p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter02.04-prior-auth-letter-generation.html">Recipe 2.4: Prior Authorization Letter Generation</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
 

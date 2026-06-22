@@ -976,6 +976,7 @@
     <span class="n">appointment_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">scheduled_dates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">model_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+    <span class="n">pipeline_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write scored predictions to DynamoDB for downstream consumption.</span>
@@ -984,47 +985,65 @@
 <span class="sd">    probability, the risk tier, and metadata for auditability. The action</span>
 <span class="sd">    engine and scheduling UI both read from this table.</span>
 
+<span class="sd">    Uses a conditional write to avoid overwriting predictions that the action</span>
+<span class="sd">    engine has already acted upon. If acted_at exists on the record, the write</span>
+<span class="sd">    is skipped to preserve the audit trail.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        predictions: List of no-show probabilities (0.0 to 1.0).</span>
 <span class="sd">        appointment_ids: Corresponding appointment IDs.</span>
 <span class="sd">        scheduled_dates: Corresponding scheduled dates (ISO format strings).</span>
 <span class="sd">        model_version: Version string for the model that produced these scores.</span>
+<span class="sd">        pipeline_run_id: Unique ID for this scoring run (for audit traceability).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Number of predictions stored.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">PREDICTIONS_TABLE</span><span class="p">)</span>
     <span class="n">scored_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="n">run_id</span> <span class="o">=</span> <span class="n">pipeline_run_id</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;run-</span><span class="si">{</span><span class="n">scored_at</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">skipped</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c1"># Use batch_writer for efficient bulk writes.</span>
     <span class="c1"># DynamoDB batch_writer handles chunking into 25-item batches</span>
     <span class="c1"># and automatic retries for unprocessed items.</span>
-    <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">()</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">appt_id</span><span class="p">,</span> <span class="n">probability</span><span class="p">,</span> <span class="n">sched_date</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="n">appointment_ids</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">scheduled_dates</span>
-        <span class="p">):</span>
-            <span class="n">risk_tier</span> <span class="o">=</span> <span class="n">classify_risk</span><span class="p">(</span><span class="n">probability</span><span class="p">)</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: batch_writer does NOT support ConditionExpression. For the</span>
+    <span class="c1"># conditional write (skip if acted_at exists), we fall back to</span>
+    <span class="c1"># individual put_item calls. In production with high volume, consider</span>
+    <span class="c1"># batching the non-conditional writes and only using put_item for</span>
+    <span class="c1"># records that might have been acted upon (query first).</span>
+    <span class="k">for</span> <span class="n">appt_id</span><span class="p">,</span> <span class="n">probability</span><span class="p">,</span> <span class="n">sched_date</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">appointment_ids</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">scheduled_dates</span>
+    <span class="p">):</span>
+        <span class="n">risk_tier</span> <span class="o">=</span> <span class="n">classify_risk</span><span class="p">(</span><span class="n">probability</span><span class="p">)</span>
 
-            <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;appointment_id&quot;</span><span class="p">:</span> <span class="n">appt_id</span><span class="p">,</span>
-                <span class="s2">&quot;scheduled_date&quot;</span><span class="p">:</span> <span class="n">sched_date</span><span class="p">,</span>
-                <span class="c1"># DynamoDB does not accept Python floats. Wrap in Decimal.</span>
-                <span class="c1"># str() first to avoid floating-point representation artifacts.</span>
-                <span class="s2">&quot;no_show_probability&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">probability</span><span class="p">,</span> <span class="mi">4</span><span class="p">))),</span>
-                <span class="s2">&quot;risk_tier&quot;</span><span class="p">:</span> <span class="n">risk_tier</span><span class="p">,</span>
-                <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="n">model_version</span><span class="p">,</span>
-                <span class="s2">&quot;scored_at&quot;</span><span class="p">:</span> <span class="n">scored_at</span><span class="p">,</span>
-                <span class="c1"># The main recipe also stores top contributing features (features_used)</span>
-                <span class="c1"># for explainability. Computing per-prediction feature importance</span>
-                <span class="c1"># requires SHAP values, which adds complexity beyond this example.</span>
-                <span class="c1"># See SageMaker Clarify for production feature attribution.</span>
-            <span class="p">}</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;appointment_id&quot;</span><span class="p">:</span> <span class="n">appt_id</span><span class="p">,</span>
+            <span class="s2">&quot;scheduled_date&quot;</span><span class="p">:</span> <span class="n">sched_date</span><span class="p">,</span>
+            <span class="s2">&quot;no_show_probability&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">probability</span><span class="p">,</span> <span class="mi">4</span><span class="p">))),</span>
+            <span class="s2">&quot;risk_tier&quot;</span><span class="p">:</span> <span class="n">risk_tier</span><span class="p">,</span>
+            <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="n">model_version</span><span class="p">,</span>
+            <span class="s2">&quot;pipeline_run_id&quot;</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span>
+            <span class="s2">&quot;scored_at&quot;</span><span class="p">:</span> <span class="n">scored_at</span><span class="p">,</span>
+        <span class="p">}</span>
 
-            <span class="n">batch</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+                <span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span>
+                <span class="c1"># Do not overwrite if the action engine already acted on this record.</span>
+                <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;attribute_not_exists(acted_at)&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="n">table</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConditionalCheckFailedException</span><span class="p">:</span>
+            <span class="c1"># Record was already acted upon. Skip it.</span>
+            <span class="n">skipped</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stored </span><span class="si">%d</span><span class="s2"> predictions in DynamoDB&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Stored </span><span class="si">%d</span><span class="s2"> predictions in DynamoDB (</span><span class="si">%d</span><span class="s2"> skipped, already acted upon)&quot;</span><span class="p">,</span>
+        <span class="n">count</span><span class="p">,</span> <span class="n">skipped</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">count</span>
 </pre></div>
 
@@ -1143,6 +1162,97 @@
         <span class="n">actions_taken</span><span class="p">[</span><span class="s2">&quot;medium_risk_interventions&quot;</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">actions_taken</span>
+</pre></div>
+
+<hr />
+<h2 id="step-7-ground-truth-collection-and-model-monitoring">Step 7: Ground Truth Collection and Model Monitoring</h2>
+<p><em>The architecture companion's Step 6 describes collecting actual outcomes after appointments occur, computing rolling AUC, and triggering retraining when performance degrades. Here's the Lambda logic that closes that feedback loop.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">collect_ground_truth</span><span class="p">(</span><span class="n">target_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actuals</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Join predictions with actual outcomes and compute model performance metrics.</span>
+
+<span class="sd">    Runs nightly (triggered by EventBridge), one day after the appointment date.</span>
+<span class="sd">    Compares what the model predicted against what actually happened, computes</span>
+<span class="sd">    rolling AUC, and publishes metrics to CloudWatch.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        target_date: ISO date string for the appointment date to evaluate</span>
+<span class="sd">            (typically yesterday).</span>
+<span class="sd">        actuals: List of dicts with appointment_id and actual_status</span>
+<span class="sd">            (&quot;completed&quot; or &quot;no_show&quot;) from the scheduling system.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with daily_auc, prediction_count, and retrain_triggered flag.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">roc_auc_score</span><span class="p">,</span> <span class="n">brier_score_loss</span>
+
+    <span class="n">cloudwatch</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;cloudwatch&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+    <span class="c1"># Query all predictions for appointments on target_date.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">PREDICTIONS_TABLE</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+        <span class="n">IndexName</span><span class="o">=</span><span class="s2">&quot;scheduled-date-index&quot;</span><span class="p">,</span>
+        <span class="n">KeyConditionExpression</span><span class="o">=</span><span class="n">Key</span><span class="p">(</span><span class="s2">&quot;scheduled_date&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">target_date</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">item</span><span class="p">[</span><span class="s2">&quot;appointment_id&quot;</span><span class="p">]:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;no_show_probability&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Join predictions with actuals.</span>
+    <span class="n">y_true</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">y_scores</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">actual</span> <span class="ow">in</span> <span class="n">actuals</span><span class="p">:</span>
+        <span class="n">appt_id</span> <span class="o">=</span> <span class="n">actual</span><span class="p">[</span><span class="s2">&quot;appointment_id&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">appt_id</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">:</span>
+            <span class="n">y_true</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">actual</span><span class="p">[</span><span class="s2">&quot;actual_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;no_show&quot;</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">y_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictions</span><span class="p">[</span><span class="n">appt_id</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Only </span><span class="si">%d</span><span class="s2"> joined records for </span><span class="si">%s</span><span class="s2">; skipping metric computation.&quot;</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">),</span> <span class="n">target_date</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;daily_auc&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;prediction_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">),</span> <span class="s2">&quot;retrain_triggered&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+
+    <span class="n">daily_auc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_scores</span><span class="p">)</span>
+    <span class="n">daily_brier</span> <span class="o">=</span> <span class="n">brier_score_loss</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_scores</span><span class="p">)</span>
+
+    <span class="c1"># Publish to CloudWatch.</span>
+    <span class="n">cloudwatch</span><span class="o">.</span><span class="n">put_metric_data</span><span class="p">(</span>
+        <span class="n">Namespace</span><span class="o">=</span><span class="s2">&quot;NoShowModel&quot;</span><span class="p">,</span>
+        <span class="n">MetricData</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;DailyAUC&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">daily_auc</span><span class="p">,</span> <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;DailyBrierScore&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">daily_brier</span><span class="p">,</span> <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;PredictionCount&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">),</span> <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;Count&quot;</span><span class="p">},</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Ground truth for </span><span class="si">%s</span><span class="s2">: AUC=</span><span class="si">%.3f</span><span class="s2">, Brier=</span><span class="si">%.4f</span><span class="s2">, n=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">target_date</span><span class="p">,</span> <span class="n">daily_auc</span><span class="p">,</span> <span class="n">daily_brier</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Check if retraining is needed.</span>
+    <span class="c1"># In production, compute a 30-day rolling AUC from CloudWatch metrics</span>
+    <span class="c1"># rather than a single-day value (too noisy). Here we demonstrate the</span>
+    <span class="c1"># threshold check against the daily value for simplicity.</span>
+    <span class="n">AUC_RETRAIN_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.72</span>
+    <span class="n">retrain_triggered</span> <span class="o">=</span> <span class="n">daily_auc</span> <span class="o">&lt;</span> <span class="n">AUC_RETRAIN_THRESHOLD</span>
+
+    <span class="k">if</span> <span class="n">retrain_triggered</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;AUC </span><span class="si">%.3f</span><span class="s2"> below threshold </span><span class="si">%.2f</span><span class="s2">. Retraining should be triggered.&quot;</span><span class="p">,</span>
+            <span class="n">daily_auc</span><span class="p">,</span> <span class="n">AUC_RETRAIN_THRESHOLD</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># In production: publish to an EventBridge event or SNS topic</span>
+        <span class="c1"># that triggers the retraining pipeline.</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;daily_auc&quot;</span><span class="p">:</span> <span class="n">daily_auc</span><span class="p">,</span>
+        <span class="s2">&quot;prediction_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">),</span>
+        <span class="s2">&quot;retrain_triggered&quot;</span><span class="p">:</span> <span class="n">retrain_triggered</span><span class="p">,</span>
+    <span class="p">}</span>
 </pre></div>
 
 <hr />

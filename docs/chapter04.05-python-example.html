@@ -3032,11 +3032,13 @@
             <span class="n">profile_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
                 <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">},</span>
                 <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;ADD outreach_recent_30d_count :neg&quot;</span><span class="p">,</span>
-                <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:neg&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;-1&quot;</span><span class="p">)},</span>
+                <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;:neg&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;-1&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;:zero&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+                <span class="p">},</span>
                 <span class="c1"># Only decrement if the counter is positive; never go</span>
                 <span class="c1"># below zero (would suggest a bug elsewhere).</span>
                 <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;outreach_recent_30d_count &gt; :zero&quot;</span><span class="p">,</span>
-                <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{},</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>

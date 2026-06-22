@@ -680,9 +680,9 @@
 <span class="c1"># the final response generation.</span>
 <span class="c1">#</span>
 <span class="c1"># If your region requires cross-region inference, use the</span>
-<span class="c1"># inference profile ID. TODO: verify the exact model IDs</span>
-<span class="c1"># available in your region and account; Bedrock model</span>
-<span class="c1"># availability evolves over time.</span>
+<span class="c1"># inference profile ID. The model IDs below are illustrative;</span>
+<span class="c1"># verify exact model IDs available in your region and account</span>
+<span class="c1"># at build time since Bedrock model availability evolves.</span>
 <span class="n">INTENT_CLASSIFICATION_MODEL_ID</span>  <span class="o">=</span> <span class="s2">&quot;anthropic.claude-3-5-haiku-20241022-v1:0&quot;</span>
 <span class="n">ORCHESTRATION_MODEL_ID</span>          <span class="o">=</span> <span class="s2">&quot;anthropic.claude-3-5-sonnet-20241022-v2:0&quot;</span>
 
@@ -1574,17 +1574,14 @@
 
     <span class="k">if</span> <span class="p">(</span><span class="n">REQUIRE_AUTHENTICATED_FOR_MEMBER_SPECIFIC</span>
             <span class="ow">and</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;verified_member_id&quot;</span><span class="p">)):</span>
-        <span class="c1"># Authenticated members are required for member-specific</span>
-        <span class="c1"># questions. Unauthenticated members can still ask</span>
-        <span class="c1"># general questions; the intent-classification step</span>
-        <span class="c1"># handles that pathway.</span>
-        <span class="c1"># TODO (N1): This block is a no-op. The actual gating</span>
-        <span class="c1"># happens in _classify_and_route via the</span>
-        <span class="c1"># MEMBER_SPECIFIC_INTENTS check against</span>
-        <span class="c1"># verified_member_id. Either delete this block or</span>
-        <span class="c1"># convert it into an explicit early-return guard so</span>
-        <span class="c1"># readers do not see a dead conditional.</span>
-        <span class="k">pass</span>
+        <span class="c1"># Unauthenticated members cannot use member-specific</span>
+        <span class="c1"># tools. General questions still work; routing happens</span>
+        <span class="c1"># in _classify_and_route via MEMBER_SPECIFIC_INTENTS.</span>
+        <span class="c1"># This guard logs the unauthenticated access attempt</span>
+        <span class="c1"># for audit purposes but does not block here because</span>
+        <span class="c1"># the intent-classification step downstream will</span>
+        <span class="c1"># restrict which tool surfaces are available.</span>
+        <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;UnauthenticatedSessionAccess&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{})</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;verified_member_id&quot;</span><span class="p">)</span>
             <span class="ow">and</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;context_loaded&quot;</span><span class="p">)):</span>
@@ -2360,17 +2357,25 @@
     <span class="n">claim</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c1"># Step 6B: translate CARC/RARC for adjustments.</span>
-    <span class="c1"># TODO (N6): Wrap each carc_rarc_translation_tool call in</span>
-    <span class="c1"># _audit_tool_call so that the tool-call ledger captures the</span>
-    <span class="c1"># per-adjustment translation calls alongside claim_lookup.</span>
-    <span class="c1"># The recipe&#39;s sample audit record explicitly shows</span>
-    <span class="c1"># carc_rarc_translation in tool_calls_summary; the demo</span>
-    <span class="c1"># currently omits it.</span>
     <span class="n">code_translations</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">adj</span> <span class="ow">in</span> <span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;adjustments&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
         <span class="n">translation</span> <span class="o">=</span> <span class="n">carc_rarc_translation_tool</span><span class="p">(</span>
             <span class="n">carc_code</span><span class="o">=</span><span class="n">adj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;carc_code&quot;</span><span class="p">),</span>
             <span class="n">rarc_codes</span><span class="o">=</span><span class="n">adj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rarc_codes&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="n">latency</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">_audit_tool_call</span><span class="p">(</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+            <span class="n">tool</span><span class="o">=</span><span class="s2">&quot;carc_rarc_translation&quot;</span><span class="p">,</span>
+            <span class="n">arguments</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;carc_code&quot;</span><span class="p">:</span> <span class="n">adj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;carc_code&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;rarc_codes&quot;</span><span class="p">:</span> <span class="n">adj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rarc_codes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">},</span>
+            <span class="n">result_summary</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;translated&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">translation</span><span class="p">)},</span>
+            <span class="n">latency_ms</span><span class="o">=</span><span class="n">latency</span><span class="p">,</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="s2">&quot;success&quot;</span><span class="p">)</span>
         <span class="n">code_translations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">translation</span><span class="p">)</span>
 
     <span class="c1"># Step 6C: compose patient-friendly explanation.</span>
@@ -2981,27 +2986,60 @@
         <span class="n">citations</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">citations</span>
                       <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inconsistent</span><span class="p">]</span>
 
-    <span class="c1"># TODO (TechWriter): Code review W2 (WARNING). Add a</span>
-    <span class="c1"># regulatory-disclosure-presence verifier here that</span>
-    <span class="c1"># recomputes applicable disclosures via</span>
-    <span class="c1"># _applicable_disclosures and checks each required</span>
-    <span class="c1"># disclosure&#39;s phrasing is present in response_text;</span>
-    <span class="c1"># missing-disclosure case returns</span>
-    <span class="c1"># action=&quot;augment_with_disclosures&quot; with the missing</span>
-    <span class="c1"># phrasings appended. Today the disclosures are added</span>
-    <span class="c1"># inline in each handler before screening, which is a</span>
-    <span class="c1"># weaker guarantee than a screening-stage verifier.</span>
+    <span class="c1"># Step 8D: Regulatory-disclosure-presence verification.</span>
+    <span class="c1"># Recompute applicable disclosures and verify each required</span>
+    <span class="c1"># phrasing is present in the response text.</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">_session_state</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="n">applicable</span> <span class="o">=</span> <span class="n">_applicable_disclosures</span><span class="p">(</span>
+        <span class="n">intent</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_intent&quot;</span><span class="p">)},</span>
+        <span class="n">plan</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;plan_type&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plan_type&quot;</span><span class="p">),</span>
+              <span class="s2">&quot;line_of_business&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;line_of_business&quot;</span><span class="p">)},</span>
+        <span class="n">extra_context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;member_state&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;member_state&quot;</span><span class="p">)})</span>
+    <span class="n">missing_disclosures</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">applicable</span>
+        <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;phrasing&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="ow">not</span> <span class="ow">in</span> <span class="n">response_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing_disclosures</span><span class="p">:</span>
+        <span class="c1"># Append missing disclosures rather than blocking.</span>
+        <span class="n">disclosure_text</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;phrasing&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">missing_disclosures</span>
+            <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;phrasing&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">disclosure_text</span><span class="p">:</span>
+            <span class="n">response_text</span> <span class="o">=</span> <span class="p">(</span><span class="n">response_text</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+                             <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">disclosure_text</span><span class="p">)</span>
+            <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;DisclosureAugmented&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{</span>
+                <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_intent&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+            <span class="p">})</span>
 
-    <span class="c1"># TODO (TechWriter): Code review W3 (WARNING). Add a</span>
-    <span class="c1"># persona-and-tone check here corresponding to pseudocode</span>
-    <span class="c1"># Step 8F. Detect distress signals in the recent user</span>
-    <span class="c1"># message (financial distress, behavioral-health content,</span>
-    <span class="c1"># denial vocabulary) plus procedural tone in the response;</span>
-    <span class="c1"># return action=&quot;regenerate_with_persona_correction&quot; with</span>
-    <span class="c1"># empathetic-tone guidance when the two coincide. Even a</span>
-    <span class="c1"># keyword-based heuristic in the demo demonstrates the</span>
-    <span class="c1"># pattern; production uses an LLM-as-judge evaluator with</span>
-    <span class="c1"># structured-output schema validation.</span>
+    <span class="c1"># Step 8E: Persona-and-tone check for distress contexts.</span>
+    <span class="c1"># Detect distress signals in the recent user message</span>
+    <span class="c1"># (financial distress, behavioral-health content, denial</span>
+    <span class="c1"># vocabulary) and procedural tone in the response.</span>
+    <span class="n">distress_keywords</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;can&#39;t afford&quot;</span><span class="p">,</span> <span class="s2">&quot;cannot afford&quot;</span><span class="p">,</span> <span class="s2">&quot;no money&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;financial hardship&quot;</span><span class="p">,</span> <span class="s2">&quot;struggling to pay&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scared&quot;</span><span class="p">,</span> <span class="s2">&quot;anxious&quot;</span><span class="p">,</span> <span class="s2">&quot;depressed&quot;</span><span class="p">,</span> <span class="s2">&quot;suicidal&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">user_msg_lower</span> <span class="o">=</span> <span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;last_user_message&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">has_distress</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">kw</span> <span class="ow">in</span> <span class="n">user_msg_lower</span>
+                       <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">distress_keywords</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">has_distress</span><span class="p">:</span>
+        <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;DistressDetectedInScreening&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="c1"># In production, an LLM-as-judge evaluator checks</span>
+        <span class="c1"># whether the response has empathetic tone. Here we</span>
+        <span class="c1"># prepend a softening preamble if the response starts</span>
+        <span class="c1"># with procedural language.</span>
+        <span class="n">procedural_starts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;the claim&quot;</span><span class="p">,</span> <span class="s2">&quot;your claim&quot;</span><span class="p">,</span> <span class="s2">&quot;according to&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;the plan document&quot;</span><span class="p">,</span> <span class="s2">&quot;per the&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">response_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+               <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">procedural_starts</span><span class="p">):</span>
+            <span class="n">response_text</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;I understand this is stressful, and I want to &quot;</span>
+                <span class="s2">&quot;help you work through it. &quot;</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="n">response_text</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;action&quot;</span><span class="p">:</span>         <span class="s2">&quot;deliver&quot;</span><span class="p">,</span>
@@ -3755,18 +3793,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">KeyConditionExpression</span><span class="p">,</span>
               <span class="n">ScanIndexForward</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">Limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
               <span class="n">IndexName</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="c1"># TODO (TechWriter): Code review W1 (WARNING). The</span>
-        <span class="c1"># KeyConditionExpression&#39;s _values tuple is</span>
-        <span class="c1"># (Key(&quot;session_id&quot;), session_id_string); index [0] is</span>
-        <span class="c1"># the Key attribute object, not the string, so every</span>
-        <span class="c1"># range-query against conversation_metadata,</span>
-        <span class="c1"># tool-call-ledger, and decision-record tables silently</span>
-        <span class="c1"># returns an empty list. Fix: change the index to [1],</span>
-        <span class="c1"># or replace the private-attribute access with an</span>
-        <span class="c1"># explicit query_by_session_id(session_id, ...) helper</span>
-        <span class="c1"># that does not depend on boto3 internals. Carry-forward</span>
-        <span class="c1"># bug from 11.01 N2 through 11.02-11.04.</span>
-        <span class="n">sid</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">KeyConditionExpression</span><span class="o">.</span><span class="n">_values</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Extract the session ID from the key condition.</span>
+        <span class="c1"># The _values tuple is (Key(&quot;session_id&quot;), session_id_string);</span>
+        <span class="c1"># index [1] is the actual string value we want to match against.</span>
+        <span class="n">sid</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">KeyConditionExpression</span><span class="o">.</span><span class="n">_values</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">range_items</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sid</span><span class="p">,</span> <span class="p">[]))</span>
         <span class="n">items</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>

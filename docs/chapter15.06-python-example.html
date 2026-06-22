@@ -516,7 +516,7 @@
 <div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy
 </pre></div>
 
-<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs <code>sagemaker:InvokeEndpoint</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>, <code>dynamodb:Query</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, and <code>sagemaker:CreateTrainingJob</code>.</p>
+<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). For development, the IAM role or user needs <code>sagemaker:InvokeEndpoint</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>, <code>dynamodb:Query</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, and <code>sagemaker:CreateTrainingJob</code>. In production, split these across four purpose-scoped roles (see the architecture companion's IAM Role Separation section).</p>
 <hr />
 <h2 id="config-and-constants">Config and Constants</h2>
 <p>Before the logic, here's the configuration that defines the clinical domain. These constants encode medical knowledge about ICU glucose management: what glucose ranges are safe, how to score outcomes, and what actions are never acceptable. In a real system, these would be developed with intensivists and endocrinologists, validated against clinical guidelines, and reviewed by your institution's pharmacy and therapeutics committee.</p>
@@ -1210,20 +1210,28 @@
 <span class="n">sagemaker_runtime</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker-runtime&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
 <span class="n">state_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">DYNAMODB_TABLE</span><span class="p">)</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">fetch_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fetch_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the patient&#39;s recent glucose history and clinical state from DynamoDB.</span>
 
 <span class="sd">    The state table stores the last N readings and current clinical context</span>
 <span class="sd">    for each active ICU patient. Updated every time a new glucose reading arrives.</span>
 
+<span class="sd">    Returns None (not an empty dict) on failure so callers can distinguish</span>
+<span class="sd">    &quot;no data&quot; from &quot;service unavailable&quot; and fall back to standard protocol.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        patient_id: Unique patient identifier (e.g., &quot;ICU-2026-04821&quot;).</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict with recent glucose readings, insulin history, and clinical context.</span>
+<span class="sd">        Dict with recent glucose readings, insulin history, and clinical context,</span>
+<span class="sd">        or None if DynamoDB is unreachable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">state_table</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">})</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">state_table</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">})</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;DynamoDB get_item failed for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="s2">&quot;Item&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No state found for patient </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">)</span>
@@ -1291,26 +1299,33 @@
         <span class="p">}</span>
     <span class="p">)</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">get_policy_recommendation</span><span class="p">(</span><span class="n">state_vector</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_policy_recommendation</span><span class="p">(</span><span class="n">state_vector</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Call the SageMaker endpoint to get the RL policy&#39;s recommended dose.</span>
 
 <span class="sd">    The endpoint hosts the trained CQL model. It takes a state vector and</span>
 <span class="sd">    returns Q-values for each action, from which we pick the best.</span>
 
+<span class="sd">    Returns None if the endpoint is unavailable (timeout, 5xx, model error).</span>
+<span class="sd">    The caller should fall back to &quot;use standard protocol&quot; on None.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        state_vector: Normalized state array from construct_state_vector.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict with recommended_dose (units) and confidence score.</span>
+<span class="sd">        Dict with recommended_dose (units) and confidence score, or None on failure.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="n">state_vector</span><span class="o">.</span><span class="n">tolist</span><span class="p">()})</span>
 
-    <span class="n">response</span> <span class="o">=</span> <span class="n">sagemaker_runtime</span><span class="o">.</span><span class="n">invoke_endpoint</span><span class="p">(</span>
-        <span class="n">EndpointName</span><span class="o">=</span><span class="n">SAGEMAKER_ENDPOINT</span><span class="p">,</span>
-        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
-        <span class="n">Body</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">sagemaker_runtime</span><span class="o">.</span><span class="n">invoke_endpoint</span><span class="p">(</span>
+            <span class="n">EndpointName</span><span class="o">=</span><span class="n">SAGEMAKER_ENDPOINT</span><span class="p">,</span>
+            <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="n">Body</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;SageMaker endpoint invocation failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
 
@@ -1336,6 +1351,75 @@
 </pre></div>
 
 <hr />
+<h2 id="step-8-audit-trail-and-recommendation-storage">Step 8: Audit Trail and Recommendation Storage</h2>
+<p><em>Maps to the audit trail guidance in Step 6 of the architecture companion. The operational store (DynamoDB) serves real-time clinical reads. The immutable archive (S3 with Object Lock) serves compliance and post-hoc analysis. Both writes happen on every recommendation.</em></p>
+<div class="code"><pre><span></span><span class="c1"># S3 client for audit archive</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># Bucket must have Object Lock enabled at creation time (cannot be added later).</span>
+<span class="c1"># Configure a default retention of 7 years in COMPLIANCE mode.</span>
+<span class="n">AUDIT_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;glucose-rl-audit-archive&quot;</span>
+<span class="n">AUDIT_RETENTION_DAYS</span> <span class="o">=</span> <span class="mi">2555</span>  <span class="c1"># ~7 years</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">store_recommendation</span><span class="p">(</span><span class="n">recommendation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write recommendation to the operational DynamoDB table for real-time reads.</span>
+
+<span class="sd">    This table is queryable by patient_id and timestamp, enabling the clinical</span>
+<span class="sd">    UI to show recommendation history and the monitoring system to track outcomes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">recommendations_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="s2">&quot;glucose-rl-recommendations&quot;</span><span class="p">)</span>
+    <span class="n">recommendations_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+        <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;glucose_reading&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;glucose_reading&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;recommended_dose&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;recommended_dose&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;reasoning&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;reasoning&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;clinician_action&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;clinician_action&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">write_immutable_audit_record</span><span class="p">(</span><span class="n">recommendation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write a tamper-evident copy to S3 with Object Lock (COMPLIANCE mode).</span>
+
+<span class="sd">    Object Lock in COMPLIANCE mode means nobody (not even account root) can</span>
+<span class="sd">    delete or overwrite this object during the retention period. This satisfies</span>
+<span class="sd">    regulatory requirements for tamper-evident clinical decision audit trails.</span>
+
+<span class="sd">    The key structure is: recommendations/{patient_id}/{timestamp}.json</span>
+<span class="sd">    This makes it straightforward to retrieve all recommendations for a patient</span>
+<span class="sd">    during an audit or malpractice review.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;recommendations/</span><span class="si">{</span><span class="n">recommendation</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">recommendation</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.json&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+            <span class="n">Bucket</span><span class="o">=</span><span class="n">AUDIT_BUCKET</span><span class="p">,</span>
+            <span class="n">Key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+            <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">recommendation</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+            <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+            <span class="n">ObjectLockMode</span><span class="o">=</span><span class="s2">&quot;COMPLIANCE&quot;</span><span class="p">,</span>
+            <span class="n">ObjectLockRetainUntilDate</span><span class="o">=</span><span class="n">_retention_date</span><span class="p">(),</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c1"># Audit write failure is serious but should not block the recommendation</span>
+        <span class="c1"># from reaching the clinician. Log loudly and alarm on this metric.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;AUDIT WRITE FAILED for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_retention_date</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the retention-until date (7 years from now).&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">AUDIT_RETENTION_DAYS</span><span class="p">)</span>
+</pre></div>
+
+<hr />
 <h2 id="full-pipeline-generate-recommendation">Full Pipeline: Generate Recommendation</h2>
 <p>This assembles all the steps into a single callable function. In production, this would be the Lambda handler invoked when a new glucose reading arrives from the EHR integration.</p>
 <div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_insulin_recommendation</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -1349,7 +1433,12 @@
 <span class="sd">    3. Constructs the RL state vector</span>
 <span class="sd">    4. Gets the policy&#39;s recommendation</span>
 <span class="sd">    5. Applies safety constraints</span>
-<span class="sd">    6. Returns a recommendation for clinician review</span>
+<span class="sd">    6. Writes a tamper-evident audit record</span>
+<span class="sd">    7. Returns a recommendation for clinician review</span>
+
+<span class="sd">    If any critical step fails (state fetch, inference), the function returns</span>
+<span class="sd">    a FALLBACK response directing the clinician to use the standard sliding</span>
+<span class="sd">    scale protocol. Silent failures are never acceptable in clinical systems.</span>
 
 <span class="sd">    The clinician always has the final say. This is decision support, not</span>
 <span class="sd">    autonomous control.</span>
@@ -1360,20 +1449,32 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict with the recommendation, reasoning, and safety information.</span>
+<span class="sd">        On infrastructure failure, returns a FALLBACK dict instead.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GLUCOSE CONTROL RL: New reading for </span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Step 1: Fetch current patient state</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[1/5] Fetching patient state from DynamoDB...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[1/6] Fetching patient state from DynamoDB...&quot;</span><span class="p">)</span>
     <span class="n">patient_data</span> <span class="o">=</span> <span class="n">fetch_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">)</span>
+
+    <span class="c1"># None means DynamoDB was unreachable (not just &quot;no prior data&quot;)</span>
+    <span class="k">if</span> <span class="n">patient_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  ERROR: DynamoDB unreachable. Returning fallback.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;FALLBACK&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;System unavailable. Use standard sliding scale protocol.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient state store unreachable&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="n">patient_data</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  WARNING: No prior state found. Using defaults.&quot;</span><span class="p">)</span>
         <span class="n">patient_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;glucose_current&quot;</span><span class="p">:</span> <span class="n">new_glucose</span><span class="p">,</span> <span class="s2">&quot;previous_dose&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 
     <span class="c1"># Step 2: Update state with new reading</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[2/5] Updating state: new glucose = </span><span class="si">{</span><span class="n">new_glucose</span><span class="si">}</span><span class="s2"> mg/dL&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[2/6] Updating state: new glucose = </span><span class="si">{</span><span class="n">new_glucose</span><span class="si">}</span><span class="s2"> mg/dL&quot;</span><span class="p">)</span>
     <span class="n">update_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">,</span> <span class="n">patient_data</span><span class="p">)</span>
 
     <span class="c1"># Refresh patient_data with the new glucose as current</span>
@@ -1385,18 +1486,28 @@
     <span class="p">)</span>
 
     <span class="c1"># Step 3: Construct state vector</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[3/5] Constructing state vector...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[3/6] Constructing state vector...&quot;</span><span class="p">)</span>
     <span class="n">state_vector</span> <span class="o">=</span> <span class="n">construct_state_vector</span><span class="p">(</span><span class="n">patient_data</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  State vector (first 4 features): </span><span class="si">{</span><span class="n">state_vector</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Step 4: Get policy recommendation</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[4/5] Querying RL policy endpoint...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[4/6] Querying RL policy endpoint...&quot;</span><span class="p">)</span>
     <span class="n">policy_result</span> <span class="o">=</span> <span class="n">get_policy_recommendation</span><span class="p">(</span><span class="n">state_vector</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">policy_result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  ERROR: SageMaker endpoint unavailable. Returning fallback.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;FALLBACK&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;System unavailable. Use standard sliding scale protocol.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Policy inference endpoint unreachable&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
     <span class="n">raw_dose</span> <span class="o">=</span> <span class="n">policy_result</span><span class="p">[</span><span class="s2">&quot;recommended_dose&quot;</span><span class="p">]</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Raw recommendation: </span><span class="si">{</span><span class="n">raw_dose</span><span class="si">}</span><span class="s2"> units (confidence: </span><span class="si">{</span><span class="n">policy_result</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
     <span class="c1"># Step 5: Apply safety constraints</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[5/5] Applying safety constraints...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[5/6] Applying safety constraints...&quot;</span><span class="p">)</span>
     <span class="n">previous_dose</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;previous_dose&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
     <span class="n">safe_result</span> <span class="o">=</span> <span class="n">apply_safety_constraints</span><span class="p">(</span><span class="n">raw_dose</span><span class="p">,</span> <span class="n">patient_data</span><span class="p">,</span> <span class="n">previous_dose</span><span class="p">)</span>
 
@@ -1426,6 +1537,16 @@
         <span class="p">},</span>
         <span class="s2">&quot;clinician_action&quot;</span><span class="p">:</span> <span class="s2">&quot;PENDING&quot;</span><span class="p">,</span>
     <span class="p">}</span>
+
+    <span class="c1"># Store recommendation in operational store (DynamoDB) for real-time reads</span>
+    <span class="n">store_recommendation</span><span class="p">(</span><span class="n">recommendation</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Write tamper-evident audit record.</span>
+    <span class="c1"># The operational store serves the clinical workflow. This immutable archive</span>
+    <span class="c1"># serves compliance: S3 Object Lock in COMPLIANCE mode prevents anyone</span>
+    <span class="c1"># (including root) from deleting or overwriting the record during retention.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[6/6] Writing immutable audit record to S3...&quot;</span><span class="p">)</span>
+    <span class="n">write_immutable_audit_record</span><span class="p">(</span><span class="n">recommendation</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Recommendation packaged. Awaiting clinician decision.&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1492,11 +1613,21 @@
 <li>Error handling and retries for all AWS API calls (already partially shown)</li>
 <li>Input validation: reject malformed glucose readings, out-of-range values</li>
 <li>Structured JSON logging with correlation IDs (never log PHI values)</li>
-<li>IAM least-privilege: separate roles for training vs. inference vs. state management</li>
+<li>IAM least-privilege: separate roles for state construction, safety constraints, training pipeline, and monitoring (see architecture companion for the full role separation table)</li>
 <li>VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch</li>
 <li>KMS customer-managed keys for all PHI-containing resources</li>
 <li>DynamoDB point-in-time recovery and S3 versioning for audit trail</li>
-<li>Load testing: ensure the inference path completes within the clinical workflow timeout (&lt; 5 seconds)</li>
+<li>S3 Object Lock (COMPLIANCE mode) on the audit bucket for tamper-evident recommendation logs</li>
+<li>Load testing: ensure the inference path completes within the clinical workflow timeout (&lt; 3 seconds end-to-end)</li>
+</ul>
+<p><strong>De-identification for retraining:</strong></p>
+<ul>
+<li>Episode logs feeding into the retraining pipeline contain temporal glucose patterns that carry re-identification risk even after pseudonymization (a rare glucose trajectory can fingerprint a patient)</li>
+<li>Pseudonymization keys must live in a separate HSM/KMS key hierarchy from the training infrastructure</li>
+<li>IRB coverage must explicitly include the retraining protocol, not just the initial retrospective study</li>
+<li>Minimum cohort sizes per episode bin prevent rare-pattern re-identification</li>
+<li>Your compliance team needs to rule on whether derived features (glucose variability metrics, insulin sensitivity estimates) constitute PHI under HIPAA's Safe Harbor standard</li>
+<li>Expect this determination to take 2-4 months with institutional privacy counsel</li>
 </ul>
 <p><strong>The honest gap:</strong> This example is maybe 5% of a production system. The RL algorithm is the intellectually interesting part, but the data pipeline, safety validation, regulatory pathway, and clinician trust-building are what determine whether this ever helps a patient. Plan for 12-18 months from &quot;working prototype&quot; to &quot;shadow mode in one ICU.&quot;</p>
 <hr />

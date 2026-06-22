@@ -712,7 +712,7 @@
 <span class="c1"># engagement-message composition for routine check-ins.</span>
 <span class="c1">#</span>
 <span class="c1"># If your region requires cross-region inference, use the</span>
-<span class="c1"># inference profile ID. TODO: verify the exact model IDs</span>
+<span class="c1"># inference profile ID. Verify the exact model IDs</span>
 <span class="c1"># available in your region and account; Bedrock model</span>
 <span class="c1"># availability evolves over time.</span>
 <span class="n">SMALL_MODEL_ID</span>                   <span class="o">=</span> <span class="s2">&quot;anthropic.claude-3-5-haiku-20241022-v1:0&quot;</span>
@@ -2501,11 +2501,14 @@
         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>              <span class="n">_now_iso</span><span class="p">(),</span>
     <span class="p">}))</span>
 
-    <span class="k">return</span> <span class="n">handle_conversation</span><span class="p">(</span>
-        <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
-        <span class="n">user_message</span><span class="o">=</span><span class="n">user_message</span><span class="p">,</span>
-        <span class="n">longitudinal_context</span><span class="o">=</span><span class="n">longitudinal_context</span><span class="p">)</span>
+    <span class="c1"># Return the loaded context for the orchestrator.</span>
+    <span class="c1"># The orchestrator (coach_full_pipeline) calls</span>
+    <span class="c1"># handle_conversation exactly once with this context.</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;longitudinal_context&quot;</span><span class="p">:</span> <span class="n">longitudinal_context</span><span class="p">,</span>
+    <span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_or_create_session</span><span class="p">(</span><span class="n">state_table</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span>
                             <span class="n">channel_session_id</span><span class="p">,</span> <span class="n">auth_context</span><span class="p">):</span>

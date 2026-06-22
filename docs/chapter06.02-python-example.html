@@ -712,7 +712,7 @@
 
 <hr />
 <h2 id="step-2-feature-engineering-and-scaling">Step 2: Feature Engineering and Scaling</h2>
-<p><em>The pseudocode calls this <code>prepare_features(utilization_df)</code>. Before clustering, we need to standardize the features so that high-magnitude columns (like total_allowed_12m in dollars) don't dominate the distance calculations over low-magnitude columns (like inpatient_admits which might be 0-3). StandardScaler centers each feature at mean=0 and scales to unit variance.</em></p>
+<p><em>The pseudocode calls this <code>prepare_features(utilization_df)</code>. Before clustering, we need to standardize the features so that high-magnitude columns (like total_allowed_12m in dollars) don't dominate the distance calculations over low-magnitude columns (like inpatient_admits which might be 0-3). StandardScaler centers each feature at mean=0 and scales to unit variance. With only 8 features, we skip the PCA step described in the main recipe. PCA becomes important when you have 20+ engineered features.</em></p>
 <div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prepare_features</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">StandardScaler</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Extract utilization features and standardize them for clustering.</span>
@@ -746,6 +746,9 @@
         <span class="n">feature_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">cap</span><span class="p">)</span>
 
     <span class="c1"># Standardize: mean=0, std=1 for each feature.</span>
+    <span class="c1"># NOTE: The main recipe recommends log1p + robust scaling for production.</span>
+    <span class="c1"># We use StandardScaler with clipping here for simplicity; both approaches</span>
+    <span class="c1"># produce reasonable clusters on this synthetic data.</span>
     <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
     <span class="n">scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">feature_matrix</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
@@ -794,6 +797,10 @@
         <span class="n">random_state</span><span class="o">=</span><span class="n">RANDOM_SEED</span><span class="p">,</span>
         <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>        <span class="c1"># Run 10 initializations, keep the best</span>
         <span class="n">max_iter</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>     <span class="c1"># Usually converges in 20-50 iterations</span>
+        <span class="c1"># In production, evaluate k=4 through k=10 and select based on</span>
+        <span class="c1"># silhouette + minimum cluster size (see main recipe Step 4).</span>
+        <span class="c1"># We fix k=5 here because the synthetic data was designed with</span>
+        <span class="c1"># 5 archetypes.</span>
     <span class="p">)</span>
 
     <span class="n">cluster_labels</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">(</span><span class="n">scaled_features</span><span class="p">)</span>

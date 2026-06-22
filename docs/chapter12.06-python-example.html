@@ -509,7 +509,7 @@
         <h1 id="recipe-126-python-implementation-example">Recipe 12.6: Python Implementation Example</h1>
 <blockquote>
 <p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 12.6. It shows one way you could translate the revenue cycle cash flow forecasting pipeline into working Python using boto3 against Amazon S3 (here represented by a <code>MockS3</code> dict), AWS Glue (here represented by an in-process Python harmonization step), Amazon SageMaker (here represented by pure-Python <code>EmpiricalPaymentCurve</code>, <code>KaplanMeierEstimator</code>, and <code>PayerHazardModel</code> classes that stand in for real lifelines, scikit-survival, or DeepAR implementations), AWS Lambda (here represented by a plain Python function that runs the per-claim Monte Carlo sampling), AWS Step Functions (here represented by sequential function calls), Amazon DynamoDB (mocked with <code>MockTable</code>), Amazon EventBridge (mocked with <code>MockEventBus</code>), and Amazon CloudWatch (mocked with <code>MockCloudWatch</code>). The demo generates a synthetic AR ledger covering five payer types (Medicare fee-for-service, a state Medicaid plan, two commercial payers with different contract patterns, and self-pay patient responsibility) with realistic payment-curve shapes, a small denial-and-appeal cycle, and seasonality so you can see the harmonization, the per-payer payment-curve fitting, the per-claim cash-flow simulation, and the weekly aggregation work end-to-end without provisioning anything. It is not production-ready. There is no real S3 bucket, no real Glue ETL, no real SageMaker endpoint, no real Step Functions state machine, no real DynamoDB table, no real EventBridge bus, no real CloudWatch alarms, no integration with an actual 837 claim feed or 835 remittance feed, no contract modeling layer, no per-CPT severity adjustment, no per-Lambda IAM least privilege, no KMS customer-managed keys, no VPC endpoints, no continuous payer drift monitoring, and no recovery-agency or bad-debt write-off modeling. Think of it as the sketchpad version: useful for understanding the shape of a cash flow forecast that respects the per-payer-curve discipline, the survival-modeling discipline, the Monte Carlo composition discipline, and the working-capital framing this recipe demands. It is not something you would point at the CFO's Monday morning treasury meeting. Consider it a starting point, not a destination.</p>
-<p>The code maps to the five pseudocode steps from the main recipe: ingest and harmonize the AR ledger, the historical 835 remittance stream, and the payer-contract metadata so every open claim and every historical payment carries a canonical payer identifier, a service date, a billed amount, an expected allowed amount, and a denial flag (Step 1); fit per-payer payment-time distributions from the historical pairs of (claim_submitted_ts, payment_received_ts) using a Kaplan-Meier-style empirical survival estimator with hazard smoothing and right-censoring for still-open claims (Step 2); for every open AR claim, simulate N payment-date samples from the payer-specific distribution conditional on the claim's age and adjudication state, and compose those samples into per-week cash inflow trajectories (Step 3); apply seasonality, denial-and-appeal cycle adjustments, and patient-responsibility tail modeling on top of the per-payer simulations (Step 4); load the surfaced weekly forecasts to DynamoDB keyed by <code>forecast_week</code>, write the per-claim sample trajectories to S3 for variance-by-payer analysis, and emit pipeline-lifecycle events to EventBridge (Step 5). The synthetic payers, synthetic AR ledger, and synthetic payment curves in the demo are fictional; nothing in this file should be interpreted as real financial data from any real institution.</p>
+<p>The code maps to the five pseudocode steps from the main recipe: ingest and harmonize the AR ledger, the historical 835 remittance stream, and the payer-contract metadata so every open claim and every historical payment carries a canonical payer identifier, a service date, a billed amount, an expected allowed amount, and a denial flag (Step 1); fit per-payer payment-time distributions from the historical pairs of (claim_submitted_ts, payment_received_ts) using a Kaplan-Meier-style empirical survival estimator with hazard smoothing and right-censoring for still-open claims (Step 2); for every open AR claim, simulate N payment-date samples from the payer-specific distribution conditional on the claim's age and adjudication state, applying seasonality adjustments per sample and composing those samples into per-week cash inflow trajectories (Step 3); aggregate the sample-wise per-claim trajectories into per-week, per-payer percentile forecasts (P10, P50, P90) with a hospital-wide rollup and aging-bucket-conditional summary (Step 4); load the surfaced weekly forecasts to DynamoDB keyed by <code>forecast_week</code>, write the per-claim sample trajectories to S3 for variance-by-payer analysis, and emit pipeline-lifecycle events to EventBridge (Step 5). Patient-responsibility tail modeling (separate self-pay sub-model with payment-plan and statement-cycle features) is not implemented in this demo and is covered in the Gap to Production section. The synthetic payers, synthetic AR ledger, and synthetic payment curves in the demo are fictional; nothing in this file should be interpreted as real financial data from any real institution.</p>
 </blockquote>
 <hr />
 <h2 id="setup">Setup</h2>
@@ -604,16 +604,14 @@
 <span class="n">lambda_client</span>      <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;lambda&quot;</span><span class="p">,</span>
                                   <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                   <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
-<span class="c1"># TODO (TechWriter): Code review NOTE 5. The `sagemaker_runtime` and</span>
-<span class="c1"># `lambda_client` handles above are constructed but never exercised, even</span>
-<span class="c1"># by commented-out code. The &quot;production wiring is a one-line swap&quot; claim</span>
-<span class="c1"># is misleading: production runs the curve fitting as a SageMaker training</span>
-<span class="c1"># job (control plane, which would use `boto3.client(&quot;sagemaker&quot;)`, not</span>
-<span class="c1"># `sagemaker-runtime`), and the Monte Carlo Lambda would be invoked by Step</span>
-<span class="c1"># Functions, not by orchestration code in this file. Either remove the</span>
-<span class="c1"># unused clients, replace `sagemaker_runtime` with `sagemaker`, or extend</span>
-<span class="c1"># the surrounding comment to spell out exactly which production path each</span>
-<span class="c1"># client is staged for.</span>
+<span class="c1"># The `sagemaker_runtime` handle is staged for production inference</span>
+<span class="c1"># calls (InvokeEndpoint) against a deployed per-payer payment-curve</span>
+<span class="c1"># model. The control-plane training-job calls would use</span>
+<span class="c1"># `boto3.client(&quot;sagemaker&quot;)` instead. The `lambda_client` handle</span>
+<span class="c1"># is staged for the production path where Step Functions invokes the</span>
+<span class="c1"># Monte Carlo Lambda directly; in this demo the simulation runs</span>
+<span class="c1"># in-process. Neither handle is exercised by the demo; they are here</span>
+<span class="c1"># so the production wiring is visible at a glance.</span>
 
 <span class="c1"># --- Resource Names ---</span>
 <span class="c1"># Fill these in with your actual resource names. The demo prints</span>
@@ -1123,13 +1121,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">harmonized</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">quarantined</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE 7. The `as_of` field on each</span>
-    <span class="c1"># harmonized record is re-evaluated as `datetime.now(timezone.utc)`</span>
-    <span class="c1"># inside the loop, so every record in a single harmonization batch</span>
-    <span class="c1"># carries a microsecond-different timestamp instead of the single</span>
-    <span class="c1"># run timestamp. Hoist the timestamp out of the loop (or accept it</span>
-    <span class="c1"># as a parameter, matching the discipline in `simulate_cash_flow`</span>
-    <span class="c1"># and `fit_payer_payment_curves`).</span>
+    <span class="c1"># Use a single run timestamp for the entire batch so all records</span>
+    <span class="c1"># carry the same as_of value (consistent with the discipline in</span>
+    <span class="c1"># simulate_cash_flow and fit_payer_payment_curves).</span>
+    <span class="n">batch_ts</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">raw_remits</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PAYER_CATALOG</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;unknown payer id: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">])</span>
@@ -1174,7 +1169,7 @@
                                        <span class="k">else</span> <span class="kc">None</span><span class="p">),</span>
             <span class="s2">&quot;payment_lag_days&quot;</span><span class="p">:</span>       <span class="n">payment_lag_days</span><span class="p">,</span>
             <span class="s2">&quot;in_contract&quot;</span><span class="p">:</span>            <span class="n">in_contract</span><span class="p">,</span>
-            <span class="s2">&quot;as_of&quot;</span><span class="p">:</span>                  <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;as_of&quot;</span><span class="p">:</span>                  <span class="n">batch_ts</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
         <span class="p">}</span>
 
         <span class="c1"># Partition the harmonized output by payer and submission</span>
@@ -1195,7 +1190,7 @@
 
 <hr />
 <h2 id="step-2-fit-per-payer-payment-time-distributions">Step 2: Fit Per-Payer Payment-Time Distributions</h2>
-<p>For each payer, compute the empirical payment-time distribution from the historical (submitted_ts, payment_received_ts) pairs. This is a survival problem: the event of interest is &quot;claim paid,&quot; and open (still-unpaid) claims are right-censored. The Kaplan-Meier estimator handles censoring correctly by accounting for the at-risk population at each observed payment day. The denial-and-appeal sub-process is fit separately and folded into the composite curve.</p>
+<p>For each payer, compute the empirical payment-time distribution from the historical (submitted_ts, payment_received_ts) pairs. This is a survival problem: the event of interest is &quot;claim paid,&quot; and open (still-unpaid) claims are right-censored. The Kaplan-Meier estimator handles censoring correctly by accounting for the at-risk population at each observed payment day. Because the curve is fit on all historical payments (including those that were denied and later recovered through appeal), it absorbs the denial-and-appeal dynamics by construction. Denied-then-recovered claims simply appear as longer-lag payments in the training data.</p>
 <div class="code"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">KaplanMeierEstimator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Pedagogical Kaplan-Meier survival estimator with right-censoring.</span>
 
@@ -1388,7 +1383,7 @@
 
 <hr />
 <h2 id="step-3-monte-carlo-per-claim-cash-flow-simulation">Step 3: Monte Carlo Per-Claim Cash Flow Simulation</h2>
-<p>For every open AR claim, sample N payment-day draws from the payer's fitted curve. For each sample, walk the claim through its expected payment path: first-pass adjudication, possible denial, possible appeal, possible recovery. Aggregate the per-claim, per-sample expected cash into a per-week, per-payer cash trajectory.</p>
+<p>For every open AR claim, sample N payment-day draws from the payer's fitted curve. The per-payer Kaplan-Meier curve is fit on all historical payments for that payer, which means the curve already absorbs the denied-and-recovered cohort by construction (those claims simply appear as longer-lag payments in the training data). The demo uses the curve directly without a separate denial sub-process. This avoids the double-counting problem that arises when you sample from a curve that already includes recovered-from-appeal claims and then layer an explicit denial-recovery branch on top. Production systems that want interpretable denial-specific forecasts can instead fit the curve on clean-adjudication records only (excluding denial_flag=True) and explicitly compose a denial-recovery sub-distribution; the Gap to Production section covers this extension.</p>
 <div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">simulate_claim_payment</span><span class="p">(</span><span class="n">claim</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">payer_catalog</span><span class="p">,</span>
                            <span class="n">horizon_weeks</span><span class="p">,</span> <span class="n">as_of_dt</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample a single (payment_date, payment_amount) for one open claim.</span>
@@ -1396,70 +1391,38 @@
 <span class="sd">    Returns (payment_date, payment_amount) or (None, 0.0) if</span>
 <span class="sd">    the claim does not pay within the horizon.</span>
 
-<span class="sd">    The simulation walks the claim through the full payment</span>
-<span class="sd">    process: first-pass adjudication, possible denial, possible</span>
-<span class="sd">    appeal, possible recovery. The first-pass payment lag is</span>
-<span class="sd">    sampled from the payer&#39;s Kaplan-Meier curve. Denial and</span>
-<span class="sd">    appeal are sampled from the per-payer Bernoulli rates plus</span>
-<span class="sd">    an additional gaussian appeal lag.</span>
+<span class="sd">    The per-payer curve absorbs all payment-path outcomes by</span>
+<span class="sd">    construction: clean first-pass payments land at the short</span>
+<span class="sd">    end of the curve, denied-then-recovered payments land at</span>
+<span class="sd">    the long end, and never-recovered claims contribute to the</span>
+<span class="sd">    right-censored mass. Sampling from the curve directly</span>
+<span class="sd">    produces a realistic payment-date draw without the need for</span>
+<span class="sd">    an explicit denial sub-process.</span>
+
+<span class="sd">    Production extensions that want denial-specific</span>
+<span class="sd">    interpretability should fit on clean-adjudication records</span>
+<span class="sd">    only and compose the denial-recovery sub-distribution</span>
+<span class="sd">    explicitly (see Gap to Production).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">payer</span> <span class="o">=</span> <span class="n">payer_catalog</span><span class="p">[</span><span class="n">claim</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">]]</span>
     <span class="n">horizon_days</span> <span class="o">=</span> <span class="n">horizon_weeks</span> <span class="o">*</span> <span class="mi">7</span>
 
-    <span class="c1"># The fitted curve already implicitly contains the payer&#39;s</span>
-    <span class="c1"># mix of clean claims and recovered-from-appeal claims. To</span>
-    <span class="c1"># avoid double-counting, the demo uses the curve directly</span>
-    <span class="c1"># for the headline simulation and only carves out the denial</span>
-    <span class="c1"># path explicitly when the curve is not informative.</span>
-
-    <span class="c1"># TODO (TechWriter): Code review W1 (WARNING). The denial-and-appeal</span>
-    <span class="c1"># sub-process below double-counts the denied-recovered cohort that</span>
-    <span class="c1"># the Kaplan-Meier curve already absorbs (for the National commercial</span>
-    <span class="c1"># plan ~6% extra long-tail mass; for Medicare ~2%). The comment block</span>
-    <span class="c1"># above promises a &quot;carves out only when the curve is not informative&quot;</span>
-    <span class="c1"># guard, but that guard is not implemented; the explicit denial branch</span>
-    <span class="c1"># always fires. Also: claim[&quot;denial_flag&quot;] is ignored, so a known-denied</span>
-    <span class="c1"># open claim gets the same fresh-Bernoulli draw as a clean claim. Fix</span>
-    <span class="c1"># options: (a) drop the explicit denial sub-process and use the curve</span>
-    <span class="c1"># directly with a one-paragraph prose update; or (b) fit on</span>
-    <span class="c1"># denial_flag=False records only and compose the two distributions</span>
-    <span class="c1"># explicitly. Option (a) is the lighter touch.</span>
-
-    <span class="c1"># Sample the first-pass adjudication outcome.</span>
-    <span class="n">denied_first_pass</span> <span class="o">=</span> <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">payer</span><span class="p">[</span><span class="s2">&quot;first_pass_denial_rate&quot;</span><span class="p">])</span>
-
-    <span class="k">if</span> <span class="n">denied_first_pass</span><span class="p">:</span>
-        <span class="c1"># Sub-process: denial -&gt; appeal -&gt; recovery (or write-off).</span>
-        <span class="n">appealed</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.85</span>    <span class="c1"># 85% of denials get worked</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">appealed</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="n">recovered</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">payer</span><span class="p">[</span><span class="s2">&quot;appeal_recovery_rate&quot;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">recovered</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-
-        <span class="c1"># TODO (TechWriter): Code review NOTE 3. The `or 30` fallback below</span>
-        <span class="c1"># papers over the curve being uninformative for the denial sub-path</span>
-        <span class="c1"># by hardcoding 30 days as the first-pass lag. Either fix W1 (which</span>
-        <span class="c1"># dissolves this branch) or replace with a sample from a proper</span>
-        <span class="c1"># first-pass-timing distribution (e.g., the curve&#39;s median lag).</span>
-        <span class="n">first_lag</span>    <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="s2">&quot;estimator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sample_payment_day</span><span class="p">(</span><span class="n">horizon_days</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">30</span>
-        <span class="n">appeal_extra</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="n">payer</span><span class="p">[</span><span class="s2">&quot;appeal_lag_days_mean&quot;</span><span class="p">],</span>
-                                            <span class="n">payer</span><span class="p">[</span><span class="s2">&quot;appeal_lag_days_sd&quot;</span><span class="p">])))</span>
-        <span class="n">total_lag</span>    <span class="o">=</span> <span class="n">first_lag</span> <span class="o">+</span> <span class="n">appeal_extra</span>
-        <span class="k">if</span> <span class="n">total_lag</span> <span class="o">&gt;</span> <span class="n">horizon_days</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="n">pay_date</span> <span class="o">=</span> <span class="n">as_of_dt</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">total_lag</span><span class="p">)</span>
-        <span class="c1"># Recovered claims often pay at a slight discount to</span>
-        <span class="c1"># original allowed amount (e.g., 90-95%).</span>
-        <span class="n">amt</span> <span class="o">=</span> <span class="p">(</span><span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;expected_allowed_amount&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">pay_date</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">amt</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-
-    <span class="c1"># Clean first-pass path.</span>
+    <span class="c1"># Sample a payment day from the payer&#39;s fitted survival curve.</span>
+    <span class="c1"># The curve&#39;s right-censored mass means some draws return None</span>
+    <span class="c1"># (claim does not pay within the horizon). This is the</span>
+    <span class="c1"># correct behavior: it represents the probability that the</span>
+    <span class="c1"># claim will not convert to cash within the forecast window.</span>
     <span class="n">sampled_day</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="s2">&quot;estimator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sample_payment_day</span><span class="p">(</span><span class="n">horizon_days</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sampled_day</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">sampled_day</span> <span class="o">&gt;</span> <span class="n">horizon_days</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="n">pay_date</span> <span class="o">=</span> <span class="n">as_of_dt</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">sampled_day</span><span class="p">)</span>
-    <span class="n">amt</span> <span class="o">=</span> <span class="p">(</span><span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;expected_allowed_amount&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.92</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="c1"># Payment amount: the expected allowed amount with a small</span>
+    <span class="c1"># random adjustment representing contractual adjustments,</span>
+    <span class="c1"># partial denials, and coordination-of-benefits offsets.</span>
+    <span class="c1"># The 0.88-to-1.0 range is a simplification; production</span>
+    <span class="c1"># conditions this on payer class and claim characteristics.</span>
+    <span class="n">amt</span> <span class="o">=</span> <span class="p">(</span><span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;expected_allowed_amount&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.88</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">pay_date</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">amt</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_seasonality_factor</span><span class="p">(</span><span class="n">week_of_year</span><span class="p">):</span>
@@ -1506,16 +1469,13 @@
     <span class="k">for</span> <span class="n">claim</span> <span class="ow">in</span> <span class="n">open_ar</span><span class="p">:</span>
         <span class="n">curve</span> <span class="o">=</span> <span class="n">payer_curves</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">claim</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">curve</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Payer with insufficient training history; fall back</span>
-            <span class="c1"># to a conservative payer-class-average curve in</span>
-            <span class="c1"># production. The demo skips these claims.</span>
-            <span class="c1"># TODO (TechWriter): Code review NOTE 4. Silent skips here mean</span>
-            <span class="c1"># if 5% of the open-AR ledger is dropped because their payers</span>
-            <span class="c1"># have insufficient training history, the all-payer aggregate</span>
-            <span class="c1"># under-reports by 5% with no signal to the operator. Either</span>
-            <span class="c1"># accumulate a `dropped_claim_count` and log/emit-CloudWatch/</span>
-            <span class="c1"># surface-in-EventBridge it, or implement the payer-class-average</span>
-            <span class="c1"># fallback inline.</span>
+            <span class="c1"># Payer with insufficient training history. In production,</span>
+            <span class="c1"># fall back to a payer-class-average curve. The demo skips</span>
+            <span class="c1"># these claims and logs the count so the operator sees</span>
+            <span class="c1"># how much AR mass was excluded from the forecast.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No curve for payer </span><span class="si">%s</span><span class="s2">; claim </span><span class="si">%s</span><span class="s2"> skipped&quot;</span><span class="p">,</span>
+                           <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">],</span>
+                           <span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;claim_id&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">))</span>
             <span class="k">continue</span>
         <span class="n">bucket</span> <span class="o">=</span> <span class="n">_ar_aging_bucket</span><span class="p">(</span><span class="n">claim</span><span class="p">[</span><span class="s2">&quot;submitted_date&quot;</span><span class="p">],</span> <span class="n">as_of_dt</span><span class="p">)</span>
         <span class="n">aging_summary</span><span class="p">[</span><span class="n">bucket</span><span class="p">][</span><span class="n">claim</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
@@ -1574,14 +1534,11 @@
                 <span class="k">continue</span>
             <span class="n">mean_v</span>   <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
             <span class="n">sorted_s</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
-            <span class="c1"># TODO (TechWriter): Code review NOTE 9. The percentile selection</span>
-            <span class="c1"># below uses index truncation (`sorted_s[int(0.10 * len(...))]`)</span>
-            <span class="c1"># rather than interpolation. For 1000 samples the difference is</span>
-            <span class="c1"># negligible; for 100 samples it can shift reported p10 noticeably.</span>
-            <span class="c1"># Either use `statistics.quantiles(samples, n=10)` (Hazen-like</span>
-            <span class="c1"># interpolation) or add a comment that this is an index-truncation</span>
-            <span class="c1"># approximation valid for large sample sets and production should</span>
-            <span class="c1"># use `numpy.percentile` or `statistics.quantiles`.</span>
+            <span class="c1"># Index-truncation percentile approximation. For N=1000</span>
+            <span class="c1"># samples the difference from interpolation-based methods</span>
+            <span class="c1"># (numpy.percentile, statistics.quantiles) is negligible.</span>
+            <span class="c1"># Production with smaller sample counts should use</span>
+            <span class="c1"># numpy.percentile or statistics.quantiles for accuracy.</span>
             <span class="n">p10</span> <span class="o">=</span> <span class="n">sorted_s</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.10</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_s</span><span class="p">))]</span>
             <span class="n">p50</span> <span class="o">=</span> <span class="n">sorted_s</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.50</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_s</span><span class="p">))]</span>
             <span class="n">p90</span> <span class="o">=</span> <span class="n">sorted_s</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.90</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_s</span><span class="p">))]</span>
@@ -1651,35 +1608,28 @@
 <span class="sd">    with counts for the orchestrator&#39;s metric emission.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">written</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">chunk</span> <span class="o">=</span> <span class="mi">25</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE 6. The boto3 resource-level</span>
-    <span class="c1"># `batch_writer()` already chunks into 25-item batches automatically and</span>
-    <span class="c1"># handles `UnprocessedItems` retry internally, so the outer chunk loop</span>
-    <span class="c1"># below is redundant. Production opens a single `batch_writer()` context</span>
-    <span class="c1"># for the entire list and lets the SDK handle chunking. Same finding</span>
-    <span class="c1"># landed in 12.04. Collapse to one batch_writer context with an inline</span>
-    <span class="c1"># comment that the SDK handles chunk and UnprocessedItems retry.</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">forecasts</span><span class="p">),</span> <span class="n">chunk</span><span class="p">):</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">forecasts</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">chunk</span><span class="p">]</span>
-        <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">()</span> <span class="k">as</span> <span class="n">bw</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>
-                <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;forecast_week&quot;</span><span class="p">:</span>  <span class="n">f</span><span class="p">[</span><span class="s2">&quot;forecast_week&quot;</span><span class="p">],</span>
-                    <span class="s2">&quot;payer_id&quot;</span><span class="p">:</span>       <span class="n">f</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">],</span>
-                    <span class="s2">&quot;payer_display&quot;</span><span class="p">:</span>  <span class="n">f</span><span class="p">[</span><span class="s2">&quot;payer_display&quot;</span><span class="p">],</span>
-                    <span class="s2">&quot;week_index&quot;</span><span class="p">:</span>     <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;week_index&quot;</span><span class="p">]),</span>
-                    <span class="s2">&quot;expected_cash&quot;</span><span class="p">:</span>  <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;expected_cash&quot;</span><span class="p">]),</span>
-                    <span class="s2">&quot;p10_cash&quot;</span><span class="p">:</span>       <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;p10_cash&quot;</span><span class="p">]),</span>
-                    <span class="s2">&quot;p50_cash&quot;</span><span class="p">:</span>       <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;p50_cash&quot;</span><span class="p">]),</span>
-                    <span class="s2">&quot;p90_cash&quot;</span><span class="p">:</span>       <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;p90_cash&quot;</span><span class="p">]),</span>
-                    <span class="s2">&quot;sample_count&quot;</span><span class="p">:</span>   <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;sample_count&quot;</span><span class="p">]),</span>
-                    <span class="s2">&quot;generated_at&quot;</span><span class="p">:</span>   <span class="n">f</span><span class="p">[</span><span class="s2">&quot;generated_at&quot;</span><span class="p">],</span>
-                    <span class="s2">&quot;pipeline_version&quot;</span><span class="p">:</span> <span class="n">PIPELINE_VERSION</span><span class="p">,</span>
-                    <span class="s2">&quot;contract_version&quot;</span><span class="p">:</span> <span class="n">CONTRACT_LIBRARY_VERSION</span><span class="p">,</span>
-                    <span class="s2">&quot;run_id&quot;</span><span class="p">:</span>         <span class="n">run_id</span><span class="p">,</span>
-                <span class="p">}</span>
-                <span class="n">bw</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
-                <span class="n">written</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># boto3&#39;s batch_writer() automatically chunks into 25-item batches</span>
+    <span class="c1"># and retries UnprocessedItems internally. One context manager for</span>
+    <span class="c1"># the entire list; the SDK handles the rest.</span>
+    <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">()</span> <span class="k">as</span> <span class="n">bw</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">forecasts</span><span class="p">:</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;forecast_week&quot;</span><span class="p">:</span>  <span class="n">f</span><span class="p">[</span><span class="s2">&quot;forecast_week&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;payer_id&quot;</span><span class="p">:</span>       <span class="n">f</span><span class="p">[</span><span class="s2">&quot;payer_id&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;payer_display&quot;</span><span class="p">:</span>  <span class="n">f</span><span class="p">[</span><span class="s2">&quot;payer_display&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;week_index&quot;</span><span class="p">:</span>     <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;week_index&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;expected_cash&quot;</span><span class="p">:</span>  <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;expected_cash&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;p10_cash&quot;</span><span class="p">:</span>       <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;p10_cash&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;p50_cash&quot;</span><span class="p">:</span>       <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;p50_cash&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;p90_cash&quot;</span><span class="p">:</span>       <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;p90_cash&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;sample_count&quot;</span><span class="p">:</span>   <span class="n">_to_decimal</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;sample_count&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;generated_at&quot;</span><span class="p">:</span>   <span class="n">f</span><span class="p">[</span><span class="s2">&quot;generated_at&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;pipeline_version&quot;</span><span class="p">:</span> <span class="n">PIPELINE_VERSION</span><span class="p">,</span>
+                <span class="s2">&quot;contract_version&quot;</span><span class="p">:</span> <span class="n">CONTRACT_LIBRARY_VERSION</span><span class="p">,</span>
+                <span class="s2">&quot;run_id&quot;</span><span class="p">:</span>         <span class="n">run_id</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">bw</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">written</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="c1"># Aging-summary attached as a metadata record at a dedicated</span>
     <span class="c1"># CURRENT pseudo-week so the dashboard can fetch the latest</span>
@@ -1703,16 +1653,10 @@
     <span class="c1"># next-week cash if we lose the BCBS contract?&quot;).</span>
     <span class="n">s3_key</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trajectories/run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">/&quot;</span>
               <span class="sa">f</span><span class="s2">&quot;date=</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">)</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE 2. The dict comprehension below is</span>
-    <span class="c1"># a no-op (the conditional returns `v` in both branches). Either collapse</span>
-    <span class="c1"># to `Body=json.dumps(forecasts)` or implement the intended transform</span>
-    <span class="c1"># (most likely candidate: drop per-record `pipeline_version` and</span>
-    <span class="c1"># `contract_version` since those would be tagged once on the trajectory</span>
-    <span class="c1"># file, not per-row).</span>
+    <span class="c1"># Write the per-claim sample trajectories as a single JSON blob.</span>
+    <span class="c1"># Production would partition by payer for predicate pushdown.</span>
     <span class="n">s3</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">sample_trajectory_bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">s3_key</span><span class="p">,</span>
-                  <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span>
-                      <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;generated_at&quot;</span> <span class="k">else</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-                      <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">forecasts</span><span class="p">]))</span>
+                  <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">forecasts</span><span class="p">))</span>
 
     <span class="c1"># EventBridge completion event. The payload deliberately</span>
     <span class="c1"># carries no PHI: just the run identifier, total expected</span>
@@ -1793,15 +1737,10 @@
 
     <span class="c1"># --- Step 1: Harmonize ---</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[step 1] harmonize_ar_records&quot;</span><span class="p">)</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE 1. The two calls below re-harmonize</span>
-    <span class="c1"># the same right-censored records into the same S3 keys (idempotent on</span>
-    <span class="c1"># claim_id, but wasted work and misleading about production data flow).</span>
-    <span class="c1"># In production the harmonized AR ledger comes from a Glue job consuming</span>
-    <span class="c1"># the 837/835 stream once, and the open-AR pull comes from a separate</span>
-    <span class="c1"># practice-management read. Either drop the second call and filter</span>
-    <span class="c1"># `harmonized` to derive `open_harmonized`, or add a comment that the</span>
-    <span class="c1"># second call models the production pull from the practice management</span>
-    <span class="c1"># system and is structurally distinct from the historical Glue ingestion.</span>
+    <span class="c1"># In production, the harmonized AR ledger comes from a Glue job</span>
+    <span class="c1"># consuming the 835/837 stream. The open-AR pull is a separate</span>
+    <span class="c1"># read from the practice-management system. The demo models both</span>
+    <span class="c1"># paths with the same harmonize function on different record sets.</span>
     <span class="n">harmonized</span> <span class="o">=</span> <span class="n">harmonize_ar_records</span><span class="p">(</span>
         <span class="n">raw_history</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="n">HARMONIZED_AR_BUCKET</span><span class="p">)</span>
     <span class="n">open_harmonized</span> <span class="o">=</span> <span class="n">harmonize_ar_records</span><span class="p">(</span>

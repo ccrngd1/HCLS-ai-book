@@ -633,8 +633,23 @@
 <pre class="code code-plain"><code>FUNCTION receive_note(queue_message):
     // Parse the incoming message to extract note metadata and text content.
     // The message format depends on your EHR integration: HL7, FHIR, or custom.
-    // TODO (TechWriter): Expert review A5 (MEDIUM). Add idempotency check: query archive for note_id, skip if unchanged, reprocess with prior record deletion if amended.
     note_id      = queue_message.note_identifier      // unique ID from the EHR
+
+    // Idempotency check: query the archive for this note_id.
+    // If the note already exists with identical content, skip reprocessing entirely.
+    // If it exists but content has changed (amended note), delete prior AE records
+    // for this note_id before reprocessing. Amended notes are common in clinical
+    // workflows (addenda, corrections, late-signed attestations).
+    existing = QUERY S3 for &quot;notes-archive/*/note_id.json&quot;
+    IF existing AND existing.note_text == queue_message.document_text:
+        LOG &quot;Note {note_id} already processed with identical content. Skipping.&quot;
+        RETURN null  // acknowledge the SQS message, no further processing
+    ELSE IF existing AND existing.note_text != queue_message.document_text:
+        // Amended note: delete prior adverse event records for this note,
+        // then reprocess from scratch. This prevents stale detections from
+        // an earlier version of the note persisting alongside new detections.
+        DELETE from DynamoDB &quot;adverse-events&quot; WHERE note_id == note_id
+        LOG &quot;Note {note_id} amended. Cleared prior detections, reprocessing.&quot;
     patient_id   = queue_message.patient_identifier   // who the note belongs to
     note_text    = queue_message.document_text        // the full clinical note content
     note_date    = queue_message.service_date         // when the clinical encounter occurred
@@ -707,8 +722,13 @@
 
     FOR each condition in conditions:
         is_negated      = any trait in condition.traits has Name == &quot;NEGATION&quot;
-        is_hypothetical = any trait in condition.traits has Name == &quot;HYPOTHETICAL&quot;  // TODO: verify trait name in current API
-        is_family_hx    = any trait in condition.traits has Name == &quot;FAMILY_HISTORY&quot; // TODO: verify if CM exposes this directly
+        is_hypothetical = any trait in condition.traits has Name == &quot;HYPOTHETICAL&quot;
+        // Comprehend Medical does not expose a dedicated FAMILY_HISTORY trait
+        // on MEDICAL_CONDITION entities. Use section detection or a rule-based
+        // check: if the condition appears within a &quot;Family History&quot; section header
+        // (detected by offset ranges in a prior section-parsing step), treat it
+        // as family history. For the pseudocode, we use a placeholder function.
+        is_family_hx    = condition_in_family_history_section(condition.offset, note_sections)
 
         IF NOT is_negated AND NOT is_hypothetical AND NOT is_family_hx:
             // This condition is asserted as present in the patient. Keep it.
@@ -845,7 +865,14 @@ FUNCTION classify_severity(detected_event, note_text):
 
     // Write to DynamoDB. Partition key: patient_id. Sort key: detection_timestamp.
     // GSI on rxnorm_code + note_date for medication-level queries.
-    // TODO (TechWriter): Expert review S4 (MEDIUM). Add DynamoDB TTL configuration: Grade 1-2 events retain 2 years, Grade 3-4 retain 7 years. Document per institutional compliance requirements.
+    // TTL configuration: set a `ttl_expiry` attribute on each record.
+    //   Grade 1-2 events: TTL = detection_timestamp + 2 years (730 days)
+    //   Grade 3-4 events: TTL = detection_timestamp + 7 years (2555 days)
+    // These durations align with typical institutional compliance requirements,
+    // but your retention policy should be validated with compliance and legal.
+    // Some institutions require indefinite retention for serious AEs.
+    ttl_days = 730 IF severity in [&quot;grade_1_mild&quot;, &quot;grade_2_moderate&quot;] ELSE 2555
+    ae_record.ttl_expiry = current_epoch_seconds + (ttl_days * 86400)
     WRITE ae_record to DynamoDB table &quot;adverse-events&quot;
 
     // High-severity alert: Grade 3 or above triggers immediate notification.
@@ -889,8 +916,17 @@ FUNCTION classify_severity(detected_event, note_text):
     signals = []
     FOR each pair_key, counts in pair_counts:
         unique_patients = size of counts.patients
-        expected_rate   = lookup_expected_rate(pair_key.rxnorm_code, pair_key.event)
-        // TODO (TechWriter): Expert review A4 (MEDIUM). Expand on expected-rate data sources: FAERS public data, institutional 6-month rolling baseline, or drug label incidence rates. Store in DynamoDB lookup table, update monthly.
+        // Expected rate: how many unique patients would we expect to report this
+        // drug-event pair in this time window, absent any real signal?
+        // Data sources for expected rates (choose one or combine):
+        //   1. FAERS public quarterly data: nationwide reporting rates by drug-event pair
+        //   2. Institutional 6-month rolling baseline: your own historical detection rate
+        //   3. Drug label incidence rates: manufacturer-reported frequencies
+        // Store in a DynamoDB lookup table keyed on (rxnorm_code, normalized_event_term).
+        // Update monthly via a scheduled Lambda that pulls FAERS data or recalculates
+        // institutional baselines. When no expected rate is available for a pair,
+        // fall back to a generic &quot;rare event&quot; baseline (e.g., 1 per 10,000 patients exposed).
+        expected_rate = lookup_expected_rate(pair_key.rxnorm_code, pair_key.event)
 
         IF unique_patients &gt;= 3 AND (unique_patients / expected_rate) &gt; 2.0:
             // Signal: this drug-event pair is occurring at &gt;2x the expected rate
@@ -1000,7 +1036,19 @@ FUNCTION classify_severity(detected_event, note_text):
 <li>Copy-pasted note sections that repeat mentions across visits without new clinical information</li>
 </ul>
 <hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode above gets you to a working demo. Here's what stands between that and something you can run in production.</p>
+<p><strong>Expected-effects filtering is the whole tuning project.</strong> Every drug has known side effects. Statins cause myalgia. Opioids cause constipation. ACE inhibitors cause cough. Without a tuned expected-effects filter, the system flags every patient on metformin who reports GI discomfort, every patient on an antibiotic who gets mild diarrhea. The knowledge base lookup in Step 4 helps, but production requires a configurable &quot;expected at this frequency&quot; threshold per drug-event pair, with the ability for clinical pharmacists to tune those thresholds based on institutional experience. Expect 2-4 weeks of threshold tuning with your pharmacovigilance team before the false positive rate becomes acceptable.</p>
+<p><strong>Cross-note reasoning is not implemented.</strong> The pseudocode processes each note in isolation. Real adverse events often span multiple notes: a medication is mentioned in one note, the symptom appears in a note three days later by a different clinician who doesn't mention the drug. The per-note pipeline misses these entirely. Production systems need a per-patient medication timeline (maintained from pharmacy feeds and prior notes) that the current-note processor can query to catch implicit adverse events without an explicit drug mention in the current note. See the cross-note variation below for the architectural pattern.</p>
+<p><strong>The knowledge base needs continuous maintenance.</strong> The known-ADR lookup table (SIDER, FDA drug labels, FAERS) is not static. New drugs get approved. New adverse reactions get identified. Label updates add warnings. Production requires a scheduled process that refreshes the knowledge base from authoritative sources, validates updates against a test corpus, and versions the knowledge base so you can trace which version was active when a detection decision was made.</p>
+<p><strong>Human review workflow is not defined.</strong> Every detection enters the database with <code>status: &quot;pending_review&quot;</code> but the pseudocode doesn't specify who reviews, how they review, or what happens after review. Production needs: a review queue interface (filtered by severity, sorted by recency), a disposition workflow (confirm, dismiss, escalate), a feedback mechanism that flows reviewer decisions back into tuning, and SLA tracking to ensure high-severity events get reviewed within defined timeframes.</p>
+<p><strong>Regulatory reporting integration is not included.</strong> Confirmed adverse events may need to be reported to FDA MedWatch (for serious/unexpected reactions), to institutional safety committees (for internal patterns), or to the manufacturer (for post-market surveillance obligations). The bridge from &quot;confirmed detection in DynamoDB&quot; to &quot;structured report submitted to the appropriate authority&quot; is a separate integration project with its own data mapping, timeline requirements, and compliance checkpoints. The CTCAE severity classification in the pseudocode aligns with MedWatch seriousness criteria, but the submission workflow itself is out of scope.</p>
+<p><strong>Duplicate detection across notes is missing.</strong> The same adverse event gets documented in multiple notes: the initial progress note, the follow-up visit, the discharge summary, the specialist referral letter. Without deduplication, the aggregation step counts one real event as four or five detections, inflating signal ratios. Production needs entity resolution at the adverse-event level: matching detections by patient + drug + event + time window and collapsing them into a single canonical event record with provenance links to all source notes.</p>
+<p><strong>The severity classifier is fragile.</strong> Keyword matching for severity indicators works for explicit documentation (&quot;patient was admitted,&quot; &quot;ICU transfer&quot;) but misses contextual severity: a lab value that indicates organ damage, a vital sign trend that suggests clinical deterioration, or an intervention that implies severity without using severity language. Production systems augment keyword matching with structured data from the EHR (lab results, vital signs, orders) to inform severity classification.</p>
+<p><strong>Model monitoring and drift detection are absent.</strong> Comprehend Medical's extraction performance is not constant across note types, specialties, or documentation styles. A new EHR template, a new department, or a new dictation style can shift extraction quality without any explicit signal. Production needs ongoing monitoring: extraction confidence distributions over time, flagging rate trends, reviewer-confirmed-vs-dismissed ratios. When these metrics drift, the pipeline needs attention.</p>
+<hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Cross-note temporal reasoning.</strong> Instead of processing each note in isolation, maintain a per-patient medication timeline in DynamoDB, updated from pharmacy feeds and prior note processing. The table stores active medications with start dates, stop dates, and RxNorm codes, keyed on patient_id with a sort key of medication_start_date. When processing a new note, query medications started in the last 30 days for that patient. If the note contains a new symptom but no medication mention, cross-reference against the active medication timeline to catch implicit adverse events. This catches the scenario where a patient starts amlodipine on Monday (documented in the prescribing note), then reports dizziness on Thursday in a nurse triage note that never mentions amlodipine. The per-note pipeline misses this; the cross-note pipeline catches it because amlodipine appears in the 30-day medication window. Implementation adds one DynamoDB query per note (fast, cheap) and requires a separate Lambda that keeps the medication timeline current from pharmacy system feeds.</p>
 <p><strong>Integration with medication reconciliation.</strong> Cross-reference detected adverse events with the patient's current medication list from the pharmacy system. This adds a validation layer: if the system detects a relationship between a drug and a symptom, but the pharmacy system shows the patient hasn't actually filled that prescription in six months, that's likely a false positive from a historical mention. The medication list becomes a plausibility check.</p>
 <p><strong>Vaccine adverse event detection.</strong> The same architecture applies to vaccine safety surveillance (VAERS-equivalent at the institutional level). Vaccines have different temporal patterns than chronic medications (most reactions occur within 7-14 days of administration), and the knowledge base of expected vs. unexpected reactions is well-defined by the CDC. Narrower scope makes this a good pilot use case for the broader adverse event detection system.</p>
 <p><strong>Integration with patient-reported outcomes.</strong> Extend the input beyond clinician-authored notes to include patient-reported data: patient portal messages, symptom questionnaires, and nurse triage call notes. Patient-reported symptoms often appear earlier and with more detail than what makes it into the formal clinical note. This catches the signal closer to onset.</p>

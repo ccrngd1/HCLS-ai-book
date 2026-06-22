@@ -2077,9 +2077,30 @@
 
     <span class="c1"># Step 7B: durable audit record. The HIPAA-grade record of</span>
     <span class="c1"># who issued what command, against which patient, with what</span>
-    <span class="c1"># outcome.</span>
+    <span class="c1"># outcome. Uses the references-not-content pattern: the audit</span>
+    <span class="c1"># table carries references to archived content (transcript,</span>
+    <span class="c1"># slot values, EHR API calls) plus structural metadata (lengths,</span>
+    <span class="c1"># hashes, slot_keys_present) plus non-content identifiers.</span>
+    <span class="c1"># Full content lives in the secure archive (S3 with KMS) under</span>
+    <span class="c1"># the same governance as the audio recordings.</span>
     <span class="n">command_id</span> <span class="o">=</span> <span class="s2">&quot;cmd-&quot;</span> <span class="o">+</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">16</span><span class="p">]</span>
     <span class="n">now</span> <span class="o">=</span> <span class="n">_now_iso</span><span class="p">()</span>
+    <span class="n">transcript_text</span> <span class="o">=</span> <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transcript&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">transcript_hash</span> <span class="o">=</span> <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transcript_hash&quot;</span><span class="p">)</span>
+    <span class="n">slots_data</span> <span class="o">=</span> <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slots&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">ehr_calls</span> <span class="o">=</span> <span class="n">execution_log</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ehr_api_calls&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="c1"># In production, archive content to S3 first, then write</span>
+    <span class="c1"># references to DynamoDB. The demo records the pattern</span>
+    <span class="c1"># structurally without actual S3 writes.</span>
+    <span class="n">archive_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sess-</span><span class="si">{</span><span class="n">session_id</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">/cmd-</span><span class="si">{</span><span class="n">command_id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">transcript_archive_ref</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;s3://voice-nav-archive/</span><span class="si">{</span><span class="n">archive_prefix</span><span class="si">}</span><span class="s2">/transcript.json&quot;</span><span class="p">)</span>
+    <span class="n">slot_values_archive_ref</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;s3://voice-nav-archive/</span><span class="si">{</span><span class="n">archive_prefix</span><span class="si">}</span><span class="s2">/slot_values.json&quot;</span><span class="p">)</span>
+    <span class="n">ehr_api_calls_archive_ref</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;s3://voice-nav-archive/</span><span class="si">{</span><span class="n">archive_prefix</span><span class="si">}</span><span class="s2">/ehr_api_calls.json&quot;</span><span class="p">)</span>
+
     <span class="n">audit_record</span> <span class="o">=</span> <span class="n">_to_decimal</span><span class="p">({</span>
         <span class="s2">&quot;command_id&quot;</span><span class="p">:</span>             <span class="n">command_id</span><span class="p">,</span>
         <span class="s2">&quot;clinician_id&quot;</span><span class="p">:</span>           <span class="n">session_context</span><span class="p">[</span><span class="s2">&quot;clinician_id&quot;</span><span class="p">],</span>
@@ -2089,21 +2110,27 @@
             <span class="n">session_context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;launch_id&quot;</span><span class="p">),</span>
         <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>              <span class="n">now</span><span class="p">,</span>
         <span class="s2">&quot;activation_at&quot;</span><span class="p">:</span>          <span class="n">activation_at</span><span class="p">,</span>
-        <span class="s2">&quot;transcript&quot;</span><span class="p">:</span>             <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transcript&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;transcript_hash&quot;</span><span class="p">:</span>
-            <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transcript_hash&quot;</span><span class="p">),</span>
+        <span class="c1"># References to archived content</span>
+        <span class="s2">&quot;transcript_archive_ref&quot;</span><span class="p">:</span> <span class="n">transcript_archive_ref</span><span class="p">,</span>
+        <span class="s2">&quot;transcript_length_chars&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">transcript_text</span><span class="p">),</span>
+        <span class="s2">&quot;transcript_hash&quot;</span><span class="p">:</span>        <span class="n">transcript_hash</span><span class="p">,</span>
         <span class="s2">&quot;transcript_avg_confidence&quot;</span><span class="p">:</span>
             <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;avg_confidence&quot;</span><span class="p">),</span>
         <span class="s2">&quot;transcript_min_confidence&quot;</span><span class="p">:</span>
             <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_confidence&quot;</span><span class="p">),</span>
+        <span class="c1"># Structural metadata</span>
         <span class="s2">&quot;intent&quot;</span><span class="p">:</span>                 <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;intent&quot;</span><span class="p">),</span>
         <span class="s2">&quot;intent_confidence&quot;</span><span class="p">:</span>
             <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;intent_confidence&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;slots&quot;</span><span class="p">:</span>                  <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slots&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;slot_keys_present&quot;</span><span class="p">:</span>      <span class="nb">list</span><span class="p">(</span><span class="n">slots_data</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+        <span class="s2">&quot;slot_values_archive_ref&quot;</span><span class="p">:</span> <span class="n">slot_values_archive_ref</span><span class="p">,</span>
+        <span class="s2">&quot;slot_values_hash&quot;</span><span class="p">:</span>       <span class="n">_hash_transcript</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">slots_data</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span>
         <span class="s2">&quot;read_write_classification&quot;</span><span class="p">:</span>
             <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;read_write&quot;</span><span class="p">),</span>
         <span class="s2">&quot;classifier_used&quot;</span><span class="p">:</span>
             <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;classifier_used&quot;</span><span class="p">),</span>
+        <span class="c1"># Non-content identifiers</span>
         <span class="s2">&quot;resolved_patient_id&quot;</span><span class="p">:</span>
             <span class="n">enriched_command</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resolved_patient_id&quot;</span><span class="p">),</span>
         <span class="s2">&quot;ehr_snapshot_id&quot;</span><span class="p">:</span>
@@ -2117,7 +2144,9 @@
         <span class="s2">&quot;execution_status&quot;</span><span class="p">:</span>       <span class="n">execution_log</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">),</span>
         <span class="s2">&quot;execution_started_at&quot;</span><span class="p">:</span>   <span class="n">execution_log</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;started_at&quot;</span><span class="p">),</span>
         <span class="s2">&quot;execution_completed_at&quot;</span><span class="p">:</span> <span class="n">execution_log</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;completed_at&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;ehr_api_calls&quot;</span><span class="p">:</span>          <span class="n">execution_log</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ehr_api_calls&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="s2">&quot;ehr_api_calls_count&quot;</span><span class="p">:</span>    <span class="nb">len</span><span class="p">(</span><span class="n">ehr_calls</span><span class="p">),</span>
+        <span class="s2">&quot;ehr_api_calls_archive_ref&quot;</span><span class="p">:</span> <span class="n">ehr_api_calls_archive_ref</span><span class="p">,</span>
+        <span class="c1"># Version stamps for audit reconstruction</span>
         <span class="s2">&quot;bot_version&quot;</span><span class="p">:</span>            <span class="n">BOT_VERSION</span><span class="p">,</span>
         <span class="s2">&quot;intent_taxonomy_version&quot;</span><span class="p">:</span> <span class="n">INTENT_TAXONOMY_VERSION</span><span class="p">,</span>
         <span class="s2">&quot;threshold_config_version&quot;</span><span class="p">:</span> <span class="n">THRESHOLD_CONFIG_VERSION</span><span class="p">,</span>

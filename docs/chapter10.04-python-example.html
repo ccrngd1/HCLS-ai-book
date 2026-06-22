@@ -514,7 +514,7 @@
 <hr />
 <h2 id="setup">Setup</h2>
 <p>You will need the AWS SDK for Python:</p>
-<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>amazon-transcribe
 </pre></div>
 
 <p>In production you would also configure an Amazon API Gateway WebSocket API for the streaming-audio endpoint plus a REST API for dictation lifecycle and final note submission, an Amazon Cognito user pool federated to the institutional identity provider for clinician authentication, a SMART on FHIR launch context handoff with the host EHR, an Amazon Transcribe Medical custom vocabulary per institution (and optionally per specialty, per clinician), an Amazon Bedrock inference profile pinned to a specific clinical-formatter model and region, the Lambda functions that orchestrate each pipeline stage (the session opener, the ASR result handler, the formatter wrapper, the structured-field extractor wrapper, the EHR handoff, the audit writer, the adaptation-feedback emitter), an AWS Step Functions state machine that durably orchestrates the dictation-to-signed-note workflow with retry semantics, DynamoDB tables that hold session state, dictation metadata across the lifecycle, and per-clinician configuration (custom vocabulary, preferred templates, macros, adaptation parameters), AWS Secrets Manager secrets for the EHR API credentials and the SMART on FHIR backend-services signing keys, an Amazon EventBridge bus for cross-system events (<code>dictation_started</code>, <code>dictation_transcribed</code>, <code>dictation_signed</code>, <code>dictation_failed</code>), Amazon S3 buckets for audio recordings (with brief-retention lifecycle) and the long-term audit archive (with Object Lock in compliance mode), and customer-managed KMS keys for every PHI-bearing data class. The demo replaces all of these with small mocks so the focus stays on the per-stage processing logic rather than on the cloud-resource provisioning.</p>
@@ -590,25 +590,22 @@
 <span class="c1"># These boto3 clients are declared at module level so a real Lambda</span>
 <span class="c1"># deployment reuses them across warm invocations. The demo below</span>
 <span class="c1"># uses Mock* classes instead; the real clients are never invoked here.</span>
-<span class="c1"># TODO (TechWriter): Code review W1 (WARNING). Streaming Transcribe</span>
-<span class="c1"># Medical does not run through the boto3 transcribe client. The</span>
-<span class="c1"># StartMedicalStreamTranscription operation is HTTP/2 and is wrapped</span>
-<span class="c1"># by the standalone amazon-transcribe-streaming-sdk Python package</span>
-<span class="c1"># (TranscribeStreamingClient.start_medical_stream_transcription),</span>
-<span class="c1"># which is separate from boto3. Either rename `transcribe_client`</span>
-<span class="c1"># below to `transcribe_batch_client` (keeping it for batch and</span>
-<span class="c1"># vocabulary-management operations only) or remove it, and add a</span>
-<span class="c1"># Setup-section line noting that streaming Transcribe Medical</span>
-<span class="c1"># requires `pip install amazon-transcribe`. Update the comments in</span>
-<span class="c1"># Step 1E and Step 2A and the &quot;Real Transcribe Medical streaming</span>
-<span class="c1"># wiring&quot; paragraph in the Gap section to clarify the streaming-</span>
-<span class="c1"># SDK dependency rather than implying the boto3 client.</span>
+<span class="c1">#</span>
+<span class="c1"># IMPORTANT: Streaming Transcribe Medical does NOT use the boto3</span>
+<span class="c1"># transcribe client. The StartMedicalStreamTranscription API is</span>
+<span class="c1"># HTTP/2 and requires the standalone amazon-transcribe-streaming-sdk</span>
+<span class="c1"># (TranscribeStreamingClient.start_medical_stream_transcription).</span>
+<span class="c1"># Install with: pip install amazon-transcribe</span>
+<span class="c1">#</span>
+<span class="c1"># The boto3 client below (transcribe_batch_client) handles only</span>
+<span class="c1"># batch transcription jobs and vocabulary management</span>
+<span class="c1"># (CreateMedicalVocabulary, UpdateMedicalVocabulary, etc.).</span>
 <span class="n">REGION</span> <span class="o">=</span> <span class="s2">&quot;us-east-1&quot;</span>
 <span class="n">dynamodb</span>              <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                           <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
 <span class="n">s3_client</span>             <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                           <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
-<span class="n">transcribe_client</span>     <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;transcribe&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
+<span class="n">transcribe_batch_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;transcribe&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                           <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
 <span class="n">bedrock_runtime</span>       <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;bedrock-runtime&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                           <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
@@ -1990,19 +1987,15 @@
     <span class="n">template</span>   <span class="o">=</span> <span class="n">session_context</span><span class="p">[</span><span class="s2">&quot;template&quot;</span><span class="p">]</span>
     <span class="n">verbatim</span>   <span class="o">=</span> <span class="n">asr_result</span><span class="p">[</span><span class="s2">&quot;verbatim&quot;</span><span class="p">]</span>
 
-    <span class="c1"># TODO (TechWriter): Code review W2 (WARNING). The pseudocode&#39;s</span>
-    <span class="c1"># Step 4B applies disambiguated[&quot;structural_events&quot;] (navigation</span>
-    <span class="c1"># commands like &quot;new paragraph&quot;, &quot;go to section X&quot;) to a section</span>
-    <span class="c1"># cursor that decides which template field each content segment</span>
-    <span class="c1"># lands in. This Python collapses everything into the rule-based</span>
-    <span class="c1"># section-header detector and never reads structural_events,</span>
-    <span class="c1"># which leaves a meaningful pseudocode-to-Python gap. Either add</span>
-    <span class="c1"># a small apply_structural_events helper that walks events in</span>
-    <span class="c1"># time order and routes content into template sections, or add</span>
-    <span class="c1"># an explicit comment here that the demo intentionally uses only</span>
-    <span class="c1"># the rule-based path while production drives a section cursor</span>
-    <span class="c1"># off structural_events. See main recipe Step 4B for the full</span>
-    <span class="c1"># pattern.</span>
+    <span class="c1"># NOTE: The pseudocode&#39;s Step 4B applies structural_events</span>
+    <span class="c1"># (navigation commands like &quot;new paragraph&quot;, &quot;go to section X&quot;)</span>
+    <span class="c1"># to a section cursor that routes content into template fields.</span>
+    <span class="c1"># This demo intentionally uses only the rule-based section-</span>
+    <span class="c1"># header detection path for simplicity. In production, implement</span>
+    <span class="c1"># an apply_structural_events helper that walks events in time</span>
+    <span class="c1"># order and drives a section cursor off the command stream.</span>
+    <span class="c1"># See the main recipe&#39;s Step 4B for the full pattern.</span>
+    <span class="c1">#</span>
     <span class="c1"># Step 4A: rule-based formatting pass. Punctuation inference,</span>
     <span class="c1"># capitalization, number-and-date canonicalization, section</span>
     <span class="c1"># header detection. Lower latency than the LLM, deterministic.</span>

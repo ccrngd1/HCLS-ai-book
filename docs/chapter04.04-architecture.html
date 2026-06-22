@@ -601,7 +601,7 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td>Per-Lambda least-privilege: <code>sagemaker:CreateTransformJob</code> and <code>sagemaker:DescribeTransformJob</code> scoped to specific model ARNs; <code>dynamodb:GetItem</code> / <code>BatchWriteItem</code> / <code>UpdateItem</code> scoped to specific tables; <code>bedrock:InvokeModel</code> on specific foundation-model ARNs; <code>s3:GetObject</code> / <code>PutObject</code> scoped to feature and recommendation buckets; <code>kinesis:PutRecord</code> on the engagement stream; <code>ses:SendEmail</code> scoped to the BAA-covered identity. Never <code>*</code>.</td>
+<td>Per-Lambda least-privilege: <code>sagemaker:CreateTransformJob</code> and <code>sagemaker:DescribeTransformJob</code> scoped to specific model ARNs (e.g., <code>arn:aws:sagemaker:us-east-1:123456789012:transform-job/need-*</code>, <code>arn:aws:sagemaker:us-east-1:123456789012:model/wellness-need-scorer-*</code>); <code>dynamodb:GetItem</code> / <code>BatchWriteItem</code> / <code>UpdateItem</code> scoped to specific table ARNs (e.g., <code>arn:aws:dynamodb:us-east-1:123456789012:table/recommendation-log</code>); <code>bedrock:InvokeModel</code> on specific foundation-model ARNs (e.g., <code>arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-haiku-*</code>); <code>s3:GetObject</code> / <code>PutObject</code> scoped to feature and recommendation bucket ARNs with prefix conditions (e.g., <code>arn:aws:s3:::wellness-scores/run_date=*</code>); <code>kinesis:PutRecord</code> on the engagement stream ARN; <code>ses:SendEmail</code> scoped to the BAA-covered identity ARN. Never <code>Resource: *</code>.</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
@@ -868,6 +868,16 @@
 <pre class="code code-plain"><code>FUNCTION allocate_capacity(per_member_rankings, programs, policy):
     // Build a flat list of (member, program, priority) tuples, sorted by
     // priority descending. The allocator walks this list and assigns slots.
+    //
+    // Pre-cache cohort features per member. A member ranked across N programs
+    // would otherwise produce N redundant DynamoDB reads, and a reader that
+    // updates between reads can produce inconsistent cohort assignments
+    // across the same member&#x27;s recommendations.
+    unique_members = distinct_members(per_member_rankings)
+    cohort_cache = {}
+    FOR member_id in unique_members:
+        cohort_cache[member_id] = lookup_cohort_features(member_id)
+
     candidates = []
     FOR each member, programs_for_member in per_member_rankings:
         FOR each p in programs_for_member:
@@ -877,9 +887,9 @@
                 priority:      p.priority,
                 priority_components: p.priority_components,
                 member_rank:   p.member_rank,
-                cohort_features: lookup_cohort_features(member)
-                    // e.g., engagement-history quartile, language, geography,
-                    //       SDOH cohort
+                cohort_features: cohort_cache[member]
+                    // Cached per member; consistent across all (member, program)
+                    // pairs for the same member within this run.
             })
     candidates_sorted = sort candidates by priority DESC
 
@@ -975,21 +985,37 @@
             })
             CONTINUE
 
-        // Consent verification. Wellness consent may be implicit
-        // (an enrollment-time opt-in to &quot;wellness communications&quot;) or
-        // explicit (a per-program consent the member acted on). Check both.
-        IF NOT member_profile.wellness_consent.active:
-            deferred.append({
-                row:    row,
-                reason: &quot;no_active_wellness_consent&quot;
-            })
+        // Multi-dimensional consent verification. Wellness consent is not
+        // a single boolean. Each dimension that fails produces its own
+        // deferral reason so the dashboard surfaces exactly what&#x27;s missing.
+        //
+        // (a) ADA voluntary-participation: wellness programs must be
+        //     genuinely voluntary under the ADA; confirm the member has
+        //     affirmatively opted in.
+        IF NOT member_profile.consent.ada_voluntary_participation:
+            deferred.append({ row: row, reason: &quot;ada_voluntary_participation_not_confirmed&quot; })
             CONTINUE
 
-        IF row.program_id in member_profile.opt_outs.programs:
-            deferred.append({
-                row:    row,
-                reason: &quot;member_opted_out_of_program&quot;
-            })
+        // (b) GINA authorization: only checked when the program&#x27;s
+        //     eligibility criteria use family-history features (e.g., DPP
+        //     may use family history of diabetes). The program catalog
+        //     carries a `uses_family_history_features` flag.
+        IF program_uses_family_history(row.program_id) AND NOT member_profile.consent.gina_authorization:
+            deferred.append({ row: row, reason: &quot;gina_authorization_required&quot; })
+            CONTINUE
+
+        // (c) Program-specific consent: a member who consented to weight
+        //     management outreach has not necessarily consented to behavioral
+        //     health outreach. Keyed on program_id.
+        IF row.program_id NOT IN member_profile.consent.program_consents:
+            deferred.append({ row: row, reason: &quot;program_specific_consent_missing&quot; })
+            CONTINUE
+
+        // (d) Channel-specific consent: email vs SMS vs telephonic. Checked
+        //     against the channel the orchestrator will use for this member.
+        intended_channel = resolve_intended_channel(row.member_id, row.program_id)
+        IF intended_channel NOT IN member_profile.consent.channel_consents:
+            deferred.append({ row: row, reason: &quot;channel_consent_missing&quot; })
             CONTINUE
 
         outreach_list.append(row)
@@ -1052,7 +1078,14 @@
                     // tailored copy.
             },
             urgency      = derive_urgency(row.priority, program.cohort_start_date),
-            tracking_id  = &quot;wellness-&quot; + row.run_date + &quot;-&quot; + row.member_id + &quot;-&quot; + row.program_id
+            tracking_id  = make_opaque_tracking_id(row.run_date, row.member_id, row.program_id)
+                // HMAC-SHA256 over (run_date, member_id, program_id) with a per-environment
+                // secret, truncated to 32 hex chars. Opaque and non-reversible: the tracking_id
+                // flows on outbound channels (email open-tracking pixels, SMS click-through
+                // links, vendor platform handoffs) and inbound engagement events. Member
+                // identity is reattached only inside systems with read access to the
+                // recommendation log. Plain-text member_ids in URLs and payloads are PHI
+                // leakage even when the surrounding context looks innocuous.
         )
 
         // Update the contact-frequency counter optimistically. The actual
@@ -1071,14 +1104,14 @@
                 patient_id = row.member_id,
                 briefing   = pcp_briefing,
                 source     = &quot;wellness-recommender&quot;,
-                tracking_id = &quot;wellness-pcp-&quot; + row.run_date + &quot;-&quot; + row.member_id
+                tracking_id = make_opaque_tracking_id(row.run_date, row.member_id, &quot;pcp-&quot; + row.program_id)
             )
 
         // Emit a &#x27;program_recommended&#x27; engagement event so downstream
         // attribution can match outcomes back to this recommendation.
         Kinesis.PutRecord(stream = &quot;engagement-stream&quot;, record = {
             event_type:        &quot;program_recommended&quot;,
-            tracking_id:       &quot;wellness-&quot; + row.run_date + &quot;-&quot; + row.member_id + &quot;-&quot; + row.program_id,
+            tracking_id:       make_opaque_tracking_id(row.run_date, row.member_id, row.program_id),
             member_id:         row.member_id,
             program_id:        row.program_id,
             run_date:          row.run_date,
@@ -1148,6 +1181,32 @@
             reason:     event.reason
         })
 
+    // Outreach delivery failure reconciliation. The contact-frequency
+    // counter was incremented optimistically in Step 6. If outreach
+    // failed to deliver, we must decrement the counter so the member
+    // isn&#x27;t silently penalized for outreach they never received.
+    // Without this, members with unreliable channels accumulate phantom
+    // counter increments that push them past MAX_WELLNESS_PER_MONTH and
+    // get systematically silenced from future outreach.
+    IF event.event_type in [&quot;program_outreach_failed&quot;, &quot;program_outreach_bounced&quot;,
+                             &quot;program_outreach_undeliverable&quot;]:
+        DynamoDB.UpdateItem(
+            &quot;patient-profile&quot;,
+            rec.member_id,
+            &quot;ADD outreach_recent_wellness_count :neg_one, outreach_recent_total_count :neg_one&quot;,
+            values = { &quot;:neg_one&quot;: -1 }
+        )
+        DynamoDB.UpdateItem(
+            &quot;recommendation-log&quot;,
+            rec.tracking_id,
+            &quot;SET delivery_status = :failed, delivery_failure_reason = :reason&quot;,
+            values = { &quot;:failed&quot;: &quot;undelivered&quot;, &quot;:reason&quot;: event.failure_reason }
+        )
+        emit_metric(&quot;outreach_delivery_failed&quot;, value = 1, dimensions = {
+            program_id: event.program_id,
+            failure_reason: event.failure_reason
+        })
+
     // Cohort-sliced metrics for the equity dashboard. Track enrollment,
     // completion, and override rates by cohort so subgroup drift is visible.
     emit_metric(&quot;wellness_engagement&quot;,
@@ -1159,6 +1218,41 @@
                     language:                rec.cohort_features.language,
                     sdoh_cohort:             rec.cohort_features.sdoh_cohort
                 })
+</code></pre>
+<p><strong>Stale-pending sweep (reconciliation companion to Step 7).</strong> A daily Lambda scans recommendation-log rows from the prior 24 hours whose tracking_id has no engagement-stream activity at all (no <code>program_outreach_sent</code>, no <code>program_outreach_opened</code>, no delivery-failure event). These are outreach attempts that were queued in Step 6 but never confirmed as sent or failed. The sweep either decrements the contact-frequency counter (if the channel optimizer confirms the message was never actually dispatched) or escalates to operations (if the state is ambiguous). Without this sweep, members whose outreach silently fails to deliver still consume cap slots, accumulate phantom counter increments, and are silenced from future outreach for outreach they never received.</p>
+<pre class="code code-plain"><code>FUNCTION sweep_stale_pending_recommendations(run_date_minus_1):
+    // Pull recommendation-log rows from yesterday that lack any
+    // engagement-stream confirmation.
+    stale_recs = query_recommendation_log(
+        run_date = run_date_minus_1,
+        filter   = &quot;NOT EXISTS engagement_events WHERE tracking_id = rec.tracking_id&quot;
+    )
+
+    FOR rec in stale_recs:
+        // Check the channel optimizer&#x27;s dispatch status.
+        dispatch_status = ChannelOptimizer.GetDispatchStatus(rec.tracking_id)
+
+        IF dispatch_status == &quot;never_dispatched&quot; OR dispatch_status == &quot;unknown&quot;:
+            // Safe to decrement: the outreach was never actually sent.
+            DynamoDB.UpdateItem(
+                &quot;patient-profile&quot;,
+                rec.member_id,
+                &quot;ADD outreach_recent_wellness_count :neg_one, outreach_recent_total_count :neg_one&quot;,
+                values = { &quot;:neg_one&quot;: -1 }
+            )
+            DynamoDB.UpdateItem(
+                &quot;recommendation-log&quot;,
+                rec.tracking_id,
+                &quot;SET delivery_status = :stale&quot;,
+                values = { &quot;:stale&quot;: &quot;stale_unconfirmed&quot; }
+            )
+            emit_metric(&quot;stale_pending_decremented&quot;, value = 1)
+
+        ELSE IF dispatch_status == &quot;dispatched_awaiting_confirmation&quot;:
+            // Ambiguous: the message may still be in transit. Escalate
+            // rather than decrementing, to avoid double-counting.
+            escalate_to_operations(rec, reason = &quot;stale_pending_no_engagement_24h&quot;)
+            emit_metric(&quot;stale_pending_escalated&quot;, value = 1)
 </code></pre>
 <p><strong>Step 8: Run long-horizon outcome evaluation periodically.</strong> Independent of the weekly batch run, a quarterly or semi-annual outcome-evaluation job compares the clinical and cost trajectories of recommended-and-engaged members against matched controls. The output drives the medical director's program-renewal decisions and surfaces evidence (or counter-evidence) for whether each program is actually moving the needle. Skip this and you can't honestly answer the question of whether the wellness investment is paying off.</p>
 <pre class="code code-plain"><code>FUNCTION run_outcome_evaluation(programs, evaluation_window):
@@ -1208,6 +1302,135 @@
         // Emit metrics to QuickSight and CloudWatch dashboards.
         emit_outcome_metrics(program, ate, ate_by_cohort)
 </code></pre>
+<h3 id="supplementary-outreach-message-validator">Supplementary: Outreach Message Validator</h3>
+<p>The <code>validate_outreach_message</code> call in Step 6 deserves explicit specification. The validator has four layers, checked in order:</p>
+<pre class="code code-plain"><code>FUNCTION validate_outreach_message(tailored, program):
+    // Layer 1: Schema and shape. The LLM must return all required fields
+    // (subject_line, opening_line, program_pitch, closing_call_to_action)
+    // with correct types and within length limits (subject &lt; 100 chars,
+    // body fields &lt; 500 chars each).
+    IF NOT schema_valid(tailored, OUTREACH_SCHEMA):
+        RETURN { valid: false, reason: &quot;schema_violation&quot; }
+
+    // Layer 2: Required disclosures. Each program has mandatory disclosures
+    // (e.g., &quot;participation is voluntary&quot; for ADA compliance, cost-sharing
+    // details if applicable). Check that the message contains them.
+    required_disclosures = program.required_disclosures
+    FOR disclosure in required_disclosures:
+        IF NOT contains_semantic_equivalent(tailored.full_text(), disclosure):
+            RETURN { valid: false, reason: &quot;missing_disclosure:&quot; + disclosure.id }
+
+    // Layer 3: Prohibited-claims check. A regex/blocklist of patterns that
+    // must never appear (curative-language, outcome guarantees, implicit
+    // endorsement of a clinical decision, off-label claims).
+    prohibited_patterns = load_prohibited_claims(program.program_id)
+        // Versioned config artifact in S3 with object versioning, owned by
+        // clinical/compliance, loaded at validator-init from the current version.
+    FOR pattern in prohibited_patterns:
+        IF regex_match(pattern, tailored.full_text()):
+            RETURN { valid: false, reason: &quot;prohibited_claim:&quot; + pattern.id }
+
+    // Layer 4: Hallucinated-clinical-claims check. Compare any clinical
+    // assertions in the LLM output against an approved-claims list for
+    // this program. The approved-claims list is the set of clinical
+    // statements the program&#x27;s vendor and medical director have explicitly
+    // approved for member-facing communication.
+    approved_claims = load_approved_claims(program.program_id)
+        // Same versioned-config pattern as prohibited_claims.
+    extracted_claims = extract_clinical_assertions(tailored.full_text())
+    FOR claim in extracted_claims:
+        IF claim NOT IN approved_claims:
+            RETURN { valid: false, reason: &quot;unapproved_clinical_claim&quot; }
+
+    RETURN { valid: true }
+
+// Failure handling:
+// - Schema or length failures: fall back to program.default_template.
+// - Clinical or prohibited-claims failures: defer the outreach with
+//   reason &quot;validator_failed:&lt;reason&gt;&quot; and flag for human review.
+// - A change to the prohibited-claims or approved-claims lists should
+//   trigger a re-validation pass over the most recent N days of outreach
+//   to catch messages that would now fail. Manually-approved exceptions
+//   are logged for audit.
+</code></pre>
+<p>The approved-claims and prohibited-claims lists live as versioned config artifacts in S3 (object versioning enabled), owned by clinical/compliance. The validator loads the current version at init. A list update triggers a CloudWatch Event that invokes a re-validation Lambda over recent outreach history.</p>
+<h3 id="supplementary-per-program-eventbridge-scheduler">Supplementary: Per-Program EventBridge Scheduler</h3>
+<p>The architecture diagram shows a single weekly EventBridge schedule triggering the entire pipeline. In production, different programs have different cohort cadences (DPP allocates members 7-14 days before monthly cohort start; smoking cessation rolls weekly; stress reduction starts quarterly). Replace the single schedule with per-program EventBridge Scheduler rules driven by each program's cohort cadence stored in the program-catalog metadata.</p>
+<pre class="code code-plain"><code>// Each program (or cadence-group of programs that share a schedule)
+// gets its own EventBridge Scheduler rule. The rule triggers that
+// program&#x27;s slice of the pipeline on its own cron.
+//
+// The cohort-start window for each program (e.g., DPP allocates
+// members 7 to 14 days before cohort start) lives as a program-catalog
+// field and parameterizes the scheduler.
+//
+// Example rules:
+//   prog-dpp:     cron(0 6 ? * MON *) on the first Monday &gt;= 14 days
+//                 before the next cohort start
+//   prog-smoking: cron(0 6 ? * WED *)  (weekly rolling enrollment)
+//   prog-stress:  cron(0 6 1 1,4,7,10 ? *)  (quarterly)
+//
+// Reference Recipe 14.x for the cross-program scheduling-as-optimization
+// version when slates have many programs with overlapping cohort calendars.
+</code></pre>
+<h3 id="supplementary-model-retrain-trigger-and-promotion-path">Supplementary: Model-Retrain Trigger and Promotion Path</h3>
+<p>The architecture diagram shows &quot;Periodic retrain&quot; without an explicit trigger node or a path for promoting a newly-trained model into the next batch run.</p>
+<p><strong>Trigger mechanism:</strong> An EventBridge schedule (monthly default, configurable per model) invokes a Step Functions workflow that:</p>
+<ol>
+<li>Pulls the latest training data from the engagement data lake (labels from the prior 30-60 days of engagement events joined to recommendation-log rows).</li>
+<li>Kicks off a SageMaker Training Job per model (need scorer, per-program engagement predictors, per-program uplift estimators).</li>
+<li>Registers the trained model artifact in SageMaker Model Registry with status <code>PendingApproval</code>.</li>
+</ol>
+<p><strong>Promotion path:</strong> After training completes:</p>
+<ol>
+<li>An automated evaluation step compares the new model against the current production model on a held-out validation set (AUC, calibration, cohort-stratified metrics).</li>
+<li>If the new model passes the automated gate (metric improvement above threshold, no cohort regression), it is promoted to <code>Approved</code> in Model Registry.</li>
+<li>A canary run scores a small random sample (1-5% of the next eligible population) with both the old and new model; if the canary shows no anomalies (score-distribution shift, allocator-behavior change beyond tolerance), the new model is promoted to the Batch Transform model package used by the next full run.</li>
+<li>If the canary fails, the model stays in <code>PendingApproval</code> and an alarm fires to the data-science team.</li>
+</ol>
+<p>The Batch Transform job in Step 2 always references the <code>Approved</code> model version from Model Registry, so the promotion is a registry-state change, not a code deploy.</p>
+<h3 id="supplementary-greedy-allocator-path-dependence">Supplementary: Greedy Allocator Path-Dependence</h3>
+<p>The greedy allocator in Step 4 has an intrinsic instability worth documenting. The per-member program choice depends on the global priority ordering: two members eligible for the same two programs may be assigned different programs depending on which (member, program) pair appears first in the sort. Re-running the allocator with slightly different priorities (a feature refresh, a model retrain that shifts scores by small amounts) may flip a member's assigned program across runs.</p>
+<p>This is the greedy allocator's inherent instability and is one of the reasons graduating to integer programming (Recipe 14.x) is worth the investment when the slate has more than 3-4 programs with overlapping eligibility.</p>
+<p>For plans where allocation stability across runs is operationally important (members receive a &quot;you've been recommended for X&quot; notification and a flip to Y in the next run is confusing), a per-member best-program pre-pass can pre-commit each member to their top-priority program before the global greedy walk. The pre-pass loses some optimization tightness (it can't redistribute members to fill under-subscribed programs as effectively) in exchange for stability. The choice between stability and optimization tightness is policy; document it and let the cross-functional committee decide.</p>
+<h3 id="supplementary-pcp-review-hold-policy">Supplementary: PCP Review-Hold Policy</h3>
+<p>For higher-stakes programs, the parallel PCP-notify pattern in Step 6 may not be sufficient. A <code>pcp_review_policy</code> field in the program catalog controls the escalation:</p>
+<table>
+<thead>
+<tr>
+<th>Policy Value</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>none</code></td>
+<td>No PCP notification. Appropriate for low-stakes lifestyle apps.</td>
+</tr>
+<tr>
+<td><code>notify_parallel</code></td>
+<td>Current behavior: PCP is notified in parallel with member outreach. Appropriate for moderate-stakes programs (DPP, weight management).</td>
+</tr>
+<tr>
+<td><code>review_required_24h</code></td>
+<td>Outreach is held for 24 hours. PCP can decline before send. Default to send if no response within the window.</td>
+</tr>
+<tr>
+<td><code>review_required_72h_then_hold</code></td>
+<td>Outreach held for 72 hours. If PCP doesn't respond, escalate to care team rather than auto-sending. Appropriate for fragile clinical situations.</td>
+</tr>
+</tbody>
+</table>
+<p>Canonical &quot;review required&quot; cases: behavioral health programs for members with fragile mental-health stability, smoking cessation in pregnancy, weight management for members with eating-disorder history. Reference Recipe 4.10 for the formal-state-machine version of this orchestration.</p>
+<h3 id="supplementary-sdoh-cohort-phi-boundary">Supplementary: SDOH-Cohort PHI Boundary</h3>
+<p>Cohort labels like <code>low_food_security</code> are derived from screening data and reveal sensitive information about a member's life circumstances. Treat these labels as PHI even when stripped of direct identifiers: a small SDOH cohort in a specific geography is reidentifiable.</p>
+<p>The <code>cohort_features</code> attribute on engagement events should be limited to the minimum cohort axes needed for fairness monitoring, and access should be narrower than for general engagement data. Apply the minimum-necessary principle to cohort axes themselves: only carry cohort attributes through to the engagement event that the equity dashboard actually consumes.</p>
+<p>A new cohort axis added because &quot;it might be useful someday&quot; is a privacy expansion that should be reviewed by the privacy officer before implementation. Each cohort axis must have an explicit consumer (a dashboard panel, a fairness metric, an equity-floor definition) or it shouldn't flow into the event payload.</p>
+<h3 id="supplementary-dlq-coverage">Supplementary: DLQ Coverage</h3>
+<p>The architecture needs dead-letter queues at three boundaries, none of which the architecture diagram currently shows:</p>
+<p><strong>(a) Step Functions to Lambda allocator:</strong> A Catch clause on each Lambda task in the Step Functions state machine, pointing to an SQS failure queue keyed on (run_date, stage, failure_reason). A CloudWatch alarm fires when the DLQ depth exceeds zero.</p>
+<p><strong>(b) Kinesis to attribution Lambda:</strong> Configure an <code>OnFailure</code> destination on the event source mapping pointing to SQS (or SNS for fan-out to operations). A CloudWatch alarm on DLQ depth catches silently-dropped engagement events that would leave the model training data incomplete and the dashboards wrong, with no observable symptom until a quarterly evaluation regresses.</p>
+<p><strong>(c) Batch Transform job failures:</strong> SageMaker doesn't surface failures via DLQ natively. Wire the Step Functions Catch to handle <code>TransformJob</code> failed states explicitly: the Catch routes to an SQS queue with the failed job's (run_date, program_id, model_name, failure_reason), and a separate alarm ensures the failure is visible to operations within minutes.</p>
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter04.04-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
@@ -1215,7 +1438,7 @@
 <h2 id="expected-results">Expected Results</h2>
 <p><strong>Sample recommendation log entry (per-(member, program) row):</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;tracking_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wellness-2026-05-04-mem-000482-prog-dpp&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tracking_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a3f8c91e7b2d04561f9c8e3a7b204d56&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;run_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-04&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;member_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mem-000482&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;program_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prog-dpp&quot;</span><span class="p">,</span>
@@ -1243,7 +1466,7 @@
 
 <p><strong>Sample tailored outreach payload (passed to channel optimizer):</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;tracking_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wellness-2026-05-04-mem-000482-prog-dpp&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tracking_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a3f8c91e7b2d04561f9c8e3a7b204d56&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;tailored&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;subject_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Una opción de prevención que puede ayudarle&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;opening_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hola Maria, queríamos compartirle un programa que podría apoyarle con sus resultados recientes.&quot;</span><span class="p">,</span>

@@ -1278,6 +1278,12 @@
 <span class="sd">    We index phases and events as separate documents so they&#39;re independently</span>
 <span class="sd">    searchable with their own timestamps and attributes.</span>
 
+<span class="sd">    IMPORTANT: The surgeon_id is pseudonymized before indexing. The general</span>
+<span class="sd">    search index stores only a stable pseudonym. Resolving the pseudonym to</span>
+<span class="sd">    the actual surgeon identity requires a separate restricted lookup table</span>
+<span class="sd">    and elevated IAM permissions. See the architecture companion for the</span>
+<span class="sd">    full access control model.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        procedure_id: Links documents back to the procedure.</span>
 <span class="sd">        metadata: Procedure metadata for filtering.</span>
@@ -1296,12 +1302,20 @@
     <span class="c1"># )</span>
     <span class="c1"># headers = {&quot;Content-Type&quot;: &quot;application/json&quot;}</span>
 
+    <span class="c1"># Pseudonymize surgeon identity for the search index.</span>
+    <span class="c1"># In production, this would be a lookup in a DynamoDB mapping table:</span>
+    <span class="c1">#   pseudonym_table.get_item(Key={&quot;surgeon_id&quot;: metadata[&quot;surgeon_id&quot;]})</span>
+    <span class="c1"># If no mapping exists, generate a new pseudonym and store it.</span>
+    <span class="c1"># The pseudonym is stable (same surgeon always gets the same pseudonym)</span>
+    <span class="c1"># but not reversible without access to the restricted lookup table.</span>
+    <span class="n">surgeon_pseudonym</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;surgeon-</span><span class="si">{</span><span class="nb">hash</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;surgeon_id&#39;</span><span class="p">])</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">100000</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span>
+
     <span class="c1"># Index each phase as a searchable document.</span>
     <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;phase_timeline&quot;</span><span class="p">]:</span>
         <span class="n">doc</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span>
             <span class="s2">&quot;procedure_type&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_type&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;surgeon_id&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;surgeon_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;surgeon_pseudonym&quot;</span><span class="p">:</span> <span class="n">surgeon_pseudonym</span><span class="p">,</span>
             <span class="s2">&quot;procedure_date&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_date&quot;</span><span class="p">],</span>
             <span class="s2">&quot;phase_name&quot;</span><span class="p">:</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;phase_name&quot;</span><span class="p">],</span>
             <span class="s2">&quot;start_time&quot;</span><span class="p">:</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;start_time&quot;</span><span class="p">],</span>
@@ -1321,7 +1335,7 @@
         <span class="n">doc</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span>
             <span class="s2">&quot;procedure_type&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_type&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;surgeon_id&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;surgeon_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;surgeon_pseudonym&quot;</span><span class="p">:</span> <span class="n">surgeon_pseudonym</span><span class="p">,</span>
             <span class="s2">&quot;procedure_date&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_date&quot;</span><span class="p">],</span>
             <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;event_type&quot;</span><span class="p">],</span>
             <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span>

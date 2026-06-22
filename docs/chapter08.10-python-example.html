@@ -721,70 +721,99 @@
     <span class="n">note_text</span> <span class="o">=</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
 
     <span class="c1"># Comprehend Medical has a 20,000 character limit per call.</span>
-    <span class="c1"># Clinical notes rarely exceed this, but in production you&#39;d chunk longer docs.</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">note_text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">20000</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Note </span><span class="si">%s</span><span class="s2"> exceeds 20K chars, truncating&quot;</span><span class="p">,</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">])</span>
-        <span class="n">note_text</span> <span class="o">=</span> <span class="n">note_text</span><span class="p">[:</span><span class="mi">20000</span><span class="p">]</span>
+    <span class="c1"># For notes exceeding this, split at sentence boundaries before 18,000 chars,</span>
+    <span class="c1"># process each chunk independently, then merge and deduplicate results.</span>
+    <span class="c1"># Most clinical notes are well under the limit, so chunking rarely fires.</span>
+    <span class="n">chunks</span> <span class="o">=</span> <span class="n">_chunk_note_text</span><span class="p">(</span><span class="n">note_text</span><span class="p">,</span> <span class="n">max_chars</span><span class="o">=</span><span class="mi">18000</span><span class="p">)</span>
 
-    <span class="c1"># Call DetectEntitiesV2. This is the general-purpose extraction API.</span>
-    <span class="c1"># It returns conditions, medications, tests, anatomy, and temporal expressions.</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">note_text</span><span class="p">)</span>
+    <span class="n">all_entities</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_rx_lookup</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="c1"># Also call InferRxNorm for normalized medication codes.</span>
-    <span class="c1"># This gives us RxNorm CUIs so we can match &quot;Effexor&quot; to &quot;venlafaxine&quot;.</span>
-    <span class="n">rx_response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">infer_rx_norm</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">note_text</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">chunk_text</span><span class="p">,</span> <span class="n">chunk_offset</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+        <span class="c1"># Call DetectEntitiesV2 on this chunk.</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">chunk_text</span><span class="p">)</span>
 
-    <span class="c1"># Process entities into a consistent internal format.</span>
-    <span class="n">processed</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[]):</span>
-        <span class="c1"># Determine assertion status from Traits.</span>
-        <span class="c1"># NEGATION trait means the entity is negated (&quot;denies depression&quot;).</span>
-        <span class="c1"># No NEGATION trait means present/positive.</span>
-        <span class="n">assertion</span> <span class="o">=</span> <span class="s2">&quot;POSITIVE&quot;</span>
-        <span class="n">traits</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[])]</span>
-        <span class="k">if</span> <span class="s2">&quot;NEGATION&quot;</span> <span class="ow">in</span> <span class="n">traits</span><span class="p">:</span>
-            <span class="n">assertion</span> <span class="o">=</span> <span class="s2">&quot;NEGATIVE&quot;</span>
+        <span class="c1"># Also call InferRxNorm for normalized medication codes.</span>
+        <span class="n">rx_response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">infer_rx_norm</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">chunk_text</span><span class="p">)</span>
 
-        <span class="c1"># Extract linked attributes (dose, frequency, test values, etc.)</span>
-        <span class="n">attributes</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Attributes&quot;</span><span class="p">,</span> <span class="p">[]):</span>
-            <span class="n">attributes</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">attr</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">attr</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">attr</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
+        <span class="c1"># Process entities and adjust offsets back to original document coordinates.</span>
+        <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">assertion</span> <span class="o">=</span> <span class="s2">&quot;POSITIVE&quot;</span>
+            <span class="n">traits</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[])]</span>
+            <span class="k">if</span> <span class="s2">&quot;NEGATION&quot;</span> <span class="ow">in</span> <span class="n">traits</span><span class="p">:</span>
+                <span class="n">assertion</span> <span class="o">=</span> <span class="s2">&quot;NEGATIVE&quot;</span>
+
+            <span class="n">attributes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Attributes&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="n">attributes</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">attr</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">attr</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">attr</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
+                <span class="p">})</span>
+
+            <span class="n">all_entities</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;assertion&quot;</span><span class="p">:</span> <span class="n">assertion</span><span class="p">,</span>
+                <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;traits&quot;</span><span class="p">:</span> <span class="n">traits</span><span class="p">,</span>
+                <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">attributes</span><span class="p">,</span>
+                <span class="s2">&quot;begin_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;BeginOffset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">chunk_offset</span><span class="p">,</span>
+                <span class="s2">&quot;end_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;EndOffset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">chunk_offset</span><span class="p">,</span>
             <span class="p">})</span>
 
-        <span class="n">processed</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;assertion&quot;</span><span class="p">:</span> <span class="n">assertion</span><span class="p">,</span>
-            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;traits&quot;</span><span class="p">:</span> <span class="n">traits</span><span class="p">,</span>
-            <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">attributes</span><span class="p">,</span>
-            <span class="s2">&quot;begin_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;BeginOffset&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;end_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;EndOffset&quot;</span><span class="p">],</span>
-        <span class="p">})</span>
-
-    <span class="c1"># Build a medication normalization lookup from InferRxNorm results.</span>
-    <span class="c1"># This lets us link brand names to generics later.</span>
-    <span class="n">rx_lookup</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">rx_entity</span> <span class="ow">in</span> <span class="n">rx_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[]):</span>
-        <span class="k">if</span> <span class="n">rx_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;RxNormConcepts&quot;</span><span class="p">):</span>
-            <span class="n">top_concept</span> <span class="o">=</span> <span class="n">rx_entity</span><span class="p">[</span><span class="s2">&quot;RxNormConcepts&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">rx_lookup</span><span class="p">[</span><span class="n">rx_entity</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">top_concept</span><span class="p">[</span><span class="s2">&quot;Code&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">top_concept</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">top_concept</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
-            <span class="p">}</span>
+        <span class="c1"># Build medication normalization lookup from InferRxNorm results.</span>
+        <span class="k">for</span> <span class="n">rx_entity</span> <span class="ow">in</span> <span class="n">rx_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">if</span> <span class="n">rx_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;RxNormConcepts&quot;</span><span class="p">):</span>
+                <span class="n">top_concept</span> <span class="o">=</span> <span class="n">rx_entity</span><span class="p">[</span><span class="s2">&quot;RxNormConcepts&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">all_rx_lookup</span><span class="p">[</span><span class="n">rx_entity</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">top_concept</span><span class="p">[</span><span class="s2">&quot;Code&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">top_concept</span><span class="p">[</span><span class="s2">&quot;Description&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">top_concept</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
+                <span class="p">}</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">],</span>
         <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_date&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">processed</span><span class="p">,</span>
-        <span class="s2">&quot;rx_normalization&quot;</span><span class="p">:</span> <span class="n">rx_lookup</span><span class="p">,</span>
-        <span class="s2">&quot;entity_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">processed</span><span class="p">),</span>
+        <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">all_entities</span><span class="p">,</span>
+        <span class="s2">&quot;rx_normalization&quot;</span><span class="p">:</span> <span class="n">all_rx_lookup</span><span class="p">,</span>
+        <span class="s2">&quot;entity_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_entities</span><span class="p">),</span>
     <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_chunk_note_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_chars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">18000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split text into chunks that fit within Comprehend Medical&#39;s 20K limit.</span>
+<span class="sd">    Splits at the last sentence-ending punctuation before max_chars.</span>
+<span class="sd">    Returns list of (chunk_text, start_offset) tuples.</span>
+
+<span class="sd">    Most notes are under 18K and return as a single chunk with offset 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_chars</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">text</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+
+    <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">max_chars</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:],</span> <span class="n">start</span><span class="p">))</span>
+            <span class="k">break</span>
+        <span class="c1"># Find last sentence boundary before the limit</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;. &quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">boundary</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">boundary</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+            <span class="c1"># No sentence boundary found; fall back to whitespace</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">boundary</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">boundary</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="n">end</span>  <span class="c1"># Hard cut as last resort</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">boundary</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># Include the period/space</span>
+
+        <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">boundary</span><span class="p">],</span> <span class="n">start</span><span class="p">))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">boundary</span>
+
+    <span class="k">return</span> <span class="n">chunks</span>
 </pre></div>
 
 <hr />
@@ -997,18 +1026,33 @@
                 <span class="p">},</span>
             <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Standard aggregation: count evidence instances</span>
+            <span class="c1"># Standard aggregation: count evidence instances, with temporal</span>
+            <span class="c1"># conflict resolution when both positive and negative evidence exist.</span>
+            <span class="c1"># &quot;current-status&quot; (default): most recent note wins.</span>
+            <span class="c1"># &quot;ever-had&quot;: any positive evidence suffices regardless of negations.</span>
+            <span class="n">positive_evidence</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">criterion_evidence</span> <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;assertion&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;POSITIVE&quot;</span><span class="p">]</span>
+            <span class="n">negative_evidence</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">criterion_evidence</span> <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;assertion&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;NEGATIVE&quot;</span><span class="p">]</span>
+
+            <span class="n">temporal_mode</span> <span class="o">=</span> <span class="n">criterion</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;temporal_semantics&quot;</span><span class="p">,</span> <span class="s2">&quot;current-status&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">positive_evidence</span> <span class="ow">and</span> <span class="n">negative_evidence</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">temporal_mode</span> <span class="o">==</span> <span class="s2">&quot;current-status&quot;</span><span class="p">:</span>
+                    <span class="n">latest_negative_date</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;note_date&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">negative_evidence</span><span class="p">)</span>
+                    <span class="n">positive_evidence</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">positive_evidence</span> <span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="s2">&quot;note_date&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">latest_negative_date</span>
+                    <span class="p">]</span>
+                <span class="c1"># &quot;ever-had&quot;: keep all positive evidence unchanged</span>
+
             <span class="n">min_required</span> <span class="o">=</span> <span class="n">criterion</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_evidence_count&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">results</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;met&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">criterion_evidence</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_required</span><span class="p">,</span>
+                <span class="s2">&quot;met&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">positive_evidence</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_required</span><span class="p">,</span>
                 <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="p">(</span>
-                    <span class="nb">sum</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">criterion_evidence</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">criterion_evidence</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">criterion_evidence</span> <span class="k">else</span> <span class="mf">0.0</span>
+                    <span class="nb">sum</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">positive_evidence</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">positive_evidence</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">positive_evidence</span> <span class="k">else</span> <span class="mf">0.0</span>
                 <span class="p">),</span>
-                <span class="s2">&quot;evidence_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">criterion_evidence</span><span class="p">),</span>
-                <span class="s2">&quot;supporting_notes&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">criterion_evidence</span><span class="p">)),</span>
+                <span class="s2">&quot;evidence_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">positive_evidence</span><span class="p">),</span>
+                <span class="s2">&quot;supporting_notes&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">positive_evidence</span><span class="p">)),</span>
                 <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;matched_terms&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;entity_text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">criterion_evidence</span><span class="p">)),</span>
+                    <span class="s2">&quot;matched_terms&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;entity_text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">positive_evidence</span><span class="p">)),</span>
                 <span class="p">},</span>
             <span class="p">}</span>
 
@@ -1187,8 +1231,17 @@
 
 <span class="sd">    DynamoDB gotcha: floats must be wrapped in Decimal. boto3&#39;s resource layer</span>
 <span class="sd">    raises TypeError on raw Python floats.</span>
+
+<span class="sd">    TTL policy: intermediate NLP artifacts expire after 90 days. Final</span>
+<span class="sd">    classifications stored in S3 follow institutional retention (7-10 years).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">EVIDENCE_TABLE_NAME</span><span class="p">)</span>
+
+    <span class="c1"># TTL: expire intermediate evidence after 90 days.</span>
+    <span class="c1"># Records linked to published cohorts should have TTL removed manually</span>
+    <span class="c1"># or set to match the study&#39;s data retention schedule.</span>
+    <span class="n">ttl_seconds</span> <span class="o">=</span> <span class="mi">90</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span>  <span class="c1"># 90 days</span>
+    <span class="n">expires_at</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">timestamp</span><span class="p">())</span> <span class="o">+</span> <span class="n">ttl_seconds</span>
 
     <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
@@ -1201,6 +1254,7 @@
         <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">evidence_item</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span> <span class="mi">4</span><span class="p">))),</span>
         <span class="s2">&quot;evidence_type&quot;</span><span class="p">:</span> <span class="n">evidence_item</span><span class="p">[</span><span class="s2">&quot;evidence_type&quot;</span><span class="p">],</span>
         <span class="s2">&quot;stored_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;expires_at&quot;</span><span class="p">:</span> <span class="n">expires_at</span><span class="p">,</span>  <span class="c1"># DynamoDB TTL attribute</span>
     <span class="p">}</span>
 
     <span class="c1"># Add optional fields if present</span>

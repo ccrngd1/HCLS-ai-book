@@ -834,13 +834,25 @@
 
     <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;Infeasible&quot;</span><span class="p">:</span>
         <span class="c1"># The constraints are contradictory. No valid schedule exists.</span>
-        <span class="c1"># In production, you&#39;d identify which constraints conflict.</span>
+        <span class="c1"># In production, you&#39;d identify which constraints conflict (IIS extraction).</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Model is infeasible. Check constraint compatibility.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;INFEASIBLE&quot;</span><span class="p">,</span>
             <span class="s2">&quot;schedule&quot;</span><span class="p">:</span> <span class="p">{},</span>
             <span class="s2">&quot;objective_value&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s2">&quot;solve_seconds&quot;</span><span class="p">:</span> <span class="n">solve_seconds</span><span class="p">,</span>
+            <span class="s2">&quot;flag_for_review&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;Not Solved&quot;</span><span class="p">:</span>
+        <span class="c1"># Solver crashed or hit an internal error before finding any solution.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Solver failed without producing a solution.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;SOLVER_FAILURE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;schedule&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;objective_value&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;solve_seconds&quot;</span><span class="p">:</span> <span class="n">solve_seconds</span><span class="p">,</span>
+            <span class="s2">&quot;flag_for_review&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="p">}</span>
 
     <span class="c1"># Extract the solution: which service got which block?</span>
@@ -852,11 +864,20 @@
             <span class="k">if</span> <span class="n">pulp</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">sid</span><span class="p">][</span><span class="n">bid</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">schedule</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span> <span class="o">=</span> <span class="n">sid</span>
 
+    <span class="c1"># Check solution quality. In production, distinguish:</span>
+    <span class="c1"># - gap &lt;= 5%: near-optimal, proceed automatically</span>
+    <span class="c1"># - gap 5-15%: suboptimal but acceptable, flag for human review</span>
+    <span class="c1"># - gap &gt; 15%: too far from optimal, don&#39;t replace current schedule</span>
+    <span class="c1"># PuLP doesn&#39;t expose the MIP gap directly for CBC, but commercial solvers do.</span>
+    <span class="c1"># Here we just flag &quot;Not Optimal&quot; status (solver hit time limit before proving optimality).</span>
+    <span class="n">flag_for_review</span> <span class="o">=</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;Not Solved&quot;</span> <span class="ow">or</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;Optimal&quot;</span>
+
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">status</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
         <span class="s2">&quot;schedule&quot;</span><span class="p">:</span> <span class="n">schedule</span><span class="p">,</span>
         <span class="s2">&quot;objective_value&quot;</span><span class="p">:</span> <span class="n">pulp</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">objective</span><span class="p">),</span>
         <span class="s2">&quot;solve_seconds&quot;</span><span class="p">:</span> <span class="n">solve_seconds</span><span class="p">,</span>
+        <span class="s2">&quot;flag_for_review&quot;</span><span class="p">:</span> <span class="n">flag_for_review</span><span class="p">,</span>
     <span class="p">}</span>
 </pre></div>
 
@@ -1043,11 +1064,15 @@
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 4: Solving (this may take a few seconds)...&quot;</span><span class="p">)</span>
     <span class="n">solution</span> <span class="o">=</span> <span class="n">solve_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;blocks&quot;</span><span class="p">],</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;services&quot;</span><span class="p">])</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Status: </span><span class="si">{</span><span class="n">solution</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Objective value: </span><span class="si">{</span><span class="n">solution</span><span class="p">[</span><span class="s1">&#39;objective_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Solve time: </span><span class="si">{</span><span class="n">solution</span><span class="p">[</span><span class="s1">&#39;solve_seconds&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">solution</span><span class="p">[</span><span class="s2">&quot;objective_value&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Objective value: </span><span class="si">{</span><span class="n">solution</span><span class="p">[</span><span class="s1">&#39;objective_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Solve time: </span><span class="si">{</span><span class="n">solution</span><span class="p">[</span><span class="s1">&#39;solve_seconds&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">solution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;flag_for_review&quot;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  *** FLAGGED FOR REVIEW: solution may be suboptimal ***&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">solution</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;INFEASIBLE&quot;</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: No feasible schedule exists under current constraints.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">solution</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;INFEASIBLE&quot;</span><span class="p">,</span> <span class="s2">&quot;SOLVER_FAILURE&quot;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ERROR: </span><span class="si">{</span><span class="n">solution</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">. No valid schedule produced.&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Review room capabilities and minimum allocation requirements.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">solution</span>
 

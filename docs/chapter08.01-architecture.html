@@ -548,7 +548,11 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td><code>comprehend:ClassifyDocument</code>, <code>comprehend:DetectEntities</code> (medical), <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>sqs:SendMessage</code></td>
+<td>Resource-scoped statements: <code>comprehend:ClassifyDocument</code> on the classifier endpoint ARN; <code>comprehendmedical:DetectEntitiesV2</code> on <code>*</code> (Comprehend Medical is stateless, no resource ARN); <code>s3:GetObject</code> and <code>s3:PutObject</code> on the training-data bucket ARN only; <code>dynamodb:GetItem</code> on the abbreviation-map table ARN (config data, no PHI); <code>dynamodb:GetItem</code> + <code>dynamodb:PutItem</code> on the classification-results table ARN (contains PHI, separate key policy); <code>sqs:SendMessage</code> on the review queue ARN only. Separate config-level access (abbreviation map) from PHI-level access (classification results) using distinct IAM policy statements so that a compromised read-only path cannot write to PHI stores.</td>
+</tr>
+<tr>
+<td><strong>SQS Security</strong></td>
+<td>Queue policy restricts <code>sqs:ReceiveMessage</code> to the review application's IAM role only (no other principal can dequeue PHI). Set message retention to match your review SLA (e.g., 24 hours, not the default 4 days) so PHI does not persist longer than operationally necessary. Configure a dead-letter queue (DLQ) with <code>maxReceiveCount: 3</code> for messages that fail processing repeatedly. Encrypt with SSE-KMS (customer-managed key). An unscoped queue with default retention is a compliance gap when messages contain chief complaint text.</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
@@ -556,7 +560,7 @@
 </tr>
 <tr>
 <td><strong>Encryption</strong></td>
-<td>S3: SSE-KMS; DynamoDB: encryption at rest (default); SQS: SSE-KMS; all API calls over TLS</td>
+<td>S3: SSE-KMS; DynamoDB: encryption at rest (customer-managed KMS key for the classification-results table); SQS: SSE-KMS (customer-managed key); all API calls over TLS</td>
 </tr>
 <tr>
 <td><strong>VPC</strong></td>
@@ -682,12 +686,12 @@
         text = preprocessed_text
 
     // Extract detected entities and their types.
-    // Example: &quot;chest pain&quot; might return [{ text: &quot;chest pain&quot;, type: &quot;SYMPTOM&quot;, score: 0.97 }]
+    // Example: &quot;chest pain&quot; might return [{ text: &quot;chest pain&quot;, type: &quot;DX_NAME&quot;, category: &quot;MEDICAL_CONDITION&quot;, score: 0.97 }]
     entities = empty list
     FOR each entity in response.Entities:
         append to entities: {
             text: entity.Text,       // the span of text identified
-            type: entity.Type,       // SYMPTOM, DIAGNOSIS, ANATOMY, etc.
+            type: entity.Type,       // DX_NAME, SYSTEM_ORGAN_SITE, TEST_NAME, etc.
             category: entity.Category,   // MEDICAL_CONDITION, ANATOMY, etc.
             score: entity.Score       // confidence in this detection
         }
@@ -853,9 +857,28 @@ FUNCTION apply_confidence_gate(prediction):
 <li>Negated complaints in telephone triage contexts (&quot;denies chest pain, presenting for medication refill&quot;)</li>
 </ul>
 <hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This architecture demonstrates the classification pipeline end-to-end, but several gaps exist between this pseudocode and a system you'd trust with real patient routing:</p>
+<p><strong>Error handling and graceful degradation.</strong> Every external call (Comprehend endpoint, DynamoDB, SQS) can fail or throttle. Production needs: catch specific exceptions (ServiceUnavailableException, ThrottlingException, ProvisionedThroughputExceededException), retry with exponential backoff, and define a fallback path. If the Comprehend endpoint is down, route all complaints to the human queue rather than failing the registration workflow. The patient should never wait because your classifier is unavailable.</p>
+<p><strong>Input validation.</strong> The pseudocode trusts that input text is reasonable. Production validates: non-empty, under Comprehend's 5,000-byte limit, contains at least one alphabetic character, and does not contain injection patterns. Reject or truncate malformed inputs before they reach the classifier.</p>
+<p><strong>Structured logging with PHI controls.</strong> Chief complaint text is PHI. Never log it in plaintext to CloudWatch. Log a complaint_id reference and store actual text only in encrypted DynamoDB where access is IAM-controlled and CloudTrail-audited. Use a JSON log formatter for CloudWatch Logs Insights queries.</p>
+<p><strong>Retry logic with idempotency.</strong> If the Lambda times out after writing to DynamoDB but before sending to SQS, the complaint gets stored but never queued for review. Use the complaint_id as an SQS deduplication ID (FIFO queue) or implement a reconciliation process that scans for stored records with gate_action=&quot;REVIEW&quot; that lack a corresponding SQS receipt.</p>
+<p><strong>Multi-language support.</strong> This pipeline assumes English input. For patient populations with significant non-English speakers, add a language detection step (Comprehend's DetectDominantLanguage) before classification. Route non-English complaints to a human reviewer or translate before classification. Misclassifying a complaint because it was in Spanish is a patient safety issue.</p>
+<p><strong>Retraining automation.</strong> The feedback loop (human corrections feeding back into training data) is the recipe's core differentiator, but this pseudocode stops at the review queue. Closing that loop requires a separate pipeline (see the Retraining Pipeline variation below).</p>
+<p><strong>Endpoint health monitoring.</strong> Comprehend endpoints can degrade silently (latency creep, accuracy drift without errors). Publish custom CloudWatch metrics: p99 latency per classification, confidence score distribution, and review queue depth. Alarm on sudden shifts.</p>
+<hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Multi-label classification.</strong> Instead of assigning a single category, allow multiple labels for multi-complaint entries. &quot;Chest pain and shortness of breath&quot; gets both &quot;Chest Pain, Cardiac&quot; and &quot;Respiratory, Dyspnea.&quot; This requires changing from multi-class to multi-label classification (Comprehend supports both modes). The routing logic downstream needs to handle multiple categories per encounter.</p>
 <p><strong>Acuity prediction stacking.</strong> After classifying the complaint category, run a second model that predicts acuity level (ESI 1-5) based on the complaint text combined with the predicted category. This creates a two-stage pipeline: first classify what it is, then predict how urgent it is. The category prediction becomes a feature for the acuity model, which improves acuity accuracy compared to predicting directly from raw text alone.</p>
+<p><strong>Retraining pipeline (closing the feedback loop).</strong> The review queue captures human corrections, but those corrections need to flow back into the model. The retraining architecture:</p>
+<ol>
+<li>A review application (internal tool) dequeues complaints from SQS, presents the top predictions to a human reviewer, and records the corrected category.</li>
+<li>Corrected records are written back to the training S3 bucket as new labeled examples (appended to the existing training CSV, partitioned by correction date).</li>
+<li>A Step Functions workflow runs on a schedule (weekly or monthly, depending on correction volume). It: (a) assembles the updated training dataset from S3, (b) kicks off a new Comprehend custom classifier training job, (c) waits for training completion, (d) evaluates the new model against a held-out test set.</li>
+<li>If the new model's accuracy exceeds the current production model by a configurable threshold (or at minimum does not regress), the workflow updates the Comprehend endpoint to use the new model. If accuracy drops, the workflow raises an alarm and keeps the existing model active.</li>
+<li>The old model artifact remains in S3 for rollback. Endpoint updates in Comprehend are non-disruptive (new model serves requests once ready; no downtime).</li>
+</ol>
+<p>This closes the loop: misclassifications get corrected by humans, corrections become training data, training data improves the model, and the improved model makes fewer misclassifications. The cadence (weekly vs. monthly) depends on correction volume. If you accumulate fewer than 100 corrections per week, monthly retraining is sufficient.</p>
 <p><strong>Real-time model monitoring and drift detection.</strong> Publish classification confidence distributions to CloudWatch as custom metrics. Set alarms when the mean confidence drops below a threshold (indicating the model is seeing inputs it wasn't trained on). Track the review queue volume over time: a rising review rate signals model degradation or vocabulary drift. Automate retraining triggers based on these signals.</p>
 <hr />
 <h2 id="additional-resources">Additional Resources</h2>

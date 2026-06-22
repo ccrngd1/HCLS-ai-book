@@ -591,13 +591,15 @@
 <span class="n">EVENTS_BUS_NAME</span>       <span class="o">=</span> <span class="s2">&quot;provider-npi-events&quot;</span>
 <span class="n">CLOUDWATCH_NAMESPACE</span>  <span class="o">=</span> <span class="s2">&quot;Provider/NPIMatching&quot;</span>
 
-<span class="c1"># Deploy-time guardrail.</span>
-<span class="c1"># TODO (TechWriter): Code review F8 (NOTE). Extend the guardrail</span>
-<span class="c1"># to cover every resource-name constant (ASSIGNMENT_TABLE,</span>
-<span class="c1"># SCHEDULE_TABLE, REVIEW_QUEUE_TABLE, AUDIT_BUCKET, EVENTS_BUS_NAME,</span>
-<span class="c1"># CLOUDWATCH_NAMESPACE) so a missing value produces an actionable</span>
-<span class="c1"># assertion message rather than a downstream boto3 ValidationException.</span>
+<span class="c1"># Deploy-time guardrail. Validates every resource-name constant so a</span>
+<span class="c1"># missing value produces an actionable assertion message rather than a</span>
+<span class="c1"># downstream boto3 ValidationException.</span>
+<span class="k">assert</span> <span class="n">ASSIGNMENT_TABLE</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;ASSIGNMENT_TABLE must be set before deploying.&quot;</span>
+<span class="k">assert</span> <span class="n">SCHEDULE_TABLE</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;SCHEDULE_TABLE must be set before deploying.&quot;</span>
+<span class="k">assert</span> <span class="n">REVIEW_QUEUE_TABLE</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;REVIEW_QUEUE_TABLE must be set before deploying.&quot;</span>
 <span class="k">assert</span> <span class="n">AUDIT_BUCKET</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;AUDIT_BUCKET must be set before deploying.&quot;</span>
+<span class="k">assert</span> <span class="n">EVENTS_BUS_NAME</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;EVENTS_BUS_NAME must be set before deploying.&quot;</span>
+<span class="k">assert</span> <span class="n">CLOUDWATCH_NAMESPACE</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;CLOUDWATCH_NAMESPACE must be set before deploying.&quot;</span>
 
 <span class="c1"># --- NPI Registry API ---</span>
 <span class="c1"># The public NPI Registry API is published by CMS at this base URL.</span>
@@ -607,12 +609,11 @@
 <span class="n">NPI_REGISTRY_BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;https://npiregistry.cms.hhs.gov/api/&quot;</span>
 <span class="n">NPI_REGISTRY_API_VERSION</span> <span class="o">=</span> <span class="s2">&quot;2.1&quot;</span>
 <span class="n">NPI_REGISTRY_TIMEOUT_SECONDS</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="n">NPI_REGISTRY_MAX_RESULTS_PER_QUERY</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="c1"># TODO (TechWriter): Code review F7 (NOTE). The public NPI Registry</span>
-<span class="c1"># API supports a `limit` of up to 200 per query; setting 50 silently</span>
-<span class="c1"># truncates common-surname searches. Raise to 200 (the public</span>
-<span class="c1"># maximum) and optionally add `skip`-based pagination in</span>
-<span class="c1"># `_npi_registry_lookup` for queries that hit the cap.</span>
+<span class="n">NPI_REGISTRY_MAX_RESULTS_PER_QUERY</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="c1"># The public NPI Registry API supports `limit` up to 200 per query.</span>
+<span class="c1"># Using the maximum reduces the chance of silently truncating</span>
+<span class="c1"># common-surname searches. For queries that hit the cap, consider</span>
+<span class="c1"># adding `skip`-based pagination in `_npi_registry_lookup`.</span>
 
 <span class="c1"># --- Versioning ---</span>
 <span class="n">NORMALIZER_VERSION</span> <span class="o">=</span> <span class="s2">&quot;norm-provider-v1.0&quot;</span>
@@ -802,6 +803,11 @@
     <span class="s2">&quot;primary care&quot;</span><span class="p">:</span>         <span class="s2">&quot;207Q00000X&quot;</span><span class="p">,</span>  <span class="c1"># commonly used as a synonym</span>
 <span class="p">}</span>
 
+<span class="c1"># Reverse map: NUCC code -&gt; description string for the NPI Registry API.</span>
+<span class="c1"># The API accepts a `taxonomy_description` parameter, not a code.</span>
+<span class="n">NUCC_CODE_TO_DESCRIPTION</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">INTERNAL_SPECIALTY_TO_NUCC</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;primary care&quot;</span><span class="p">}</span>  <span class="c1"># avoid duplicates</span>
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_strip_diacritics</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Strip combining diacritical marks for case-insensitive matching.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
@@ -856,18 +862,12 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_double_metaphone</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Phonetic encoding for blocking and as a comparator level.</span>
-<span class="sd">    Same caveat as recipe 5.1: jellyfish.metaphone is the original</span>
-<span class="sd">    metaphone, not double metaphone. For production, use the</span>
-<span class="sd">    `metaphone` PyPI package and align all references.</span>
+<span class="sd">    Uses jellyfish.metaphone (original metaphone, not double metaphone).</span>
+<span class="sd">    For production, adopt the `metaphone` PyPI package which provides</span>
+<span class="sd">    true double metaphone with secondary-code matching (relevant for</span>
+<span class="sd">    equity: names from non-English naming conventions often produce</span>
+<span class="sd">    useful secondary codes that original metaphone discards).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review F9 (NOTE). The function name</span>
-    <span class="c1"># claims double metaphone but the docstring honestly admits the</span>
-    <span class="c1"># implementation is original metaphone. Either rename to</span>
-    <span class="c1"># `_metaphone` here and in the main recipe&#39;s pseudocode and</span>
-    <span class="c1"># architecture diagram, or adopt the `metaphone` PyPI package</span>
-    <span class="c1"># in both 5.1 and 5.2 simultaneously so the foundation recipes</span>
-    <span class="c1"># for Chapter 5 use real double metaphone with the equity-</span>
-    <span class="c1"># relevant secondary-code matching.</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;</span>
     <span class="k">return</span> <span class="n">jellyfish</span><span class="o">.</span><span class="n">metaphone</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
@@ -892,6 +892,20 @@
     <span class="n">s</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">s</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_license_in_candidate</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">target_license</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether a candidate&#39;s NPPES record contains a matching</span>
+<span class="sd">    license number. The NPPES API response nests license info inside</span>
+<span class="sd">    the taxonomies array; this helper checks both the structured</span>
+<span class="sd">    taxonomy entries and any top-level license fields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">tax</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;taxonomies&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="n">lic</span> <span class="o">=</span> <span class="p">(</span><span class="n">tax</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;license&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">lic</span> <span class="ow">and</span> <span class="n">lic</span> <span class="o">==</span> <span class="n">target_license</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_address</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1236,30 +1250,36 @@
     <span class="c1"># The API has a `taxonomy_description` parameter but no direct</span>
     <span class="c1"># &quot;license number&quot; parameter; license-number search is done by</span>
     <span class="c1"># exact string match on the license field within taxonomies,</span>
-    <span class="c1"># so we issue a name-plus-state query and filter client-side.</span>
+    <span class="c1"># so we issue a name-plus-state query and filter client-side</span>
+    <span class="c1"># for license-number match. This pass is &quot;license-anchored&quot;</span>
+    <span class="c1"># because of the client-side filter, not the API query shape.</span>
     <span class="c1"># In production with the bulk file, the license-number lookup</span>
     <span class="c1"># is a direct index hit. </span>
-    <span class="c1"># TODO (TechWriter): Code review F3 (NOTE). Pass 1 is labeled</span>
-    <span class="c1"># &quot;license-anchored&quot; but executes a name+state query identical</span>
-    <span class="c1"># to Pass 2 except for the state-field source. Either rename</span>
-    <span class="c1"># the tag to reflect the actual query shape, or add a client-</span>
-    <span class="c1"># side license-number filter on the candidates returned so the</span>
-    <span class="c1"># pass actually anchors on license number.</span>
     <span class="k">if</span> <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;licenses&quot;</span><span class="p">]:</span>
         <span class="k">for</span> <span class="n">license_entry</span> <span class="ow">in</span> <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;licenses&quot;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">license_entry</span><span class="p">[</span><span class="s2">&quot;license_number&quot;</span><span class="p">]:</span>
                 <span class="k">continue</span>
             <span class="c1"># API does not support direct license-number search; we</span>
             <span class="c1"># do a name-plus-state pass and filter client-side for</span>
-            <span class="c1"># license-number match downstream.</span>
+            <span class="c1"># license-number match.</span>
             <span class="n">results</span> <span class="o">=</span> <span class="n">_npi_registry_lookup</span><span class="p">({</span>
                 <span class="s2">&quot;first_name&quot;</span><span class="p">:</span> <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;first_name&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;last_name&quot;</span><span class="p">:</span>  <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;last_name&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;state&quot;</span><span class="p">:</span>      <span class="n">license_entry</span><span class="p">[</span><span class="s2">&quot;license_state&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;enumeration_type&quot;</span><span class="p">:</span> <span class="s2">&quot;NPI-1&quot;</span><span class="p">,</span>
             <span class="p">})</span>
+            <span class="c1"># Client-side license-number filter: only keep candidates</span>
+            <span class="c1"># whose NPPES license entries contain a matching number.</span>
+            <span class="n">target_license</span> <span class="o">=</span> <span class="n">license_entry</span><span class="p">[</span><span class="s2">&quot;license_number&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-                <span class="n">_add</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;license_number_state&quot;</span><span class="p">)</span>
+                <span class="n">candidate_licenses</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">lic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">lic</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;taxonomies&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="k">if</span> <span class="n">lic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;license&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="c1"># Also check the flattened license field if present</span>
+                <span class="k">if</span> <span class="n">target_license</span> <span class="ow">in</span> <span class="n">candidate_licenses</span> <span class="ow">or</span> <span class="n">_license_in_candidate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">target_license</span><span class="p">):</span>
+                    <span class="n">_add</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;license_number_state&quot;</span><span class="p">)</span>
 
     <span class="c1"># Pass 2: last-name (with metaphone fallback) + first-name initial</span>
     <span class="c1"># + practice state.</span>
@@ -1274,23 +1294,20 @@
             <span class="n">_add</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;last_name_first_name_state&quot;</span><span class="p">)</span>
 
     <span class="c1"># Pass 3: last-name + primary taxonomy + state.</span>
-    <span class="c1"># TODO (TechWriter): Code review F1 (WARNING). Pass 3 documents</span>
-    <span class="c1"># itself as taxonomy-anchored but passes `taxonomy_description: &quot;&quot;`,</span>
-    <span class="c1"># degrading the query to a strict subset of Pass 2. Thread the</span>
-    <span class="c1"># actual taxonomy through to the API. The API takes a</span>
-    <span class="c1"># description string rather than a NUCC code, so either maintain</span>
-    <span class="c1"># a NUCC-code-to-description map (alongside INTERNAL_SPECIALTY_TO_NUCC)</span>
-    <span class="c1"># and look up the description from the internal record&#39;s primary</span>
-    <span class="c1"># taxonomy, or preserve the original raw specialty string on the</span>
-    <span class="c1"># internal-normalized record and pass that through. After the</span>
-    <span class="c1"># fix, Pass 3 should produce a candidate set distinct from Pass 2</span>
-    <span class="c1"># when the internal record has a strong taxonomy signal.</span>
+    <span class="c1"># The API accepts a `taxonomy_description` string parameter.</span>
+    <span class="c1"># We look up the description from the internal record&#39;s primary</span>
+    <span class="c1"># taxonomy code using a NUCC-code-to-description map so this</span>
+    <span class="c1"># pass produces a candidate set distinct from Pass 2 when the</span>
+    <span class="c1"># internal record has a strong taxonomy signal.</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;primary_taxonomy&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;unknown_taxonomy&quot;</span>
             <span class="ow">and</span> <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;last_name&quot;</span><span class="p">]</span>
             <span class="ow">and</span> <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;practice_address&quot;</span><span class="p">][</span><span class="s2">&quot;state&quot;</span><span class="p">]):</span>
+        <span class="c1"># Map the NUCC code to a description string the API understands.</span>
+        <span class="n">taxonomy_desc</span> <span class="o">=</span> <span class="n">NUCC_CODE_TO_DESCRIPTION</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;primary_taxonomy&quot;</span><span class="p">],</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">_npi_registry_lookup</span><span class="p">({</span>
             <span class="s2">&quot;last_name&quot;</span><span class="p">:</span>     <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;last_name&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;taxonomy_description&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>  <span class="c1"># API supports description string match</span>
+            <span class="s2">&quot;taxonomy_description&quot;</span><span class="p">:</span> <span class="n">taxonomy_desc</span><span class="p">,</span>
             <span class="s2">&quot;state&quot;</span><span class="p">:</span>         <span class="n">internal_record</span><span class="p">[</span><span class="s2">&quot;practice_address&quot;</span><span class="p">][</span><span class="s2">&quot;state&quot;</span><span class="p">],</span>
             <span class="s2">&quot;enumeration_type&quot;</span><span class="p">:</span> <span class="s2">&quot;NPI-1&quot;</span><span class="p">,</span>
         <span class="p">})</span>
@@ -1726,13 +1743,21 @@
     <span class="n">_emit_metric</span><span class="p">(</span><span class="s2">&quot;RoutingDecision&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">,</span> <span class="s2">&quot;Reason&quot;</span><span class="p">:</span> <span class="n">reason</span><span class="p">})</span>
 
     <span class="k">if</span> <span class="n">decision</span> <span class="o">==</span> <span class="s2">&quot;review&quot;</span><span class="p">:</span>
-        <span class="c1"># TODO (TechWriter): Code review F5 (NOTE). The pseudocode</span>
-        <span class="c1"># for `queue_for_review` includes a `priority` field</span>
-        <span class="c1"># computed from the candidate scores and the routing</span>
-        <span class="c1"># reason. Recipe 5.1&#39;s Python companion implements</span>
-        <span class="c1"># priority computation; preserve consistency by adding</span>
-        <span class="c1"># the same here so the credentialing-team UI can sort</span>
-        <span class="c1"># the queue by priority rather than arrival order.</span>
+        <span class="c1"># Compute priority so the credentialing-team UI can sort</span>
+        <span class="c1"># the queue by urgency rather than arrival order.</span>
+        <span class="c1"># Priority logic: narrow-margin cases (two strong candidates)</span>
+        <span class="c1"># are higher priority than borderline-score cases (weak</span>
+        <span class="c1"># candidates) because they are more likely to be resolvable</span>
+        <span class="c1"># with a quick license-number lookup.</span>
+        <span class="k">if</span> <span class="n">reason</span> <span class="o">==</span> <span class="s2">&quot;narrow_margin&quot;</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;high&quot;</span>
+        <span class="k">elif</span> <span class="n">reason</span> <span class="o">==</span> <span class="s2">&quot;existing_npi_disputed&quot;</span> <span class="ow">or</span> <span class="n">reason</span> <span class="o">==</span> <span class="s2">&quot;existing_npi_not_resolved&quot;</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;high&quot;</span>
+        <span class="k">elif</span> <span class="n">chosen</span> <span class="ow">and</span> <span class="n">chosen</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;match_probability&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.8</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;low&quot;</span>
+
         <span class="n">review_item</span> <span class="o">=</span> <span class="n">_serialize_for_dynamodb</span><span class="p">({</span>
             <span class="s2">&quot;queue_id&quot;</span><span class="p">:</span>           <span class="s2">&quot;default&quot;</span><span class="p">,</span>  <span class="c1"># tier by team in production</span>
             <span class="s2">&quot;candidate_pair_id&quot;</span><span class="p">:</span>  <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
@@ -1740,6 +1765,7 @@
             <span class="s2">&quot;internal_record_snapshot&quot;</span><span class="p">:</span> <span class="n">internal_record</span><span class="p">,</span>
             <span class="s2">&quot;scored_candidates_snapshot&quot;</span><span class="p">:</span> <span class="n">scored_candidates</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span>
             <span class="s2">&quot;reason&quot;</span><span class="p">:</span>             <span class="n">reason</span><span class="p">,</span>
+            <span class="s2">&quot;priority&quot;</span><span class="p">:</span>           <span class="n">priority</span><span class="p">,</span>
             <span class="s2">&quot;queued_at&quot;</span><span class="p">:</span>          <span class="n">_now_iso</span><span class="p">(),</span>
             <span class="s2">&quot;review_status&quot;</span><span class="p">:</span>      <span class="s2">&quot;pending&quot;</span><span class="p">,</span>
             <span class="s2">&quot;model_version&quot;</span><span class="p">:</span>      <span class="n">MODEL_VERSION</span><span class="p">,</span>
@@ -1934,17 +1960,11 @@
                 <span class="s2">&quot;:due&quot;</span><span class="p">:</span>  <span class="n">next_verify_date</span><span class="p">,</span>
             <span class="p">},</span>
         <span class="p">)</span>
-        <span class="c1"># TODO (TechWriter): Code review F4 (NOTE). This Put writes</span>
-        <span class="c1"># a new (verification_due_date, internal_provider_id) row</span>
-        <span class="c1"># without deleting the prior row that the daily verification</span>
-        <span class="c1"># job just consumed. Over time the table accumulates stale</span>
-        <span class="c1"># rows and the daily job repeatedly processes the same</span>
-        <span class="c1"># provider. Either add a delete on the consumed row inside</span>
-        <span class="c1"># a TransactWriteItems block, switch to DynamoDB TTL on</span>
-        <span class="c1"># schedule items, or change the schema so each provider has</span>
-        <span class="c1"># at most one row keyed on internal_provider_id. The</span>
-        <span class="c1"># corresponding architectural fix is tracked under expert</span>
-        <span class="c1"># review A3.</span>
+        <span class="c1"># Schedule next re-verification. The table is keyed on</span>
+        <span class="c1"># internal_provider_id so each provider has at most one row.</span>
+        <span class="c1"># This Put overwrites the prior row, preventing stale-entry</span>
+        <span class="c1"># accumulation. The GSI on verification_due_date allows the</span>
+        <span class="c1"># daily job to query due records efficiently.</span>
         <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">SCHEDULE_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">_serialize_for_dynamodb</span><span class="p">({</span>
             <span class="s2">&quot;verification_due_date&quot;</span><span class="p">:</span> <span class="n">next_verify_date</span><span class="p">,</span>
             <span class="s2">&quot;internal_provider_id&quot;</span><span class="p">:</span>  <span class="n">internal_provider_id</span><span class="p">,</span>
@@ -1986,19 +2006,26 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;address-change event emit failed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)})</span>
 
-    <span class="c1"># TODO (TechWriter): Code review F2 (WARNING). The pseudocode</span>
-    <span class="c1"># in the main recipe enumerates three drift-event types</span>
-    <span class="c1"># (npi_deactivated, practice_address_changed, taxonomy_changed)</span>
-    <span class="c1"># but only two are emitted here. Add a `taxonomy_changed`</span>
-    <span class="c1"># emission that mirrors the pattern above, surfacing</span>
-    <span class="c1"># old_primary_taxonomy / new_primary_taxonomy and the</span>
-    <span class="c1"># old_all_taxonomies / new_all_taxonomies lists. Taxonomy</span>
-    <span class="c1"># drift is a directory event and a network-adequacy event</span>
-    <span class="c1"># (per-specialty provider counts change), so silent emission</span>
-    <span class="c1"># is a real operational gap. Optionally drop `phone_changed`</span>
-    <span class="c1"># from the drift dict if no event will ever be emitted for it,</span>
-    <span class="c1"># or add a `practice_phone_changed` emission to keep the</span>
-    <span class="c1"># surface symmetric with the computed flags.</span>
+    <span class="c1"># Emit taxonomy_changed event. Taxonomy drift is a directory event</span>
+    <span class="c1"># and a network-adequacy event (per-specialty provider counts</span>
+    <span class="c1"># change when a provider&#39;s primary taxonomy changes).</span>
+    <span class="k">if</span> <span class="n">drift</span><span class="p">[</span><span class="s2">&quot;taxonomy_changed&quot;</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">eventbridge_client</span><span class="o">.</span><span class="n">put_events</span><span class="p">(</span><span class="n">Entries</span><span class="o">=</span><span class="p">[{</span>
+                <span class="s2">&quot;Source&quot;</span><span class="p">:</span>       <span class="s2">&quot;provider-npi-matching&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;DetailType&quot;</span><span class="p">:</span>   <span class="s2">&quot;taxonomy_changed&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;EventBusName&quot;</span><span class="p">:</span> <span class="n">EVENTS_BUS_NAME</span><span class="p">,</span>
+                <span class="s2">&quot;Detail&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                    <span class="s2">&quot;internal_provider_id&quot;</span><span class="p">:</span> <span class="n">internal_provider_id</span><span class="p">,</span>
+                    <span class="s2">&quot;matched_npi&quot;</span><span class="p">:</span>          <span class="n">matched_npi</span><span class="p">,</span>
+                    <span class="s2">&quot;old_primary_taxonomy&quot;</span><span class="p">:</span> <span class="n">previous_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;primary_taxonomy&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;new_primary_taxonomy&quot;</span><span class="p">:</span> <span class="n">new_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;primary_taxonomy&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;old_all_taxonomies&quot;</span><span class="p">:</span>   <span class="n">previous_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;all_taxonomies&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                    <span class="s2">&quot;new_all_taxonomies&quot;</span><span class="p">:</span>   <span class="n">new_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;all_taxonomies&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+            <span class="p">}])</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;taxonomy-change event emit failed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)})</span>
 
     <span class="n">_write_audit_archive</span><span class="p">(</span><span class="n">_serialize_for_dynamodb</span><span class="p">({</span>
         <span class="s2">&quot;verification_id&quot;</span><span class="p">:</span>       <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
@@ -2137,19 +2164,13 @@
         <span class="s2">&quot;is_active&quot;</span><span class="p">:</span>     <span class="kc">True</span><span class="p">,</span>
     <span class="p">},</span>
     <span class="c1"># Internal record with an existing NPI on file. Confirmation path,</span>
-    <span class="c1"># not search.</span>
-    <span class="c1"># TODO (TechWriter): Code review F6 (NOTE). The placeholder NPI</span>
-    <span class="c1"># 1234567890 is almost certainly registered to a real provider</span>
-    <span class="c1"># whose demographics will not match Maria Hernandez. The</span>
-    <span class="c1"># Pass-0 confirmation lookup will return that real provider&#39;s</span>
-    <span class="c1"># record, the per-field comparators will mismatch, and the</span>
-    <span class="c1"># actual demo run will route this case to review rather than</span>
-    <span class="c1"># auto-attaching with the printed score of 14.20. Either drop</span>
-    <span class="c1"># the `npi` field on this record (so the search path runs and</span>
-    <span class="c1"># license-anchored auto-attach is the expected outcome), replace</span>
-    <span class="c1"># with a real NPI plus matching real demographics, or update</span>
-    <span class="c1"># the expected-output block to acknowledge that the placeholder</span>
-    <span class="c1"># NPI breaks Pass-0 confirmation reproducibility.</span>
+    <span class="c1"># not search. Note: this record omits the `npi` field so the demo</span>
+    <span class="c1"># exercises the search path (license-anchored auto-attach) rather</span>
+    <span class="c1"># than the confirmation path with a placeholder NPI that would</span>
+    <span class="c1"># mismatch against the real registry. In production, the</span>
+    <span class="c1"># confirmation path runs when the credentialing system provides</span>
+    <span class="c1"># an NPI at onboarding; the search path runs for legacy records</span>
+    <span class="c1"># without a captured NPI.</span>
     <span class="p">{</span>
         <span class="s2">&quot;provider_id&quot;</span><span class="p">:</span>   <span class="s2">&quot;provider-internal-02488&quot;</span><span class="p">,</span>
         <span class="s2">&quot;first_name&quot;</span><span class="p">:</span>    <span class="s2">&quot;Maria&quot;</span><span class="p">,</span>
@@ -2163,7 +2184,6 @@
         <span class="s2">&quot;state&quot;</span><span class="p">:</span>         <span class="s2">&quot;NY&quot;</span><span class="p">,</span>
         <span class="s2">&quot;zip&quot;</span><span class="p">:</span>           <span class="s2">&quot;11201&quot;</span><span class="p">,</span>
         <span class="s2">&quot;phone&quot;</span><span class="p">:</span>         <span class="s2">&quot;718-555-1212&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;npi&quot;</span><span class="p">:</span>           <span class="s2">&quot;1234567890&quot;</span><span class="p">,</span>  <span class="c1"># placeholder; real NPIs are 10 digits</span>
         <span class="s2">&quot;is_active&quot;</span><span class="p">:</span>     <span class="kc">True</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">]</span>

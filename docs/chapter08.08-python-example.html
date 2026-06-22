@@ -525,6 +525,8 @@
 <li><code>s3:PutObject</code></li>
 <li><code>dynamodb:PutItem</code></li>
 <li><code>dynamodb:Query</code></li>
+<li><code>sqs:ReceiveMessage</code>, <code>sqs:DeleteMessage</code>, <code>sqs:GetQueueAttributes</code> (for the Lambda trigger)</li>
+<li><code>sqs:SendMessage</code> (for routing to the review queue)</li>
 </ul>
 <hr />
 <h2 id="configuration-and-constants">Configuration and Constants</h2>
@@ -559,8 +561,12 @@
     <span class="s2">&quot;historical&quot;</span><span class="p">,</span> <span class="s2">&quot;family&quot;</span><span class="p">,</span> <span class="s2">&quot;hypothetical&quot;</span>
 <span class="p">]</span>
 
-<span class="c1"># Confidence threshold: entities classified below this go to human review.</span>
-<span class="n">CONFIDENCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.85</span>
+<span class="c1"># Confidence thresholds: two-tier system for routing entities.</span>
+<span class="c1">#   - Below EXCLUDE_THRESHOLD: entity excluded from downstream until reviewed.</span>
+<span class="c1">#   - Between EXCLUDE and INCLUDE: included with low_confidence flag, queued for review.</span>
+<span class="c1">#   - Above INCLUDE_THRESHOLD: included without qualification.</span>
+<span class="n">EXCLUDE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>
+<span class="n">INCLUDE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.85</span>
 
 <span class="c1"># Context window: characters before and after the entity to extract.</span>
 <span class="c1"># ~2-3 sentences of surrounding text. Enough for negation cues without noise.</span>
@@ -575,6 +581,12 @@
 
 <span class="c1"># DynamoDB table for annotated entities.</span>
 <span class="n">ANNOTATED_ENTITIES_TABLE</span> <span class="o">=</span> <span class="s2">&quot;assertion-annotated-entities&quot;</span>
+
+<span class="c1"># Separate restricted-access audit table for context snippets (PHI).</span>
+<span class="n">AUDIT_TABLE</span> <span class="o">=</span> <span class="s2">&quot;assertion-audit&quot;</span>
+
+<span class="c1"># Records retention: 7 years in seconds (default; adjust per institutional policy).</span>
+<span class="n">RETENTION_SECONDS</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">365</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span>
 
 <span class="c1"># ---------- Rule-Based Assertion Patterns ----------</span>
 
@@ -1005,7 +1017,7 @@
         <span class="c1"># Pass 1: Try rules.</span>
         <span class="n">rule_result</span> <span class="o">=</span> <span class="n">apply_assertion_rules</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">rule_result</span> <span class="ow">and</span> <span class="n">rule_result</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">CONFIDENCE_THRESHOLD</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rule_result</span> <span class="ow">and</span> <span class="n">rule_result</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">INCLUDE_THRESHOLD</span><span class="p">:</span>
             <span class="c1"># Propagate section_header into the entity dict so conflict</span>
             <span class="c1"># resolution (Step 4) can use it for priority scoring.</span>
             <span class="n">entity_with_section</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ctx</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">],</span> <span class="s2">&quot;section_header&quot;</span><span class="p">:</span> <span class="n">ctx</span><span class="p">[</span><span class="s2">&quot;section_header&quot;</span><span class="p">]}</span>
@@ -1131,8 +1143,11 @@
 <span class="sd">    Each entity record includes:</span>
 <span class="sd">      - Patient/note linkage for provenance</span>
 <span class="sd">      - The assertion classification and confidence</span>
-<span class="sd">      - A needs_review flag for low-confidence classifications</span>
-<span class="sd">      - A context snippet for human review</span>
+<span class="sd">      - Two-tier routing flags:</span>
+<span class="sd">        * excluded_pending_review: confidence &lt; EXCLUDE_THRESHOLD (not sent downstream)</span>
+<span class="sd">        * low_confidence: between thresholds (included with flag, queued for review)</span>
+<span class="sd">      - A TTL epoch for automatic records retention expiration</span>
+<span class="sd">      - Context snippet stored in a SEPARATE restricted-access audit table</span>
 
 <span class="sd">    Also writes a note-level summary showing assertion distribution.</span>
 
@@ -1146,23 +1161,33 @@
 <span class="sd">        Summary dict with counts by assertion class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">ANNOTATED_ENTITIES_TABLE</span><span class="p">)</span>
+    <span class="n">audit_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">AUDIT_TABLE</span><span class="p">)</span>
 
     <span class="c1"># Count assertions by class for the summary.</span>
     <span class="n">assertion_counts</span> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">ASSERTION_CLASSES</span><span class="p">}</span>
     <span class="n">review_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">excluded_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># TTL: current time + institutional retention period.</span>
+    <span class="n">ttl_epoch</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">timestamp</span><span class="p">())</span> <span class="o">+</span> <span class="n">RETENTION_SECONDS</span>
 
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">resolved_entities</span><span class="p">):</span>
-        <span class="n">needs_review</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">CONFIDENCE_THRESHOLD</span>
+        <span class="n">needs_review</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">INCLUDE_THRESHOLD</span>
+        <span class="n">excluded</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">EXCLUDE_THRESHOLD</span>
         <span class="k">if</span> <span class="n">needs_review</span><span class="p">:</span>
             <span class="n">review_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">excluded</span><span class="p">:</span>
+            <span class="n">excluded_count</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="n">assertion</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;assertion&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">assertion</span> <span class="ow">in</span> <span class="n">assertion_counts</span><span class="p">:</span>
             <span class="n">assertion_counts</span><span class="p">[</span><span class="n">assertion</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
+        <span class="n">entity_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">note_id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">&quot;</span>
+
         <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
-            <span class="s2">&quot;note_id_entity_idx&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">note_id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;note_id_entity_idx&quot;</span><span class="p">:</span> <span class="n">entity_key</span><span class="p">,</span>
             <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
             <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="n">note_date</span><span class="p">,</span>
             <span class="s2">&quot;entity_text&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
@@ -1171,10 +1196,21 @@
             <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">))),</span>
             <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">],</span>
             <span class="s2">&quot;needs_review&quot;</span><span class="p">:</span> <span class="n">needs_review</span><span class="p">,</span>
+            <span class="s2">&quot;low_confidence&quot;</span><span class="p">:</span> <span class="n">needs_review</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">excluded</span><span class="p">,</span>
+            <span class="s2">&quot;excluded_pending_review&quot;</span><span class="p">:</span> <span class="n">excluded</span><span class="p">,</span>
             <span class="s2">&quot;processed_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;ttl_epoch&quot;</span><span class="p">:</span> <span class="n">ttl_epoch</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>
+
+        <span class="c1"># Context snippet in separate restricted-access audit table.</span>
+        <span class="c1"># Only the review workflow and audit processes have access to this table.</span>
+        <span class="n">audit_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;note_id_entity_idx&quot;</span><span class="p">:</span> <span class="n">entity_key</span><span class="p">,</span>
+            <span class="s2">&quot;context_snippet&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entity&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;context_text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;ttl_epoch&quot;</span><span class="p">:</span> <span class="n">ttl_epoch</span><span class="p">,</span>
+        <span class="p">})</span>
 
     <span class="n">summary</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
@@ -1183,11 +1219,12 @@
         <span class="s2">&quot;total_entities&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_entities</span><span class="p">),</span>
         <span class="s2">&quot;assertion_counts&quot;</span><span class="p">:</span> <span class="n">assertion_counts</span><span class="p">,</span>
         <span class="s2">&quot;needs_review_count&quot;</span><span class="p">:</span> <span class="n">review_count</span><span class="p">,</span>
+        <span class="s2">&quot;excluded_count&quot;</span><span class="p">:</span> <span class="n">excluded_count</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s2">&quot;Stored </span><span class="si">%d</span><span class="s2"> annotated entities (</span><span class="si">%d</span><span class="s2"> for review)&quot;</span><span class="p">,</span>
-        <span class="nb">len</span><span class="p">(</span><span class="n">resolved_entities</span><span class="p">),</span> <span class="n">review_count</span>
+        <span class="s2">&quot;Stored </span><span class="si">%d</span><span class="s2"> annotated entities (</span><span class="si">%d</span><span class="s2"> for review, </span><span class="si">%d</span><span class="s2"> excluded)&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">resolved_entities</span><span class="p">),</span> <span class="n">review_count</span><span class="p">,</span> <span class="n">excluded_count</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">summary</span>
 </pre></div>
@@ -1309,14 +1346,19 @@
 
 <hr />
 <h2 id="lambda-handler-version">Lambda Handler Version</h2>
-<p>In production, this pipeline is triggered when a clinical note is finalized in the EHR. The event arrives via an integration layer (HL7 FHIR notification, Kinesis stream, or direct S3 upload).</p>
+<p>In production, this pipeline is triggered when a clinical note is finalized in the EHR. The event arrives via SQS (which sits between the EHR event source and Lambda for retry resilience and dead-letter queue handling). The SQS message contains either the note text inline or an S3 reference.</p>
 <div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">lambda_handler</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Lambda handler for real-time assertion classification.</span>
 
-<span class="sd">    Triggered by a note finalization event containing:</span>
+<span class="sd">    Triggered by SQS messages containing note finalization events.</span>
+<span class="sd">    The SQS queue provides automatic retries (maxReceiveCount=3) and</span>
+<span class="sd">    routes persistently failing notes to a dead-letter queue (DLQ).</span>
+<span class="sd">    A CloudWatch alarm on DLQ depth &gt; 0 alerts when notes are stuck.</span>
+
+<span class="sd">    Each SQS record contains:</span>
 <span class="sd">      - note_text or an S3 reference to the note</span>
 <span class="sd">      - patient_id</span>
 <span class="sd">      - note_id</span>
@@ -1324,42 +1366,49 @@
 
 <span class="sd">    Returns the assertion summary for monitoring and downstream routing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Extract note metadata from the event.</span>
-    <span class="c1"># Adapt this to your integration layer&#39;s event format.</span>
-    <span class="n">record</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detail&quot;</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+    <span class="c1"># SQS event contains one or more records (batch size configured on the trigger).</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="n">note_text</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;note_text&quot;</span><span class="p">)</span>
-    <span class="n">patient_id</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span>
-    <span class="n">note_id</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">]</span>
-    <span class="n">note_date</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;note_date&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">sqs_record</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Records&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">event</span><span class="p">]):</span>
+        <span class="c1"># Parse the message body (JSON-encoded note event).</span>
+        <span class="k">if</span> <span class="s2">&quot;body&quot;</span> <span class="ow">in</span> <span class="n">sqs_record</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">sqs_record</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="n">sqs_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detail&quot;</span><span class="p">,</span> <span class="n">sqs_record</span><span class="p">)</span>
 
-    <span class="c1"># If note_text not inline, fetch from S3.</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">note_text</span> <span class="ow">and</span> <span class="s2">&quot;s3_bucket&quot;</span> <span class="ow">in</span> <span class="n">record</span><span class="p">:</span>
-        <span class="c1"># S3 client created here rather than module scope because this path</span>
-        <span class="c1"># is only used when notes arrive via S3 reference rather than inline.</span>
-        <span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span>
-            <span class="n">Bucket</span><span class="o">=</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;s3_bucket&quot;</span><span class="p">],</span>
-            <span class="n">Key</span><span class="o">=</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;s3_key&quot;</span><span class="p">],</span>
-        <span class="p">)</span>
-        <span class="n">note_text</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">note_text</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;note_text&quot;</span><span class="p">)</span>
+        <span class="n">patient_id</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span>
+        <span class="n">note_id</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">]</span>
+        <span class="n">note_date</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;note_date&quot;</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">note_text</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No note text available for note </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">note_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;no_note_text&quot;</span><span class="p">,</span> <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">}</span>
+        <span class="c1"># If note_text not inline, fetch from S3.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">note_text</span> <span class="ow">and</span> <span class="s2">&quot;s3_bucket&quot;</span> <span class="ow">in</span> <span class="n">record</span><span class="p">:</span>
+            <span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span>
+                <span class="n">Bucket</span><span class="o">=</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;s3_bucket&quot;</span><span class="p">],</span>
+                <span class="n">Key</span><span class="o">=</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;s3_key&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">note_text</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
-    <span class="n">summary</span> <span class="o">=</span> <span class="n">classify_note_assertions</span><span class="p">(</span><span class="n">note_text</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">,</span> <span class="n">note_id</span><span class="p">,</span> <span class="n">note_date</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">note_text</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No note text available for note </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">note_id</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;no_note_text&quot;</span><span class="p">,</span> <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">})</span>
+            <span class="k">continue</span>
 
-    <span class="c1"># Route notes with entities needing review to a review queue.</span>
-    <span class="k">if</span> <span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;needs_review_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Note </span><span class="si">%s</span><span class="s2"> has </span><span class="si">%d</span><span class="s2"> entities for review&quot;</span><span class="p">,</span> <span class="n">note_id</span><span class="p">,</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;needs_review_count&quot;</span><span class="p">])</span>
-        <span class="c1"># In production: send to SQS review queue</span>
-        <span class="c1"># sqs_client.send_message(</span>
-        <span class="c1">#     QueueUrl=os.environ[&quot;REVIEW_QUEUE_URL&quot;],</span>
-        <span class="c1">#     MessageBody=json.dumps({&quot;note_id&quot;: note_id, &quot;patient_id&quot;: patient_id}),</span>
-        <span class="c1"># )</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="n">classify_note_assertions</span><span class="p">(</span><span class="n">note_text</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">,</span> <span class="n">note_id</span><span class="p">,</span> <span class="n">note_date</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">summary</span>
+        <span class="c1"># Route notes with entities needing review to the review SQS queue.</span>
+        <span class="k">if</span> <span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;needs_review_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Note </span><span class="si">%s</span><span class="s2"> has </span><span class="si">%d</span><span class="s2"> entities for review&quot;</span><span class="p">,</span> <span class="n">note_id</span><span class="p">,</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;needs_review_count&quot;</span><span class="p">])</span>
+            <span class="c1"># In production: send to SQS review queue (RBAC-protected).</span>
+            <span class="c1"># sqs_client.send_message(</span>
+            <span class="c1">#     QueueUrl=os.environ[&quot;REVIEW_QUEUE_URL&quot;],</span>
+            <span class="c1">#     MessageBody=json.dumps({&quot;note_id&quot;: note_id, &quot;patient_id&quot;: patient_id}),</span>
+            <span class="c1"># )</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">results</span>
 </pre></div>
 
 <hr />
@@ -1372,8 +1421,8 @@
 <p><strong>Negation scope is approximated.</strong> The rule-based layer checks for negation cues within 60 characters before the entity. Real negation scope is syntactic, not distance-based. &quot;Patient denies chest pain, shortness of breath, and palpitations but reports occasional dizziness&quot; has a negation scope that extends through a conjunction and terminates at &quot;but.&quot; The 60-character window is a reasonable approximation for common patterns but will misclassify entities at the edge of complex scope boundaries. The ML model handles these cases better, which is why the hybrid approach matters.</p>
 <p><strong>Conflict resolution needs clinical input.</strong> The priority-based resolution (Assessment &gt; HPI &gt; PMH) is a reasonable default, but clinical edge cases exist. A condition marked &quot;historical&quot; in PMH and &quot;absent&quot; in today's Assessment might mean &quot;resolved&quot; (which is different from &quot;never had it&quot;). Production systems often return all mentions rather than resolving to a single assertion, letting downstream consumers apply their own resolution logic.</p>
 <p><strong>Model monitoring and drift detection.</strong> Clinical documentation patterns change over time: new EHR templates, new providers, new specialty clinics. A model trained on 2025 notes may underperform on 2027 notes. Set up CloudWatch metrics on model confidence distributions. A shift in the distribution (more low-confidence predictions) is an early signal of model drift requiring retraining.</p>
-<p><strong>Error handling and dead letter queues.</strong> If Comprehend Medical times out or the SageMaker endpoint is temporarily unavailable, the Lambda needs to retry with backoff. Configure DLQ for messages that fail repeatedly. A note that fails assertion classification silently is a note whose entities won't appear in downstream quality measures or CDS queries.</p>
-<p><strong>DynamoDB partition design.</strong> The example uses <code>patient_id</code> as the partition key and <code>note_id_entity_idx</code> as the sort key. This works for patient-centric queries (&quot;show me all present conditions for patient X&quot;). If you also need entity-centric queries (&quot;find all patients with family history of breast cancer&quot;), you need a Global Secondary Index on <code>assertion_status + entity_text</code> or a separate query-optimized table. Design your access patterns before deploying.</p>
+<p><strong>Error handling and dead letter queues.</strong> The SQS queue between the EHR event source and Lambda provides automatic retries (maxReceiveCount = 3 with exponential backoff). Notes that fail all retries land in a dead-letter queue. Set a CloudWatch alarm on DLQ depth &gt; 0. At a 2% transient failure rate across 200 notes/hour, the DLQ catches roughly 4 notes/hour that would otherwise be silently lost. Without this, failed notes never get assertion-classified, which means their entities won't appear in downstream quality measures or CDS queries.</p>
+<p><strong>DynamoDB partition design.</strong> The example uses <code>patient_id</code> as the partition key and <code>note_id_entity_idx</code> as the sort key. This works for patient-centric queries (&quot;show me all present conditions for patient X&quot;). If you also need entity-centric queries (&quot;find all patients with family history of breast cancer&quot;), you need a Global Secondary Index on <code>assertion_status + entity_text</code> or a separate query-optimized table. Design your access patterns before deploying. The <code>ttl_epoch</code> attribute enables automatic record expiration aligned with your institution's records retention policy. The separate audit table (for context snippets containing PHI) should have its own restrictive IAM policy scoped to the review workflow role only.</p>
 <p><strong>Testing with synthetic vs. real data.</strong> The synthetic note in <code>__main__</code> exercises the happy path. Production testing requires a fixture library covering edge cases: notes with no section headers, notes with conflicting assertions, extremely long notes, notes with heavy abbreviation use, specialty-specific documentation (surgical notes vs. psychiatry notes vs. radiology reports). The i2b2 2010 assertion corpus (requires a data use agreement) provides annotated test data for benchmarking.</p>
 <p><strong>VPC and encryption.</strong> Lambda processing clinical notes runs inside a VPC with VPC endpoints for Comprehend Medical, SageMaker, DynamoDB, S3, and CloudWatch Logs. Clinical notes are PHI. Encrypt everything: S3 SSE-KMS, DynamoDB encryption at rest, SageMaker endpoint with inter-container encryption. All API calls over TLS. No exceptions.</p>
 <hr />

@@ -511,7 +511,7 @@
 <hr />
 <h2 id="the-aws-implementation">The AWS Implementation</h2>
 <h3 id="why-these-services">Why These Services</h3>
-<p><strong>Amazon Neptune for the knowledge graph.</strong> Neptune is AWS's managed graph database service supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For care gap reasoning, the RDF/SPARQL model is the better fit because it natively supports ontological reasoning through OWL (Web Ontology Language) inference. You can define class hierarchies (coronary artery disease subClassOf cardiovascular disease) and the query engine handles the inference automatically. Neptune is HIPAA eligible, supports encryption at rest and in transit, and runs within your VPC.</p>
+<p><strong>Amazon Neptune for the knowledge graph.</strong> Neptune is AWS's managed graph database service supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For care gap reasoning, the RDF/SPARQL model is the better fit because clinical guidelines are naturally expressed as class hierarchies and typed relationships. You define condition hierarchies (coronary artery disease rdfs:subClassOf cardiovascular disease) as RDF triples and traverse them at query time using SPARQL property paths (e.g., <code>rdfs:subClassOf*</code> for transitive closure). Neptune does not perform OWL inference natively. It stores and queries RDF data, but hierarchy traversal requires explicit SPARQL property path expressions rather than a built-in reasoner. For use cases requiring full OWL reasoning (forward-chaining, complex class expressions), you can integrate a third-party reasoner like RDFox to pre-materialize inferred triples and load them into Neptune. For care gap applicability checks, SPARQL property paths handle the hierarchy traversal we need without an external reasoner. Neptune is HIPAA eligible, supports encryption at rest and in transit, and runs within your VPC.</p>
 <p><strong>AWS Lambda for patient evaluation orchestration.</strong> Each patient evaluation is a bounded, stateless operation: assemble facts, query the graph, score the gaps, return results. Lambda handles the per-patient compute without requiring persistent infrastructure. For batch population evaluation (running all 50,000 patients overnight), Lambda's concurrency model scales naturally.</p>
 <p><strong>Amazon S3 for guideline ontology storage and versioning.</strong> The guideline ontology (OWL/RDF files) needs versioning, audit trails, and a clean deployment path. S3 with versioning enabled provides all three. When guidelines update annually, you upload the new ontology version, load it into Neptune, and the reasoning automatically reflects the changes.</p>
 <p><strong>AWS Step Functions for batch orchestration.</strong> Evaluating an entire population requires coordination: partition the patient list, fan out Lambda invocations, collect results, handle failures, and produce summary reports. Step Functions provides the orchestration with built-in retry logic and error handling. Configure the Map state with <code>MaxConcurrency</code> to control Neptune load. Set <code>Retry</code> with exponential backoff for Lambda timeout and Neptune throttling errors. Configure a <code>Catch</code> block that writes failed patient IDs to an SQS dead-letter queue for investigation. After batch completion, report the failure rate; if more than 5% of patients fail evaluation, alert the operations team.</p>
@@ -811,12 +811,9 @@ DiabetesMellitus subClassOf ChronicCondition
                 priority:           rec.priority,
                 frequency:          rec.frequency,
                 last_completed:     last_completed.service_date IF exists ELSE &quot;never&quot;,
-                // TODO (TechWriter): Code review Finding 1 (WARNING). days_overdue formula is wrong.
-                // days_between(cutoff_date, evaluation_date) always equals the frequency
-                // window size, not the actual overdue amount. Correct formula:
-                // days_between(last_completed.service_date, evaluation_date) - frequency_in_days
-                // Also update the expected output JSON to match corrected math.
-                days_overdue:       days_between(cutoff_date, evaluation_date),
+                days_overdue:       IF last_completed exists THEN
+                                        days_between(last_completed.service_date, evaluation_date) - frequency_in_days
+                                    ELSE null,
                 justification:      item.justification,
                 exclusions_checked: rec.excluded_by  // document what was ruled out
             }
@@ -905,7 +902,7 @@ DiabetesMellitus subClassOf ChronicCondition
 <span class="w">      </span><span class="nt">&quot;priority&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;frequency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;6 months&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;last_completed&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-03-10&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;days_overdue&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">66</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;days_overdue&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">251</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;composite_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.4</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;justification&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Active condition: E11.9 (Type 2 Diabetes)&quot;</span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
@@ -916,7 +913,7 @@ DiabetesMellitus subClassOf ChronicCondition
 <span class="w">      </span><span class="nt">&quot;priority&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;medium&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;frequency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12 months&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;last_completed&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-11-20&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;days_overdue&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">176</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;days_overdue&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">181</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;composite_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">6.2</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;justification&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Active condition: E11.9 (Type 2 Diabetes)&quot;</span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
@@ -952,7 +949,7 @@ DiabetesMellitus subClassOf ChronicCondition
 </tr>
 <tr>
 <td>Batch throughput (50K patients)</td>
-<td>~45 minutes with 100 concurrent Lambdas</td>
+<td>~8-15 minutes with 100 concurrent Lambdas</td>
 </tr>
 <tr>
 <td>Guideline coverage</td>
@@ -972,7 +969,17 @@ DiabetesMellitus subClassOf ChronicCondition
 </tr>
 </tbody>
 </table>
+<p><strong>Batch throughput note:</strong> The ~8-15 minute estimate assumes 500 sequential batches (50K patients / 100 concurrent Lambdas) at 200-500ms per patient, plus Step Functions orchestration overhead. Actual throughput depends on Neptune connection pool saturation and query complexity. Key tuning parameters: set <code>neptune_query_timeout</code> to 30 seconds to prevent individual query hangs from stalling the batch. Monitor <code>SparqlRequestsPerSec</code> and <code>MainRequestQueuePendingRequests</code> CloudWatch metrics to detect bottlenecks. Reuse HTTP connections across invocations (initialize the <code>requests.Session</code> outside the Lambda handler) to avoid TCP/TLS setup costs on every query.</p>
 <p><strong>Where it struggles:</strong> Patients with complex multi-morbidity where guideline conflicts arise. Claims data lag causing false positive gaps. Exclusion criteria that require clinical judgment (e.g., &quot;patient declined&quot; is often not coded). Guidelines that reference social determinants not captured in structured data.</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the reasoning pattern. Here's what's missing before this handles real patients at scale:</p>
+<p><strong>No ontology validation pipeline.</strong> The guideline ontology is the single most critical input. In production, you need automated validation: load a new ontology version, run it against a set of synthetic patients with known expected gaps, compare outputs, and reject the update if results diverge from expected. Without this, a typo in a condition hierarchy can silently suppress thousands of gap identifications.</p>
+<p><strong>No false positive tracking.</strong> Claims data lags 30-90 days. A gap flagged today might have been closed last week by a service that hasn't been reported yet. You need a feedback loop: when a care manager confirms a gap is already closed, record it, and track your false positive rate over time. If it exceeds 10-15%, trust erodes and outreach teams stop using the system.</p>
+<p><strong>No Neptune connection pooling.</strong> The pseudocode makes a fresh SPARQL request per patient. At 100 concurrent Lambdas, that's 100 simultaneous connections to Neptune. Neptune instances have connection limits (varies by instance type). You need connection reuse within Lambda warm starts, backpressure detection via <code>MainRequestQueuePendingRequests</code>, and graceful degradation when Neptune is saturated.</p>
+<p><strong>No exclusion completeness testing.</strong> Missing an exclusion means incorrectly flagging a gap (a patient in hospice getting flagged for a cancer screening, for example). Production requires a regression test suite specifically for exclusion logic, covering edge cases like temporary exclusions (pregnancy), encounter-type exclusions (hospice enrollment without a diagnosis code), and documentation-based exclusions (patient declined).</p>
+<p><strong>No audit trail for reasoning.</strong> HIPAA and quality program audits may require you to explain why a specific gap was (or was not) identified for a specific patient. The current output records the justification, but not the full reasoning trace: which SPARQL queries ran, which hierarchy paths were traversed, which exclusions were evaluated. For auditability, log the query and result at each reasoning step.</p>
+<p><strong>No multi-program support.</strong> Different quality programs (HEDIS, CMS Star Ratings, state Medicaid programs) have overlapping but non-identical measure definitions. A production system needs to evaluate the same patient against multiple program rule sets and deduplicate the output. The ontology needs program-scoped namespaces.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Real-time gap checking at point of care.</strong> Instead of batch overnight evaluation, expose the reasoning engine as a synchronous API that clinicians can query during a visit. &quot;What gaps does this patient have right now?&quot; This requires sub-second Neptune query performance (achievable with warm caches and optimized SPARQL) and integration with the EHR workflow. The value is immediate: the clinician can close gaps during the visit rather than requiring a separate outreach.</p>
@@ -995,7 +1002,7 @@ DiabetesMellitus subClassOf ChronicCondition
 <p><a href="https://github.com/aws-samples/amazon-neptune-samples"><code>amazon-neptune-samples</code></a>: Neptune code samples including RDF loading, SPARQL queries, and graph analytics patterns</p>
 </li>
 <li>
-<p><a href="https://github.com/aws-samples/amazon-neptune-ontology-example-blog"><code>amazon-neptune-ontology-example-blog</code></a>: Demonstrates building and querying ontologies in Neptune with OWL reasoning</p>
+<p><a href="https://github.com/aws-samples/amazon-neptune-ontology-example-blog"><code>amazon-neptune-ontology-example-blog</code></a>: Demonstrates building and querying ontologies in Neptune with SPARQL property paths (archived, but code samples remain valid)</p>
 </li>
 </ul>
 <p><strong>AWS Solutions and Blogs:</strong></p>

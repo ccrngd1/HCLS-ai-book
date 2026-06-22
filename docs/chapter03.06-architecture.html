@@ -641,7 +641,7 @@
 </tr>
 <tr>
 <td><strong>Legal Privilege Architecture</strong></td>
-<td>If the SIU operates under legal privilege, the case management data may need to be in an account or VPC isolated from general analytics, with access controlled by legal counsel. Coordinate with the general counsel's office before designing the architecture.</td>
+<td>If the SIU operates under legal privilege, the case management data must be physically isolated from general analytics. Concrete primitives: a separate AWS account in an OU administered by general counsel (GC); a separate VPC with no peering to general analytics VPCs; separate customer-managed KMS keys whose key policies exclude analytics-engineer roles; a distinct CloudTrail trail writing to a GC-controlled S3 bucket; distinct OpenSearch domain and DynamoDB tables for case data tagged with <code>PRIVILEGED</code> data-classification labels; SCP-level prevention of S3 cross-account access from the privileged environment to general analytics accounts (and vice versa). Access is granted by GC to named investigators and legal staff only. Coordinate with the general counsel's office before designing the architecture; this isolation pattern may be required before any investigation data is created.</td>
 </tr>
 <tr>
 <td><strong>Regulatory Referral Workflows</strong></td>
@@ -970,38 +970,64 @@
             }
         )
 
-    // Upsert service edges.
+    // Upsert claim vertices. Each claim is a node so that edges can connect
+    // providers, organizations, and patients to specific claims rather than
+    // collapsing relationships into direct provider-patient edges that lose
+    // the claim-level granularity needed for queries like &quot;find all claims
+    // where provider X is the rendering provider.&quot;
     FOR each claim in new_claims:
-        // Rendered-by edge: rendering provider -&gt; patient
-        Neptune.UpsertEdge(
-            label = &quot;rendered&quot;,
-            from  = claim.rendering_provider_canonical_id,
-            to    = hash_patient_id(claim.patient_id),
+        Neptune.UpsertVertex(
+            label = &quot;Claim&quot;,
+            id    = claim.claim_id,
             properties = {
-                claim_id:        claim.claim_id,
+                service_date:     claim.primary_service_date,
+                primary_cpt:      claim.primary_cpt,
+                billed_amount:    claim.claim_total_billed,
+                paid_amount:      claim.claim_total_paid,
+                place_of_service: claim.place_of_service,
+                lob:              claim.line_of_business
+            }
+        )
+
+    // Upsert service edges with explicit edge types separating rendered,
+    // billed, referred, and patient relationships through claim vertices.
+    FOR each claim in new_claims:
+        // rendered_on_claim: rendering provider -&gt; claim
+        Neptune.UpsertEdge(
+            label = &quot;rendered_on_claim&quot;,
+            from  = claim.rendering_provider_canonical_id,
+            to    = claim.claim_id,
+            properties = {
                 service_date:    claim.primary_service_date,
                 paid_amount:     claim.claim_total_paid
             }
         )
-        // Billed-by edge: organization -&gt; claim
+        // billed_for_claim: billing organization -&gt; claim
         Neptune.UpsertEdge(
-            label = &quot;billed&quot;,
+            label = &quot;billed_for_claim&quot;,
             from  = claim.billing_organization_canonical_id,
-            to    = hash_patient_id(claim.patient_id),
+            to    = claim.claim_id,
             properties = {
-                claim_id:        claim.claim_id,
                 billed_amount:   claim.claim_total_billed,
                 paid_amount:     claim.claim_total_paid
             }
         )
-        // Referred-by edge: referring -&gt; rendering (when present)
+        // for_patient: claim -&gt; patient (hashed)
+        Neptune.UpsertEdge(
+            label = &quot;for_patient&quot;,
+            from  = claim.claim_id,
+            to    = hash_patient_id(claim.patient_id),
+            properties = {
+                service_date:    claim.primary_service_date
+            }
+        )
+        // referred_for_claim: referring provider -&gt; claim (when present)
         IF claim.referring_npi is not null:
             Neptune.UpsertEdge(
-                label = &quot;referred&quot;,
+                label = &quot;referred_for_claim&quot;,
                 from  = claim.referring_provider_canonical_id,
-                to    = claim.rendering_provider_canonical_id,
+                to    = claim.claim_id,
                 properties = {
-                    claim_id:     claim.claim_id,
                     service_date: claim.primary_service_date,
                     cpt_category: category_of(claim.primary_cpt)
                 }
@@ -1217,9 +1243,21 @@
 <p><strong>Step 6: Run the graph layer.</strong> Graph features and community detection. Output is graph-based flags with subgraph descriptors that investigators can open.</p>
 <pre class="code code-plain"><code>FUNCTION run_graph_analytics():
     // Community detection on the full graph. Louvain is the standard.
+    // The projection includes Provider, Organization, and Claim node types
+    // with rendered_on_claim, billed_for_claim, referred_for_claim, owns,
+    // and co_located edge types. Patient nodes are excluded from the
+    // community projection because patient-centered subgraphs are not the
+    // signal here; the goal is provider-and-organization collusive networks.
+    // Claim nodes participate as intermediaries that connect providers to
+    // organizations through billing relationships.
     communities = Neptune.RunAlgorithm(
         algorithm = &quot;louvain&quot;,
-        graph_projection = &quot;fwa-core-projection&quot;
+        graph_projection = {
+            node_labels:  [&quot;Provider&quot;, &quot;Organization&quot;, &quot;Claim&quot;],
+            edge_labels:  [&quot;rendered_on_claim&quot;, &quot;billed_for_claim&quot;,
+                           &quot;referred_for_claim&quot;, &quot;owns&quot;, &quot;co_located&quot;],
+            weight_property: &quot;paid_amount&quot;     // weight edges by payment flow
+        }
     )
 
     FOR each community in communities:
@@ -1315,6 +1353,21 @@
 </code></pre>
 <p><strong>Step 7: Aggregate evidence and build the case bundle.</strong> Flags from all layers combine into per-entity case bundles with ranked evidence, estimated dollar impact, and graph context.</p>
 <pre class="code code-plain"><code>FUNCTION on_flag_event(flag):
+    // Idempotency guard. EventBridge delivers at-least-once; a redelivered
+    // flag event must not double-count flags on the case, inflate dollar
+    // impact, or re-publish triage events. Use a deterministic event key
+    // and a conditional write to a deduplication table.
+    event_key = hash(flag.flag_id + &quot;:&quot; + flag.detector_source)
+    already_processed = DynamoDB.PutItem(
+        table = &quot;processed-flag-events&quot;,
+        item  = { event_key: event_key, processed_at: NOW(), ttl: NOW() + 90_DAYS },
+        condition_expression = &quot;attribute_not_exists(event_key)&quot;
+    )
+    IF already_processed == CONDITION_CHECK_FAILED:
+        // Duplicate delivery. Skip silently.
+        emit_metric(&quot;flag_event_deduplicated&quot;, 1)
+        return
+
     // Determine the target entity (provider, organization, community, or patient).
     target = resolve_target(flag)
 
@@ -1324,11 +1377,29 @@
         target_entity_type = target.type
     )
 
-    // Append the flag with full context.
+    // Append the flag with full context and reference versions.
+    // Every flag carries a reference_versions envelope so that downstream
+    // consumers (regulatory referral packages, appeals, audit) can answer
+    // &quot;why was this flag fired with these inputs at this point in time?&quot;
+    // When a state MFCU asks &quot;why was this flagged in November when the
+    // LEIE record was added in June?&quot;, the LEIE extract date in the
+    // evidence trail answers that question.
     case.flags.append({
         flag:             flag,
         detected_at:      NOW(),
-        detector:         flag.detector_source
+        detector:         flag.detector_source,
+        reference_versions: {
+            rule_library_version:     get_current_rule_library_version(),
+            cci_table_version:        get_current_cci_version(),
+            mue_table_version:        get_current_mue_version(),
+            leie_extract_date:        get_current_leie_extract_date(),
+            sam_extract_date:         get_current_sam_extract_date(),
+            death_master_extract_date: get_current_death_master_date(),
+            coverage_policy_versions: get_active_coverage_policy_versions(),
+            graph_snapshot_id:        get_current_graph_snapshot_id(),
+            supervised_model_version: get_current_model_version(&quot;fwa-reranker&quot;),
+            peer_baseline_snapshot:   get_current_peer_baseline_snapshot_id()
+        }
     })
 
     // Refresh the evidence bundle.
@@ -1350,6 +1421,29 @@
     OpenSearch.Index(&quot;fwa-cases&quot;, case)
 
     // Notify the review queue if priority crosses the review threshold.
+    // PHI does NOT transit through EventBridge. The CaseReady.triage event
+    // carries only case_id and priority_score. Subscribers (investigator
+    // workbench, notification service, audit) fetch full case data through
+    // their own IAM-scoped read paths into OpenSearch and DynamoDB.
+    //
+    // Per-investigator access control:
+    //   - Investigator roles read only cases assigned to them (case_id IN
+    //     assigned_cases for the investigator&#x27;s IAM role; enforced via
+    //     OpenSearch fine-grained access control evaluating case_assignments
+    //     field against the caller&#x27;s identity claims).
+    //   - Supervisor and compliance roles override with higher-granularity
+    //     access, backed by dedicated CloudTrail data-event audit.
+    //   - Analyst roles read low-detail case summaries but require explicit
+    //     case-assignment for full evidence-bundle access.
+    //   - Clinical-reviewer roles get read-only on cases routed for clinical
+    //     review.
+    //
+    // Notification channels (email, Teams, Slack) carry case_id and routing
+    // tier only. Entity names, dollar impact, and flag details stay out of
+    // notification subjects because they are operationally sensitive and may
+    // be visible on lock screens. Flag content (post-mortem billing dates,
+    // ownership-cascade corporate officers, exclusion-violation provider
+    // details) is sensitive beyond per-patient PHI.
     IF case.priority_score &gt;= CASE_REVIEW_THRESHOLD:
         EventBridge.PutEvent(
             bus         = &quot;fwa-workflow&quot;,
@@ -1453,6 +1547,24 @@
     //   criminal_referral
     //   civil_settlement
     //   administrative_sanction
+    //
+    // NOTE: This taxonomy covers terminal states only. Provider appeals and
+    // due-process workflows (appeal_filed, appeal_upheld, appeal_overturned,
+    // appeal_modified, appeal_withdrawn) are a production requirement covered
+    // in the &quot;Why This Isn&#x27;t Production-Ready&quot; section under &quot;Provider
+    // appeals and due-process workflows.&quot; A production implementation adds:
+    //   - An appeal state machine (case transitions from a terminal outcome
+    //     back into appeal_pending, then to an appeal-outcome state)
+    //   - An immutable evidence-as-of-decision snapshot in
+    //     case.evidence_history (frozen at the moment of adverse action)
+    //   - Appeal-outcome taxonomy: appeal_upheld, appeal_overturned,
+    //     appeal_modified, appeal_withdrawn
+    //   - A feedback path from appeal_overturned outcomes to the supervised
+    //     classifier as confirmed false positives (critical for model
+    //     calibration and for demonstrating good-faith detection posture)
+    // The pseudocode here intentionally omits the appeal state machine to
+    // keep the teaching example focused on detection-through-outcome-capture.
+    // See &quot;Why This Isn&#x27;t Production-Ready&quot; for the full gap description.
 
     // Write label rows for retraining.
     label_row = {
@@ -1751,8 +1863,10 @@
 <p><strong>Data sharing with other payers and government.</strong> The Healthcare Fraud Prevention Partnership (HFPP), public-private data sharing arrangements, and state-level all-payer claim databases provide context that a single payer's data can't provide. Participating in these arrangements takes governance effort but provides 20-40% additional signal. AWS Clean Rooms is an enabling infrastructure; the governance work around it is the harder part.</p>
 <p><strong>Provider appeals and due-process workflows.</strong> Providers have due-process rights when adverse actions are taken (audits, recoupments, network termination). The case management system has to support the appeals workflow: what evidence was used in the initial decision, how the provider can request records, how appeals are tracked, how reversals feed back to the detection system. Without this, adverse actions can be overturned and the organization faces liability.</p>
 <p><strong>Fairness, bias, and equity monitoring.</strong> Detection rates by specialty, by geography, by patient demographics, by provider race/ethnicity when identifiable, by practice setting (safety net, rural, FQHC). If the system disproportionately flags providers serving specific patient populations, the implications are significant. Fairness monitoring must be continuous, not a one-time audit. Mitigations include case-mix adjustment, subgroup performance review, and threshold-tuning review specifically for equity.</p>
+<p>The infrastructure that makes subgroup monitoring binding: subgroup performance and detection-rate monitoring requires read access to provider attributes (race, ethnicity when identifiable, geography, practice setting) and patient demographic attributes (age band, sex, race, ethnicity, insurance type, language) that may be governed differently from clinical PHI under some state laws (state laws often restrict secondary use of race/ethnicity data more tightly than HIPAA restricts PHI per se). Restrict read access on the demographic-and-attribute stores to the retraining job role and the fairness-monitoring dashboard role. Enable CloudTrail data events on every subgroup query. The QuickSight dashboard (backed by Athena queries) reads an aggregated subgroup-metrics table (flag rate by specialty by geography by practice setting; case-disposition rates by patient demographic; overpayment-recovery rates by provider attribute), not the raw demographic-joined flag archive, so that dashboard-user access does not require row-level read on the subgroup attributes. Case-mix adjustment requires patient-level demographic data joined to provider attribution; this join occurs in a controlled environment (SageMaker Processing job with a dedicated role) with output limited to aggregated metrics.</p>
 <p><strong>Change management for rule releases.</strong> New rules can silently shift the flag distribution, generate a flood of false positives, or miss a scheme that shifted the week before. Rule changes go through testing (against historical data), staged rollout (shadow mode before production), and explicit sign-off from program leadership. Treating rule updates like code deploys (pull requests, review, staged rollout) is appropriate.</p>
 <p><strong>Disaster recovery and continuity.</strong> The FWA pipeline is not in the payment-gating hot path for most architectures (payment integrity usually runs alongside or after adjudication, not inline). But the detection workload itself is essential; a quarter without FWA detection is a quarter of undetected schemes. Plan for multi-region failover or at least cross-region backup of the case management state.</p>
+<p><strong>Dead-letter queues and poison-message handling.</strong> The four critical Lambdas in the pipeline (stream-normalizer, rules-engine, evidence-aggregator, outcome-capture) each need an <code>OnFailure</code> destination pointing to a dedicated SQS DLQ. CloudWatch alarms on DLQ depth alert the on-call SIU-engineering team. For the stream-normalizer DLQ specifically, the alarm threshold should be 1, because a single dropped claim is a claim that escaped scoring. Replay events from the DLQ after fixing the root cause; for events older than the regulatory-referral compliance window, escalate to compliance-team review rather than auto-replay because the timing-of-detection is itself part of the compliance posture under 42 CFR 422.504(h) and 42 CFR 438.608. A claim that was supposed to be scored in January but actually scored in April after a DLQ replay has a different compliance posture than a claim scored on time.</p>
 <p><strong>Cross-border and international dimensions.</strong> Some schemes involve offshore entities, international money flows, or providers practicing across jurisdictions. These add complexity (data-sharing restrictions, currency normalization, international sanctions lists) that domestic-focused architectures may not anticipate. Consult with legal and international compliance before handling these cases.</p>
 <p><strong>FDA and other regulatory adjacencies.</strong> Investigation of devices and drugs may overlap with FDA recall work, state pharmacy board investigations, and DEA-regulated substance tracking. Cross-agency workflow integration is often important. This is less of an AWS architecture issue and more of a program-design issue.</p>
 <hr />

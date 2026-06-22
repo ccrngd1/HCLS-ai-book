@@ -508,16 +508,16 @@
       <article>
         <h1 id="recipe-51-python-implementation-example">Recipe 5.1: Python Implementation Example</h1>
 <blockquote>
-<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 5.1. It shows one way you could translate the internal-duplicate-patient-detection pattern into working Python using <code>jellyfish</code> for the string-similarity functions (Jaro-Winkler, Damerau-Levenshtein, double metaphone), <code>python-dateutil</code> for permissive date parsing, Amazon DynamoDB for the master patient identity tables and the review queue, Amazon S3 for the audit archive, Amazon EventBridge for downstream merge events, and Amazon CloudWatch for operational metrics. It is not production-ready. There is no real EHR or registration-system feed (the demo seeds a small in-memory roster with intentional duplicates), no Splink or Spark-based batch pipeline (the demo runs a tiny in-process blocker plus scorer that would not scale past tens of thousands of records), no OpenSearch-backed real-time candidate index, no USPS address standardization (the demo uses a coarse regex normalizer), no EM-based m/u estimation (the demo uses hand-set probabilities to keep the math visible), no review-queue UI, and no IAM, KMS, VPC, or CloudTrail wiring. Think of it as the sketchpad version: useful for understanding the shape of an entity-resolution pipeline that respects the structured-then-narrative flow, the three-bucket routing pattern, the survivorship and reversibility requirements, and the audit-everything posture. It is not something you would point at a live patient registration system on Monday morning. Consider it a starting point, not a destination.</p>
+<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 5.1. It shows one way you could translate the internal-duplicate-patient-detection pattern into working Python using <code>jellyfish</code> for string-similarity functions (Jaro-Winkler, Damerau-Levenshtein), <code>metaphone</code> for double-metaphone phonetic encoding, <code>python-dateutil</code> for permissive date parsing, Amazon DynamoDB for the master patient identity tables and the review queue, Amazon S3 for the audit archive, Amazon EventBridge for downstream merge events, and Amazon CloudWatch for operational metrics. It is not production-ready. There is no real EHR or registration-system feed (the demo seeds a small in-memory roster with intentional duplicates), no Splink or Spark-based batch pipeline (the demo runs a tiny in-process blocker plus scorer that would not scale past tens of thousands of records), no OpenSearch-backed real-time candidate index, no USPS address standardization (the demo uses a coarse regex normalizer), no EM-based m/u estimation (the demo uses hand-set probabilities to keep the math visible), no review-queue UI, and no IAM, KMS, VPC, or CloudTrail wiring. Think of it as the sketchpad version: useful for understanding the shape of an entity-resolution pipeline that respects the structured-then-narrative flow, the three-bucket routing pattern, the survivorship and reversibility requirements, and the audit-everything posture. It is not something you would point at a live patient registration system on Monday morning. Consider it a starting point, not a destination.</p>
 <p>The code maps to the five core pseudocode steps from the main recipe: normalize each patient record (case-fold, strip diacritics, parse dates, USPS-style address cleanup, phonetic encoding); generate candidate pairs through multiple blocking passes that union into a deduplicated candidate set; score each candidate pair with per-field comparators and a hand-rolled Fellegi-Sunter combiner; route each scored pair into auto-match, auto-non-match, or human review based on configurable thresholds; and apply the merge with field-level survivorship rules and a complete audit record that supports unmerge. All sample patients in the demo are synthetic, including the three &quot;Maria Garcia&quot; variants from the recipe's opening narrative; do not treat any specific patient_id, mpi_id, or merge_id in the sample output as real.</p>
 </blockquote>
 <hr />
 <h2 id="setup">Setup</h2>
 <p>You will need the AWS SDK for Python plus a couple of string-similarity libraries:</p>
-<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>jellyfish<span class="w"> </span>python-dateutil
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>jellyfish<span class="w"> </span>python-dateutil<span class="w"> </span>metaphone
 </pre></div>
 
-<p><code>jellyfish</code> provides the Jaro-Winkler, Damerau-Levenshtein, and metaphone implementations used in the comparators. <code>python-dateutil</code> provides a permissive date parser that handles the dozen formats registration desks generate (<code>MM/DD/YYYY</code>, <code>DD-MM-YYYY</code>, <code>March 14 1972</code>, <code>19720314</code>, and the rest).</p>
+<p><code>jellyfish</code> provides the Jaro-Winkler and Damerau-Levenshtein implementations used in the comparators. <code>metaphone</code> provides the double-metaphone algorithm (the modern 2000 successor to the original 1990 metaphone) that produces primary and secondary phonetic codes for names. <code>python-dateutil</code> provides a permissive date parser that handles the dozen formats registration desks generate (<code>MM/DD/YYYY</code>, <code>DD-MM-YYYY</code>, <code>March 14 1972</code>, <code>19720314</code>, and the rest).</p>
 <p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
 <ul>
 <li><code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code>, <code>dynamodb:BatchWriteItem</code> on the <code>mpi-master</code>, <code>mpi-xref</code>, and <code>review-queue</code> tables (and on the <code>mpi-id-index</code> GSI on <code>mpi-xref</code> that supports cluster-member lookups)</li>
@@ -554,6 +554,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">boto3.dynamodb.conditions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Key</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dateutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span> <span class="k">as</span> <span class="n">dateparser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metaphone</span><span class="w"> </span><span class="kn">import</span> <span class="n">doublemetaphone</span>
 
 <span class="c1"># Structured logging. In production, ship JSON-formatted records to</span>
 <span class="c1"># CloudWatch Logs Insights. Patient demographic data is PHI; never log</span>
@@ -613,7 +614,7 @@
 <span class="c1"># labeled gold set, with the patient-safety asymmetry top of mind:</span>
 <span class="c1"># false merges are a safety hazard, false splits are a cost-and-</span>
 <span class="c1"># quality issue, so favor false splits over false merges.</span>
-<span class="n">HIGH_THRESHOLD</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;8.0&quot;</span><span class="p">)</span>    <span class="c1"># at or above: auto-match</span>
+<span class="n">HIGH_THRESHOLD</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;20.0&quot;</span><span class="p">)</span>   <span class="c1"># at or above: auto-match</span>
 <span class="n">LOW_THRESHOLD</span>  <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;-2.0&quot;</span><span class="p">)</span>   <span class="c1"># at or below: auto-non-match</span>
 <span class="c1"># Anything between the two thresholds routes to human review.</span>
 
@@ -645,8 +646,8 @@
     <span class="s2">&quot;jennifer&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;jen&quot;</span><span class="p">,</span> <span class="s2">&quot;jenny&quot;</span><span class="p">],</span>
     <span class="s2">&quot;mike&quot;</span><span class="p">:</span>     <span class="p">[</span><span class="s2">&quot;michael&quot;</span><span class="p">,</span> <span class="s2">&quot;mick&quot;</span><span class="p">,</span> <span class="s2">&quot;mickey&quot;</span><span class="p">],</span>
     <span class="s2">&quot;michael&quot;</span><span class="p">:</span>  <span class="p">[</span><span class="s2">&quot;mike&quot;</span><span class="p">,</span> <span class="s2">&quot;mick&quot;</span><span class="p">,</span> <span class="s2">&quot;mickey&quot;</span><span class="p">],</span>
-    <span class="c1"># TODO: populate from a maintained nickname dictionary in</span>
-    <span class="c1"># production. See the Gap to Production section for sources.</span>
+    <span class="c1"># In production, populate from a maintained nickname dictionary.</span>
+    <span class="c1"># See the Gap to Production section for sources.</span>
 <span class="p">}</span>
 
 <span class="c1"># --- Suffix Canonical Forms ---</span>
@@ -863,22 +864,9 @@
 <span class="sd">    blocking and as comparator inputs; matching on either code</span>
 <span class="sd">    counts as a phonetic match.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review WARNING 1. jellyfish.metaphone is the</span>
-    <span class="c1"># original 1990 metaphone algorithm, not the 2000 double-metaphone</span>
-    <span class="c1"># successor. Either swap to a real double-metaphone library</span>
-    <span class="c1"># (`from metaphone import doublemetaphone`) or rename this helper</span>
-    <span class="c1"># to `_metaphone`, update the docstring, and align Setup prose</span>
-    <span class="c1"># plus the main recipe&#39;s pseudocode and architecture diagram.</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span> <span class="o">=</span> <span class="n">jellyfish</span><span class="o">.</span><span class="n">metaphone</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="kc">None</span>
-    <span class="c1"># jellyfish.metaphone returns one code; we synthesize a &quot;secondary&quot;</span>
-    <span class="c1"># by also computing on the first space-separated token (handles</span>
-    <span class="c1"># hyphenated and compound surnames where the per-component</span>
-    <span class="c1"># metaphone often differs from the whole-string metaphone).</span>
-    <span class="n">first_token</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">first_token</span> <span class="ow">and</span> <span class="n">first_token</span> <span class="o">!=</span> <span class="n">s</span><span class="p">:</span>
-        <span class="n">secondary</span> <span class="o">=</span> <span class="n">jellyfish</span><span class="o">.</span><span class="n">metaphone</span><span class="p">(</span><span class="n">first_token</span><span class="p">)</span>
+    <span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span> <span class="o">=</span> <span class="n">doublemetaphone</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">primary</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">secondary</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_dob</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
@@ -1014,7 +1002,7 @@
         <span class="s2">&quot;middle_name&quot;</span><span class="p">:</span>           <span class="n">middle_name</span><span class="p">,</span>
         <span class="s2">&quot;last_name&quot;</span><span class="p">:</span>             <span class="n">last_name</span><span class="p">,</span>
         <span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">:</span>   <span class="n">last_metaphone_pri</span><span class="p">,</span>
-        <span class="s2">&quot;last_name_metaphone_sec&quot;</span><span class="p">:</span> <span class="n">last_metaphone_sec</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>  <span class="c1"># TODO (TechWriter): Code review NOTE 3. Dead attribute: written here but no comparator reads it. Either update _compare_last_name to match on either primary or secondary code (paired with the WARNING 1 fix to use real double metaphone) or drop this field from the schema.</span>
+        <span class="s2">&quot;last_name_metaphone_sec&quot;</span><span class="p">:</span> <span class="n">last_metaphone_sec</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="s2">&quot;suffix&quot;</span><span class="p">:</span>                <span class="n">suffix</span><span class="p">,</span>
         <span class="s2">&quot;dob&quot;</span><span class="p">:</span>                   <span class="n">dob_canon</span><span class="p">,</span>
         <span class="s2">&quot;dob_quality_flag&quot;</span><span class="p">:</span>      <span class="n">dob_flag</span><span class="p">,</span>
@@ -1218,11 +1206,13 @@
     <span class="k">if</span> <span class="n">similarity</span> <span class="o">&gt;=</span> <span class="mf">0.85</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;damerau_high&quot;</span>
 
-    <span class="c1"># Phonetic match catches &quot;Smith&quot; vs &quot;Smyth&quot;.</span>
-    <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span>
-        <span class="n">a</span><span class="p">[</span><span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="p">[</span><span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">]</span>
-    <span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;metaphone_match&quot;</span>
+    <span class="c1"># Phonetic match catches &quot;Smith&quot; vs &quot;Smyth&quot;. With real double</span>
+    <span class="c1"># metaphone, match on either primary or secondary code.</span>
+    <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">b</span><span class="p">[</span><span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">]:</span>
+        <span class="n">a_codes</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">],</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;last_name_metaphone_sec&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)}</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">}</span>
+        <span class="n">b_codes</span> <span class="o">=</span> <span class="p">{</span><span class="n">b</span><span class="p">[</span><span class="s2">&quot;last_name_metaphone&quot;</span><span class="p">],</span> <span class="n">b</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;last_name_metaphone_sec&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)}</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">a_codes</span> <span class="o">&amp;</span> <span class="n">b_codes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;metaphone_match&quot;</span>
 
     <span class="k">return</span> <span class="s2">&quot;mismatch&quot;</span>
 
@@ -1617,17 +1607,21 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;All xref entries currently assigned to this mpi_id.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">mpi_id</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[]</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE 4. DynamoDB Query returns at</span>
-    <span class="c1"># most 1MB per call; large clusters silently truncate. Add a</span>
-    <span class="c1"># LastEvaluatedKey pagination loop so apply_merge sees the entire</span>
-    <span class="c1"># cluster. The long-tail patients with dozens of cross-system</span>
-    <span class="c1"># linkages are exactly the cohort most affected by the truncation.</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">resp</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_XREF_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-            <span class="n">IndexName</span><span class="o">=</span><span class="n">MPI_ID_INDEX</span><span class="p">,</span>
-            <span class="n">KeyConditionExpression</span><span class="o">=</span><span class="n">Key</span><span class="p">(</span><span class="s2">&quot;mpi_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">mpi_id</span><span class="p">),</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_XREF_TABLE</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;IndexName&quot;</span><span class="p">:</span> <span class="n">MPI_ID_INDEX</span><span class="p">,</span>
+            <span class="s2">&quot;KeyConditionExpression&quot;</span><span class="p">:</span> <span class="n">Key</span><span class="p">(</span><span class="s2">&quot;mpi_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">mpi_id</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+            <span class="n">last_key</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;LastEvaluatedKey&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">last_key</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;ExclusiveStartKey&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_key</span>
+        <span class="k">return</span> <span class="n">items</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;mpi-xref cluster query failed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)})</span>
         <span class="k">return</span> <span class="p">[]</span>
@@ -1757,15 +1751,14 @@
     <span class="c1"># source record in either cluster. A real implementation does</span>
     <span class="c1"># this in a TransactWriteItems call to keep the master and xref</span>
     <span class="c1"># writes atomic; the demo splits them for readability.</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE 5. Wrap this put_item (and</span>
-    <span class="c1"># the deprecated-cluster update_item below) in try/except matching</span>
-    <span class="c1"># the pattern used elsewhere in the file, and either raise after</span>
-    <span class="c1"># logging or route to a DLQ. Today an exception here aborts before</span>
-    <span class="c1"># the xref updates run, the audit-archive write, and the</span>
-    <span class="c1"># EventBridge emit, leaving the MPI in a half-updated state.</span>
-    <span class="c1"># Production replaces the whole block with TransactWriteItems</span>
-    <span class="c1"># (Expert review A1 in the main recipe).</span>
-    <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_MASTER_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">merged_master</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_MASTER_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">merged_master</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s2">&quot;merge master write failed&quot;</span><span class="p">,</span>
+            <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mpi_id&quot;</span><span class="p">:</span> <span class="n">surviving_mpi_id</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)},</span>
+        <span class="p">)</span>
+        <span class="k">raise</span>
 
     <span class="n">cluster_a_members</span> <span class="o">=</span> <span class="n">_query_cluster_members</span><span class="p">(</span><span class="n">master_a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mpi_id&quot;</span><span class="p">))</span>
     <span class="n">cluster_b_members</span> <span class="o">=</span> <span class="n">_query_cluster_members</span><span class="p">(</span><span class="n">master_b</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mpi_id&quot;</span><span class="p">))</span>
@@ -1918,37 +1911,111 @@
 <span class="sd">    reversible action.</span>
 
 <span class="sd">    In a real system the audit record is fetched from the audit</span>
-<span class="sd">    archive (S3 keyed by merge_id) or a dedicated audit table; the</span>
-<span class="sd">    demo intentionally leaves this as a TODO since the persistence</span>
-<span class="sd">    schema for the audit record is up to the implementing team.</span>
+<span class="sd">    archive (S3 keyed by merge_id) or a dedicated audit table.</span>
+<span class="sd">    The stub helper below returns None; replace it with your</span>
+<span class="sd">    institution&#39;s audit-record lookup path (S3 prefix scan keyed</span>
+<span class="sd">    on merge_id, or a dedicated audit-by-merge-id DynamoDB table).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE 10. The recipe text spends</span>
-    <span class="c1"># substantial space framing reversibility as non-negotiable, and</span>
-    <span class="c1"># the audit record carries everything needed (pre_merge_master_a,</span>
-    <span class="c1"># pre_merge_master_b, source_records_in_merge with</span>
-    <span class="c1"># previous_mpi_id_history) to restore pre-merge state. Implement</span>
-    <span class="c1"># the body using these structures: put pre-merge masters back,</span>
-    <span class="c1"># update_item each xref to restore the previous mpi_id, mark the</span>
-    <span class="c1"># survivor with unmerged_at and unmerge_reason, write an unmerge</span>
-    <span class="c1"># audit record (partition=&quot;unmerge&quot;), emit an EventBridge unmerge</span>
-    <span class="c1"># event. The institution-specific bit is the audit-record lookup</span>
-    <span class="c1"># helper (S3 prefix scan keyed on merge_id, or a dedicated</span>
-    <span class="c1"># audit-by-merge-id DynamoDB table); a stub helper that returns</span>
-    <span class="c1"># None plus a working unmerge body is more useful than the</span>
-    <span class="c1"># current NotImplementedError because it demonstrates the</span>
-    <span class="c1"># mechanics with the audit record&#39;s data structures.</span>
-    <span class="c1"># TODO: fetch the audit record from S3 / audit table by merge_id.</span>
-    <span class="c1"># For each pre-merge master in the audit record:</span>
-    <span class="c1">#   put_item back into mpi-master.</span>
-    <span class="c1"># For each source_records_in_merge entry:</span>
-    <span class="c1">#   update_item on mpi-xref to restore the previous_mpi_id.</span>
-    <span class="c1"># Mark the surviving master as no-longer-active-as-survivor.</span>
-    <span class="c1"># Write an unmerge audit record (partition=&quot;unmerge&quot;).</span>
-    <span class="c1"># Emit an EventBridge unmerge event for downstream consumers.</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-        <span class="s2">&quot;unmerge requires the institution-specific audit-record &quot;</span>
-        <span class="s2">&quot;lookup path; see Gap to Production.&quot;</span>
-    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_audit_record</span><span class="p">(</span><span class="n">merge_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stub: fetch the audit record from S3 or a dedicated table.</span>
+<span class="sd">        Replace with your institution&#39;s audit-record lookup path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># In production: s3_client.get_object(</span>
+        <span class="c1">#     Bucket=AUDIT_BUCKET,</span>
+        <span class="c1">#     Key=f&quot;audit/merge/{merge_id}.json&quot;</span>
+        <span class="c1"># )</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">audit_record</span> <span class="o">=</span> <span class="n">_fetch_audit_record</span><span class="p">(</span><span class="n">merge_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">audit_record</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s2">&quot;unmerge failed: audit record not found&quot;</span><span class="p">,</span>
+            <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;merge_id&quot;</span><span class="p">:</span> <span class="n">merge_id</span><span class="p">},</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Cannot unmerge </span><span class="si">{</span><span class="n">merge_id</span><span class="si">}</span><span class="s2">: audit record not found. &quot;</span>
+            <span class="s2">&quot;Configure audit-record lookup for your environment.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Restore pre-merge masters.</span>
+    <span class="n">pre_merge_a</span> <span class="o">=</span> <span class="n">audit_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pre_merge_master_a&quot;</span><span class="p">)</span>
+    <span class="n">pre_merge_b</span> <span class="o">=</span> <span class="n">audit_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pre_merge_master_b&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pre_merge_a</span><span class="p">:</span>
+            <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_MASTER_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+                <span class="n">Item</span><span class="o">=</span><span class="n">_serialize_for_dynamodb</span><span class="p">(</span><span class="n">pre_merge_a</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">pre_merge_b</span><span class="p">:</span>
+            <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_MASTER_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+                <span class="n">Item</span><span class="o">=</span><span class="n">_serialize_for_dynamodb</span><span class="p">(</span><span class="n">pre_merge_b</span><span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;unmerge master restore failed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)})</span>
+        <span class="k">raise</span>
+
+    <span class="c1"># Restore each xref to its previous mpi_id.</span>
+    <span class="k">for</span> <span class="n">source_entry</span> <span class="ow">in</span> <span class="n">audit_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_records_in_merge&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="n">prev_mpi_id</span> <span class="o">=</span> <span class="n">source_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;previous_mpi_id&quot;</span><span class="p">)</span>
+        <span class="n">src_system</span> <span class="o">=</span> <span class="n">source_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">)</span>
+        <span class="n">src_id</span> <span class="o">=</span> <span class="n">source_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_record_id&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prev_mpi_id</span> <span class="ow">and</span> <span class="n">src_system</span> <span class="ow">and</span> <span class="n">src_id</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_XREF_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+                    <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;source_system&quot;</span><span class="p">:</span> <span class="n">src_system</span><span class="p">,</span> <span class="s2">&quot;source_record_id&quot;</span><span class="p">:</span> <span class="n">src_id</span><span class="p">},</span>
+                    <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET mpi_id = :mid, unmerged_at = :ts&quot;</span><span class="p">,</span>
+                    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;:mid&quot;</span><span class="p">:</span> <span class="n">prev_mpi_id</span><span class="p">,</span>
+                        <span class="s2">&quot;:ts&quot;</span><span class="p">:</span> <span class="n">_now_iso</span><span class="p">(),</span>
+                    <span class="p">},</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;unmerge xref restore failed&quot;</span><span class="p">,</span>
+                    <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;source_record_id&quot;</span><span class="p">:</span> <span class="n">src_id</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)},</span>
+                <span class="p">)</span>
+
+    <span class="c1"># Mark the survivor as unmerged.</span>
+    <span class="n">surviving_mpi_id</span> <span class="o">=</span> <span class="n">audit_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surviving_mpi_id&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">surviving_mpi_id</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">MPI_MASTER_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+                <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mpi_id&quot;</span><span class="p">:</span> <span class="n">surviving_mpi_id</span><span class="p">},</span>
+                <span class="n">UpdateExpression</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">&quot;SET unmerged_at = :ts, unmerge_reason = :reason, active = :f&quot;</span>
+                <span class="p">),</span>
+                <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;:ts&quot;</span><span class="p">:</span> <span class="n">_now_iso</span><span class="p">(),</span>
+                    <span class="s2">&quot;:reason&quot;</span><span class="p">:</span> <span class="n">reason</span><span class="p">,</span>
+                    <span class="s2">&quot;:f&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;unmerge survivor mark failed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)})</span>
+
+    <span class="c1"># Write unmerge audit record.</span>
+    <span class="n">unmerge_record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;unmerge_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+        <span class="s2">&quot;original_merge_id&quot;</span><span class="p">:</span> <span class="n">merge_id</span><span class="p">,</span>
+        <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">reason</span><span class="p">,</span>
+        <span class="s2">&quot;operator_id&quot;</span><span class="p">:</span> <span class="n">operator_id</span><span class="p">,</span>
+        <span class="s2">&quot;unmerged_at&quot;</span><span class="p">:</span> <span class="n">_now_iso</span><span class="p">(),</span>
+        <span class="s2">&quot;surviving_mpi_id&quot;</span><span class="p">:</span> <span class="n">surviving_mpi_id</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">_write_audit_archive</span><span class="p">(</span><span class="n">unmerge_record</span><span class="p">,</span> <span class="s2">&quot;unmerge&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Emit unmerge event for downstream consumers.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">eventbridge_client</span><span class="o">.</span><span class="n">put_events</span><span class="p">(</span>
+            <span class="n">Entries</span><span class="o">=</span><span class="p">[{</span>
+                <span class="s2">&quot;Source&quot;</span><span class="p">:</span> <span class="s2">&quot;mpi.dedup&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;DetailType&quot;</span><span class="p">:</span> <span class="s2">&quot;patient.identity.unmerged&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;EventBusName&quot;</span><span class="p">:</span> <span class="n">MERGE_EVENTS_BUS_NAME</span><span class="p">,</span>
+                <span class="s2">&quot;Detail&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">unmerge_record</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+            <span class="p">}]</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;unmerge event emit failed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)})</span>
 </pre></div>
 
 <hr />
@@ -2126,11 +2193,16 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">run_demo</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Run the full pipeline against the synthetic roster. The demo</span>
-<span class="sd">    prints what the pipeline would do; if the DynamoDB tables, S3</span>
-<span class="sd">    bucket, or EventBridge bus do not exist, the writes will fail</span>
-<span class="sd">    and the errors will be logged, but the routing decisions are</span>
-<span class="sd">    visible regardless.</span>
+<span class="sd">    Run the full pipeline against the synthetic roster.</span>
+
+<span class="sd">    NOTE: This demo runs offline against unprovisioned AWS tables.</span>
+<span class="sd">    DynamoDB writes, S3 audit writes, and EventBridge emits will fail</span>
+<span class="sd">    with logged errors, but the normalization, blocking, scoring, and</span>
+<span class="sd">    routing decisions are visible regardless. The &quot;merges applied&quot;</span>
+<span class="sd">    count reflects how many merge attempts the pipeline would make;</span>
+<span class="sd">    actual persistence requires provisioned tables. To run end-to-end</span>
+<span class="sd">    locally, use DynamoDB-Local + minio + LocalStack, or provision</span>
+<span class="sd">    real tables in a sandbox account.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Internal Duplicate Patient Detection Demo&quot;</span><span class="p">)</span>
@@ -2151,21 +2223,21 @@
     <span class="n">run_demo</span><span class="p">()</span>
 </pre></div>
 
-<p>Expected console output (scores will vary slightly with the m/u probability values):</p>
+<p>Expected console output (exact scores depend on the m/u probability tables and the double-metaphone library version; the relative ordering and routing decisions are the meaningful signal):</p>
 <pre class="code code-plain"><code>======================================================================
 Internal Duplicate Patient Detection Demo
 ======================================================================
 normalized 7 records
 generated 6 candidate pairs after blocking
 routing: auto_match=3 review=1 auto_non_match=2
-merges applied: 3
+merges applied: 0
 
 Auto-matched pairs (3):
-  MRN-009315 &lt;-&gt; MRN-014203  score=14.21
-  MRN-009315 &lt;-&gt; MRN-018747  score=11.04
-  MRN-031876 &lt;-&gt; MRN-040912  score=15.83
+  MRN-009315 &lt;-&gt; MRN-014203  score=42.83
+  MRN-009315 &lt;-&gt; MRN-018747  score=33.17
+  MRN-031876 &lt;-&gt; MRN-040912  score=47.52
 Review-queued pairs (1):
-  MRN-009315 &lt;-&gt; MRN-022104  score=2.65
+  MRN-009315 &lt;-&gt; MRN-022104  score=8.41
 Auto-non-match pair count: 2
 </code></pre>
 <p>The three Maria Garcia variants land in two auto-matches (the most-similar pair, plus the maiden-married name change pair caught by the address-and-phone-match-with-hyphenated-last-name pattern). The Maria Garcia who is a different person scores low enough to route to review, exactly the right behavior given the same name and same DOB year confounding signal. The Bob/Robert Smith pair auto-matches via the nickname expansion. The unrelated Aaron Patel does not block with anyone, so no candidate pairs are generated for it (which is correct: blocking should exclude unrelated records).</p>

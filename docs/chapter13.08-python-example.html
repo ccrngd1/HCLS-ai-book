@@ -1087,11 +1087,33 @@
 
     <span class="c1"># Cache miss. Query Neptune via openCypher.</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cache miss for </span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">, querying Neptune&quot;</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">query_neptune_for_mappings</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">target_terminologies</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">query_neptune_for_mappings</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">target_terminologies</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionError</span><span class="p">,</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">Timeout</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c1"># Neptune unreachable. Check if we have a stale cached version</span>
+        <span class="c1"># (previous TTL may have expired but we keep a backup key with longer TTL).</span>
+        <span class="n">stale_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;norm_stale:</span><span class="si">{</span><span class="n">terminology</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">targets_key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">stale</span> <span class="o">=</span> <span class="n">redis_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">stale_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stale</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Neptune unavailable, returning stale cache for </span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+            <span class="n">stale_result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">stale</span><span class="p">)</span>
+            <span class="n">stale_result</span><span class="p">[</span><span class="s2">&quot;stale&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="n">stale_result</span>
+        <span class="c1"># No stale data available either. Return degraded status.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Neptune unavailable and no stale cache for </span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;service_degraded&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+            <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Normalization service temporarily unavailable&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
 
     <span class="c1"># Cache the result for future lookups.</span>
     <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;found&quot;</span><span class="p">:</span>
         <span class="n">redis_client</span><span class="o">.</span><span class="n">setex</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">CACHE_TTL_SECONDS</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
+        <span class="c1"># Also store a longer-lived stale copy for fallback during outages.</span>
+        <span class="n">stale_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;norm_stale:</span><span class="si">{</span><span class="n">terminology</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">targets_key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">redis_client</span><span class="o">.</span><span class="n">setex</span><span class="p">(</span><span class="n">stale_key</span><span class="p">,</span> <span class="n">CACHE_TTL_SECONDS</span> <span class="o">*</span> <span class="mi">7</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">result</span>
 
@@ -1341,7 +1363,65 @@
 <hr />
 <h2 id="putting-it-all-together">Putting It All Together</h2>
 <p>Here's the full pipeline assembled into callable functions. The ingestion pipeline runs when new terminology releases arrive. The normalization service runs continuously, serving queries from consuming systems.</p>
-<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_terminology_ingestion</span><span class="p">(</span>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">invalidate_cache_after_load</span><span class="p">(</span>
+    <span class="n">terminology</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">changed_codes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">selective_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Invalidate Redis cache entries affected by a terminology update.</span>
+
+<span class="sd">    After loading a new terminology version into Neptune, stale mappings</span>
+<span class="sd">    live in the cache. This function computes whether to selectively</span>
+<span class="sd">    invalidate affected keys or flush the entire cache based on the size</span>
+<span class="sd">    of the change delta.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        terminology: Which terminology was updated (e.g., &quot;ICD10CM&quot;)</span>
+<span class="sd">        changed_codes: List of codes that were added, retired, or modified</span>
+<span class="sd">        selective_threshold: If more codes changed than this, flush everything</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Summary of invalidation actions taken.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">changed_codes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">selective_threshold</span><span class="p">:</span>
+        <span class="c1"># Large delta (annual update). Flush and optionally warm.</span>
+        <span class="n">redis_client</span><span class="o">.</span><span class="n">flushdb</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Full cache flush: </span><span class="si">%d</span><span class="s2"> codes changed (threshold: </span><span class="si">%d</span><span class="s2">)&quot;</span><span class="p">,</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">changed_codes</span><span class="p">),</span> <span class="n">selective_threshold</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;full_flush&quot;</span><span class="p">,</span> <span class="s2">&quot;codes_affected&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">changed_codes</span><span class="p">)}</span>
+
+    <span class="c1"># Small delta. Selectively delete matching keys.</span>
+    <span class="n">deleted_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">changed_codes</span><span class="p">:</span>
+        <span class="c1"># SCAN for matching keys (never use KEYS in production, it blocks Redis).</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;norm:</span><span class="si">{</span><span class="n">terminology</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">:*&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">cursor</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="n">redis_client</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">cursor</span><span class="o">=</span><span class="n">cursor</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">keys</span><span class="p">:</span>
+                <span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="o">*</span><span class="n">keys</span><span class="p">)</span>
+                <span class="n">deleted_count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cursor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="c1"># Also clear stale fallback keys.</span>
+        <span class="n">stale_pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;norm_stale:</span><span class="si">{</span><span class="n">terminology</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">:*&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">cursor</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="n">redis_client</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">cursor</span><span class="o">=</span><span class="n">cursor</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="n">stale_pattern</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">keys</span><span class="p">:</span>
+                <span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="o">*</span><span class="n">keys</span><span class="p">)</span>
+                <span class="n">deleted_count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cursor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Selective cache invalidation: deleted </span><span class="si">%d</span><span class="s2"> keys for </span><span class="si">%d</span><span class="s2"> changed codes&quot;</span><span class="p">,</span>
+                <span class="n">deleted_count</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">changed_codes</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;selective&quot;</span><span class="p">,</span> <span class="s2">&quot;codes_affected&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">changed_codes</span><span class="p">),</span>
+            <span class="s2">&quot;keys_deleted&quot;</span><span class="p">:</span> <span class="n">deleted_count</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_terminology_ingestion</span><span class="p">(</span>
     <span class="n">mrconso_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mrrel_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1451,7 +1531,7 @@
 <hr />
 <h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
 <p>This example demonstrates the core patterns. It parses UMLS files, builds graph load files, queries Neptune, and caches results. But there's a significant distance between this sketch and something you'd deploy to support clinical systems. Here's where that gap lives:</p>
-<p><strong>Error handling and resilience.</strong> Every external call (Neptune, Redis, S3) can fail. Production code wraps each in try/except with specific handling for connection timeouts, throttling, and transient errors. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Your normalization service needs graceful degradation: if the cache is down, fall through to Neptune directly (slower but functional).</p>
+<p><strong>Error handling and resilience.</strong> Every external call (Neptune, Redis, S3) can fail. The <code>normalize_concept</code> function above demonstrates basic Neptune fallback (returning stale cached data or a degraded status), but production code needs the same pattern for every integration point. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Extend the graceful degradation pattern to value set expansion and batch normalization as well.</p>
 <p><strong>Retries and backoff.</strong> The boto3 retry config handles S3 and basic AWS calls, but Neptune HTTP queries and Redis operations need their own retry logic. Exponential backoff with jitter prevents thundering herd problems when a service recovers from an outage.</p>
 <p><strong>Input validation.</strong> This code trusts its inputs. Production validates that codes match expected patterns (ICD-10 codes follow a specific regex, SNOMED codes are numeric, LOINC codes have a specific format). Invalid inputs should return clear error responses, not crash the service or produce confusing Neptune query errors.</p>
 <p><strong>Structured logging and observability.</strong> The <code>print()</code> statements are placeholders. Production uses structured JSON logging with correlation IDs so you can trace a single normalization request through cache lookup, Neptune query, and response assembly. CloudWatch metrics on cache hit rate, query latency percentiles, and error rates are essential for operations.</p>
@@ -1459,7 +1539,7 @@
 <p><strong>VPC and network security.</strong> Neptune requires VPC deployment. Your Lambda functions need VPC configuration with private subnets. Use VPC endpoints for S3 and CloudWatch to keep traffic off the public internet. Security groups should restrict Neptune access to only the Lambda security group and the Glue job security group.</p>
 <p><strong>KMS encryption.</strong> This example uses default S3 encryption. Production uses customer-managed KMS keys with key rotation enabled. Neptune encryption at rest must be enabled at cluster creation (you cannot add it later). ElastiCache encryption at rest and in-transit should both be enabled.</p>
 <p><strong>Version management.</strong> This example loads a single version. Production maintains multiple versions simultaneously (the current ICD-10 release and the previous one, because claims filed before October use the old codes). You need version-aware queries and a strategy for retiring old versions without breaking historical lookups.</p>
-<p><strong>Cache invalidation.</strong> When you load a new terminology version, which cache entries are stale? The naive approach (flush everything) causes a thundering herd on Neptune. The smart approach computes the delta (which concepts changed between versions) and selectively invalidates only affected cache keys. This requires tracking which CUIs were modified in the new release.</p>
+<p><strong>Cache invalidation.</strong> The <code>invalidate_cache_after_load</code> function above demonstrates the basic strategy (selective vs. full flush based on delta size). Production needs additional work: tracking which value set expansions contain which concepts for precise invalidation, wiring the invalidation into your Step Functions orchestrator as a mandatory post-load step, and adding monitoring to alert when invalidation takes longer than expected.</p>
 <p><strong>Bulk query optimization.</strong> The <code>batch_normalize</code> function processes misses one at a time. Production uses Neptune's ability to handle multiple patterns in a single query (via UNWIND in openCypher) to batch cache misses into fewer round trips. For a batch of 1,000 codes, you want 1-2 Neptune queries, not 1,000.</p>
 <p><strong>UMLS licensing compliance.</strong> UMLS data has specific redistribution restrictions. You cannot expose raw UMLS content through your API without ensuring your consumers also have UMLS licenses. Your normalization API should return your own derived mappings, not raw UMLS relationship data. Consult NLM's licensing terms.</p>
 <p><strong>Testing.</strong> There are no tests here. Production needs unit tests for the parsing logic (with sample RRF snippets), integration tests against a Neptune test cluster with known test data, and end-to-end tests that verify the full normalization path. Use synthetic terminology data for testing, never production UMLS data in CI/CD pipelines (it's too large and has licensing implications).</p>

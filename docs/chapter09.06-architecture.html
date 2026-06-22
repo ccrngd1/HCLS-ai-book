@@ -858,6 +858,15 @@ FUNCTION apply_clinical_decision(predictions):
 <li>Pediatric patients (different retinal anatomy, different disease presentation)</li>
 </ul>
 <hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>This architecture demonstrates the screening pipeline's shape, but a production deployment must close several gaps:</p>
+<p><strong>Clinical validation study.</strong> You cannot deploy a DR screening system without a prospective clinical validation on your target population. The model's sensitivity and specificity must be measured against expert ophthalmologist consensus on a representative sample (diverse demographics, multiple camera types, realistic image quality distribution). This is not optional; it's a regulatory and patient safety requirement.</p>
+<p><strong>FDA regulatory pathway.</strong> If the system renders autonomous screening decisions without physician oversight, it requires FDA clearance (De Novo or 510(k)). Even physician-reviewed triage tools may require 510(k) depending on the clinical claims. The regulatory documentation (design controls, risk analysis, clinical evidence summary) typically takes 6-12 months to prepare.</p>
+<p><strong>Model monitoring and drift detection.</strong> Retinal camera firmware updates, new operator cohorts, and population shifts all degrade model performance over time. You need a continuous monitoring pipeline that compares model predictions against a gold-standard reading panel on a rolling basis. When performance drops below validated thresholds, an automated alert triggers the revalidation or recalibration workflow.</p>
+<p><strong>Camera-specific calibration.</strong> Different fundus camera models produce images with different color profiles, resolutions, and fields of view. A model validated on one camera brand may underperform on another. Multi-site deployments need per-camera calibration or a preprocessing normalization step that accounts for device-specific characteristics.</p>
+<p><strong>EHR bidirectional integration.</strong> The architecture stores results in DynamoDB, but clinicians need results in the EHR where they make decisions. Production requires HL7 FHIR or HL7v2 messaging to push structured results into the patient's chart, update referral orders, and close care gap flags. This integration is often the longest implementation phase.</p>
+<p><strong>Failover and availability.</strong> A screening program with scheduled patients cannot tolerate downtime. The SageMaker endpoint needs multi-AZ deployment, the Step Functions workflow needs error handling with graceful degradation (queue images for later processing if the endpoint is unavailable), and the notification system needs delivery confirmation with escalation paths for failed alerts.</p>
+<hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Multi-disease retinal screening.</strong> The same fundus image that shows diabetic retinopathy can also reveal glaucoma (optic disc changes), age-related macular degeneration (drusen, geographic atrophy), and hypertensive retinopathy. Multi-task models that screen for multiple conditions simultaneously increase the value of each captured image. The architecture is identical; you add output heads to the classification model and additional decision logic branches.</p>
 <p><strong>Longitudinal progression tracking.</strong> Instead of grading each image independently, compare the current image to the patient's previous screenings. Track lesion count changes, hemorrhage area growth, and microaneurysm turnover rates. This transforms screening from a point-in-time assessment to a progression monitoring system. Requires image registration (aligning images from different visits) and a temporal database of per-patient imaging history.</p>
@@ -875,15 +884,15 @@ FUNCTION apply_clinical_decision(predictions):
 </ul>
 <p><strong>Clinical and Regulatory References:</strong></p>
 <ul>
-<li>TODO: Verify current FDA guidance document URL for AI/ML-based Software as a Medical Device (SaMD)</li>
-<li>TODO: Verify URL for IDx-DR (Digital Diagnostics) FDA De Novo clearance summary</li>
-<li>TODO: Verify URL for AAO Diabetic Retinopathy Preferred Practice Pattern</li>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device">FDA: Artificial Intelligence and Machine Learning in Software as a Medical Device</a> - Framework for AI/ML-based SaMD regulatory pathway</li>
+<li><a href="https://www.accessdata.fda.gov/cdrh_docs/reviews/DEN180001.pdf">FDA De Novo Classification: IDx-DR (DEN180001)</a> - First FDA-cleared autonomous AI diagnostic for diabetic retinopathy</li>
+<li><a href="https://www.aao.org/preferred-practice-pattern/diabetic-retinopathy-ppp">AAO Preferred Practice Pattern: Diabetic Retinopathy</a> - Clinical guidelines for DR screening and management</li>
 </ul>
 <p><strong>Public Datasets (for development only):</strong></p>
 <ul>
-<li>TODO: Verify current Kaggle EyePACS dataset URL</li>
-<li>TODO: Verify Messidor-2 dataset access URL</li>
-<li>TODO: Verify APTOS 2019 Blindness Detection challenge URL</li>
+<li><a href="https://www.kaggle.com/c/diabetic-retinopathy-detection">EyePACS Diabetic Retinopathy Detection (Kaggle)</a> - Large-scale fundus image dataset with severity grades</li>
+<li><a href="https://www.adcis.net/en/third-party/messidor2/">Messidor-2</a> - Reference dataset for DR grading algorithm benchmarking</li>
+<li><a href="https://www.kaggle.com/c/aptos2019-blindness-detection">APTOS 2019 Blindness Detection (Kaggle)</a> - Recent competition dataset with ICDR-graded fundus images</li>
 </ul>
 <hr />
 <h2 id="estimated-implementation-time">Estimated Implementation Time</h2>

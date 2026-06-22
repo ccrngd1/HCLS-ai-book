@@ -749,20 +749,32 @@
     // trigger.scenario: scoped scenario name for the reasoning
     // trigger.clinician_id: Cognito user ID for audit trail
 
-    run_id = generate UUID
+    // Derive a deterministic run_id from the event key so that duplicate
+    // EventBridge deliveries (at-least-once) resolve to the same execution
+    // rather than spawning a redundant pipeline run.
+    event_key = f&quot;{trigger.patient_id}:{trigger.encounter_id}:{trigger.scenario}&quot;
+    run_id = deterministic_uuid_v5(namespace=MM_REASONING_NAMESPACE, name=event_key)
 
-    // Write the run record early for traceability
-    write to DynamoDB table &quot;mm-reasoning-runs&quot;:
-        run_id         = run_id
-        trigger_type   = trigger.type
-        scenario       = trigger.scenario
-        patient_id     = trigger.patient_id
-        encounter_id   = trigger.encounter_id
-        clinician_id   = trigger.clinician_id
-        status         = &quot;INITIATED&quot;
-        initiated_at   = current UTC timestamp
+    // Conditional write: only create the run record if this run_id does not
+    // already exist. If the condition fails, this is a duplicate delivery;
+    // return the existing run_id without re-triggering.
+    try:
+        write to DynamoDB table &quot;mm-reasoning-runs&quot; with condition attribute_not_exists(run_id):
+            run_id         = run_id
+            trigger_type   = trigger.type
+            scenario       = trigger.scenario
+            patient_id     = trigger.patient_id
+            encounter_id   = trigger.encounter_id
+            clinician_id   = trigger.clinician_id
+            status         = &quot;INITIATED&quot;
+            initiated_at   = current UTC timestamp
+    catch ConditionalCheckFailed:
+        // Duplicate delivery; the run already exists. Return idempotently.
+        RETURN { run_id: run_id, status: &quot;ALREADY_EXISTS&quot; }
 
-    // Kick off Step Functions execution; the state machine handles parallel ingestion
+    // Kick off Step Functions execution with the deterministic run_id as
+    // the execution name. Step Functions rejects duplicate execution names
+    // within the retention window, providing a second idempotency layer.
     start Step Functions execution:
         state_machine_arn = MM_REASONING_STATE_MACHINE_ARN
         name              = run_id
@@ -833,7 +845,15 @@
             source_id: f&quot;imaging:{metadata.study_instance_uid}&quot;
         } to imaging_records
 
-    RETURN imaging_records
+    // Return a status-annotated result so the inventory step can distinguish
+    // &quot;no imaging exists&quot; from &quot;imaging retrieval failed&quot; from &quot;imaging present.&quot;
+    IF error occurred during HealthImaging or vendor calls:
+        RETURN { status: &quot;failed&quot;, modality: &quot;imaging&quot;, records: [],
+                 error: error_details }
+    ELSE IF length(imaging_records) == 0:
+        RETURN { status: &quot;empty&quot;, modality: &quot;imaging&quot;, records: [] }
+    ELSE:
+        RETURN { status: &quot;retrieved&quot;, modality: &quot;imaging&quot;, records: imaging_records }
 </code></pre>
 <pre class="code code-plain"><code>FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
 
@@ -882,7 +902,13 @@
             deep_link: build_ecg_deep_link(ecg)
         } to ecg_records
 
-    RETURN ecg_records
+    IF error occurred during HealthLake or SageMaker calls:
+        RETURN { status: &quot;failed&quot;, modality: &quot;ecg&quot;, records: [],
+                 error: error_details }
+    ELSE IF length(ecg_records) == 0:
+        RETURN { status: &quot;empty&quot;, modality: &quot;ecg&quot;, records: [] }
+    ELSE:
+        RETURN { status: &quot;retrieved&quot;, modality: &quot;ecg&quot;, records: ecg_records }
 </code></pre>
 <pre class="code code-plain"><code>FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
 
@@ -945,7 +971,8 @@
             flagged_events: abnormal_events(recent_vitals)
         }
 
-    RETURN { lab_trends: lab_trends, vitals_summary: vitals_summary,
+    RETURN { status: &quot;retrieved&quot;, modality: &quot;labs_vitals&quot;,
+             lab_trends: lab_trends, vitals_summary: vitals_summary,
              source_id: f&quot;labs_vitals:{patient_id}&quot; }
 </code></pre>
 <pre class="code code-plain"><code>FUNCTION ingest_notes(run_id, patient_id, scenario):
@@ -981,7 +1008,13 @@
             source_id: f&quot;note:{note.id}&quot;
         } to notes
 
-    RETURN notes
+    IF error occurred during HealthLake or ComprehendMedical calls:
+        RETURN { status: &quot;failed&quot;, modality: &quot;notes&quot;, records: [],
+                 error: error_details }
+    ELSE IF length(notes) == 0:
+        RETURN { status: &quot;empty&quot;, modality: &quot;notes&quot;, records: [] }
+    ELSE:
+        RETURN { status: &quot;retrieved&quot;, modality: &quot;notes&quot;, records: notes }
 </code></pre>
 <pre class="code code-plain"><code>FUNCTION ingest_structured_context(run_id, patient_id):
 
@@ -995,56 +1028,83 @@
     // demographics, active_conditions, current_medications, allergies,
     // derived (eGFR, BMI, Child-Pugh as applicable)
 
-    RETURN structured
+    IF error occurred during HealthLake calls:
+        RETURN { status: &quot;failed&quot;, modality: &quot;structured_context&quot;,
+                 records: {}, error: error_details }
+    ELSE:
+        RETURN { status: &quot;retrieved&quot;, modality: &quot;structured_context&quot;,
+                 records: structured }
 </code></pre>
 <p><strong>Step 3: Normalize, annotate, and build the modality inventory.</strong> Each modality's ingestion produces its own representation. This step assembles them into a unified patient state with consistent timestamps, source identifiers, and a modality inventory that the reasoning layer will consult.</p>
 <pre class="code code-plain"><code>FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
 
-    // Build the unified patient state
+    // Each ingestion result is status-annotated: { status, modality, records, error? }
+    // Statuses: &quot;retrieved&quot; (data present), &quot;empty&quot; (genuinely absent for this patient),
+    //           &quot;failed&quot; (retrieval error: timeout, throttle, vendor 500),
+    //           &quot;scoped_out&quot; (not relevant for this scenario).
+    // The inventory is built from status, not from record count alone.
+
+    // Unpack records (use empty defaults for failed or empty modalities)
+    imaging_records = imaging.records if imaging.status == &quot;retrieved&quot; else []
+    ecg_records = ecg.records if ecg.status == &quot;retrieved&quot; else []
+    lab_trends = labs_vitals.lab_trends if labs_vitals.status == &quot;retrieved&quot; else {}
+    vitals_summary = labs_vitals.vitals_summary if labs_vitals.status == &quot;retrieved&quot; else {}
+    notes_records = notes.records if notes.status == &quot;retrieved&quot; else []
+    structured_data = structured.records if structured.status == &quot;retrieved&quot; else {}
+
+    // Build the unified patient state from successfully retrieved modalities
     patient_state = {
-        structured_context: structured,
-        imaging_records: imaging,
-        ecg_records: ecg,
-        lab_trends: labs_vitals.lab_trends,
-        vitals_summary: labs_vitals.vitals_summary,
-        notes: notes
+        structured_context: structured_data,
+        imaging_records: imaging_records,
+        ecg_records: ecg_records,
+        lab_trends: lab_trends,
+        vitals_summary: vitals_summary,
+        notes: notes_records
     }
 
-    // Build the modality inventory describing what is present and its recency
+    // Build the modality inventory from status, not cardinality.
+    // &quot;failed&quot; modalities are distinct from &quot;empty&quot; modalities: the scope gate
+    // routes &quot;failed&quot; to retry rather than treating the absence as permanent.
     modality_inventory = {
         structured_context: {
-            present: true,
-            recency: &quot;current&quot;,
-            confidence: &quot;high&quot;
+            status: structured.status,
+            present: structured.status == &quot;retrieved&quot;,
+            recency: &quot;current&quot; if structured.status == &quot;retrieved&quot; else null,
+            confidence: &quot;high&quot; if structured.status == &quot;retrieved&quot; else &quot;unavailable&quot;
         },
         imaging: {
-            present: length(imaging) &gt; 0,
-            count: length(imaging),
-            most_recent: most_recent_date(imaging),
-            modalities: unique(imaging map to .study_modality),
-            cleared_ai_present: any(imaging, has cleared_ai_outputs)
+            status: imaging.status,
+            present: imaging.status == &quot;retrieved&quot; AND length(imaging_records) &gt; 0,
+            count: length(imaging_records),
+            most_recent: most_recent_date(imaging_records),
+            modalities: unique(imaging_records map to .study_modality),
+            cleared_ai_present: any(imaging_records, has cleared_ai_outputs)
         },
         ecg: {
-            present: length(ecg) &gt; 0,
-            count: length(ecg),
-            most_recent: most_recent_date(ecg)
+            status: ecg.status,
+            present: ecg.status == &quot;retrieved&quot; AND length(ecg_records) &gt; 0,
+            count: length(ecg_records),
+            most_recent: most_recent_date(ecg_records)
         },
         labs: {
-            present: length(labs_vitals.lab_trends) &gt; 0,
-            current_and_trended: count_where(labs_vitals.lab_trends,
+            status: labs_vitals.status,
+            present: labs_vitals.status == &quot;retrieved&quot; AND length(lab_trends) &gt; 0,
+            current_and_trended: count_where(lab_trends,
                                                  classification in [&quot;rising&quot;,&quot;falling&quot;,&quot;stable&quot;]),
-            single_values_only: count_where(labs_vitals.lab_trends,
+            single_values_only: count_where(lab_trends,
                                                  classification == &quot;single_value&quot;)
         },
         vitals: {
-            present: length(labs_vitals.vitals_summary) &gt; 0,
-            recency: &quot;current_encounter&quot;
+            status: labs_vitals.status,
+            present: labs_vitals.status == &quot;retrieved&quot; AND length(vitals_summary) &gt; 0,
+            recency: &quot;current_encounter&quot; if length(vitals_summary) &gt; 0 else null
         },
         notes: {
-            present: length(notes) &gt; 0,
-            count: length(notes),
-            types: unique(notes map to .note_type),
-            most_recent: most_recent_date(notes)
+            status: notes.status,
+            present: notes.status == &quot;retrieved&quot; AND length(notes_records) &gt; 0,
+            count: length(notes_records),
+            types: unique(notes_records map to .note_type),
+            most_recent: most_recent_date(notes_records)
         }
     }
 
@@ -1081,11 +1141,24 @@
             decision.reason = &quot;recently_reasoned_same_scenario&quot;
             RETURN decision
 
+    // Route &quot;failed&quot; modalities to retry before evaluating availability.
+    // A modality with status &quot;failed&quot; is not the same as genuinely absent;
+    // it means a transient error (HealthImaging timeout, Comprehend throttle,
+    // vendor AI 500). Retry up to a cap before proceeding without it.
+    failed_modalities = [m for m in modality_inventory
+                         where modality_inventory[m].status == &quot;failed&quot;]
+    IF length(failed_modalities) &gt; 0:
+        decision.proceed = false
+        decision.defer_reason = &quot;modality_retrieval_failed_pending_retry&quot;
+        decision.missing = failed_modalities
+        RETURN decision
+
     // Required modalities per scenario
     required = required_modalities_for_scenario(scenario)
     // e.g., for &quot;ed_dyspnea_workup&quot;:
     //   required = [&quot;structured_context&quot;, &quot;labs&quot;, &quot;vitals&quot;, &quot;imaging:chest&quot;]
     //   recommended = [&quot;ecg&quot;, &quot;notes:recent&quot;]
+    recommended = recommended_modalities_for_scenario(scenario)
 
     missing_required = empty list
     FOR each req in required:
@@ -1098,13 +1171,42 @@
         decision.missing = missing_required
         RETURN decision
 
-    // If the scope is &quot;full reasoning&quot; but critical data is missing,
-    // the pipeline may scope down to a narrower scenario
-    IF scenario == &quot;comprehensive_reasoning&quot; AND any_recommended_missing:
-        decision.scoped_to = derive_narrower_scope(scenario, modality_inventory)
-        decision.proceed = true
-        decision.reason = &quot;scoped_down_due_to_missing_recommended_modalities&quot;
-        RETURN decision
+    // Handle missing recommended modalities for ALL scenarios (not only
+    // comprehensive_reasoning). Each scenario defines one of three handlers
+    // per recommended modality:
+    //   (a) narrow the scope to a sub-scenario that does not need it
+    //   (b) proceed with a completeness_cap of &quot;low&quot; (the reasoning layer
+    //       annotates its output accordingly)
+    //   (c) defer when the recommended modality is effectively required
+    //       for that sub-scenario (e.g., ECG for ACS-inclusive reasoning)
+    missing_recommended = [r for r in recommended
+                           where not modality_available(modality_inventory, r)]
+
+    IF length(missing_recommended) &gt; 0:
+        handler = recommended_missing_handler_for_scenario(scenario, missing_recommended)
+        // handler.action is one of: &quot;scope_down&quot;, &quot;proceed_capped&quot;, &quot;defer&quot;
+
+        IF handler.action == &quot;scope_down&quot;:
+            decision.scoped_to = handler.narrower_scenario
+            decision.proceed = true
+            decision.reason = &quot;scoped_down_due_to_missing_recommended_modalities&quot;
+            decision.missing = missing_recommended
+            RETURN decision
+
+        ELSE IF handler.action == &quot;proceed_capped&quot;:
+            decision.scoped_to = scenario
+            decision.proceed = true
+            decision.completeness_cap = &quot;low&quot;
+            decision.reason = &quot;proceeding_with_reduced_completeness&quot;
+            decision.missing = missing_recommended
+            RETURN decision
+
+        ELSE IF handler.action == &quot;defer&quot;:
+            decision.proceed = false
+            decision.defer_reason = &quot;recommended_modality_effectively_required&quot;
+            decision.missing = missing_recommended
+            decision.reason = handler.defer_rationale
+            RETURN decision
 
     decision.proceed = true
     decision.scoped_to = scenario
@@ -1164,6 +1266,39 @@
         protocols: protocol_results,
         case_analogs: case_analog_results
     }
+</code></pre>
+<p><strong>Step 6b: PHI minimization before prompt construction.</strong> Bedrock under BAA is compliant for PHI, but the HIPAA minimum-necessary principle applies inside the BAA boundary as well. Before the reasoning prompt is assembled, strip direct identifiers (MRN, DOB, patient name, address, phone, email, payer identifiers, NPI) from the serialized patient state. The reasoning output re-associates conclusions to the patient via run_id plus patient_id in the rendering step; those identifiers do not need to round-trip through the model prompt.</p>
+<pre class="code code-plain"><code>FUNCTION minimize_phi_for_prompt(patient_state):
+
+    // Fields to strip from all nested objects before prompt serialization
+    DIRECT_IDENTIFIERS = [&quot;mrn&quot;, &quot;medical_record_number&quot;, &quot;date_of_birth&quot;,
+                          &quot;dob&quot;, &quot;patient_name&quot;, &quot;name&quot;, &quot;address&quot;, &quot;street&quot;,
+                          &quot;city&quot;, &quot;state&quot;, &quot;zip&quot;, &quot;postal_code&quot;, &quot;phone&quot;,
+                          &quot;telephone&quot;, &quot;email&quot;, &quot;email_address&quot;,
+                          &quot;payer_id&quot;, &quot;member_id&quot;, &quot;subscriber_id&quot;,
+                          &quot;npi&quot;, &quot;provider_npi&quot;, &quot;ssn&quot;,
+                          &quot;social_security_number&quot;]
+
+    minimized = deep_copy(patient_state)
+
+    // Strip identifiers from structured context
+    FOR each field in DIRECT_IDENTIFIERS:
+        remove field from minimized.structured_context if present
+
+    // Strip identifiers from note content (replace with &quot;[REDACTED]&quot;)
+    FOR each note in minimized.notes:
+        note.content = redact_identifiers(note.content, DIRECT_IDENTIFIERS)
+        FOR each passage in note.key_passages:
+            passage.text = redact_identifiers(passage.text, DIRECT_IDENTIFIERS)
+
+    // Imaging reports and ECG reports: redact patient-identifying headers
+    FOR each img in minimized.imaging_records:
+        img.report_text = redact_identifiers(img.report_text, DIRECT_IDENTIFIERS)
+    FOR each ecg in minimized.ecg_records:
+        ecg.machine_interpretation = redact_identifiers(
+            ecg.machine_interpretation, DIRECT_IDENTIFIERS)
+
+    RETURN minimized
 </code></pre>
 <p><strong>Step 7: The reasoning layer.</strong> Build the prompt with the modality inventory, patient state, retrieved content, and safety findings. The prompt enforces multi-hypothesis reasoning, evidence-for-and-against per hypothesis, explicit handling of missing modalities, verbatim preservation, cross-modality consistency, and citation discipline.</p>
 <pre class="code code-plain"><code>FUNCTION invoke_reasoning_layer(scenario, patient_state, modality_inventory,
@@ -1886,7 +2021,7 @@
 <ul>
 <li><a href="https://github.com/jind11/MedQA">MedQA</a>: Medical licensing exam QA pairs</li>
 <li><a href="https://openai.com/index/healthbench/">HealthBench</a>: OpenAI benchmark for healthcare-relevant LLM evaluations</li>
-<li><a href="https://crfm.stanford.edu/helm/medical/latest/">MedHELM</a>: Stanford HELM benchmark for medical LLMs</li>
+<li><a href="https://crfm-helm.readthedocs.io/en/latest/medhelm/">MedHELM</a>: Stanford HELM benchmark for medical LLMs</li>
 </ul>
 <hr />
 <h2 id="estimated-implementation-time">Estimated Implementation Time</h2>

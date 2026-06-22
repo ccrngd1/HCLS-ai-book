@@ -673,7 +673,7 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td>Per-Lambda least-privilege roles. The session-setup Lambda has DynamoDB write to the session table only. The audio-router Lambda has Transcribe streaming permissions, Translate permissions, Bedrock invoke-model permissions, Polly synthesize-speech permissions, and S3 write to the audio bucket. The faithfulness-and-verification Lambda has Bedrock invoke-model permissions and DynamoDB write to the audit table. The escalation Lambda has Connect and Chime SDK permissions for human-interpreter handoff plus Secrets Manager read for vendor credentials. The audit Lambda has DynamoDB write and EventBridge publish. Avoid wildcard actions and resources in production.</td>
+<td>Per-Lambda least-privilege roles. The session-setup Lambda has DynamoDB write to the session table only. The audio-router Lambda has Transcribe streaming permissions, Translate permissions, Bedrock invoke-model permissions, Polly synthesize-speech permissions, and S3 write to the audio bucket. The faithfulness-and-verification Lambda has Bedrock invoke-model permissions and DynamoDB write to the audit table. The escalation Lambda has Connect and Chime SDK permissions for human-interpreter handoff plus Secrets Manager read for vendor credentials. The audit Lambda has DynamoDB write and EventBridge publish. Each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Step Functions state-machine ARN, or the production EventBridge rule ARN as appropriate, so that only the intended orchestration path can trigger each function. Avoid wildcard actions and resources in production.</td>
 </tr>
 <tr>
 <td><strong>BAA and Compliance</strong></td>
@@ -681,7 +681,7 @@
 </tr>
 <tr>
 <td><strong>Encryption</strong></td>
-<td>Audio samples: SSE-KMS with customer-managed keys, retention bound to the consent terms (typically hours to days for QA, optionally longer with explicit consent for model improvement). Transcripts and translations: SSE-KMS with separate customer-managed keys, retention aligned with medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, biometric-data law retention requirements, state medical-records-retention rules, and institutional regulatory floor.  DynamoDB tables, Lambda environment variables, and Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all API calls; mTLS preferred for vendor API integrations.</td>
+<td>Audio samples: SSE-KMS with customer-managed keys, retention bound to the consent terms (typically hours to days for QA, optionally longer with explicit consent for model improvement). Transcripts and translations: SSE-KMS with separate customer-managed keys, retention aligned with medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longest of: HIPAA's six-year minimum, state-specific medical-records-retention requirements, per-jurisdiction biometric-records retention (BIPA five-year, CUBI, Washington, GDPR Article 9 for EU patients), federal language-access compliance documentation retention per Title VI, Section 1557, and OCR enforcement period, state qualified-interpreter compliance documentation retention where applicable, per-vendor disclosure-accounting log retention, and the institutional regulatory floor. Disclosure-accounting logs (per-invocation records of each ASR, MT, and TTS vendor call constituting a third-party disclosure event) follow a separate retention regime aligned with the longest applicable biometric-data and language-access compliance period.  DynamoDB tables, Lambda environment variables, and Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all API calls; mTLS preferred for vendor API integrations.</td>
 </tr>
 <tr>
 <td><strong>VPC</strong></td>
@@ -917,7 +917,11 @@
         detail: {
             encounter_id: encounter_id,
             language_pair: pair_def.pair_id,
-            posture: posture
+            posture: posture,
+            // Per-event idempotency key so downstream
+            // consumers can deduplicate on retries.
+            idempotency_key:
+                encounter_id + &quot;:setup&quot;
         }
     }])
 
@@ -1399,7 +1403,12 @@ FUNCTION handle_barge_in(encounter_id,
         detail: {
             encounter_id: encounter_id,
             reason: reason,
-            language_pair: state.language_pair
+            language_pair: state.language_pair,
+            // Per-event idempotency key: encounter plus
+            // the specific escalation event ID.
+            idempotency_key:
+                encounter_id + &quot;:&quot; +
+                segment.utterance_id + &quot;:escalation&quot;
         }
     }])
 
@@ -1487,9 +1496,19 @@ FUNCTION handle_barge_in(encounter_id,
         detail_type: &quot;encounter_ended&quot;,
         detail: {
             encounter_id: encounter_id,
-            language_pair: state.language_pair
+            language_pair: state.language_pair,
+            // Per-event idempotency key.
+            idempotency_key:
+                encounter_id + &quot;:ended&quot;
         }
     }])
+
+    // Downstream consumers maintain a DynamoDB
+    // deduplication table keyed on idempotency_key
+    // with a TTL on each record (typically 24 hours).
+    // On receipt of any event, the consumer checks the
+    // deduplication table before processing; duplicate
+    // deliveries (retry, at-least-once) are discarded.
 
     encounter_table.update(
         encounter_id: encounter_id,

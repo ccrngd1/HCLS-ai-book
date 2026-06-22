@@ -1719,16 +1719,19 @@
     <span class="n">previous_status</span> <span class="o">=</span> <span class="p">((</span><span class="n">previous</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;match_outcome&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span>
     <span class="n">previous_member_id</span> <span class="o">=</span> <span class="p">((</span><span class="n">previous</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;match_outcome&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;matched_member_id&quot;</span><span class="p">)</span>
 
-    <span class="c1"># TODO (TechWriter): Expert review A1 (HIGH). Wrap the</span>
-    <span class="c1"># DynamoDB write, the cache write, the S3 audit write, and</span>
-    <span class="c1"># the EventBridge emit in a TransactWriteItems plus an</span>
-    <span class="c1"># outbox row drained by a separate Lambda or DynamoDB</span>
-    <span class="c1"># Streams consumer so partial failures cannot leave the</span>
-    <span class="c1"># eligibility store out of sync with downstream consumers.</span>
-    <span class="c1"># Same chapter pattern as 5.1 / 5.2 / 5.3 Finding A1; the</span>
-    <span class="c1"># consequence here is sharper because the eligibility</span>
-    <span class="c1"># outcome directly drives revenue cycle, charity-care, and</span>
-    <span class="c1"># patient financial responsibility.</span>
+    <span class="c1"># Production note: wrap the DynamoDB write, cache write, S3</span>
+    <span class="c1"># audit write, and EventBridge emit in a transactional-outbox</span>
+    <span class="c1"># pattern. A DynamoDB TransactWriteItems call atomically writes</span>
+    <span class="c1"># the match-outcome item AND an outbox row; a DynamoDB Streams</span>
+    <span class="c1"># consumer drains the outbox (S3 archive, Redis cache set,</span>
+    <span class="c1"># EventBridge emit). Partial failures leave the outbox row for</span>
+    <span class="c1"># a reconciler to retry. This prevents the eligibility store</span>
+    <span class="c1"># from going out of sync with downstream consumers. The</span>
+    <span class="c1"># regulatory consequence is sharp: a stale or missing</span>
+    <span class="c1"># eligibility record directly drives claim denials (revenue</span>
+    <span class="c1"># cycle), wrongful charity-care denial, and incorrect</span>
+    <span class="c1"># patient financial responsibility collection.</span>
+    <span class="c1"># See the architecture companion for the full specification.</span>
 
     <span class="c1"># 5B: write the current match outcome.</span>
     <span class="n">cache_ttl</span> <span class="o">=</span> <span class="n">_derive_cache_ttl</span><span class="p">(</span><span class="n">service_date</span><span class="p">)</span>

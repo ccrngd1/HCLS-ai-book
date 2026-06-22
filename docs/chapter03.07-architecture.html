@@ -523,7 +523,7 @@
 <p><strong>Amazon OpenSearch Service for alert audit and analytics.</strong> Every alert, with its full feature snapshot, score, explanation, disposition, and downstream outcome, is indexed in OpenSearch. The clinical governance team queries OpenSearch for case reviews. The model team queries for performance analytics. The operational team queries for alert volume by unit. Data also flows to S3 for retraining label assembly.</p>
 <p><strong>Amazon S3 for the retrospective data lake and the training data.</strong> Historical vitals, labs, medications, and outcome labels live here, partitioned by date and patient. Customer-managed KMS encryption. Used by SageMaker for training and by Athena for ad-hoc analysis.</p>
 <p><strong>Amazon Comprehend Medical for nursing note feature extraction.</strong> When the model includes free-text nursing assessment features, Comprehend Medical extracts structured entities (mental status descriptions, pain assessments, concerns expressed). The extracted entities feed the feature engine. Optional but useful when the Rothman-Index-style nursing-assessment features are part of the model.</p>
-<p><strong>Amazon Bedrock for explanation generation.</strong> Per-prediction explanations are essential for clinician trust. SHAP values surface the technical drivers; Bedrock-hosted LLMs convert those drivers plus the patient context into clinician-readable narrative (&quot;Risk increased substantially over the last 4 hours, driven primarily by rising heart rate (76 → 102 bpm), rising respiratory rate (16 → 22), and a new lactate of 3.2. Pattern is consistent with early sepsis. Suggest sepsis bundle evaluation.&quot;). Always with human review; the LLM is producing decision support, not decisions.</p>
+<p><strong>Amazon Bedrock for explanation generation.</strong> Per-prediction explanations are essential for clinician trust. SHAP values surface the technical drivers; Bedrock-hosted LLMs convert those drivers plus the patient context into clinician-readable narrative (&quot;Risk increased substantially over the last 4 hours, driven primarily by rising heart rate (76 to 102 bpm), rising respiratory rate (16 to 22), and a new lactate of 3.2. Pattern is consistent with early sepsis. Suggest sepsis bundle evaluation.&quot;). Always with human review; the LLM is producing decision support, not decisions.</p>
 <p><strong>AWS Step Functions for orchestration.</strong> Retraining pipelines, periodic batch backstops, and scheduled subgroup performance evaluations are multi-step workflows with retry and error handling needs.</p>
 <p><strong>Amazon CloudWatch and AWS X-Ray.</strong> Operational monitoring of the streaming pipeline, scoring latency, alert delivery latency, and end-to-end traces. Latency budgets matter: from event ingest to alert delivery, the budget is typically tens of seconds to a few minutes; tracing finds where latency lives.</p>
 <p><strong>AWS CloudTrail.</strong> Audit logging on every PHI-bearing store and every API call against the scoring service. Every alert generation, every disposition, every model retraining is logged.</p>
@@ -644,6 +644,10 @@
 <tr>
 <td><strong>Local Validation Required</strong></td>
 <td>Vendor or external models must be validated on local population before clinical deployment. Subgroup-stratified validation is part of this. The validation should use a hold-out time period (not patient split) to capture temporal drift. Validation should compare against the existing standard of care (typically the in-use track-and-trigger system).</td>
+</tr>
+<tr>
+<td><strong>Subgroup Data Access</strong></td>
+<td>Race, ethnicity, language, and other demographic attributes used for fairness monitoring require separate data-governance controls. Restrict read access on the demographic-and-attribute store to the retraining-job IAM role and the fairness-monitoring-dashboard IAM role only. Enable CloudTrail data events on subgroup queries. QuickSight fairness dashboards query an aggregated subgroup-metrics table (alert rate by age band by unit type, calibration ECE by sex, time-to-acknowledge by service line) rather than the raw demographic-joined alert archive. Row-level demographic data does not flow to dashboard viewers. Some state laws restrict secondary use of race and ethnicity data beyond what HIPAA covers; confirm regulatory posture with compliance counsel before joining demographic attributes to clinical-event data for monitoring or retraining.</td>
 </tr>
 <tr>
 <td><strong>Sample Data</strong></td>
@@ -988,20 +992,30 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
         detail      = { patient_id, encounter_id, trigger, requested_at: NOW() }
     )
 </code></pre>
-<p><strong>Step 4: Compute the feature vector.</strong> The feature engine reads patient state and time-series history, computes the model's input vector, and writes it to the Feature Store for both online use and offline reproduction.</p>
-<pre class="code code-plain"><code>FUNCTION compute_features(patient_id, encounter_id, as_of):
+<p><strong>Step 4: Compute the feature vector.</strong> The feature engine reads patient state and time-series history, computes the model's input vector, and writes it to the Feature Store for both online use and offline reproduction. Two first-class concerns live in this step: the leakage buffer (ensuring only observations genuinely available at decision time enter the feature vector) and the cold-start check (detecting patients without enough history for reliable trajectory features).</p>
+<p><strong>Feature-cutoff and leakage-buffer discipline.</strong> Treatment leakage is the most dangerous silent bug in a deterioration model: if a feature captures information from interventions triggered by the very deterioration you are predicting, the model will appear to perform well in retrospective evaluation but fail prospectively. Every feature must be computed against observations whose <code>observed_at</code> timestamp is strictly before <code>as_of - LEAKAGE_BUFFER_MINUTES</code>. The buffer (typically 30-60 minutes, set by clinical governance) accounts for documentation lag, order-entry-to-administration delays, and the temporal gap between a clinician recognizing deterioration and charting the response. The clinical governance committee owns the buffer setting because it trades off detection sensitivity (shorter buffer, more features available, higher risk of leakage) against leakage protection (longer buffer, fewer features from the most recent window, potentially delayed detection of very rapid deterioration).</p>
+<p><strong>Cold-start handling.</strong> A patient just admitted has no trajectory, no patient-specific baseline, and sparse vitals. A <code>data_richness_index</code> (number of vitals observations in the last 24 hours, number of labs in the last 48 hours, hours since admission) determines whether the model's feature space is populated enough for reliable scoring. When the index is below a configured threshold, the scoring service routes the patient to a population-prior fallback (typically a NEWS2-equivalent calculation using whatever vitals are available) rather than the full ML model. The cold-start status surfaces in the alert payload so the clinician knows the alert came from the fallback path.</p>
+<pre class="code code-plain"><code>CONST LEAKAGE_BUFFER_MINUTES = 30   // clinical-governance-owned; 30-60 typical
+CONST COLD_START_VITALS_MIN = 3     // minimum vitals observations in 24h
+CONST COLD_START_LABS_MIN = 1       // minimum labs in 48h
+CONST COLD_START_LOS_MIN_HOURS = 4  // minimum hours since admission
+
+FUNCTION compute_features(patient_id, encounter_id, as_of):
     state = DynamoDB.GetItem(
         table = &quot;patient-state&quot;,
         key   = { patient_id, encounter_id }
     )
 
-    // Fetch trajectory history from Timestream.
+    // Leakage buffer: the effective cutoff for feature observations.
+    feature_cutoff = as_of - LEAKAGE_BUFFER_MINUTES minutes
+
+    // Fetch trajectory history from Timestream, respecting the leakage buffer.
     vitals_history = Timestream.Query(
         f&quot;&quot;&quot;
         SELECT measurement_code, time, measure_value::double
         FROM &quot;deterioration-history&quot;.&quot;vitals&quot;
         WHERE patient_id = &#x27;{patient_id}&#x27;
-          AND time BETWEEN ago({TRAJECTORY_WINDOW_HOURS}h) AND from_iso8601_timestamp(&#x27;{as_of}&#x27;)
+          AND time BETWEEN ago({TRAJECTORY_WINDOW_HOURS}h) AND from_iso8601_timestamp(&#x27;{feature_cutoff}&#x27;)
         ORDER BY time
         &quot;&quot;&quot;
     )
@@ -1010,18 +1024,39 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
         SELECT test_code, time, measure_value::double
         FROM &quot;deterioration-history&quot;.&quot;labs&quot;
         WHERE patient_id = &#x27;{patient_id}&#x27;
-          AND time BETWEEN ago({LAB_TRAJECTORY_WINDOW_HOURS}h) AND from_iso8601_timestamp(&#x27;{as_of}&#x27;)
+          AND time BETWEEN ago({LAB_TRAJECTORY_WINDOW_HOURS}h) AND from_iso8601_timestamp(&#x27;{feature_cutoff}&#x27;)
         ORDER BY time
         &quot;&quot;&quot;
     )
 
-    features = {}
+    // Cold-start detection: is there enough data for the ML model?
+    vitals_count_24h = count(v for v in vitals_history IF v.time &gt;= feature_cutoff - 24h)
+    labs_count_48h = count(l for l in labs_history IF l.time &gt;= feature_cutoff - 48h)
+    los_hours = hours_between(state.encounter.admission_time, as_of)
+    data_richness_index = {
+        vitals_24h:   vitals_count_24h,
+        labs_48h:     labs_count_48h,
+        los_hours:    los_hours
+    }
+    cold_start_flag = (
+        vitals_count_24h &lt; COLD_START_VITALS_MIN
+        OR labs_count_48h &lt; COLD_START_LABS_MIN
+        OR los_hours &lt; COLD_START_LOS_MIN_HOURS
+    )
 
-    // Current vitals features.
+    features = {}
+    features[&quot;cold_start_flag&quot;] = cold_start_flag
+    features[&quot;data_richness_index&quot;] = data_richness_index
+
+    // Current vitals features. Only include observations before the leakage cutoff.
     FOR each vital_code in CORE_VITALS_CODES:
         latest = state.current_vitals.get(vital_code)
-        features[f&quot;vital_{vital_code}_current&quot;] = latest.value IF latest else null
-        features[f&quot;vital_{vital_code}_age_minutes&quot;] = minutes_between(latest.observed_at, as_of) IF latest else null
+        IF latest AND latest.observed_at &lt;= feature_cutoff:
+            features[f&quot;vital_{vital_code}_current&quot;] = latest.value
+            features[f&quot;vital_{vital_code}_age_minutes&quot;] = minutes_between(latest.observed_at, as_of)
+        ELSE:
+            features[f&quot;vital_{vital_code}_current&quot;] = null
+            features[f&quot;vital_{vital_code}_age_minutes&quot;] = null
 
     // Vitals trajectory features (slope, max, min, std over windows).
     FOR each vital_code in CORE_VITALS_CODES:
@@ -1066,8 +1101,13 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
         features[f&quot;lab_{lab_code}_slope_24h&quot;] = compute_slope(lab_trend)
         features[f&quot;lab_{lab_code}_baseline&quot;] = median_of(filter_recent(labs_history, lab_code, hours = LAB_BASELINE_WINDOW_HOURS))
 
-    // Medication context.
-    active_classes = distinct(med.therapeutic_class for med in state.recent_medications IF (NOW() - med.administered_at) &lt; ACTIVE_MED_WINDOW_HOURS)
+    // Medication context. Filter by the leakage cutoff: only medications
+    // administered before the feature_cutoff contribute features.
+    active_classes = distinct(
+        med.therapeutic_class for med in state.recent_medications
+        IF med.administered_at &lt;= feature_cutoff
+        AND (feature_cutoff - med.administered_at) &lt; ACTIVE_MED_WINDOW_HOURS
+    )
     features[&quot;has_active_antibiotic&quot;]     = &quot;antibiotic&quot;     in active_classes
     features[&quot;has_active_vasopressor&quot;]    = &quot;vasopressor&quot;    in active_classes
     features[&quot;has_active_opioid&quot;]          = &quot;opioid&quot;         in active_classes
@@ -1111,14 +1151,21 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
 
     return features
 </code></pre>
-<p><strong>Step 5: Score the feature vector and apply calibration.</strong> The scoring service invokes the SageMaker endpoint with the feature vector, then a calibration layer maps the raw model output to a calibrated probability and a risk tier.</p>
+<p><strong>Step 5: Score the feature vector and apply calibration.</strong> The scoring service invokes the SageMaker endpoint with the feature vector, then a calibration layer maps the raw model output to a calibrated probability and a risk tier. Cold-start patients route to a population-prior fallback (NEWS2-equivalent) rather than the full ML model.</p>
 <pre class="code code-plain"><code>FUNCTION score_patient(patient_id, encounter_id, features, trigger):
-    // Invoke the deterioration model endpoint.
-    raw_output = SageMaker.Runtime.InvokeEndpoint(
-        endpoint_name = &quot;deterioration-model-prod&quot;,
-        body          = serialize(features)
-    )
-    // raw_output: { score: 0.0-1.0, model_version, feature_importance_top_k }
+    // Cold-start routing: patients without enough data for reliable ML
+    // scoring use a NEWS2-equivalent population-prior model instead.
+    IF features.cold_start_flag:
+        raw_output = score_via_population_prior(features)
+        raw_output.scoring_path = &quot;cold_start_news2_fallback&quot;
+    ELSE:
+        // Invoke the full deterioration model endpoint.
+        raw_output = SageMaker.Runtime.InvokeEndpoint(
+            endpoint_name = &quot;deterioration-model-prod&quot;,
+            body          = serialize(features)
+        )
+        raw_output.scoring_path = &quot;ml_model&quot;
+    // raw_output: { score: 0.0-1.0, model_version, feature_importance_top_k, scoring_path }
 
     // Apply post-hoc calibration. Calibration parameters are learned during
     // training and applied here so the score matches observed deterioration
@@ -1151,6 +1198,8 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
         calibrated_probability:  calibrated_probability,
         tier:                    tier,
         model_version:           raw_output.model_version,
+        scoring_path:            raw_output.scoring_path,              // ml_model or cold_start_news2_fallback
+        cold_start_flag:         features.cold_start_flag,
         feature_snapshot_id:     persist_feature_snapshot(features),
         feature_importance:      raw_output.feature_importance_top_k
     }
@@ -1245,6 +1294,27 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
 
     // Tier-based routing decisions. Same tier on the same patient an hour
     // later doesn&#x27;t re-page; a tier escalation does.
+    //
+    // The full alert record (with explanation, vital values, narrative) is
+    // stored only in the alert-state DynamoDB table and the OpenSearch audit
+    // index, behind IAM-scoped authenticated access. Pager, Vocera,
+    // TigerConnect, and SMS channels receive only a minimal payload: alert_id,
+    // tier, and unit location. The consuming application fetches the full alert
+    // by alert_id through an authenticated path. PHI does not transit
+    // lock-screen-visible channels or any logs they generate.
+
+    // Construct the audit_trail block for reproducibility.
+    audit_trail = {
+        feature_snapshot_id:     score_record.feature_snapshot_id,
+        scoring_record_id:       score_record.id,
+        model_version:           score_record.model_version,
+        calibration_curve_version: CALIBRATION_CURVE_VERSION,
+        thresholds_version:      THRESHOLDS_VERSION_FOR(score_record.feature_snapshot.unit_type),
+        rule_library_version:    SUPPRESSION_RULE_LIBRARY_VERSION,
+        unit_threshold_set_id:   threshold_set_id_for(score_record.feature_snapshot.unit_type),
+        scoring_path:            score_record.scoring_path
+    }
+
     alert = {
         alert_id:               generate_alert_id(),
         patient_id:             score_record.patient_id,
@@ -1254,9 +1324,10 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
         score:                  score_record.calibrated_probability,
         score_delta:            score_delta,
         is_delta_alert:         is_delta_alert,
-        explanation:             explanation,
+        cold_start_flag:        score_record.cold_start_flag,
+        explanation:            explanation,
         triggered_at:           NOW(),
-        scoring_record_id:       score_record.id
+        audit_trail:            audit_trail
     }
 
     // High tier or significant delta routes to the page channel.
@@ -1265,7 +1336,15 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
     should_page = should_page AND (last_page is null OR (NOW() - last_page.sent_at) &gt; REPAGE_MIN_INTERVAL)
 
     IF should_page:
-        send_pager_notification(alert)
+        // Pager channel gets ONLY the minimal, non-PHI payload.
+        // The recipient fetches the full alert by alert_id through the
+        // authenticated dashboard or EHR banner.
+        pager_payload = {
+            alert_id:   alert.alert_id,
+            tier:       alert.tier,
+            unit:       alert.unit
+        }
+        send_pager_notification(pager_payload)
         record_alert_routing(alert, channel = &quot;pager&quot;, recipients = page_recipients_for(alert))
 
     // Medium tier (or high) shows on the charge nurse dashboard.
@@ -1277,7 +1356,7 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
     publish_to_ehr_banner(alert)
     record_alert_routing(alert, channel = &quot;ehr_banner&quot;)
 
-    // All alerts route to the audit index.
+    // All alerts route to the audit index with the full audit_trail block.
     OpenSearch.Index(&quot;alert-index&quot;, alert)
     DynamoDB.PutItem(
         table = &quot;alert-state&quot;,
@@ -1287,6 +1366,7 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
             encounter_id:       alert.encounter_id,
             tier:               alert.tier,
             triggered_at:       alert.triggered_at,
+            audit_trail:        audit_trail,
             ack_status:         &quot;pending&quot;,
             disposition:        null,
             outcome:            null
@@ -1313,30 +1393,68 @@ FUNCTION check_suppression_rules(score_record):
         return { suppressed: true, reason: &quot;explicit_suppression&quot;, details: state.suppression_reason }
 
     return { suppressed: false }
-</code></pre>
-<p><strong>Step 8: Capture acknowledgments and outcomes.</strong> Every alert generates an acknowledgment requirement. Subsequent clinical events (ICU transfer, code blue, sepsis bundle initiation) get linked to the alert as the eventual outcome.</p>
-<pre class="code code-plain"><code>FUNCTION on_clinician_acknowledgment(alert_id, clinician_id, disposition, intervention, notes):
-    alert_state = DynamoDB.GetItem(
-        table = &quot;alert-state&quot;,
-        key   = { alert_id }
+
+CONST DEFAULT_SUPPRESSION_EXPIRY_HOURS = 72  // suppressions without explicit expiry auto-expire
+
+// Daily scheduled job: walk the suppression registry for expired entries.
+// Suppressions without documented expiry default to 72 hours. Expired
+// suppressions transition to &quot;expired_pending_review&quot; and notify the
+// suppression-owning attending. This prevents suppressions from silently
+// persisting past their clinical relevance.
+FUNCTION enforce_suppression_expiry():
+    // Scan for active suppressions past their expiration.
+    expired = DynamoDB.Scan(
+        table  = &quot;suppression-registry&quot;,
+        filter = &quot;expires_at &lt;= :now OR (expires_at IS NULL AND created_at &lt;= :default_cutoff)&quot;,
+        values = {
+            &quot;:now&quot;:            NOW(),
+            &quot;:default_cutoff&quot;: NOW() - DEFAULT_SUPPRESSION_EXPIRY_HOURS hours
+        }
     )
-    alert_state.ack_status   = &quot;acknowledged&quot;
-    alert_state.acknowledged_by = clinician_id
-    alert_state.acknowledged_at = NOW()
-    alert_state.disposition   = disposition           // monitoring, escalated, intervention, dismissed_as_noise
-    alert_state.intervention  = intervention          // free text; what action was taken
-    alert_state.notes          = notes
-    DynamoDB.PutItem(table = &quot;alert-state&quot;, item = alert_state)
-    OpenSearch.Index(&quot;alert-index&quot;, alert_state)
+    FOR each suppression in expired:
+        suppression.status = &quot;expired_pending_review&quot;
+        suppression.expired_at = NOW()
+        DynamoDB.PutItem(table = &quot;suppression-registry&quot;, item = suppression)
+        // Notify the suppression-owning attending for review.
+        notify_attending(suppression.owning_provider, suppression)
+        log_suppression_expiry(suppression)
 
-    // If escalation requested, route through escalation workflow.
-    IF disposition == &quot;escalated&quot;:
-        invoke_escalation_workflow(alert_state)
-
-FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
-    // outcome_event: { type: ICU_transfer | code_blue | unexpected_death |
+// ADT-event-triggered suppression review: when a patient transfers units,
+// surface active suppressions to the receiving care team. A suppression set
+// by one attending on one unit may not be appropriate after a unit transfer;
+// the receiving team needs visibility.
+FUNCTION on_adt_transfer_review_suppressions(patient_id, encounter_id, new_unit):
+    active_suppressions = DynamoDB.Query(
+        table          = &quot;suppression-registry&quot;,
+        key_condition  = &quot;patient_id = :pid&quot;,
+        filter         = &quot;status = :active&quot;,
+        values         = { &quot;:pid&quot;: patient_id, &quot;:active&quot;: &quot;active&quot; }
+    )
+    IF active_suppressions is not empty:
+        // Surface to the receiving unit&#x27;s charge nurse and covering physician.
+        notify_receiving_team(new_unit, patient_id, active_suppressions)
+        log_suppression_transfer_review(patient_id, new_unit, active_suppressions)
+</code></pre>
+<p><strong>Step 8: Capture acknowledgments and outcomes.</strong> Every alert generates an acknowledgment requirement. Subsequent clinical events (ICU transfer, code blue, sepsis bundle initiation) get linked to the alert as the eventual outcome. Both handlers use deterministic event-key derivation and conditional DynamoDB writes to enforce idempotency, because EventBridge delivers at-least-once and redelivered events must not bias the retraining distribution.</p>
+<pre class="code code-plain"><code>FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
+    // outcome_event: { event_id, type: ICU_transfer | code_blue | unexpected_death |
     //                        sepsis_bundle_initiated | discharge,
     //                  occurred_at, details }
+
+    // Idempotency guard. EventBridge delivers at-least-once; redelivered
+    // outcome events must not double-link outcomes to alerts or double-write
+    // S3 label rows (which would bias the retraining distribution toward
+    // redelivered cases on a rare positive class).
+    outcome_event_key = f&quot;{outcome_event.event_id}:{outcome_event.type}&quot;
+    TRY:
+        DynamoDB.PutItem(
+            table             = &quot;processed-outcome-events&quot;,
+            item              = { event_key: outcome_event_key, processed_at: NOW(), ttl: NOW() + 30 days },
+            condition_expression = &quot;attribute_not_exists(event_key)&quot;
+        )
+    CATCH ConditionalCheckFailedException:
+        // Already processed. Safe to return without re-linking.
+        return
 
     // Link the outcome to recent alerts on this patient.
     recent_alerts = OpenSearch.Search(
@@ -1374,13 +1492,51 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
         key    = f&quot;outcomes/year={year(outcome_event.occurred_at)}/month={month(outcome_event.occurred_at)}/{generate_id()}.json&quot;,
         body   = label_row
     )
+
+FUNCTION on_clinician_acknowledgment(alert_id, clinician_id, disposition, intervention, notes):
+    // Idempotency guard for acknowledgment events (same pattern).
+    ack_event_key = f&quot;{alert_id}:{clinician_id}&quot;
+    TRY:
+        DynamoDB.PutItem(
+            table             = &quot;processed-acknowledgment-events&quot;,
+            item              = { event_key: ack_event_key, processed_at: NOW(), ttl: NOW() + 30 days },
+            condition_expression = &quot;attribute_not_exists(event_key)&quot;
+        )
+    CATCH ConditionalCheckFailedException:
+        return
+
+    alert_state = DynamoDB.GetItem(
+        table = &quot;alert-state&quot;,
+        key   = { alert_id }
+    )
+    alert_state.ack_status      = &quot;acknowledged&quot;
+    alert_state.acknowledged_by = clinician_id
+    alert_state.acknowledged_at = NOW()
+    alert_state.disposition     = disposition        // monitoring, escalated, intervention, dismissed_as_noise
+    alert_state.intervention    = intervention       // free text; what action was taken
+    alert_state.notes           = notes
+    DynamoDB.PutItem(table = &quot;alert-state&quot;, item = alert_state)
+    OpenSearch.Index(&quot;alert-index&quot;, alert_state)
+
+    IF disposition == &quot;escalated&quot;:
+        invoke_escalation_workflow(alert_state)
 </code></pre>
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter03.07-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
 <hr />
 <h3 id="expected-results">Expected Results</h3>
-<p><strong>Sample alert payload:</strong></p>
+<p>The sample payloads below use timestamps tied to the opening vignette (post-op day 2, daughter pressing the call button at 1:40 a.m., sepsis protocol activation). Dates are illustrative; production output uses real ISO-8601 timestamps from the alert-router invocation time.</p>
+<p><strong>Sample pager-channel payload (minimal, no PHI):</strong></p>
+<p>The pager, Vocera, TigerConnect, or SMS channel receives only this minimal payload. PHI does not transit lock-screen-visible channels or any logs they generate. The receiving clinician fetches the full alert by <code>alert_id</code> through the authenticated dashboard or EHR banner.</p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;alert_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DETER-2026-05-14-002281&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MED-FLOOR-4N&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample full alert record (stored in alert-state DynamoDB table and OpenSearch audit index, accessed via authenticated path only):</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;alert_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DETER-2026-05-14-002281&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-7724983&quot;</span><span class="p">,</span>
@@ -1390,6 +1546,7 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 <span class="w">  </span><span class="nt">&quot;score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.71</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;score_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.34</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;is_delta_alert&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cold_start_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;triggered_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-14T03:14:00Z&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deterioration-v3.2&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -1399,13 +1556,13 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 <span class="w">          </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;vital_HR_slope_4h&quot;</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.2</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;clinical_meaning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Heart rate has increased ~5 bpm/hour over the last 4 hours (76 → 102)&quot;</span>
+<span class="w">          </span><span class="nt">&quot;clinical_meaning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Heart rate has increased ~5 bpm/hour over the last 4 hours (76 to 102)&quot;</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="p">{</span>
 <span class="w">          </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;vital_RR_slope_4h&quot;</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.5</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;clinical_meaning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Respiratory rate has increased over the last 4 hours (16 → 22)&quot;</span>
+<span class="w">          </span><span class="nt">&quot;clinical_meaning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Respiratory rate has increased over the last 4 hours (16 to 22)&quot;</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="p">{</span>
 <span class="w">          </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab_LACTATE_current&quot;</span><span class="p">,</span>
@@ -1417,7 +1574,7 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 <span class="w">          </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;vital_TEMP_delta_from_baseline&quot;</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.4</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.09</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;clinical_meaning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Temperature ~1.4°C above patient&#39;s recent baseline&quot;</span>
+<span class="w">          </span><span class="nt">&quot;clinical_meaning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Temperature ~1.4 C above patient&#39;s recent baseline&quot;</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="p">{</span>
 <span class="w">          </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;composite_shock_index&quot;</span><span class="p">,</span>
@@ -1448,7 +1605,7 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 <span class="w">      </span><span class="p">],</span>
 <span class="w">      </span><span class="nt">&quot;score_change_from_last&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.34</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;narrative&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Risk score has increased substantially over the last 4 hours, driven primarily by rising heart rate (76 to 102 bpm), rising respiratory rate (16 to 22), a lactate of 3.2, and temperature trend rising 1.4°C above baseline. Pattern is consistent with early sepsis. Patient is post-op day 2 from colon resection. Blood cultures have been ordered, suggesting bedside team has noted concern. Suggest sepsis bundle evaluation: full set of vitals, repeat lactate, source review, and assessment per local sepsis protocol. This is decision support; clinical judgment governs.&quot;</span>
+<span class="w">    </span><span class="nt">&quot;narrative&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Risk score has increased substantially over the last 4 hours, driven primarily by rising heart rate (76 to 102 bpm), rising respiratory rate (16 to 22), a lactate of 3.2, and temperature trend rising 1.4 C above baseline. Pattern is consistent with early sepsis. Patient is post-op day 2 from colon resection. Blood cultures have been ordered, suggesting bedside team has noted concern. Suggest sepsis bundle evaluation: full set of vitals, repeat lactate, source review, and assessment per local sepsis protocol. This is decision support; clinical judgment governs.&quot;</span>
 <span class="w">  </span><span class="p">},</span>
 <span class="w">  </span><span class="nt">&quot;routing&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;channels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pager&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;dashboard&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ehr_banner&quot;</span><span class="p">],</span>
@@ -1459,8 +1616,12 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 <span class="w">  </span><span class="nt">&quot;audit_trail&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;feature_snapshot_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FEAT-2026-05-14-019283&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;scoring_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SCORE-2026-05-14-039218&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deterioration-v3.2&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;calibration_curve_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;calib-v3.2-2026-04&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;thresholds_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thresh-MED-FLOOR-2026-04&quot;</span>
+<span class="w">    </span><span class="nt">&quot;thresholds_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thresh-MED-FLOOR-2026-04&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;rule_library_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rules-v2.1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;unit_threshold_set_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thresh-set-MED-FLOOR-4N-2026-04&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;scoring_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml_model&quot;</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -1604,6 +1765,7 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 <p><strong>Clinical governance is the entire program.</strong> The detection pipeline is maybe 30% of the work. Clinical governance, alert workflow design, change management for clinical staff, ongoing performance review, and safety-event review are the other 70%. A pipeline without an active governance committee that meets monthly, reviews subgroup performance, reviews recent alerts and dispositions, approves model updates, and owns the deployment criteria will not last in clinical operation. Build the governance before the technology.</p>
 <p><strong>Local validation is non-negotiable.</strong> Whether the model is in-house or vendor-supplied, local validation against the hospital's own population is required before clinical deployment. The validation should use a hold-out time period (not just patient split) to capture temporal effects. It should include subgroup-stratified analysis. It should compare against the existing standard of care (typically the in-use NEWS2 or MEWS implementation). It should include a clinical safety review of the highest-scoring patients who didn't deteriorate (false positives) and the lowest-scoring patients who did (false negatives) to identify failure patterns before deployment.</p>
 <p><strong>Prospective shadow deployment.</strong> Before any alert reaches a clinician, the model should run in shadow mode for several weeks to months: scoring patients, logging alerts, but not routing them. Shadow alerts get reviewed retrospectively. This catches feature pipeline bugs, calibration issues that didn't show up in retrospective validation, and operational integration problems. Shadow-mode review is also when alert volume gets calibrated to operational capacity. Skipping this step has produced more failed deployments than any single technical issue.</p>
+<p><strong>Dead-letter queues and poison-message handling.</strong> For a system in the alert path of inpatient clinical care, a dropped vital event is a patient-state gap, a dropped scoring event is an unscored patient at the moment a triggering vital came in, and a dropped alert event is a missed alert. Lambda's default async retry behavior (two retries over six hours, then drop) is not acceptable for a deterioration system whose FDA-CDS-exemption posture depends on transparent operation. Production adds five SQS dead-letter queues with <code>OnFailure</code> destinations on each critical Lambda (event-normalizer, scoring-orchestrator, alert-router, ack-capture, outcome-capture). CloudWatch alarms on DLQ depth: threshold of 1 message for the event-normalizer and scoring-orchestrator paths (because a single dropped event is a patient-state gap or an unscored patient), sustained-backlog threshold acceptable for the alert-router and capture paths. Replay events from the DLQ after fixing the root cause. For events older than the deterioration prediction window (typically 6-24 hours), escalate to clinical-governance-committee review rather than auto-replay because the timing-of-detection is itself part of the system's safety case.</p>
 <p><strong>Bedside monitor integration is its own project.</strong> Pulling vitals from the EHR (where they're charted at the discrete chart-time intervals) is the easy path. Pulling vitals from bedside monitors (continuous waveforms, sub-minute granularity) gives much richer trajectory features but adds significant integration complexity (HL7 RxR, IHE PCD, vendor-specific protocols, bridge appliances, often a separate biomedical engineering project). Some programs find the marginal value worth the integration cost; others stay with EHR-only feeds.</p>
 <p><strong>Alert routing integration.</strong> Pagers, Vocera, TigerConnect, Spok, Mobile Heartbeat, and the various clinical communication platforms each have their own APIs and integration patterns. Most hospitals have one or two of these in active use, and integrating with them takes time. Plan for integration testing, escalation testing, after-hours testing, and failure-mode testing (what happens when the paging system is down).</p>
 <p><strong>EHR banner integration is vendor-specific.</strong> Epic, Cerner, Meditech, Allscripts, and other EHRs have different ways of integrating external decision support into the chart view. Epic has SMART on FHIR plus their proprietary Cogito and Best Practice Advisory mechanisms; Cerner has Discern and SMART on FHIR; Meditech is more limited. The chosen integration method affects the user experience and the development effort.</p>

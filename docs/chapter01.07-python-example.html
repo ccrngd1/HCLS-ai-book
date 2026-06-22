@@ -557,6 +557,10 @@
     <span class="s2">&quot;qod&quot;</span><span class="p">:</span>    <span class="s2">&quot;every other day&quot;</span><span class="p">,</span>
     <span class="s2">&quot;qw&quot;</span><span class="p">:</span>     <span class="s2">&quot;once weekly&quot;</span><span class="p">,</span>
     <span class="s2">&quot;biw&quot;</span><span class="p">:</span>    <span class="s2">&quot;twice weekly&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;q2w&quot;</span><span class="p">:</span>    <span class="s2">&quot;every 2 weeks&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qam&quot;</span><span class="p">:</span>    <span class="s2">&quot;every morning&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qpm&quot;</span><span class="p">:</span>    <span class="s2">&quot;every evening&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qm&quot;</span><span class="p">:</span>     <span class="s2">&quot;once monthly&quot;</span><span class="p">,</span>
 
     <span class="c1"># --- Route codes ---</span>
     <span class="c1"># These tell you how to administer the medication.</span>
@@ -572,6 +576,10 @@
     <span class="s2">&quot;im&quot;</span><span class="p">:</span>     <span class="s2">&quot;intramuscularly&quot;</span><span class="p">,</span>
     <span class="s2">&quot;iv&quot;</span><span class="p">:</span>     <span class="s2">&quot;intravenously&quot;</span><span class="p">,</span>
     <span class="s2">&quot;op&quot;</span><span class="p">:</span>     <span class="s2">&quot;in the affected eye&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;opth&quot;</span><span class="p">:</span>   <span class="s2">&quot;in the eye&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;od&quot;</span><span class="p">:</span>     <span class="s2">&quot;in the right eye&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;os&quot;</span><span class="p">:</span>     <span class="s2">&quot;in the left eye&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ou&quot;</span><span class="p">:</span>     <span class="s2">&quot;in both eyes&quot;</span><span class="p">,</span>
     <span class="s2">&quot;au&quot;</span><span class="p">:</span>     <span class="s2">&quot;in both ears&quot;</span><span class="p">,</span>
     <span class="s2">&quot;ad&quot;</span><span class="p">:</span>     <span class="s2">&quot;in the right ear&quot;</span><span class="p">,</span>
     <span class="s2">&quot;as&quot;</span><span class="p">:</span>     <span class="s2">&quot;in the left ear&quot;</span><span class="p">,</span>
@@ -601,6 +609,18 @@
     <span class="s2">&quot;pch&quot;</span><span class="p">:</span>    <span class="s2">&quot;patch&quot;</span><span class="p">,</span>
     <span class="s2">&quot;inhlr&quot;</span><span class="p">:</span>  <span class="s2">&quot;inhaler&quot;</span><span class="p">,</span>
     <span class="s2">&quot;neb&quot;</span><span class="p">:</span>    <span class="s2">&quot;nebulizer&quot;</span><span class="p">,</span>
+
+    <span class="c1"># --- Clinical context codes ---</span>
+    <span class="c1"># Miscellaneous abbreviations commonly seen in directions fields.</span>
+    <span class="s2">&quot;nte&quot;</span><span class="p">:</span>    <span class="s2">&quot;not to exceed&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;daw&quot;</span><span class="p">:</span>    <span class="s2">&quot;dispense as written&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;c&quot;</span><span class="p">:</span>      <span class="s2">&quot;with&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;s&quot;</span><span class="p">:</span>      <span class="s2">&quot;without&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span>      <span class="s2">&quot;for&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;d&quot;</span><span class="p">:</span>      <span class="s2">&quot;day&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wk&quot;</span><span class="p">:</span>     <span class="s2">&quot;week&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wks&quot;</span><span class="p">:</span>    <span class="s2">&quot;weeks&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mo&quot;</span><span class="p">:</span>     <span class="s2">&quot;month&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="c1"># RXNORM_CONFIDENCE_THRESHOLD: minimum Comprehend Medical confidence score</span>
@@ -909,32 +929,42 @@
 <hr />
 <h2 id="step-5-map-to-rxnorm-via-comprehend-medical">Step 5: Map to RxNorm via Comprehend Medical</h2>
 <p><em>The pseudocode calls this <code>map_to_rxnorm(drug_name, dosage)</code>. It passes the medication text through Comprehend Medical's <code>DetectEntitiesV2</code> API to identify MEDICATION entities and return the corresponding RxNorm concept IDs.</em></p>
-<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">map_to_rxnorm</span><span class="p">(</span><span class="n">drug_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dosage</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">map_to_rxnorm</span><span class="p">(</span><span class="n">normalized_fields</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Use Comprehend Medical to detect medication entities and map them to</span>
 <span class="sd">    RxNorm concept IDs.</span>
 
 <span class="sd">    DetectEntitiesV2 is trained on clinical and pharmaceutical text. When you</span>
-<span class="sd">    pass it &quot;Lisinopril 10mg&quot;, it identifies the MEDICATION entity, pulls out</span>
-<span class="sd">    dosage as an attribute, and returns RxNorm concept IDs for the detected</span>
-<span class="sd">    medication. Those concept IDs are what downstream systems (formulary matchers,</span>
-<span class="sd">    interaction checkers, FHIR resources) need for interoperability.</span>
+<span class="sd">    pass it the full label text, it identifies MEDICATION entities, pulls out</span>
+<span class="sd">    attributes like dosage and route, and returns RxNorm concept IDs for the</span>
+<span class="sd">    detected medications. Passing full label context (not just drug name and</span>
+<span class="sd">    dosage) gives the model surrounding clinical information (route, frequency,</span>
+<span class="sd">    prescriber context) that helps disambiguate similar drug names and confirm</span>
+<span class="sd">    the correct dosage form.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        drug_name: The drug name extracted from the label (e.g., &quot;Amoxicillin&quot;)</span>
-<span class="sd">        dosage:    The dosage extracted from the label (e.g., &quot;500mg&quot;)</span>
+<span class="sd">        normalized_fields: The output of normalize_rx_fields. All field values</span>
+<span class="sd">                           are concatenated to form the input text for the NLP model.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A list of RxNorm concept dicts, sorted by confidence descending.</span>
-<span class="sd">        Each dict contains: detected_text, rxnorm_id, description, confidence.</span>
+<span class="sd">        Each dict contains: detected_text, rxnorm_id, description, concept_type, confidence.</span>
 <span class="sd">        Returns an empty list if no MEDICATION entities are found above the threshold.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">drug_name</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">normalized_fields</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[]</span>
 
-    <span class="c1"># Combine drug name and dosage into one string. More context generally</span>
-    <span class="c1"># improves entity detection accuracy for Comprehend Medical.</span>
-    <span class="n">medication_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">drug_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">dosage</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="c1"># Assemble full label text from all normalized field values.</span>
+    <span class="c1"># More context improves entity detection accuracy for Comprehend Medical.</span>
+    <span class="c1"># A typical label produces 300-500 characters here.</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">normalized_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">):</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+    <span class="n">medication_text</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">medication_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[]</span>
 
     <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical_client</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span>
         <span class="n">Text</span><span class="o">=</span><span class="n">medication_text</span>
@@ -954,9 +984,10 @@
         <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;RxNormConcepts&quot;</span><span class="p">,</span> <span class="p">[]):</span>
             <span class="k">if</span> <span class="n">concept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Score&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">RXNORM_CONFIDENCE_THRESHOLD</span><span class="p">:</span>
                 <span class="n">rxnorm_mappings</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                    <span class="s2">&quot;detected_text&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>  <span class="c1"># what the model read</span>
-                    <span class="s2">&quot;rxnorm_id&quot;</span><span class="p">:</span>     <span class="n">concept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="c1"># standard RxNorm concept ID</span>
-                    <span class="s2">&quot;description&quot;</span><span class="p">:</span>   <span class="n">concept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="c1"># e.g., &quot;amoxicillin 500 MG Oral Capsule&quot;</span>
+                    <span class="s2">&quot;detected_text&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>       <span class="c1"># what the model read</span>
+                    <span class="s2">&quot;rxnorm_id&quot;</span><span class="p">:</span>     <span class="n">concept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>      <span class="c1"># standard RxNorm concept ID</span>
+                    <span class="s2">&quot;description&quot;</span><span class="p">:</span>   <span class="n">concept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span><span class="c1"># e.g., &quot;amoxicillin 500 MG Oral Capsule&quot;</span>
+                    <span class="s2">&quot;concept_type&quot;</span><span class="p">:</span>  <span class="n">concept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>      <span class="c1"># TTY: &quot;SCD&quot;, &quot;IN&quot;, &quot;SBD&quot;, etc.</span>
                     <span class="s2">&quot;confidence&quot;</span><span class="p">:</span>    <span class="nb">round</span><span class="p">(</span><span class="n">concept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Score&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span>
                 <span class="p">})</span>
 
@@ -1139,6 +1170,7 @@
             <span class="s2">&quot;detected_text&quot;</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;detected_text&quot;</span><span class="p">],</span>
             <span class="s2">&quot;rxnorm_id&quot;</span><span class="p">:</span>     <span class="n">m</span><span class="p">[</span><span class="s2">&quot;rxnorm_id&quot;</span><span class="p">],</span>
             <span class="s2">&quot;description&quot;</span><span class="p">:</span>   <span class="n">m</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;concept_type&quot;</span><span class="p">:</span>  <span class="n">m</span><span class="p">[</span><span class="s2">&quot;concept_type&quot;</span><span class="p">],</span>
             <span class="s2">&quot;confidence&quot;</span><span class="p">:</span>    <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">])),</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">rxnorm_mappings</span>
@@ -1241,15 +1273,15 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Decoded: </span><span class="si">{</span><span class="n">directions_decoded</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Step 5: Map drug name and dosage to RxNorm via Comprehend Medical.</span>
+    <span class="c1"># Passes full normalized label text for better entity context.</span>
     <span class="c1"># Returns ranked RxNorm concept candidates with confidence scores.</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 5: Mapping to RxNorm via Comprehend Medical&quot;</span><span class="p">)</span>
-    <span class="n">drug_name</span> <span class="o">=</span> <span class="n">normalized</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drug_name&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">dosage</span> <span class="o">=</span> <span class="n">normalized</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dosage&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">rxnorm_mappings</span> <span class="o">=</span> <span class="n">map_to_rxnorm</span><span class="p">(</span><span class="n">drug_name</span><span class="p">,</span> <span class="n">dosage</span><span class="p">)</span>
+    <span class="n">rxnorm_mappings</span> <span class="o">=</span> <span class="n">map_to_rxnorm</span><span class="p">(</span><span class="n">normalized</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rxnorm_mappings</span><span class="p">)</span><span class="si">}</span><span class="s2"> RxNorm concept(s) above confidence threshold&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">rxnorm_mappings</span><span class="p">:</span>
         <span class="n">best</span> <span class="o">=</span> <span class="n">rxnorm_mappings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Best match: </span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (RxNorm: </span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="s1">&#39;rxnorm_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, confidence: </span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Best match: </span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (RxNorm: </span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="s1">&#39;rxnorm_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;type: </span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="s1">&#39;concept_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, confidence: </span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
     <span class="c1"># Step 6: Validate the NDC format and compute refill coverage metrics.</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 6: Validating NDC and computing refill metrics&quot;</span><span class="p">)</span>
@@ -1305,8 +1337,8 @@
 <p><strong>Retries and backoff.</strong> AWS services return throttling errors under sustained load. boto3's default retry configuration is reasonable but worth tuning for Textract and Comprehend Medical specifically. Exponential backoff with jitter is the standard pattern. The <code>botocore</code> config object accepts a <code>retries</code> parameter.</p>
 <p><strong>Dead Letter Queue.</strong> Lambda on S3 events is asynchronous: failed invocations retry automatically, then the event disappears with no signal. In a medication management pipeline, a silently dropped label means a gap in the member's record with no visible indicator. Configure an SQS dead letter queue on the Lambda event source mapping. Set a CloudWatch alarm on queue depth so you know when labels are failing.</p>
 <p><strong>Idempotency.</strong> S3 delivers event notifications at least once. If the same label triggers two Lambda invocations, this code will write two records with the same <code>image_key</code>, overwriting the first. Add a DynamoDB <code>ConditionExpression</code> to the <code>put_item</code> call that checks for key non-existence: <code>attribute_not_exists(image_key)</code>. That turns a silent overwrite into an explicit check.</p>
-<p><strong>SIG codebook coverage.</strong> The 60-odd abbreviations in <code>SIG_CODES</code> cover the most common tokens you'll encounter. They do not cover everything. Real pharmacy labels will contain tokens that aren't here: less common Latin abbreviations, pharmacy-specific shorthand, and combinations you haven't seen. Build logging around unrecognized tokens in the directions field from day one. Capture them, review them regularly, and expand the codebook. Without that feedback loop, you'll never know which SIG tokens are passing through as-is instead of being decoded.</p>
-<p><strong>RxNorm concept selection.</strong> <code>map_to_rxnorm</code> returns all concept candidates above the confidence threshold, sorted by confidence descending. For many downstream use cases you actually want a single concept, not a list. Decide whether you need the most specific concept (matches strength and dose form exactly, used for formulary tier matching) or the ingredient-level concept (generalizes across package types, used for drug interaction checking). That choice is use-case specific and belongs in your consuming system, not buried in a generic sort.</p>
+<p><strong>SIG codebook coverage.</strong> The abbreviations in <code>SIG_CODES</code> cover the most common tokens you'll encounter. They do not cover everything. Real pharmacy labels will contain tokens that aren't here: less common Latin abbreviations, pharmacy-specific shorthand, and combinations you haven't seen. A production codebook needs 150+ entries to cover the long tail of ophthalmic, dermatological, and compound pharmacy directions. Build logging around unrecognized tokens in the directions field from day one. Capture them, review them regularly, and expand the codebook. Without that feedback loop, you'll never know which SIG tokens are passing through as-is instead of being decoded.</p>
+<p><strong>RxNorm concept selection.</strong> <code>map_to_rxnorm</code> returns all concept candidates above the confidence threshold, sorted by confidence descending, including the concept type (TTY). For many downstream use cases you actually want a single concept, not a list. The <code>concept_type</code> field tells you what level of specificity each concept represents: IN (ingredient, e.g., &quot;amoxicillin&quot;), SCD (clinical drug, e.g., &quot;amoxicillin 500 MG Oral Capsule&quot;), or SBD (branded drug, e.g., &quot;Amoxil 500 MG Oral Capsule&quot;). For clinical decision support (drug interaction checking), filter to IN-level concepts. For formulary matching, prefer SCD or SBD. That choice is use-case specific and belongs in your consuming system, not buried in a generic sort.</p>
 <p><strong>NDC validation goes further than format.</strong> A 10-digit string in the right format is a well-formed NDC. Whether it corresponds to a real FDA-registered drug product requires a lookup against the FDA NDC database. The NDC dataset is available as a bulk download. For medication reconciliation programs, consider refreshing it monthly and validating extracted NDCs against a local copy. This catches OCR errors that happen to produce valid-looking but non-existent NDC codes.</p>
 <p><strong>Days supply missing from label.</strong> As noted in the recipe's honest take, some states don't require days supply to be printed on the label. <code>compute_refill_metrics</code> handles this gracefully by returning <code>None</code> for unparseable fields rather than throwing an exception. Downstream systems need to check for <code>None</code> before using <code>total_days_remaining</code> in any calculation or display.</p>
 <p><strong>Input validation.</strong> This code trusts its inputs completely. A production system validates that the S3 object exists and is a supported image format before calling Textract, checks that the image is within Textract's size limits (10MB), and rejects requests with malformed bucket or key values. It also verifies that the medication text string passed to Comprehend Medical is within the API's character limit.</p>

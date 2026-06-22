@@ -512,6 +512,7 @@
 <h2 id="the-aws-implementation">The AWS Implementation</h2>
 <h3 id="why-these-services">Why These Services</h3>
 <p><strong>Amazon SageMaker for clustering and case-mix modeling.</strong> SageMaker provides the ML infrastructure for both the case-mix adjustment models (regression) and the clustering algorithms. SageMaker Processing jobs handle the feature engineering and adjustment calculations at scale. The built-in K-Means algorithm works for straightforward segmentation; for GMM or hierarchical approaches, bring your own scikit-learn container. SageMaker also provides model versioning and experiment tracking, which matters when you're iterating on feature sets and adjustment methodologies.</p>
+<p>Note that patient-level PHI is loaded into SageMaker Processing ephemeral storage during case-mix model training (the regression models require patient-level features like HCC scores and demographics). This data exists only for the duration of the Processing job and is automatically deleted when the job completes, but it means your SageMaker Processing configuration must enforce volume encryption (<code>VolumeKmsKeyId</code>) and VPC mode with no internet access. Apply the minimum panel size filter (30-50 patients depending on specialty) before model training, not just before clustering. This prevents small-panel provider features from encoding individual patient characteristics into the adjustment model's training set.</p>
 <p><strong>Amazon Redshift for data aggregation.</strong> Provider profiling requires joining claims, encounters, orders, prescriptions, and outcomes data across millions of records, then aggregating to the provider level. Redshift handles this analytical workload efficiently. The columnar storage is well-suited to the wide, aggregation-heavy queries that provider profiling demands.</p>
 <p>For quarterly batch workloads, consider Redshift Serverless (pay-per-query) instead of a provisioned cluster. A quarterly aggregation run processing 10M claims records might consume 30-60 RPU-hours (~$11-22 per run). If your organization already has a provisioned Redshift cluster for other analytics workloads, use it. If this pipeline is the only Redshift consumer, Serverless or even Athena over S3 Parquet files may be more cost-effective for the aggregation step.</p>
 <p><strong>Amazon S3 for data lake storage.</strong> Raw data extracts, intermediate feature matrices, model artifacts, and final cluster assignments all live in S3. The data lake pattern gives you lineage (you can trace any provider's cluster assignment back through the adjusted metrics to the raw claims) and reproducibility (re-run any historical analysis with the same inputs).</p>
@@ -519,6 +520,22 @@
 <p><strong>Amazon QuickSight for provider dashboards.</strong> The end product of this pipeline is a set of reports and dashboards that medical directors and individual providers consume. QuickSight connects to Redshift for the aggregated metrics and provides the interactive visualization layer. Row-level security ensures providers see their own data and peer comparisons but not individually identified peer data.</p>
 <p>QuickSight requires a VPC connection to reach Redshift in a private subnet: configure a network interface in the same private subnet as Redshift, with the Redshift security group allowing inbound on port 5439 from the QuickSight network interface's security group. QuickSight Enterprise edition is required for VPC connectivity.</p>
 <p>Dashboards should prominently display the analysis period (&quot;Based on data from April 2025 through March 2026, refreshed quarterly&quot;). Include a &quot;last updated&quot; timestamp on every dashboard page and send email notifications to providers when new results are available.</p>
+<p><strong>Tiered access control model.</strong> Provider profiling data is sensitive enough to warrant role-based access that goes beyond simple authentication. Implement four tiers:</p>
+<ol>
+<li>
+<p><strong>Individual providers</strong> see only their own report: their cluster assignment, their O/E ratios, and aggregate (not individually identified) peer comparisons within their cluster and specialty. QuickSight row-level security (RLS) filters on provider_id matched against the authenticated user's identity.</p>
+</li>
+<li>
+<p><strong>Medical directors</strong> see specialty-level dashboards with individual provider identifiers. This requires peer review privilege coverage in most states. Consult legal counsel before enabling this tier; the specific protections vary by jurisdiction and by whether your organization's peer review committee has formally designated the analysis as peer review activity. RLS grants access to all provider_ids within the director's specialty scope.</p>
+</li>
+<li>
+<p><strong>Analytics team</strong> sees de-identified data for model development and validation. Provider identifiers are replaced with opaque tokens. This tier accesses S3 data lake objects directly (not QuickSight) with a separate IAM role that cannot reach the identifiable results prefix.</p>
+</li>
+<li>
+<p><strong>Small-specialty suppression:</strong> For specialties with fewer than 5 providers in a cluster, suppress individual-level comparisons entirely. When a cluster contains only 2-3 providers, showing &quot;your cluster peers average X&quot; effectively identifies those peers. The reporting layer checks cluster size and falls back to specialty-wide comparisons when the cluster is too small.</p>
+</li>
+</ol>
+<p>Implement this with a QuickSight permissions dataset that maps authenticated user identity (federated via SAML or IAM Identity Center) to the list of provider_ids that user may view. Update the permissions dataset as part of the quarterly pipeline run (Step Functions includes a step that regenerates it from the provider roster and organizational hierarchy). Row-level security rules reference this dataset, and QuickSight enforces filtering at query time before results reach the user.</p>
 <p><strong>AWS Step Functions for pipeline orchestration.</strong> The quarterly analysis run involves multiple sequential and parallel steps: data extraction, aggregation, adjustment, clustering, validation, and report generation. Step Functions coordinates this workflow with error handling, retry logic, and audit logging.</p>
 <p>Include per-step failure handling: Glue ETL failure halts the pipeline (don't cluster on incomplete data); SageMaker convergence failure retries with different initialization; Redshift load failure retries with exponential backoff and falls back to S3-only output. Add a CloudWatch alarm on &quot;days since last successful pipeline completion&quot; to catch silent failures before the next quarterly review cycle.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
@@ -556,7 +573,7 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td><code>sagemaker:CreateProcessingJob</code>, <code>sagemaker:CreateTrainingJob</code> (with condition key restricting VPC and instance types), <code>redshift:GetClusterCredentials</code> (scoped to specific <code>dbuser:provider_profiling_etl</code>), <code>s3:GetObject</code> and <code>s3:PutObject</code> (scoped to <code>arn:aws:s3:::your-bucket/provider-profiling/*</code>), <code>glue:StartJobRun</code>, <code>quicksight:CreateDashboard</code>, <code>states:StartExecution</code>, <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> (scoped to pipeline CMK ARN)</td>
+<td>Least-privilege with explicit resource scoping (see below)</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
@@ -584,6 +601,59 @@
 </tr>
 </tbody>
 </table>
+<h4 id="iam-least-privilege-policy-examples">IAM Least-Privilege Policy Examples</h4>
+<p>The pipeline execution role needs narrowly scoped permissions. Here are the key policy statements with explicit resource ARNs and condition keys:</p>
+<p><strong>SageMaker Training and Processing (restrict to PHI-approved VPC and instance types):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;sagemaker:CreateTrainingJob&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;sagemaker:CreateProcessingJob&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:sagemaker:us-east-1:111122223333:training-job/provider-profiling-*&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;StringEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;sagemaker:VpcSecurityGroupIds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;sg-0abc1234phi56789&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;StringLike&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;sagemaker:InstanceTypes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ml.m5.*&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;Bool&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;sagemaker:VolumeKmsKey&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;true&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>sagemaker:VpcSecurityGroupIds</code> condition key ensures every training and processing job runs inside the PHI-designated security group. This prevents accidental launches outside the controlled VPC environment where patient-level data is handled.</p>
+<p><strong>Redshift credentials (scoped to a specific database user with limited schema grants):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;redshift:GetClusterCredentials&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;arn:aws:redshift:us-east-1:111122223333:dbuser:provider-cluster/provider_profiling_etl&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;arn:aws:redshift:us-east-1:111122223333:dbname:provider-cluster/analytics&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>provider_profiling_etl</code> database user should have schema-level grants only on the provider profiling tables (<code>GRANT SELECT ON SCHEMA provider_profiling TO provider_profiling_etl</code>). It should not have access to the broader data warehouse schemas containing raw patient records.</p>
+<p><strong>S3 access (scoped to specific prefixes):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;s3:PutObject&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:s3:::your-phi-bucket/provider-profiling/*&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>KMS (scoped to the pipeline-specific CMK):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;kms:Decrypt&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;kms:GenerateDataKey&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:kms:us-east-1:111122223333:key/12345678-abcd-1234-efgh-123456789012&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
 <h3 id="ingredients">Ingredients</h3>
 <table>
 <thead>

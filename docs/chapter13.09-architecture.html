@@ -524,7 +524,8 @@
     C --&gt;|New Article Event| D[Step Functions: Extraction Pipeline]
     
     D --&gt; E[Lambda: Parse &amp; Segment]
-    E --&gt; F[Comprehend Medical: NER]
+    E --&gt; PHI[Lambda: PHI Screening]
+    PHI --&gt; F[Comprehend Medical: NER]
     F --&gt; G[SageMaker Endpoint: Relation Extraction]
     G --&gt; H[Lambda: Normalization &amp; Grading]
     H --&gt; I[Lambda: Conflict Detection]
@@ -533,6 +534,13 @@
     I --&gt;|Index Updates| K[Amazon OpenSearch: Full-Text Search]
     I --&gt;|Conflicts| L[SQS: Human Review Queue]
     
+    D --&gt;|Step Failure after Retries| DLQ[SQS: Dead Letter Queue]
+    DLQ --&gt;|Replay| REPLAY[Lambda: DLQ Reprocessor]
+    DLQ --&gt;|Alarm on Depth| CW[CloudWatch Alarm]
+    
+    RET[EventBridge: Daily Schedule] --&gt; RETLAMBDA[Lambda: Retraction Monitor]
+    RETLAMBDA --&gt;|Flag/Update Edges| J
+
     J --&gt; M[API Gateway + Lambda: Query API]
     K --&gt; M
     M --&gt; N[Clinical Applications]
@@ -540,6 +548,7 @@
     style J fill:#9ff,stroke:#333
     style C fill:#f9f,stroke:#333
     style G fill:#ff9,stroke:#333
+    style DLQ fill:#f99,stroke:#333
 </pre>
 <h3 id="prerequisites">Prerequisites</h3>
 <table>
@@ -552,11 +561,11 @@
 <tbody>
 <tr>
 <td><strong>AWS Services</strong></td>
-<td>Amazon Comprehend Medical, Amazon SageMaker, Amazon Neptune, Amazon S3, AWS Lambda, AWS Step Functions, Amazon OpenSearch Service, Amazon SQS, API Gateway</td>
+<td>Amazon Comprehend Medical, Amazon SageMaker, Amazon Neptune, Amazon S3, AWS Lambda, AWS Step Functions, Amazon OpenSearch Service, Amazon SQS, Amazon EventBridge, API Gateway, Amazon CloudWatch</td>
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td>Ingestion Lambdas: <code>comprehend:DetectEntitiesV2</code>, <code>sagemaker:InvokeEndpoint</code>, <code>neptune-db:ReadDataViaQuery</code>, <code>neptune-db:WriteDataViaQuery</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>states:StartExecution</code>, <code>sqs:SendMessage</code>. Query API Lambda: <code>neptune-db:ReadDataViaQuery</code>, <code>opensearch:ESHttpGet</code>, <code>opensearch:ESHttpPost</code>. Separate admin role for Neptune backup/restore.</td>
+<td>Ingestion Lambdas: <code>comprehend:DetectEntitiesV2</code>, <code>sagemaker:InvokeEndpoint</code>, <code>neptune-db:ReadDataViaQuery</code>, <code>neptune-db:WriteDataViaQuery</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>states:StartExecution</code>, <code>sqs:SendMessage</code>. Query API Lambda: <code>neptune-db:ReadDataViaQuery</code>, <code>opensearch:ESHttpGet</code>, <code>opensearch:ESHttpPost</code>. DLQ Reprocessor Lambda: <code>sqs:ReceiveMessage</code>, <code>sqs:DeleteMessage</code>, <code>states:StartExecution</code>. Retraction Monitor Lambda: <code>neptune-db:ReadDataViaQuery</code>, <code>neptune-db:WriteDataViaQuery</code>. Separate admin role for Neptune backup/restore.</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
@@ -623,11 +632,15 @@
 </tr>
 <tr>
 <td><strong>Amazon SQS</strong></td>
-<td>Queues conflicting or low-confidence extractions for human review</td>
+<td>Queues conflicting extractions for human review; dead letter queue for failed pipeline executions</td>
 </tr>
 <tr>
 <td><strong>Amazon EventBridge</strong></td>
-<td>Schedules periodic literature fetches from PubMed</td>
+<td>Schedules periodic literature fetches and daily retraction monitoring</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Alarms on DLQ depth, pipeline error rates, and processing latency</td>
 </tr>
 <tr>
 <td><strong>AWS KMS</strong></td>
@@ -708,6 +721,53 @@
     store sentences to S3 at &quot;parsed/{pmid}/sentences.json&quot;
     
     RETURN sentences
+</code></pre>
+<p><strong>Step 2b: PHI screening.</strong> Case reports and clinical trial results may embed individually identifiable health information in source sentences, even though published literature is generally considered public. Before storing provenance sentences in Neptune or OpenSearch (where they'll persist and be queryable), screen for PHI risk. Articles tagged with the MeSH publication type &quot;Case Reports&quot; get flagged. For flagged documents, run Comprehend Medical's DetectPHI API against each sentence. Sentences containing detected PHI either get redacted (PHI spans replaced with <code>[REDACTED]</code>) or excluded from provenance storage entirely. The extracted relationships themselves (drug-treats-disease) are fine; it's the verbatim source sentences that carry the risk.</p>
+<pre class="code code-plain"><code>FUNCTION screen_for_phi(sentences, article_metadata):
+    // Determine if this article is high-risk for containing PHI.
+    // Case reports describe individual patients in detail.
+    // Clinical trial results sometimes include individual-level data.
+    pub_types = article_metadata.pub_types
+    is_case_report = &quot;Case Reports&quot; IN pub_types
+    is_clinical_trial = &quot;Clinical Trial&quot; IN pub_types OR &quot;Randomized Controlled Trial&quot; IN pub_types
+
+    IF NOT is_case_report AND NOT is_clinical_trial:
+        // Low PHI risk. Pass through without modification.
+        RETURN sentences
+
+    // High-risk article: screen each sentence for PHI
+    screened_sentences = empty list
+
+    FOR each sentence in sentences:
+        phi_response = call ComprehendMedical.DetectPHI with:
+            text = sentence.text
+
+        phi_entities = phi_response.Entities
+        // Filter to high-confidence PHI detections
+        phi_entities = [e for e in phi_entities WHERE e.Score &gt;= 0.80]
+
+        IF phi_entities is empty:
+            // No PHI detected. Keep sentence as-is.
+            append sentence to screened_sentences
+        ELSE:
+            // Redact PHI spans from the sentence text before storing as provenance.
+            // The sentence will still be used for NER/RE processing (in-memory only),
+            // but the stored provenance version has PHI removed.
+            redacted_text = sentence.text
+            // Process spans in reverse order to preserve character offsets
+            FOR each phi_entity in REVERSE(sorted by BeginOffset):
+                redacted_text = (
+                    redacted_text[:phi_entity.BeginOffset]
+                    + &quot;[REDACTED]&quot;
+                    + redacted_text[phi_entity.EndOffset:]
+                )
+
+            sentence.provenance_text = redacted_text  // stored version
+            sentence.text = sentence.text              // processing version (in-memory only)
+            sentence.phi_redacted = TRUE
+            append sentence to screened_sentences
+
+    RETURN screened_sentences
 </code></pre>
 <p><strong>Step 3: Named entity recognition.</strong> Each sentence is passed through biomedical NER to identify mentions of drugs, diseases, genes, proteins, anatomical structures, and other biomedical entities. Comprehend Medical handles the core entity types well. For specialized entity types (gene variants, molecular pathways, epigenetic modifications), you may need a supplementary custom model. The output is a list of entity mentions with their types, positions in the text, and confidence scores. Entities below a confidence threshold are discarded to prevent noise from propagating downstream.</p>
 <pre class="code code-plain"><code>FUNCTION extract_entities(sentences):
@@ -990,6 +1050,13 @@ FUNCTION section_weight(section):
                 first_seen     = current timestamp
                 last_updated   = current timestamp
                 status         = &quot;ACTIVE&quot;
+                validation_status = &quot;machine_extracted&quot;  // default for all new edges
+                // Progression: &quot;machine_extracted&quot; -&gt; &quot;human_validated&quot; or &quot;human_rejected&quot;
+                // Clinical query guidance: downstream applications should filter on
+                // validation_status = &quot;human_validated&quot; OR
+                // (evidence_score &gt;= 0.85 AND support_count &gt;= 3)
+                // The 0.70 RE confidence threshold yields 18-30% false positives,
+                // which is dangerous for clinical use without this guardrail.
 
         // Also index in OpenSearch for full-text search
         index in OpenSearch: {
@@ -1005,10 +1072,90 @@ FUNCTION section_weight(section):
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter13.09-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
+<p><strong>Step 8: Dead letter queue and failure handling.</strong> When any step in the extraction pipeline fails after Step Functions' built-in retries (typically 3 attempts with exponential backoff), the execution must not silently disappear. A failed execution sends the article ID, the failed step name, and the error details to an SQS dead letter queue. A CloudWatch alarm fires when DLQ depth exceeds a threshold (e.g., 10 messages in 5 minutes), paging the on-call engineer. A separate reprocessor Lambda can be triggered manually or on a schedule to replay failed articles once the underlying issue is resolved. Without this, articles that fail due to transient issues (Comprehend Medical throttling, Neptune connection timeouts) are permanently lost from the graph.</p>
+<pre class="code code-plain"><code>// Step Functions state machine definition includes a Catch block on each step:
+// On failure after retries, transition to the SendToDLQ state.
+
+STATE send_to_dlq:
+    INPUT = {article_id, failed_step, error_message, execution_arn, attempt_count}
+
+    send to SQS DLQ: {
+        article_id:     INPUT.article_id,
+        failed_step:    INPUT.failed_step,
+        error_message:  INPUT.error_message,
+        execution_arn:  INPUT.execution_arn,
+        timestamp:      current timestamp,
+        s3_document_key: lookup S3 key for article_id
+    }
+
+// CloudWatch Alarm: ApproximateNumberOfMessagesVisible &gt; 10 for 5 minutes
+// Action: SNS notification to on-call team
+
+// Reprocessor Lambda (triggered manually or on schedule):
+FUNCTION reprocess_dlq_messages():
+    WHILE messages available in DLQ:
+        message = receive from DLQ (max 10 per batch)
+        
+        // Restart the pipeline from the beginning for this article.
+        // The document is already in S3, so no re-fetch needed.
+        start Step Functions execution with:
+            input = {document_s3_key: message.s3_document_key, is_replay: TRUE}
+        
+        delete message from DLQ
+</code></pre>
+<p><strong>Step 9: Retraction monitoring.</strong> Published papers get retracted. When a paper that contributed to your knowledge graph is retracted, the relationships it supports may be invalid. A scheduled Lambda (daily is sufficient) queries PubMed for newly retracted articles using the &quot;Retracted Publication&quot; publication type filter. When a retraction is detected: the Lambda queries Neptune for all edges citing the retracted PMID. If the retracted paper was the sole source for an edge (support_count = 1), that edge's status changes to &quot;RETRACTED&quot;. If other papers also support the edge, the evidence_score is recalculated excluding the retracted source and the retracted provenance entry is flagged. This is a patient safety concern: retracted findings (e.g., the Wakefield MMR-autism paper) can persist in knowledge graphs and influence clinical queries if not actively monitored.</p>
+<pre class="code code-plain"><code>FUNCTION check_retractions():
+    // Query PubMed for recently retracted publications (last 7 days)
+    retracted_pmids = call PubMed E-utilities esearch with:
+        database = &quot;pubmed&quot;
+        query    = &quot;Retracted Publication[pt] AND last 7 days[CRDT]&quot;
+        retmax   = 500
+
+    FOR each pmid in retracted_pmids:
+        // Find all edges in Neptune that cite this PMID as provenance
+        affected_edges = query Neptune:
+            MATCH edges WHERE provenance contains pmid = {pmid}
+
+        IF affected_edges is empty:
+            CONTINUE  // retracted paper wasn&#x27;t in our graph
+
+        log &quot;Retraction detected: PMID {pmid} affects {count} edges&quot;
+
+        FOR each edge in affected_edges:
+            // Remove the retracted provenance entry
+            updated_provenance = edge.provenance EXCLUDING entries with pmid = {pmid}
+            new_support_count = edge.support_count - 1
+
+            IF new_support_count == 0:
+                // Retracted paper was the only source. Mark edge as retracted.
+                update edge in Neptune:
+                    status = &quot;RETRACTED&quot;
+                    retraction_date = current timestamp
+                    retraction_pmid = pmid
+            ELSE:
+                // Other papers still support this relationship.
+                // Recalculate evidence score without the retracted source.
+                new_evidence_score = recalculate_score(updated_provenance)
+                update edge in Neptune:
+                    provenance = updated_provenance
+                    support_count = new_support_count
+                    evidence_score = new_evidence_score
+                    last_updated = current timestamp
+                    // Add a flag noting a source was retracted
+                    has_retracted_source = TRUE
+
+        // Send notification for high-impact retractions
+        IF any affected edge has support_count == 0 OR evidence_score was &gt; 0.85:
+            send alert to review queue: {
+                retracted_pmid: pmid,
+                affected_edges: count,
+                edges_fully_retracted: count where new support = 0
+            }
+</code></pre>
 <h3 id="expected-results">Expected Results</h3>
 <p><strong>Sample output: querying the graph for metformin relationships:</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;query&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MATCH (d:Drug {label: &#39;metformin&#39;})-[r]-&gt;(target) RETURN d, r, target LIMIT 5&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;query&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MATCH (d:Drug {label: &#39;metformin&#39;})-[r]-&gt;(target) WHERE r.validation_status = &#39;human_validated&#39; OR (r.evidence_score &gt;= 0.85 AND r.support_count &gt;= 3) RETURN d, r, target LIMIT 5&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">      </span><span class="nt">&quot;subject&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RxNorm:6809&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;metformin&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Drug&quot;</span><span class="p">},</span>
@@ -1016,6 +1163,7 @@ FUNCTION section_weight(section):
 <span class="w">      </span><span class="nt">&quot;object&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SNOMED:44054006&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;type 2 diabetes mellitus&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Disease&quot;</span><span class="p">},</span>
 <span class="w">      </span><span class="nt">&quot;evidence_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.97</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;support_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">847</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;validation_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;human_validated&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;is_negated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;top_provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;pmid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;35291234&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;journal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Lancet&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;study_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;meta-analysis&quot;</span><span class="p">}</span>
 <span class="w">    </span><span class="p">},</span>
@@ -1025,6 +1173,7 @@ FUNCTION section_weight(section):
 <span class="w">      </span><span class="nt">&quot;object&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SNOMED:3723001&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lactic acidosis&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Condition&quot;</span><span class="p">},</span>
 <span class="w">      </span><span class="nt">&quot;evidence_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.72</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;support_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">134</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;validation_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;machine_extracted&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;is_negated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;top_provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;pmid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;34567890&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;journal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BMJ&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;study_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cohort&quot;</span><span class="p">}</span>
 <span class="w">    </span><span class="p">},</span>
@@ -1034,6 +1183,7 @@ FUNCTION section_weight(section):
 <span class="w">      </span><span class="nt">&quot;object&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HGNC:8583&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OCT1 (SLC22A1)&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Gene&quot;</span><span class="p">},</span>
 <span class="w">      </span><span class="nt">&quot;evidence_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.89</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;support_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">56</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;validation_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;human_validated&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;is_negated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;top_provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;pmid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;33445566&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;journal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Clin Pharmacol Ther&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;study_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rct&quot;</span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
@@ -1094,6 +1244,15 @@ FUNCTION section_weight(section):
 </table>
 <p><strong>Where it struggles:</strong> Implicit relationships that require world knowledge to infer. Relationships spanning multiple sentences or paragraphs. Highly hedged language where the assertion strength is ambiguous. Novel entity types not in existing ontologies (newly discovered genes, experimental compounds). Languages other than English (most biomedical NER models are English-only). Retracted papers that remain in the corpus.</p>
 <hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The architecture above demonstrates the pattern. Running this against PubMed at scale requires addressing several gaps that are intentionally outside the scope of a cookbook recipe:</p>
+<p><strong>Custom relation extraction model training.</strong> The pseudocode calls a SageMaker endpoint for relation extraction, but training that model is a significant ML engineering effort. You'd fine-tune PubMedBERT on BioRED (or ChemProt for drug-protein interactions), curate a biomedical-specific held-out evaluation set, and iterate until precision exceeds 75%. Expect 4-8 weeks of focused ML work before the model is reliable enough to populate a knowledge graph.</p>
+<p><strong>Entity normalization service at scale.</strong> The simplified lookup pattern shown here covers a handful of entities. The real UMLS Metathesaurus contains over 4 million concepts and 15 million concept names. You'd build a dedicated normalization microservice backed by an Elasticsearch index of UMLS terms, with fuzzy matching, abbreviation expansion, and embedding-based similarity for novel terms. The UMLS license is free but requires registration and annual renewal.</p>
+<p><strong>Human validation workflow.</strong> The <code>validation_status</code> field on edges creates a requirement: someone needs to validate edges before clinical applications consume them. You need a review UI where domain experts see the source sentences, the extracted relationship, confidence scores, and supporting evidence, then mark edges as validated or rejected. Without this workflow, the validation field is just metadata that never gets populated.</p>
+<p><strong>Graph versioning and reproducibility.</strong> Clinical research applications may need to know what the graph looked like at a specific point in time (e.g., &quot;what knowledge was available when this clinical decision was made?&quot;). This requires either graph snapshots (Neptune snapshots are point-in-time but coarse) or a temporal property model where each edge carries valid_from/valid_to timestamps.</p>
+<p><strong>Multi-language support.</strong> Most biomedical NER and RE models are English-only. A global literature graph needs to handle German, French, Chinese, and Japanese publications. This requires either translation (lossy for medical terminology) or language-specific NER models.</p>
+<p><strong>Evaluation and regression testing.</strong> You need a gold-standard evaluation set of manually annotated articles where you know the correct triples. Run this after every model update or pipeline change to catch regressions. Without it, you won't know when precision degrades until clinicians report bad results.</p>
+<hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>RAG-enhanced literature search.</strong> Use the knowledge graph as a retrieval layer for a Retrieval-Augmented Generation system. When a clinician asks &quot;what are the known interactions between drug X and gene Y?&quot;, retrieve relevant graph edges and their source sentences, then use an LLM to synthesize a natural language answer with citations. This combines the structured precision of the graph with the natural language fluency of generative AI.</p>
 <p><strong>Automated systematic review support.</strong> Extend the pipeline to support systematic reviews: given a research question, identify all relevant papers, extract the relevant relationships, and present a structured summary of the evidence landscape (how many papers support vs. refute, what study designs, what populations). This doesn't replace a systematic review but dramatically accelerates the screening and extraction phases.</p>
@@ -1113,12 +1272,12 @@ FUNCTION section_weight(section):
 <p><strong>AWS Sample Repos:</strong></p>
 <ul>
 <li><a href="https://github.com/aws-samples/amazon-neptune-samples"><code>amazon-neptune-samples</code></a>: Neptune graph database examples including data loading, querying, and visualization patterns</li>
-<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: Healthcare NLP extraction with Comprehend Medical integrated into FHIR workflows</li>
+<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: Healthcare NLP extraction with Comprehend Medical integrated into FHIR workflows (archived, but patterns remain instructive)</li>
 </ul>
 <p><strong>AWS Solutions and Blogs:</strong></p>
 <ul>
-<li><a href="https://aws.amazon.com/blogs/database/building-a-biomedical-knowledge-graph-with-amazon-neptune/">Drug Discovery with Amazon Neptune</a>: Architecture for biomedical knowledge graphs on Neptune</li>
-<li><a href="https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-system-on-aws/">NLP for Healthcare on AWS</a>: End-to-end medical NLP pipeline architecture</li>
+<li><a href="https://aws.amazon.com/blogs/database/building-a-biological-knowledge-graph-at-pendulum-using-amazon-neptune/">Building a Biological Knowledge Graph at Pendulum Using Amazon Neptune</a>: Architecture for biomedical knowledge graphs on Neptune</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/build-a-cognitive-search-and-a-health-knowledge-graph-using-amazon-healthlake-amazon-kendra-and-amazon-neptune/">Build a Cognitive Search and a Health Knowledge Graph Using AWS AI Services</a>: Healthcare NLP and knowledge graph combining Comprehend Medical, Neptune, and Kendra</li>
 </ul>
 <p><strong>External Resources:</strong></p>
 <ul>

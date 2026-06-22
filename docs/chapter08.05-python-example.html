@@ -700,42 +700,81 @@
             <span class="k">continue</span>
 
         <span class="c1"># Comprehend Medical has a 20,000 character limit per request.</span>
-        <span class="c1"># Most clinical note sections are well under this, but we truncate</span>
-        <span class="c1"># just in case. In production, you&#39;d chunk long sections.</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][:</span><span class="mi">20000</span><span class="p">]</span>
+        <span class="c1"># Discharge summaries and operative notes can exceed this.</span>
+        <span class="c1"># Chunk at sentence boundaries to preserve negation scope.</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="n">_chunk_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_chars</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">continue</span>
-
-        <span class="c1"># Call DetectEntitiesV2. This returns all medical entity types:</span>
-        <span class="c1"># MEDICAL_CONDITION, MEDICATION, ANATOMY, TEST_TREATMENT_PROCEDURE, etc.</span>
-        <span class="c1"># We only care about MEDICAL_CONDITION for problem list extraction.</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[]):</span>
-            <span class="k">if</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;MEDICAL_CONDITION&quot;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">chunk_offset</span><span class="p">,</span> <span class="n">chunk_text</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># Build our problem record with everything we need downstream.</span>
-            <span class="n">problem</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;begin_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;BeginOffset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;start_offset&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;end_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;EndOffset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;start_offset&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;traits&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[]),</span>
-                <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Attributes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
-                <span class="c1"># entity_type helps distinguish DIAGNOSIS vs SIGN vs SYMPTOM</span>
-                <span class="s2">&quot;entity_type&quot;</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span>
-                    <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[])</span>
-                     <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DIAGNOSIS&quot;</span><span class="p">,</span> <span class="s2">&quot;SIGN&quot;</span><span class="p">,</span> <span class="s2">&quot;SYMPTOM&quot;</span><span class="p">)),</span>
-                    <span class="s2">&quot;DIAGNOSIS&quot;</span>  <span class="c1"># default if no type trait present</span>
-                <span class="p">)</span>
-            <span class="p">}</span>
-            <span class="n">all_problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">problem</span><span class="p">)</span>
+            <span class="c1"># Call DetectEntitiesV2. This returns all medical entity types:</span>
+            <span class="c1"># MEDICAL_CONDITION, MEDICATION, ANATOMY, TEST_TREATMENT_PROCEDURE, etc.</span>
+            <span class="c1"># We only care about MEDICAL_CONDITION for problem list extraction.</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">chunk_text</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="k">if</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;MEDICAL_CONDITION&quot;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Build our problem record with everything we need downstream.</span>
+                <span class="c1"># Offset correction: add both section start and chunk offset.</span>
+                <span class="n">problem</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;begin_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;BeginOffset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;start_offset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">chunk_offset</span><span class="p">,</span>
+                    <span class="s2">&quot;end_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;EndOffset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;start_offset&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">chunk_offset</span><span class="p">,</span>
+                    <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;traits&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                    <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Attributes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                    <span class="c1"># entity_type helps distinguish DIAGNOSIS vs SIGN vs SYMPTOM</span>
+                    <span class="s2">&quot;entity_type&quot;</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                         <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DIAGNOSIS&quot;</span><span class="p">,</span> <span class="s2">&quot;SIGN&quot;</span><span class="p">,</span> <span class="s2">&quot;SYMPTOM&quot;</span><span class="p">)),</span>
+                        <span class="s2">&quot;DIAGNOSIS&quot;</span>  <span class="c1"># default if no type trait present</span>
+                    <span class="p">)</span>
+                <span class="p">}</span>
+                <span class="n">all_problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">problem</span><span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Extracted </span><span class="si">%d</span><span class="s2"> MEDICAL_CONDITION entities&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_problems</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">all_problems</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_chunk_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_chars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split text into chunks that respect the Comprehend Medical character limit.</span>
+
+<span class="sd">    Chunks at sentence boundaries (period followed by space or newline) to avoid</span>
+<span class="sd">    splitting mid-sentence, which would break negation scope. Returns a list of</span>
+<span class="sd">    (offset, chunk_text) tuples so callers can correct entity offsets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_chars</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">text</span><span class="p">)]</span>
+
+    <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">max_chars</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:]))</span>
+            <span class="k">break</span>
+
+        <span class="c1"># Find the last sentence boundary before the limit.</span>
+        <span class="c1"># Look for &quot;. &quot; or &quot;.\n&quot; working backwards from the cut point.</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;. &quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">boundary</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">boundary</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">boundary</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+            <span class="c1"># No sentence boundary found; fall back to cutting at max_chars.</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="n">end</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">boundary</span> <span class="o">+=</span> <span class="mi">2</span>  <span class="c1"># include the period and space</span>
+
+        <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">boundary</span><span class="p">]))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">boundary</span>
+
+    <span class="k">return</span> <span class="n">chunks</span>
 </pre></div>
 
 <hr />
@@ -942,20 +981,27 @@
 
     <span class="c1"># 1. Find problems active in notes but missing from the problem list.</span>
     <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="n">active_extracted</span><span class="p">:</span>
-        <span class="n">top_snomed</span> <span class="o">=</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;snomed&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">top_snomed</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">current_codes</span><span class="p">:</span>
-            <span class="n">recommendations</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;ADD_CANDIDATE&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;problem_text&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;snomed&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
-                <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;icd10&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;icd10&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;source_note&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
-                <span class="s2">&quot;rationale&quot;</span><span class="p">:</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Mentioned as active in </span><span class="si">{</span><span class="n">problem</span><span class="p">[</span><span class="s1">&#39;section&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> section &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;but not on current problem list&quot;</span>
-                <span class="p">)</span>
-            <span class="p">})</span>
+        <span class="c1"># Check all top-3 SNOMED candidates, not just top-1.</span>
+        <span class="c1"># The same condition can normalize to different codes depending on context.</span>
+        <span class="c1"># Checking only the top candidate produces false ADD_CANDIDATE recommendations</span>
+        <span class="c1"># for problems already on the list under a different synonym code.</span>
+        <span class="n">extracted_codes</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;snomed&quot;</span><span class="p">]}</span>
+        <span class="k">if</span> <span class="n">extracted_codes</span> <span class="o">&amp;</span> <span class="n">current_codes</span><span class="p">:</span>
+            <span class="c1"># At least one candidate matches an existing problem. Skip.</span>
+            <span class="k">continue</span>
+
+        <span class="n">recommendations</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;ADD_CANDIDATE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;problem_text&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;snomed&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+            <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;icd10&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;icd10&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">problem</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;source_note&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
+            <span class="s2">&quot;rationale&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Mentioned as active in </span><span class="si">{</span><span class="n">problem</span><span class="p">[</span><span class="s1">&#39;section&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> section &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;but not on current problem list&quot;</span>
+            <span class="p">)</span>
+        <span class="p">})</span>
 
     <span class="c1"># 2. Find problems on the list that notes suggest are resolved.</span>
     <span class="n">resolved_codes</span> <span class="o">=</span> <span class="p">{</span>
@@ -1002,7 +1048,8 @@
 <hr />
 <h2 id="step-6-store-results">Step 6: Store Results</h2>
 <p><em>The pseudocode calls this <code>store_results(patient_id, extracted_problems, recommendations, note_id)</code>. We write full extraction results to S3 for audit and reprocessing, and write actionable recommendations to DynamoDB for clinician review workflows.</em></p>
-<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">store_results</span><span class="p">(</span>
     <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1016,6 +1063,10 @@
 <span class="sd">    Two destinations:</span>
 <span class="sd">    - S3: Full extraction record for audit trail and reprocessing</span>
 <span class="sd">    - DynamoDB: Actionable recommendations for clinician review queue</span>
+
+<span class="sd">    Recommendation IDs are deterministic (derived from note_id + snomed_code + type)</span>
+<span class="sd">    so reprocessing the same note produces the same IDs. Conditional writes prevent</span>
+<span class="sd">    duplicates, making the pipeline idempotent.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
@@ -1041,22 +1092,41 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stored extraction results to s3://</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">RESULTS_BUCKET</span><span class="p">,</span> <span class="n">s3_key</span><span class="p">)</span>
 
     <span class="c1"># Write recommendations to DynamoDB for clinician review.</span>
+    <span class="c1"># Deterministic IDs + conditional writes = idempotent reprocessing.</span>
     <span class="k">if</span> <span class="n">recommendations</span><span class="p">:</span>
         <span class="n">rec_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">RECOMMENDATIONS_TABLE</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recommendations</span><span class="p">:</span>
-            <span class="n">rec_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
-                <span class="s2">&quot;recommendation_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;problem_text&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;problem_text&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;snomed_code&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;snomed&quot;</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;icd10_code&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;icd10&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Code&quot;</span><span class="p">,</span> <span class="s2">&quot;N/A&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;icd10&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mi">3</span><span class="p">))),</span>
-                <span class="s2">&quot;source_note&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
-                <span class="s2">&quot;rationale&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;rationale&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;PENDING_REVIEW&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">timestamp</span>
-            <span class="p">})</span>
+            <span class="c1"># Deterministic ID: same note + same code + same type always</span>
+            <span class="c1"># produces the same recommendation_id. This prevents duplicates</span>
+            <span class="c1"># when a note is reprocessed (e.g., after a pipeline bug fix).</span>
+            <span class="n">snomed_code</span> <span class="o">=</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;snomed&quot;</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;snomed&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;NONE&quot;</span>
+            <span class="n">rec_id</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">note_id</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">snomed_code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">rec</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">32</span><span class="p">]</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rec_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+                    <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+                        <span class="s2">&quot;recommendation_id&quot;</span><span class="p">:</span> <span class="n">rec_id</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;problem_text&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;problem_text&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;snomed_code&quot;</span><span class="p">:</span> <span class="n">snomed_code</span><span class="p">,</span>
+                        <span class="s2">&quot;icd10_code&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;icd10&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Code&quot;</span><span class="p">,</span> <span class="s2">&quot;N/A&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;icd10&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mi">3</span><span class="p">))),</span>
+                        <span class="s2">&quot;source_note&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
+                        <span class="s2">&quot;rationale&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;rationale&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;PENDING_REVIEW&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">timestamp</span>
+                    <span class="p">},</span>
+                    <span class="c1"># Conditional write: only insert if this recommendation doesn&#39;t</span>
+                    <span class="c1"># already exist. Prevents duplicates on reprocessing.</span>
+                    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;attribute_not_exists(recommendation_id)&quot;</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">rec_table</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConditionalCheckFailedException</span><span class="p">:</span>
+                <span class="c1"># Already exists from a previous run. That&#39;s fine, skip it.</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Recommendation </span><span class="si">%s</span><span class="s2"> already exists, skipping&quot;</span><span class="p">,</span> <span class="n">rec_id</span><span class="p">)</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stored </span><span class="si">%d</span><span class="s2"> recommendations to DynamoDB&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommendations</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">results_record</span>
@@ -1188,9 +1258,9 @@
 <p><strong>KMS customer-managed keys.</strong> This example uses <code>ServerSideEncryption=&quot;aws:kms&quot;</code> but doesn't specify a key ID, which means it uses the AWS-managed key. Production uses a CMK you control, with key rotation enabled, and CloudTrail logging every key usage event.</p>
 <p><strong>DynamoDB Decimal handling.</strong> DynamoDB doesn't accept Python floats. This example already wraps confidence scores in <code>Decimal(str(...))</code>. Any new numeric fields must follow the same pattern. If you forget, <code>put_item</code> raises a <code>TypeError</code> that's not immediately obvious in its error message.</p>
 <p><strong>Section detection robustness.</strong> The regex-based section detection here works for cleanly formatted notes. Real clinical notes are messy: inconsistent casing, missing colons, headers embedded mid-paragraph, numbered lists that look like headers. Production systems use ML-based section detectors trained on diverse note formats, or at minimum a much more comprehensive pattern library.</p>
-<p><strong>Comprehend Medical API limits.</strong> DetectEntitiesV2 accepts up to 20,000 UTF-8 characters per call. Discharge summaries and operative notes routinely exceed this. Production systems chunk long notes at section boundaries and reassemble results with corrected offsets. The chunking strategy matters: splitting mid-sentence can break negation scope.</p>
+<p><strong>Comprehend Medical API limits.</strong> This example now chunks text at sentence boundaries when sections exceed 20,000 characters. The chunking logic handles the common case, but production systems need more robust sentence boundary detection (the simple &quot;. &quot; heuristic fails on abbreviations like &quot;Dr. Smith&quot; or &quot;i.e. renal failure&quot;). Consider using a proper sentence tokenizer (like spaCy's sentencizer) and adding overlap between chunks to avoid losing context at boundaries.</p>
 <p><strong>Testing.</strong> There are no tests here. Production needs unit tests for section detection (with diverse note formats), integration tests against Comprehend Medical with known test notes, assertion classification tests with manually annotated examples covering negation edge cases, and end-to-end tests that verify the full pipeline produces expected recommendations. Use synthetic notes only. Never put real patient text in your test fixtures.</p>
-<p><strong>Reconciliation complexity.</strong> The reconciliation logic here does simple code matching. Real reconciliation needs SNOMED hierarchy traversal (is &quot;Type 2 diabetes mellitus&quot; a parent of &quot;Type 2 diabetes mellitus with diabetic nephropathy&quot;?), fuzzy concept matching for cases where the extracted text doesn't normalize perfectly, and deduplication logic for when the same problem appears in multiple notes with slightly different wording.</p>
+<p><strong>Reconciliation complexity.</strong> This example now checks all top-3 SNOMED candidates (not just top-1) to reduce false ADD_CANDIDATE recommendations. But real reconciliation also needs SNOMED hierarchy traversal (is &quot;Type 2 diabetes mellitus&quot; a parent of &quot;Type 2 diabetes mellitus with diabetic nephropathy&quot;?), which requires access to SNOMED relationship tables or an ontology service. It also needs fuzzy concept matching for cases where the extracted text doesn't normalize perfectly, and deduplication logic for when the same problem appears in multiple notes with slightly different wording.</p>
 <hr />
 <p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter08.05-problem-list-extraction.html">Recipe 8.5</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
 

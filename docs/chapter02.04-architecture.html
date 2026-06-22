@@ -515,7 +515,7 @@
 <p><strong>Amazon Bedrock Knowledge Bases for payer policies and clinical evidence.</strong> Two separate knowledge bases, actually. One holds the current coverage policies from your contracted payers (updated on a recurring schedule as policies change). The other holds clinical guidelines and vetted literature used for citations. Knowledge Bases handles the vector embedding, chunking, and retrieval pipeline. At generation time, you retrieve the specific policy for this payer and service, and the relevant guidelines for this condition.</p>
 <p><strong>Amazon S3 for document storage.</strong> Three buckets in practice: one for raw patient clinical data extracts, one for generated letter drafts, and one for finalized signed letters. S3 is the audit trail. Every letter the system produces should be retrievable years later, along with the inputs that produced it. HIPAA retention requirements typically run six years, sometimes longer.</p>
 <p><strong>AWS Lambda for orchestration.</strong> The pipeline is a sequence of retrieval and generation steps, each of which is an API call. Lambda orchestrates these without managing servers. For a production deployment, you'll likely split the pipeline across multiple Lambda functions (one per logical stage) coordinated by Step Functions, which gives you better observability, retry logic, and failure handling.</p>
-<p><strong>AWS Step Functions for workflow orchestration.</strong> Once you're past the proof-of-concept, a multi-step pipeline with external retrievals and human review deserves a proper state machine. Step Functions handles the choreography: run retrievals in parallel, wait for physician review, retry failed submissions, branch on payer type. The visual workflow also gives operations staff something concrete to look at when debugging a stuck case.</p>
+<p><strong>AWS Step Functions for workflow orchestration.</strong> Once you're past the proof-of-concept, a multi-step pipeline with external retrievals and human review deserves a proper state machine. Step Functions handles the choreography: run retrievals in parallel, wait for physician review, retry failed submissions, branch on payer type. The visual workflow also gives operations staff something concrete to look at when debugging a stuck case. For the physician-review wait specifically, use the <code>waitForTaskToken</code> integration pattern: the generation Lambda completes by emitting a task token bound to the case, and the physician review UI calls <code>SendTaskSuccess</code> with the signed letter (or <code>SendTaskFailure</code> if the physician rejects the draft). This avoids polling DynamoDB from within Step Functions (which adds state-transition cost at scale) and gives the workflow a clean wait-for-signal semantic. Task tokens can live up to one year, comfortably longer than any reasonable PA review SLA.</p>
 <p><strong>Amazon Textract for payer policy extraction.</strong> Payer medical policies arrive as PDFs. Textract pulls the text and structure out of them so that Knowledge Bases can index the content. For well-formatted payer documents, Textract's form and table detection is sufficient. For older or scanned policies, you may need additional cleanup steps.</p>
 <p><strong>Amazon HealthLake for patient data access.</strong> If you've standardized on FHIR for clinical data access, HealthLake is the natural store for the patient records you're reading from. If you're pulling directly from an EHR via FHIR APIs, HealthLake becomes a caching layer to avoid hammering the EHR for every prior auth. Alternative: if your data is already in an EHR-integrated data platform, you may not need HealthLake at all.</p>
 <p><strong>Amazon DynamoDB for pipeline state tracking.</strong> Each prior auth request moves through stages: received, retrieving, generating, awaiting review, submitted, approved, denied. DynamoDB tracks the state and supports the operational dashboards and reporting that practice management needs. Sub-millisecond lookups for &quot;show me all PA requests from Dr. Smith this week&quot; are important when you have staff monitoring queues.</p>
@@ -567,7 +567,7 @@
 </tr>
 <tr>
 <td><strong>IAM Permissions</strong></td>
-<td><code>bedrock:InvokeModel</code>, <code>bedrock:Retrieve</code>, <code>bedrock:RetrieveAndGenerate</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code>, <code>states:StartExecution</code>, <code>healthlake:SearchWithGet</code>, <code>textract:StartDocumentAnalysis</code></td>
+<td><code>bedrock:InvokeModel</code> (scoped to model ARN), <code>bedrock:Retrieve</code> and <code>bedrock:RetrieveAndGenerate</code> (scoped to KB ARNs), <code>s3:GetObject</code> and <code>s3:PutObject</code> (scoped to bucket ARNs), <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code> (scoped to table ARN), <code>states:StartExecution</code> (scoped to state machine ARN), <code>healthlake:SearchWithGet</code> (scoped to datastore ARN), <code>textract:StartDocumentAnalysis</code>, <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> (scoped to CMK ARN)</td>
 </tr>
 <tr>
 <td><strong>BAA</strong></td>
@@ -587,11 +587,11 @@
 </tr>
 <tr>
 <td><strong>Encryption</strong></td>
-<td>S3: SSE-KMS with customer-managed keys; DynamoDB: encryption at rest with CMK; Bedrock: TLS in transit and encryption at rest; CloudWatch Logs: KMS encryption</td>
+<td>S3: SSE-KMS with customer-managed keys; DynamoDB: encryption at rest with CMK; Bedrock: TLS in transit and encryption at rest; CloudWatch Logs: KMS encryption. If Bedrock model-invocation-logging is enabled for quality monitoring or drift analysis, the logged prompts contain PHI (extracted clinical facts, patient identifiers). The log destination bucket or CloudWatch log group must be KMS-encrypted with the same CMK, access-controlled equivalently, and subject to the same retention policy as primary PHI stores. Consider sampling invocation logs rather than logging every call.</td>
 </tr>
 <tr>
 <td><strong>VPC</strong></td>
-<td>Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, Step Functions</td>
+<td>Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock (<code>bedrock-runtime</code>), Bedrock Agent Runtime (<code>bedrock-agent-runtime</code>), KMS, Textract, HealthLake, CloudWatch Logs, CloudWatch Monitoring, Secrets Manager, Step Functions, and DynamoDB. Cloud EHRs (Epic on Azure, athenaOne) require TLS-encrypted egress from your VPC to the EHR vendor's public FHIR endpoint with per-vendor credentials in Secrets Manager and strict egress security groups. On-premises EHRs require Direct Connect or Site-to-Site VPN with the FHIR gateway reachable via private IP only. In both cases PHI must never traverse the public internet unencrypted, and egress logs should be captured for audit.</td>
 </tr>
 <tr>
 <td><strong>CloudTrail</strong></td>
@@ -603,7 +603,7 @@
 </tr>
 <tr>
 <td><strong>Cost Estimate</strong></td>
-<td>Bedrock generation (Claude Sonnet): ~$0.05-0.15 per letter depending on length. Knowledge Base retrieval: ~$0.002 per request. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes. End-to-end: ~$0.10-0.30 per generated letter.</td>
+<td>The pipeline makes approximately 22+ Bedrock calls per case for a typical 10-criterion PA: 1 call for criteria extraction (Step 2), 10 calls for per-criterion fact extraction (Step 3), 10 calls for per-criterion mapping assessment (Step 4), and 1 call for letter generation (Step 6). At Claude Sonnet pricing, this totals roughly $1.50-2.50 per letter depending on clinical data volume and criterion count. Knowledge Base retrieval adds ~$0.02 across all queries. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes.</td>
 </tr>
 </tbody>
 </table>
@@ -678,8 +678,30 @@
     // request.provider_id:       the ordering physician
     // request.urgency:           standard or expedited (affects turnaround expectations)
     
+    // Idempotency check: duplicate PA submissions happen (EHR retries on perceived
+    // timeout, user double-click, duplicate HL7 ADT events). Derive a deterministic
+    // fingerprint from the request&#x27;s natural key and use a conditional write to
+    // prevent duplicate pipeline executions.
+    fingerprint = hash(request.patient_id, request.payer_id, request.service_code,
+                       request.diagnosis_code, request.order_datetime)
+    
+    existing = conditional read from DynamoDB table &quot;pa-request-fingerprints&quot;:
+        key = fingerprint
+    
+    IF existing is not None:
+        // A case already exists for this exact request. Return the existing case_id
+        // instead of starting a second pipeline run.
+        RETURN existing.case_id
+    
     // Create a new case record that will accumulate state through the pipeline
     case_id = generate UUID
+    
+    // Conditional write: only succeeds if fingerprint doesn&#x27;t already exist.
+    // Prevents race conditions from near-simultaneous duplicate submissions.
+    write to DynamoDB table &quot;pa-request-fingerprints&quot; with condition attribute_not_exists(fingerprint):
+        fingerprint      = fingerprint
+        case_id          = case_id
+        created_at       = current UTC timestamp
     
     write to DynamoDB table &quot;pa-cases&quot;:
         case_id          = case_id
@@ -755,6 +777,7 @@
     RETURN { criteria: criteria, policy_found: true, policy_source: policy_chunks }
 </code></pre>
 <p><strong>Step 3: Retrieve patient clinical data and extract relevant facts.</strong> Now you pull the patient's clinical information from the EHR (or from HealthLake if you're caching) and extract the specific facts that map to the criteria identified in Step 2. This is where you translate unstructured clinical data into discrete, verifiable facts.</p>
+<p>A production note on HIPAA minimum necessary: the pseudocode below pulls two years of clinical data across six FHIR resource types plus unstructured notes, then sends that payload to the model in a loop (one call per criterion). That is broad. The HIPAA minimum necessary principle requires that you only access and disclose the minimum PHI needed for the purpose. A production implementation should scope the FHIR query by specialty-relevant resource categories and a shorter default window (12 months, extendable only if a specific criterion demands longer history), and should consider per-call redaction of identifiers the LLM does not need to see (patient name, MRN, DOB). The model needs clinical facts to compose the letter, not identifiers. Redact identifiers before sending to the model and substitute them back into the final letter from authoritative structured fields.</p>
 <pre class="code code-plain"><code>FUNCTION retrieve_patient_facts(patient_id, criteria, diagnosis_code):
     // Pull the patient&#x27;s relevant clinical data. The scope of &quot;relevant&quot; is driven
     // by what criteria we need to satisfy.
@@ -1025,6 +1048,7 @@
         unverified_claims    = unverified_claims
         unverified_citations = unverified_citations
         letter_ready_at      = current UTC timestamp if status == &quot;APPROVED_FOR_REVIEW&quot;
+        retry_count          = increment if status == &quot;REQUIRES_REGENERATION&quot;
     
     IF status == &quot;APPROVED_FOR_REVIEW&quot;:
         // Notify the physician&#x27;s review queue
@@ -1032,6 +1056,24 @@
             case_id    = case.case_id
             urgency    = case.urgency
             deadline   = case.target_deadline
+    
+    IF status == &quot;REQUIRES_REGENERATION&quot;:
+        // Retry semantics: don&#x27;t loop indefinitely at the same temperature
+        // and prompt. Cap retries and vary strategy on each attempt.
+        retry_count = read current retry_count from DynamoDB for this case_id
+        
+        IF retry_count == 1:
+            // First retry: force temperature=0 for deterministic output
+            regenerate with temperature=0, same prompt
+        ELSE IF retry_count == 2:
+            // Second retry: add a negative-constraint prompt naming the
+            // previously-fabricated claims from unverified_claims
+            regenerate with explicit instruction: &quot;Do NOT assert: {unverified_claims}&quot;
+        ELSE IF retry_count &gt;= 3:
+            // Exhausted retries. Escalate to human composition.
+            update status to &quot;ESCALATED_TO_HUMAN&quot;
+            emit metric &quot;pa_letter_retries_exhausted&quot; for operational alerting
+            notify practice staff that this case requires manual letter composition
     
     RETURN { status: status, validation_rate: validation_rate }
 </code></pre>
@@ -1116,7 +1158,7 @@
 </tr>
 <tr>
 <td>Cost per letter</td>
-<td>$0.10-0.30 (tokens + retrieval)</td>
+<td>~$1.50-2.50 (22+ model calls + retrieval for a typical 10-criterion PA on Claude Sonnet)</td>
 </tr>
 </tbody>
 </table>

@@ -2045,6 +2045,335 @@ Bot:     Thanks Marisol. Dr. Adekunle will read this
 <li><strong>Misalignment between what intake captures and what the visit needs.</strong> A bot collecting an exhaustive HPI for a routine medication-management follow-up wastes patient time; a bot collecting a thin HPI for a new chest-pain presentation provides no value. Mitigation: per-visit-type protocols are tuned to the visit's clinical needs with iterative review based on the clinical leadership's feedback on packet utility.</li>
 </ul>
 <hr />
+<h3 id="cross-cutting-architectural-primitives">Cross-Cutting Architectural Primitives</h3>
+<p>The following subsections promote key design commitments from prose references to architectural primitives with explicit governance, lifecycle, and operational detail. These are not optional production considerations; they are structural commitments that shape the deployment from day one.</p>
+<h4 id="intake-protocol-as-code-lifecycle">Intake-Protocol-as-Code Lifecycle</h4>
+<p>The per-visit-type intake protocol is a versioned, testable, deployable artifact. Each protocol uses semantic versioning (MAJOR.MINOR.PATCH) with explicit change semantics: MAJOR for structural changes to the packet schema or screener bundle, MINOR for question-scope additions or ROS-branch changes, PATCH for phrasing corrections that do not change the captured data surface.</p>
+<p><strong>Governance ownership:</strong></p>
+<ul>
+<li>Clinical informatics: protocol structure, schema coordination with EHR-side display</li>
+<li>Relevant clinical service line: clinical content per visit type</li>
+<li>Medical-staff committee: sign-off on clinical-content changes at MAJOR or MINOR level</li>
+<li>Patient-safety committee: sign-off on any change touching crisis-detection or acuity-flag pathways</li>
+</ul>
+<p><strong>Lifecycle stages:</strong></p>
+<ol>
+<li>Protocol authored or modified in version control (each protocol is a dated, versioned artifact)</li>
+<li>Sandbox testing against a held-out set of representative intake conversations, stratified by visit type, with per-visit-type regression evaluation</li>
+<li>Staged rollout with per-visit-type canary (5% traffic for 48 hours, then 25%, then 100%)</li>
+<li>Rollback-on-regression discipline: if the per-visit-type completion rate, extraction-accuracy proxy, or acuity-flag false-positive rate degrades beyond threshold during canary, auto-rollback to the previous version</li>
+</ol>
+<p><strong>Per-record version stamping:</strong> Every pre-visit-packet record carries <code>protocol_version</code>, <code>screener_bundle_version</code>, <code>acuity_pattern_library_version</code>, and <code>packet_schema_version</code> stamps. These stamps enable retrospective analysis when clinical leadership asks &quot;which protocol version produced these packets last month.&quot;</p>
+<h4 id="validated-screener-library-governance">Validated-Screener-Library Governance</h4>
+<p>The screener library is a separate versioned asset from the protocol library. Each screener (PHQ-9, GAD-7, AUDIT-C, PROMIS short forms, condition-specific PROs, SDOH bundles) carries its own version, licensing status, and validated-translation inventory.</p>
+<p><strong>Licensing reconciliation:</strong></p>
+<ul>
+<li>PHQ-9, PHQ-2, GAD-7: public domain, no institutional license required</li>
+<li>PROMIS short forms: specific use terms per instrument; institutional agreement with HealthMeasures required for some forms</li>
+<li>Condition-specific PROs (NEI-VFQ, BFI, ODI, etc.): many require institutional licenses; confirm license-in-scope before including in the bundle</li>
+</ul>
+<p><strong>Validated-translation discipline for non-English deployments:</strong> The institution uses validated translations (from the instrument publisher's approved translations or from peer-reviewed validation studies) rather than ad-hoc machine translation. Native-speaker clinical review confirms the translation's appropriateness for the patient population before deployment.</p>
+<p><strong>Re-validation cadence:</strong> Any wording change to a screener item (even a &quot;minor&quot; phrasing adjustment) invalidates the score and requires re-validation review before deployment. The screener library's governance treats wording changes as MAJOR version events.</p>
+<h4 id="acuity-pattern-library-governance">Acuity-Pattern-Library Governance</h4>
+<p>The acuity-pattern library (red-flag clinical patterns, crisis-signal patterns, sensitive-disclosure patterns) is a versioned asset owned by the patient-safety committee with input from the relevant clinical service lines.</p>
+<p><strong>Quarterly review cadence:</strong> The patient-safety committee reviews the library quarterly, incorporating new patterns from adverse-event near-miss reviews, clinical-literature updates, and pattern-miss retrospectives. Tabletop drills exercise the crisis pathway at the same cadence.</p>
+<p><strong>Per-state regulatory configuration:</strong> Where state law requires reporting of specific conditions at intake (e.g., mandatory-reporter obligations for suspected child abuse) or requires specific screeners, the state-specific configuration is a versioned asset coordinated with the protocol library.</p>
+<p><strong>Rule auditability:</strong> Each pattern rule carries a rule-ID that maps to the institutional protocol document. Retrospective analysis can trace &quot;which rule fired for this flag event&quot; back to the source policy.</p>
+<h4 id="working-store-vs-archive-store-discipline">Working-Store vs. Archive-Store Discipline</h4>
+<p>The tool-call ledger and pre-visit-packet journal separate hot-path structural data from cold-path free-text content.</p>
+<p><strong>Tool-call ledger (DynamoDB, hot path):</strong> Holds structural references only: tool name, invocation timestamp, structural arguments (patient_id, encounter_id, tool-specific typed parameters), structural result summary (outcome code, key counts, key flags), latency, outcome status, and an <code>archive_ref</code> pointer to the full content. Free-text patient utterances and full extraction outputs do not live here.</p>
+<p><strong>Tool-call archive (S3, per-conversation prefix):</strong> The full tool-call payloads (including patient utterances that triggered the tool call, full extraction output, full screener-item-level responses) route here under the appropriate KMS key class. Access-control: engineering plus audit-and-compliance.</p>
+<p><strong>Pre-visit-packet journal (DynamoDB, structural):</strong> Carries structural fields only: <code>packet_id</code>, <code>schema_version</code>, <code>protocol_version</code>, <code>screener_bundle_version</code>, <code>acuity_pattern_library_version</code>, <code>ehr_delivery_record_id</code>, flag counts, <code>completion_at</code>, and a <code>packet_content_archive_ref</code> pointer. Access-control: medical-records team, prescribers, operations, audit-and-compliance, patient-rights handlers.</p>
+<p><strong>Packet-content archive (S3, per-encounter prefix):</strong> Full HPI free-text, full ROS findings, full medication-and-allergy-and-history reconciliation deltas, full screener item-level responses, full conversation transcript, full new-information events. Access-control: same as the journal plus the clinical team consuming the packet.</p>
+<p><strong>Flag-events table:</strong> Access-control: patient-safety committee, clinical-staff-routing operators, audit-and-compliance.</p>
+<p><strong>Conversation log:</strong> Treatment varies by institution (audit-pipeline artifact vs. formal medical record). Access-control determined by institutional medical-records policy.</p>
+<p><strong>Per-record-class retention floors:</strong> The retention floor for each record class is the longest of:</p>
+<ul>
+<li>HIPAA's six-year minimum</li>
+<li>State-specific medical-records retention rules (including state-specific pediatric-records retention extensions where applicable, which may require retention until the patient turns 18 plus N years)</li>
+<li>State-specific consumer-privacy-law retention rules where applicable (CCPA/CPRA, VCDPA, CPA, etc.)</li>
+<li>Per-channel retention obligations (TCPA/10DLC for SMS; voice-channel recording retention rules where applicable)</li>
+<li>Institutional regulatory floor</li>
+</ul>
+<p>Different record classes (audit-archive, pre-visit-packet-journal, flag-event-journal, conversation-log, tool-call-ledger) may have different floors based on which obligations apply to each class.</p>
+<h4 id="per-cohort-monitoring-with-launch-gate-discipline">Per-Cohort Monitoring with Launch-Gate Discipline</h4>
+<p>Per-cohort monitoring is an architectural primitive, not a post-launch dashboard. Each cohort must independently meet launch-gate thresholds before going live.</p>
+<p><strong>Single-axis cohorts:</strong> per-language, per-channel, per-region, per-assurance-level, per-visit-type, per-age-cohort, per-proxy-completion.</p>
+<p><strong>Two-axis cohorts:</strong> per-language-by-channel, per-language-by-visit-type, per-visit-type-by-age-cohort, per-channel-by-proxy-completion, per-age-cohort-by-channel.</p>
+<p><strong>Three-axis cohort:</strong> per-language-by-channel-by-visit-type (for multilingual, multi-visit-type deployments).</p>
+<p><strong>Per-cohort threshold metrics:</strong></p>
+<ul>
+<li>Completion rate</li>
+<li>Abandonment-by-stage rate</li>
+<li>Time-to-completion</li>
+<li>Screener-positivity rate per screener</li>
+<li>Acuity-flag rate</li>
+<li>Crisis-flag rate</li>
+<li>Mis-extraction rate, broken out per extraction class (HPI, ROS, medication, allergy, history; note that HPI/ROS/medication/allergy/history misextraction has clinical-record-quality consequences distinct from a wrong scheduling action)</li>
+<li>Screener-administration-fidelity rate (validated-wording preservation)</li>
+<li>Packet-delivery-success rate</li>
+<li>EHR-side-clinician-acknowledgment rate (did the clinician actually read the packet during the visit)</li>
+<li>Resume rate (engagement metric specific to intake)</li>
+<li>Tool-call-failure rate per tool</li>
+<li>Sustained-utilization rate</li>
+<li>Patient-feedback distribution</li>
+</ul>
+<p><strong>Per-cohort minimum sample sizes:</strong> Statistical reliability requires minimum sample sizes per cohort. Long-tail cohorts (rare language-by-visit-type combinations) use alternate sampling strategies (longer observation windows, pooled-language-family analysis where clinically appropriate).</p>
+<p><strong>Launch gate:</strong> Institution-wide-average metrics are informational only. Each cohort must independently meet its threshold before going live for that cohort. A cohort that fails its threshold gets a cohort-disabled-feature workflow with clinical-leadership and patient-experience remediation tracking.</p>
+<p><strong>Patient-safety-committee ownership:</strong> The patient-safety committee owns interpretation of per-cohort acuity-flag-rate and crisis-flag-rate patterns.</p>
+<h4 id="prompt-injection-defense-for-the-tool-orchestration-path">Prompt-Injection Defense for the Tool-Orchestration Path</h4>
+<p>The Bedrock Agents tool-orchestration path has an intake-specific amplification risk: a prompt-injection attack that manipulates the extraction tools can inject false clinical findings into the pre-visit packet, alter screener scores, or suppress acuity flags. This is a clinical-record-integrity concern, not just a security concern.</p>
+<p><strong>Delimited-input framing:</strong> All inputs to the orchestration model use explicit delimiters: <code>&lt;patient_utterance&gt;</code>, <code>&lt;verified_session_context&gt;</code>, <code>&lt;conversation_history&gt;</code>, <code>&lt;chart_context&gt;</code>, <code>&lt;active_question&gt;</code>. The model is instructed that content within <code>&lt;patient_utterance&gt;</code> is untrusted user input and must never be interpreted as system instructions.</p>
+<p><strong>Tool-Lambda enforcement:</strong> Every tool-Lambda validates that the <code>patient_id</code> and <code>encounter_id</code> arguments match the verified session context. A tool-Lambda that receives arguments inconsistent with the session rejects the call and logs the mismatch.</p>
+<p><strong>Per-language jailbreak-test corpus:</strong> The test corpus includes extraction-injection cases: attempts to manipulate HPI extraction to inject false findings, manipulate screener-item capture to alter scores, manipulate medication-reconciliation to inject false additions, manipulate allergy-reconciliation to remove allergies. Tests cover the institution's deployed languages.</p>
+<p><strong>Bedrock Guardrails configuration:</strong> Denied-topics list specific to clinical-content-injection patterns. Content filters tuned to recognize attempts to override extraction logic.</p>
+<p><strong>Audit logging:</strong> Tool-Lambda cross-check outcomes (pass or mismatch) are logged to the tool-call ledger for retrospective analysis.</p>
+<h4 id="faithfulness-check-stage">Faithfulness-Check Stage</h4>
+<p>Between Bedrock generation and response delivery, a faithfulness-check stage grounds every factual reference in the response to a verifiable source.</p>
+<p><strong>References checked:</strong></p>
+<ul>
+<li>Chart-fact references (medications, allergies, conditions) grounded to the chart-context tool-call result</li>
+<li>Captured-finding references grounded to the extraction tool-call result</li>
+<li>Screener-progress references grounded to the screener-administer tool state</li>
+<li>Screener-item-wording references grounded to the screener-registry source</li>
+<li>Packet-content-summary references grounded to the packet-assemble result</li>
+<li>EHR-delivery-confirmation references grounded to the packet-deliver result</li>
+</ul>
+<p><strong>Implementation:</strong> An independent verifier model (lighter-weight, structured-output-schema-validated) checks each factual claim in the response against the cited tool-call result. Rule-based contradiction detection and omission detection supplement the model check.</p>
+<p><strong>Failure handling:</strong> Regenerate-attempt budget (typically 2 retries). If all attempts fail the faithfulness check, the system falls back to a safe generic response that does not reference any specific clinical data.</p>
+<p><strong>Per-cohort faithfulness-failure rate:</strong> Tracked as a launch-gate metric. A cohort with elevated faithfulness failures gets investigation before expansion.</p>
+<h4 id="tool-surface-contract-management">Tool-Surface Contract Management</h4>
+<p>Each tool in the intake bot's tool surface is a versioned, governed artifact with its own lifecycle.</p>
+<p><strong>Per-tool versioned schemas:</strong> Each tool's input and output schema uses semantic versioning. The action-group OpenAPI definition pins the schema version.</p>
+<p><strong>Per-tool version stamps in audit records:</strong> The audit record extends version stamping to include per-tool versions: <code>active_hpi_extraction_tool_version</code>, <code>active_ros_extraction_tool_version</code>, <code>active_screener_administer_tool_version</code>, <code>active_packet_assemble_tool_version</code>, <code>active_packet_deliver_tool_version</code>.</p>
+<p><strong>Per-tool deprecation policy:</strong> A deprecated tool version remains available for in-flight conversations but is not offered to new sessions. The deprecation window (typically 7 days for non-breaking changes, 30 days for breaking changes) allows conversations started on the old version to complete.</p>
+<p><strong>Per-tool change-management:</strong> Jointly owned by engineering and clinical informatics. Tool-schema changes that affect the packet output surface require clinical-informatics sign-off.</p>
+<p><strong>Per-tool canary deployment:</strong> New tool versions receive 5% of traffic for 48 hours. Per-tool-call-failure-rate and per-tool-extraction-accuracy-proxy are canary metrics. Auto-rollback on regression.</p>
+<h4 id="deployment-pattern">Deployment Pattern</h4>
+<p>All configuration and content artifacts live in version control with commit-SHA-tied builds:</p>
+<ul>
+<li>Versioned system prompt</li>
+<li>Intent-classification prompt</li>
+<li>Extraction prompts per category (HPI, ROS, medication, allergy, history)</li>
+<li>Institutional persona definition</li>
+<li>Persona-and-tone-evaluator prompt</li>
+<li>Institution-glossary (medical terms, local abbreviations)</li>
+<li>Redaction taxonomy</li>
+<li>Per-language consent-disclosure assets</li>
+<li>Bedrock Guardrails policy configuration</li>
+<li>Knowledge-base corpus snapshot</li>
+<li>Per-visit-type protocol versions</li>
+<li>Screener bundle versions</li>
+<li>Acuity pattern library version</li>
+<li>Packet schema version</li>
+<li>Identity-verification policy</li>
+<li>Per-cohort launch-gate threshold values</li>
+<li>Tool-surface schemas (per-tool OpenAPI definitions)</li>
+</ul>
+<p><strong>Prompt-and-model versioning:</strong> Bedrock inference profiles pin the model version and the prompt version together. Rollback-on-regression uses the same canary discipline as the tool surface.</p>
+<p><strong>Held-out evaluation set:</strong> Representative intake conversations covering:</p>
+<ul>
+<li>The institution's visit-type catalog</li>
+<li>Crisis scenarios (mental-health, medical-emergency, abuse-disclosure)</li>
+<li>Acuity-flag scenarios (red-flag symptom patterns)</li>
+<li>Sensitive-disclosure scenarios</li>
+<li>Multilingual conversations</li>
+<li>Prompt-injection test cases</li>
+<li>Faithfulness test cases</li>
+</ul>
+<p><strong>Per-cohort canary deployment with traffic-shift:</strong> New system-prompt versions, new model versions, and new tool versions roll out through the same staged discipline (5% canary, per-cohort evaluation, full rollout on green).</p>
+<h4 id="multi-language-deployment">Multi-Language Deployment</h4>
+<p>Multi-language support is a day-one design decision, not a post-launch extension.</p>
+<p><strong>Validated screener translations:</strong> The institution uses validated translations from instrument publishers or peer-reviewed validation studies. No ad-hoc machine translation of screener items. Each language's screener translations carry their own version and validation provenance.</p>
+<p><strong>Per-language assets:</strong></p>
+<ul>
+<li>HPI and ROS extraction patterns tuned for the language's symptom-expression idioms</li>
+<li>Acuity-pattern detection tuned for the language (symptom descriptions vary by language and culture)</li>
+<li>Persona and tone calibration (formality levels, cultural communication norms)</li>
+<li>Asset versioning per language (a Spanish-language HPI-extraction update does not require English re-deployment)</li>
+</ul>
+<p><strong>Per-language launch-gate:</strong> Each language must independently meet its per-cohort thresholds before going live. A new language deployment follows the same canary discipline as any other deployment artifact.</p>
+<h4 id="eventbridge-idempotency-keys">EventBridge Idempotency Keys</h4>
+<p>Each intake-lifecycle event published to EventBridge carries an explicit idempotency key to prevent duplicate processing by downstream consumers:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Idempotency Key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>conversation_started</code></td>
+<td><code>(session_id, &quot;started&quot;)</code></td>
+</tr>
+<tr>
+<td><code>intake_completed</code></td>
+<td><code>(session_id, &quot;completed&quot;)</code></td>
+</tr>
+<tr>
+<td><code>intake_abandoned</code></td>
+<td><code>(session_id, &quot;abandoned&quot;)</code></td>
+</tr>
+<tr>
+<td><code>acuity_flag_raised</code></td>
+<td><code>(session_id, flag_event_id, &quot;acuity&quot;)</code></td>
+</tr>
+<tr>
+<td><code>crisis_flag_raised</code></td>
+<td><code>(session_id, flag_event_id, &quot;crisis&quot;)</code></td>
+</tr>
+<tr>
+<td><code>packet_delivered</code></td>
+<td><code>(packet_id, &quot;delivered&quot;)</code></td>
+</tr>
+<tr>
+<td><code>packet_delivery_failed</code></td>
+<td><code>(packet_id, delivery_attempt_id, &quot;failed&quot;)</code></td>
+</tr>
+<tr>
+<td><code>conversation_closed</code></td>
+<td><code>(session_id, &quot;closed&quot;)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Downstream consumers maintain a deduplication store (DynamoDB conditional write on the idempotency key, or equivalent) to ensure at-least-once delivery semantics do not produce duplicate side effects.</p>
+<h4 id="disaster-recovery-topology">Disaster Recovery Topology</h4>
+<p>Per-stage failover policy for the intake system's dependencies:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Failover Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bedrock LLM</td>
+<td>Cross-region failover to secondary Bedrock region; detection threshold: 3 consecutive failures or p99 latency exceeding 30 seconds</td>
+</tr>
+<tr>
+<td>Bedrock Knowledge Bases</td>
+<td>Cross-region failover; the corpus snapshot is replicated to the secondary region</td>
+</tr>
+<tr>
+<td>Bedrock Agents</td>
+<td>Cross-region failover coordinated with the LLM failover</td>
+</tr>
+<tr>
+<td>Bedrock Guardrails</td>
+<td>Cross-region failover; policy configuration replicated</td>
+</tr>
+<tr>
+<td>DynamoDB</td>
+<td>Global tables for multi-region active-active on conversation-state and partial-state tables</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Cross-region replication for the audit-archive and packet-journal buckets</td>
+</tr>
+<tr>
+<td>EHR integration</td>
+<td>Degrade to &quot;intake paused; visit still scheduled; call the office&quot; messaging; queued packet delivery on EHR recovery</td>
+</tr>
+<tr>
+<td>Screener registry</td>
+<td>Degrade to conservative-skip-screener-with-explicit-flag for clinical review; the packet notes &quot;screener not administered due to registry unavailability&quot;</td>
+</tr>
+<tr>
+<td>Protocol registry</td>
+<td>Degrade to no-intake-deferred-with-staff-followup; the bot cannot conduct intake without knowing the protocol</td>
+</tr>
+<tr>
+<td>Connect (where used)</td>
+<td>Channel-specific degradation; SMS and voice sessions degrade to &quot;please try the patient portal or call the office&quot;</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Failover-back triggers:</strong> Manual confirmation by on-call engineering after the primary region's health-check passes for 10 consecutive minutes.</p>
+<p><strong>Quarterly testing cadence:</strong> Failover paths are exercised quarterly in a staging environment with synthetic load.</p>
+<h4 id="iam-and-network-security-commitments">IAM and Network Security Commitments</h4>
+<p><strong>Resource-based policies:</strong> Each tool-Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Bedrock Agents action-group ARN, or the production EventBridge rule ARN as appropriate. A Lambda invoked from an unexpected source is rejected before the handler executes.</p>
+<p><strong>Defense-in-depth event-payload validation:</strong> At the start of each tool-Lambda, the handler validates the invoking context against production constants and validates the <code>patient_id</code> and <code>encounter_id</code> arguments against the verified session. This is a second layer behind the resource-based policy.</p>
+<p><strong>Per-endpoint WAF rate-limit policy:</strong> Rate limits tuned for intake-specific traffic patterns. The intake endpoint allows moderate sustained traffic (patients completing long sessions) but throttles burst patterns that suggest automated abuse. Per-IP and per-session rate limits are both configured.</p>
+<h4 id="accessibility-conformance">Accessibility Conformance</h4>
+<p>The chat widget (and any alternative input surfaces) conforms to WCAG 2.1 AA:</p>
+<ul>
+<li>ARIA labeling for all interactive elements</li>
+<li>Keyboard navigation for the full conversation flow</li>
+<li>Screen-reader announcements for new messages</li>
+<li>High-contrast mode support</li>
+<li>Font scaling support (up to 200% without layout breakage)</li>
+<li>Alternative input methods including the voice channel</li>
+</ul>
+<p>Named ownership at the accessibility program manager. Accessibility conformance is a launch-gate criterion with automated and manual audit.</p>
+<h4 id="per-channel-authentication-and-encryption">Per-Channel Authentication and Encryption</h4>
+<table>
+<thead>
+<tr>
+<th>Channel</th>
+<th>Authentication</th>
+<th>Data-in-Transit</th>
+<th>Session-Token TTL</th>
+<th>BAA Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Patient-portal embed</td>
+<td>Authenticated portal session (OAuth/SAML)</td>
+<td>TLS 1.2+ (portal's existing certificate)</td>
+<td>Portal session TTL (typically 15-60 minutes with refresh)</td>
+<td>Patient-portal vendor BAA (must explicitly cover the embedded chat surface)</td>
+</tr>
+<tr>
+<td>Unauthenticated link (SMS-delivered)</td>
+<td>One-time token with TTL bounded by the intake-completion window (typically 72 hours before the visit)</td>
+<td>TLS 1.2+</td>
+<td>One-time token TTL</td>
+<td>Institution's own infrastructure BAA</td>
+</tr>
+<tr>
+<td>SMS channel (Connect)</td>
+<td>Phone-number verification plus one-time passcode</td>
+<td>TLS to Connect; carrier-side encryption varies</td>
+<td>Per-message (stateless)</td>
+<td>Connect BAA; TCPA/10DLC compliance required</td>
+</tr>
+<tr>
+<td>Voice channel (Connect)</td>
+<td>Phone-number verification plus voice-based identity confirmation</td>
+<td>TLS to Connect; carrier-side encryption varies</td>
+<td>Call-duration</td>
+<td>Connect BAA; voice-recording retention compliance required</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Audit-record propagation:</strong> The audit record for each conversation carries the authentication context (channel, assurance level, token type, verification method) for retrospective access-control analysis.</p>
+<h4 id="pre-visit-packet-display-in-ehr-as-architectural-prerequisite">Pre-Visit Packet Display in EHR as Architectural Prerequisite</h4>
+<p>The EHR-side display configuration is not post-deployment polish; it is a deployment-scope prerequisite. An unread packet has zero clinical value.</p>
+<p><strong>Display configuration scope:</strong></p>
+<ul>
+<li>Where the packet appears in the encounter view (typically the encounter-prep or pre-visit section)</li>
+<li>How the chief complaint and HPI summary surface visually (prominent, scannable, not buried in a tab)</li>
+<li>How acuity flags are displayed prominently (color-coded, icon-flagged, not hidden behind a click)</li>
+<li>How screener scores are shown (with score-band interpretation, e.g., &quot;PHQ-9: 14 (moderate)&quot;)</li>
+<li>How the clinician acknowledges or actions the packet during the visit (explicit acknowledgment click, tracked for the clinician-acknowledgment-rate metric)</li>
+</ul>
+<p><strong>Clinical-leadership sign-off:</strong> The visual design of the packet display is reviewed and signed off by clinical leadership as a launch gate. Per-EHR-vendor variation in display capability is acknowledged and documented.</p>
+<h4 id="compensation-operations-tooling">Compensation Operations Tooling</h4>
+<p>When the bot produces incorrect outputs (false-positive acuity flags, missed flags, misextracted data), explicit operational tooling supports remediation:</p>
+<p><strong>Operational tools:</strong></p>
+<ul>
+<li>View-conversation-history tool (reconstruct what the patient said and what the bot captured)</li>
+<li>Replay-extraction-with-corrected-parameters tool (re-run extraction against the original utterances with corrected prompts or rules)</li>
+<li>Dismiss-or-correct-acuity-flag tool (mark a flag as false-positive with a reason code; correct a missed flag with retrospective annotation)</li>
+<li>False-positive and false-negative tracking (feeds the pattern-library improvement loop)</li>
+</ul>
+<p><strong>Compensation-event lifecycle:</strong> Compensation events publish to EventBridge (<code>flag_compensated</code>, <code>extraction_corrected</code>) for downstream consumers that may have acted on the original incorrect data.</p>
+<p><strong>Audit-trail preservation:</strong> The original incorrect output is preserved (never overwritten); the compensation event records the correction alongside the original.</p>
+<p><strong>Access-control:</strong> Operational tooling access via institutional IdP with role-based access. The patient-safety committee's retrospective-review feed receives compensation events for pattern-library improvement.</p>
+<hr />
 <h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
 <p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
 <p><strong>Per-visit-type intake protocol formalization as a pre-deployment program.</strong> The single most valuable engineering work for an intake bot is done before the engineering work starts: formalizing the practice's intake protocols per visit type. Each visit type needs an explicit chief-complaint-and-HPI scope, an explicit ROS scope, an explicit history scope, an explicit screener bundle, and an explicit packet schema. The formalization is a clinical-informatics-and-service-line project, supported by the engineering team. Skipping the formalization and shipping the bot on top of generic protocols produces a bot that is barely better than a form, which undermines the project's value proposition.</p>

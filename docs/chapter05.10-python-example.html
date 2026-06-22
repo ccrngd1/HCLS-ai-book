@@ -551,12 +551,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">unicodedata</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">boto3.dynamodb.conditions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Key</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
 
 <span class="c1"># Structured logging. In production, ship JSON-formatted records</span>
@@ -833,7 +832,6 @@
 <span class="c1"># --- Resolution status values ---</span>
 <span class="n">RES_RECEIVED</span>          <span class="o">=</span> <span class="s2">&quot;received&quot;</span>
 <span class="n">RES_NO_MATCH</span>          <span class="o">=</span> <span class="s2">&quot;no_match&quot;</span>
-<span class="n">RES_LOW_CONF_NO_MATCH</span> <span class="o">=</span> <span class="s2">&quot;low_confidence_no_match&quot;</span>
 <span class="n">RES_QUEUED_FOR_REVIEW</span> <span class="o">=</span> <span class="s2">&quot;queued_for_review&quot;</span>
 <span class="n">RES_HIDDEN_DUPLICATE</span>  <span class="o">=</span> <span class="s2">&quot;hidden_duplicate_candidate&quot;</span>
 <span class="n">RES_DATE_CONFLICT</span>     <span class="o">=</span> <span class="s2">&quot;date_of_death_conflict_flagged&quot;</span>
@@ -1397,7 +1395,16 @@
         <span class="s2">&quot;family_name&quot;</span><span class="p">:</span>  <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;family_name&quot;</span><span class="p">),</span>
         <span class="s2">&quot;dob&quot;</span><span class="p">:</span>          <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dob&quot;</span><span class="p">),</span>
         <span class="s2">&quot;sex&quot;</span><span class="p">:</span>          <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sex&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;address_line&quot;</span><span class="p">:</span> <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;address_line&quot;</span><span class="p">),</span>
+        <span class="c1"># Accept either the VRDR-approximate address_line_1</span>
+        <span class="c1"># (the canonical normalized field name per the recipe</span>
+        <span class="c1"># text&#39;s sample payload) or the legacy address_line.</span>
+        <span class="c1"># Production ingestion connectors normalize the wire</span>
+        <span class="c1"># format at the per-source-normalizer layer; the demo</span>
+        <span class="c1"># collapses the per-source-normalizer step into this</span>
+        <span class="c1"># function, so it accepts both.</span>
+        <span class="s2">&quot;address_line&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;address_line_1&quot;</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;address_line&quot;</span><span class="p">)),</span>
         <span class="s2">&quot;city&quot;</span><span class="p">:</span>         <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;city&quot;</span><span class="p">),</span>
         <span class="s2">&quot;state&quot;</span><span class="p">:</span>        <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">),</span>
         <span class="s2">&quot;zip_code&quot;</span><span class="p">:</span>     <span class="n">source_specific_record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;zip_code&quot;</span><span class="p">),</span>
@@ -1526,9 +1533,11 @@
         <span class="n">reconcile_multi_source_death_events</span><span class="p">(</span>
             <span class="n">event_id</span><span class="p">,</span> <span class="n">dominant</span><span class="p">[</span><span class="s2">&quot;candidate_record_id&quot;</span><span class="p">])</span>
 
-    <span class="k">elif</span> <span class="n">dominant</span><span class="p">[</span><span class="s2">&quot;match_confidence_tier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">MEDIUM_CONFIDENCE</span><span class="p">:</span>
-        <span class="c1"># Verification-queue path: route to the human-review</span>
-        <span class="c1"># queue.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Medium-confidence: route to the human-review queue.</span>
+        <span class="c1"># The matcher only adds candidates with score &gt;=</span>
+        <span class="c1"># candidate_acceptance_threshold to the scored list,</span>
+        <span class="c1"># so every dominant candidate is HIGH or MEDIUM here.</span>
         <span class="n">_DEATH_EVENT_LOG</span><span class="p">[</span><span class="n">event_id</span><span class="p">][</span><span class="s2">&quot;resolution_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">RES_QUEUED_FOR_REVIEW</span><span class="p">)</span>
         <span class="n">_VERIFICATION_QUEUE</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
@@ -1549,17 +1558,6 @@
         <span class="n">_emit_metric</span><span class="p">(</span><span class="s2">&quot;DeathEventQueuedForReview&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span>
                       <span class="n">dimensions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;SourceId&quot;</span><span class="p">:</span> <span class="n">source_id</span><span class="p">,</span>
                                     <span class="s2">&quot;Reason&quot;</span><span class="p">:</span> <span class="s2">&quot;MediumConfidenceMatch&quot;</span><span class="p">})</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Low-confidence: park the event in the no-match</span>
-        <span class="c1"># archive with the candidate set for audit.</span>
-        <span class="n">_DEATH_EVENT_LOG</span><span class="p">[</span><span class="n">event_id</span><span class="p">][</span><span class="s2">&quot;resolution_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">RES_LOW_CONF_NO_MATCH</span><span class="p">)</span>
-        <span class="n">_audit_log</span><span class="p">({</span>
-            <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;DEATH_EVENT_LOW_CONFIDENCE_NO_MATCH&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;event_id&quot;</span><span class="p">:</span>   <span class="n">event_id</span><span class="p">,</span>
-            <span class="s2">&quot;source_id&quot;</span><span class="p">:</span>  <span class="n">source_id</span><span class="p">,</span>
-        <span class="p">})</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compute_per_feature_similarities</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
                                           <span class="n">mpi_record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -1622,11 +1620,18 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Coordinate with recipe 5.1&#39;s duplicate-resolution pipeline.</span>
 <span class="sd">    The death event has revealed a duplicate chain in the MPI;</span>
-<span class="sd">    we merge the chain into a consolidated record before</span>
-<span class="sd">    applying the death status. Production fires an</span>
-<span class="sd">    EventBridge event to recipe 5.1&#39;s resolver and waits for</span>
-<span class="sd">    the consolidation acknowledgment; the demo synthesizes the</span>
-<span class="sd">    consolidation inline.</span>
+<span class="sd">    we signal recipe 5.1 to merge the chain into a consolidated</span>
+<span class="sd">    record before applying the death status.</span>
+
+<span class="sd">    Note: the demo records a merge action on the cross-recipe-5.1</span>
+<span class="sd">    mock but does not actually consolidate the duplicate&#39;s</span>
+<span class="sd">    appointments, prescriptions, or billing episodes into the</span>
+<span class="sd">    survivor. Production delegates the consolidation to recipe</span>
+<span class="sd">    5.1&#39;s merge pipeline, which mutates the MPI atomically with</span>
+<span class="sd">    the death-status application. The demo&#39;s cascade therefore</span>
+<span class="sd">    acts only on the survivor&#39;s pre-merge data; a production</span>
+<span class="sd">    deployment would see the cascade act on the consolidated</span>
+<span class="sd">    post-merge data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># The demo picks the first record as the consolidated</span>
     <span class="c1"># target and signals recipe 5.1 to merge the others into</span>
@@ -2026,6 +2031,8 @@
          <span class="n">cascade_care_management_panel_removal</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;analytics-platform&quot;</span><span class="p">,</span>
          <span class="n">cascade_analytics_platform_handler</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;cross-recipe-5.1&quot;</span><span class="p">,</span>
+         <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">cascade_cross_recipe_signal</span><span class="p">(</span><span class="s2">&quot;5.1&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)),</span>
         <span class="p">(</span><span class="s2">&quot;cross-recipe-5.5&quot;</span><span class="p">,</span>
          <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">cascade_cross_recipe_signal</span><span class="p">(</span><span class="s2">&quot;5.5&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)),</span>
         <span class="p">(</span><span class="s2">&quot;cross-recipe-5.7&quot;</span><span class="p">,</span>
@@ -2326,9 +2333,7 @@
 <span class="sd">    the event. Production tracks expected consumers from the</span>
 <span class="sd">    cascade-consumer registry; the demo uses CASCADE_REGISTRY</span>
 <span class="sd">    as the expected set.&quot;&quot;&quot;</span>
-    <span class="n">expected_consumers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">CASCADE_CONSUMER_CONFIG</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span>
-        <span class="s2">&quot;cross-recipe-5.1&quot;</span>  <span class="c1"># handled in hidden-duplicate flow</span>
-    <span class="p">}</span>
+    <span class="n">expected_consumers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">CASCADE_CONSUMER_CONFIG</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">completed</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">ack</span><span class="p">[</span><span class="s2">&quot;cascade_consumer&quot;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">ack</span> <span class="ow">in</span> <span class="n">_CASCADE_ACK_STORE</span>
@@ -2561,6 +2566,18 @@
     <span class="nb">print</span><span class="p">()</span>
 
     <span class="c1"># --- Flow 1: multi-source-corroborated death ---</span>
+    <span class="c1"># Reset MPI to exclude the duplicate-chain candidate</span>
+    <span class="c1"># (exercised separately in Flow 2) so Flow 1 cleanly</span>
+    <span class="c1"># demonstrates the corroboration pattern without also</span>
+    <span class="c1"># triggering hidden-duplicate-revelation.</span>
+    <span class="n">local_mpi</span> <span class="o">=</span> <span class="n">MockLocalMPI</span><span class="p">([</span>
+        <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">SYNTHETIC_LOCAL_MPI_RECORDS</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;local_record_id&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;amc-richmond-mrn-7782441&quot;</span>
+    <span class="p">])</span>
+    <span class="n">_DEATH_EVENT_LOG</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">_VERIFICATION_QUEUE</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">_CASCADE_ACK_STORE</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">72</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Flow 1: state vital-records death event arrives, then LADMF&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;        arrives later for the same patient (corroboration)&quot;</span><span class="p">)</span>
@@ -2936,6 +2953,7 @@ Flow 4: premature death-status reversal (live patient
 <p><strong>Real DynamoDB schema with the four primary tables.</strong> The <code>death-event-log</code> table holds per-event provenance and resolution state (partition key: <code>event_id</code>, with a GSI on <code>matched_record_id</code> for the multi-source-reconciler's prior-events query, with a second GSI on <code>(source_id, ingested_at)</code> for per-source ingestion-rate reporting). The <code>verification-queue</code> table holds pending review cases (partition key: <code>queue_event_id</code>, with a GSI on <code>(verification_reason, queued_at)</code> for the per-reason queue-aging dashboard). The <code>cascade-ack-store</code> table holds per-system acknowledgments (partition key: <code>event_id</code>, sort key: <code>cascade_consumer</code>). The <code>personal-representative-authorization</code> table holds the per-patient personal-representative-access scope (partition key: <code>local_record_id</code>, sort key: <code>auth_event_id</code>, with a GSI on <code>personal_representative_id</code>). Provision with on-demand capacity. Customer-managed KMS keys at rest. Point-in-time recovery for all four tables. DynamoDB Streams on the death-event-log table to drive the cross-recipe event fan-out.</p>
 <p><strong>TransactWriteItems for atomic cross-table writes.</strong> The demo's MPI update, death-event-log status update, and cascade-emission are sequenced. Production wraps them in <code>TransactWriteItems</code> so the per-event state is atomic across the tables; partial-failure scenarios cannot leave the MPI updated without the death-event-log reflecting the resolution.</p>
 <p><strong>Real Aurora PostgreSQL local MPI integration.</strong> The demo's <code>MockLocalMPI</code> is an in-memory dict. Production has Aurora PostgreSQL (or the institution's existing MPI vendor's product) with indexes on the demographic-feature blocking keys, full-text search, sensitivity-flag enforcement, and recipe 5.1's identity-merge state. The deceased-patient-resolution pipeline consults the MPI under read-only access for matching; mutations to the death-status fields flow through a scoped write path in the mpi-update-handler Lambda.</p>
+<p><strong>Real recipe-5.1 merge pipeline integration.</strong> The demo's <code>handle_hidden_duplicate_revelation</code> records a merge action on the cross-recipe-5.1 mock but does not actually consolidate the duplicate's appointments, prescriptions, or billing episodes into the survivor. Production delegates the consolidation to recipe 5.1's merge pipeline, which mutates the MPI atomically with the death-status application. The demo's cascade therefore acts only on the survivor's pre-merge data; a production deployment would see the cascade act on the consolidated post-merge data (the survivor inherits the duplicate's appointments, prescriptions, and billing episodes before the cascade cancels or reviews them).</p>
 <p><strong>Real Step Functions orchestration.</strong> The demo's six steps run synchronously in-process. Production orchestrates the per-event flow through Step Functions with per-step retries, per-step error routing to DLQs, parallel execution where the per-event work permits (the cascade fan-out is parallelized), and explicit synchronization at the cross-recipe-coordination steps. Step Functions provides the audit-and-monitoring substrate for the per-event flow; CloudWatch alarms on stuck workflows surface DLQ depth issues.</p>
 <p><strong>Real EventBridge bus with cross-recipe consumer subscriptions.</strong> The demo emits events but they go nowhere in demo mode. Production deploys a dedicated <code>deceased-patient-events-bus</code> with EventBridge rules routing the deceased_patient_resolved, deceased_status_reversed, hidden_duplicate_revealed, personal_representative_authorized, posthumous_access_granted, and cross_source_disagreement_flagged events to the appropriate consumers (the per-cascade Lambdas, the cross-recipe consumers for recipes 5.1, 5.5, 5.7, 5.8, 5.9, the analytics consumers, the operational dashboards). DLQs on every consumer; CloudWatch alarms on DLQ depth surface stuck consumers.</p>
 <p><strong>Real cross-account audit-archive S3 bucket.</strong> Production has a dedicated AWS account for the audit-archive bucket (separate from the operational account for blast-radius isolation). The audit-archive bucket has Object Lock in Compliance mode with retention pinned to the longest of the regulatory floors (HIPAA 50-year posthumous-protection-period as the dominant retention floor, state medical-records-retention, the per-source-data-use-agreement audit-retention floor, and the cross-jurisdictional retention overlay where the institution operates across borders). Lifecycle to S3 Glacier Deep Archive after 90 days. The 50-year retention floor is the longest single retention requirement in the chapter; the institution's audit-archive design has to accommodate the multi-decade horizon.</p>

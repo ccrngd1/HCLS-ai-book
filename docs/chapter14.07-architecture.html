@@ -711,9 +711,37 @@
         model.add_constraint(case.room_var in case.room_constraints)
 
     // Hard constraint: manual overrides (locked assignments from charge nurse).
-    FOR each override in read_overrides_from_database():
-        model.fix_variable(override.case_id.room_var, override.locked_room)
-        model.fix_variable(override.case_id.start_var, override.locked_start_time)
+    // Overrides are stored in a DynamoDB table (&quot;or-overrides&quot;) keyed by
+    // schedule_date (PK) and case_id (SK). Each override record contains:
+    //   - locked_room: the room ID the case is pinned to (or null if only time is locked)
+    //   - locked_start_time: the fixed start time in minutes from block start (or null)
+    //   - override_type: &quot;room_lock&quot; | &quot;time_lock&quot; | &quot;full_lock&quot; | &quot;room_exclusion&quot;
+    //   - created_by: the user alias who created the override
+    //   - role: the role that authorized the override (e.g., &quot;charge_nurse&quot;, &quot;surgeon&quot;)
+    //   - reason: free-text justification for audit trail
+    //   - created_at: ISO timestamp
+    //
+    // Role-based permissions determine who can create overrides:
+    //   - Charge nurse: can lock any case to a room or time, exclude rooms, swap cases
+    //   - Attending surgeon: can lock their own cases only
+    //   - Perioperative director: full override authority plus ability to delete others&#x27; overrides
+    //   - Other staff (techs, residents): no override permissions
+    //
+    // The API Gateway authorizer enforces these permissions before writing to DynamoDB.
+    // The solver reads all active overrides for today&#x27;s date and applies them as
+    // hard constraints. If an override makes the problem infeasible (e.g., two cases
+    // locked to the same room at the same time), the solver returns INFEASIBLE with
+    // conflict analysis identifying which overrides conflict.
+
+    overrides = query DynamoDB table &quot;or-overrides&quot; where schedule_date = today
+    FOR each override in overrides:
+        IF override.override_type in [&quot;room_lock&quot;, &quot;full_lock&quot;]:
+            model.fix_variable(override.case_id.room_var, override.locked_room)
+        IF override.override_type in [&quot;time_lock&quot;, &quot;full_lock&quot;]:
+            model.fix_variable(override.case_id.start_var, override.locked_start_time)
+        IF override.override_type == &quot;room_exclusion&quot;:
+            // Remove the excluded room from this case&#x27;s eligible room set.
+            model.remove_from_domain(override.case_id.room_var, override.excluded_room)
 
     // Soft constraint: minimize total overtime (penalized in objective).
     FOR each room in rooms:
@@ -907,6 +935,15 @@ FUNCTION enqueue_replan(reason, **kwargs):
 </tbody>
 </table>
 <p><strong>Where it struggles:</strong> Days with many urgent add-ons (the schedule is constantly disrupted). Cases with highly uncertain durations (complex revisions, trauma). Facilities where surgeon preferences are treated as hard constraints rather than soft (the problem becomes over-constrained). And the political dimension: a mathematically optimal schedule that moves a senior surgeon's preferred time slot will be rejected regardless of its optimality.</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<ul>
+<li><strong>No EHR write-back.</strong> This implementation reads from the EHR but never writes the optimized schedule back. A production system needs bidirectional integration so the surgical scheduling module reflects the optimizer's output. Without write-back, coordinators are maintaining two sources of truth.</li>
+<li><strong>No surgeon preference learning loop.</strong> Preferences are static configuration. A production system should learn from override patterns (if Dr. Martinez always overrides to get first-case Tuesdays, that should become a soft constraint automatically) and periodically surface preference drift to perioperative leadership.</li>
+<li><strong>Shallow compliance audit trail.</strong> CloudTrail captures API calls, but a production deployment needs a purpose-built audit log that records: every schedule version, the optimization inputs that produced it, each manual override with role/reason, every notification sent, and every replan trigger with its cause. This audit trail supports both perioperative governance reviews and potential litigation over scheduling decisions.</li>
+<li><strong>No solver OOM failover.</strong> If the Fargate solver task runs out of memory on a large problem instance (60+ cases with complex equipment constraints), the current design lets it crash. Production needs a fallback path: detect OOM via ECS task exit code, automatically retry with a reduced problem (split into morning/afternoon blocks), or fall back to a fast heuristic that produces a feasible-but-not-optimal schedule within seconds.</li>
+<li><strong>No multi-site coordination.</strong> Health systems with multiple campuses may need cross-facility optimization (route a case to the campus with available capacity). This requires a federation layer above the single-site solver that the current architecture does not address.</li>
+</ul>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Multi-day horizon optimization.</strong> Instead of optimizing one day at a time, optimize the entire week. Cases that can flex between days get assigned to the day where they improve overall utilization. This requires tighter integration with the surgical scheduling system and longer solve times, but the utilization gains compound.</p>

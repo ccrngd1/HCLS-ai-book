@@ -511,7 +511,8 @@
 <hr />
 <h2 id="the-aws-implementation">The AWS Implementation</h2>
 <h3 id="why-these-services">Why These Services</h3>
-<p><strong>Amazon SageMaker for model development and solver execution.</strong> Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development and processing jobs for compute-intensive solver runs and data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.</p>
+<p><strong>Amazon SageMaker for model development and solver execution.</strong> Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development and Processing Jobs for compute-intensive solver runs and data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.</p>
+<p>Why Processing Jobs instead of Training Jobs? Training Jobs carry ML-specific semantics: they produce model artifacts, support hyperparameter tuning, and integrate with SageMaker's model registry. None of that applies to solver execution. A MIP solver reads input data, runs a branch-and-bound algorithm, and writes a solution file. Processing Jobs are the right fit because they're designed for generic compute tasks (data preparation, evaluation, any batch workload) without the ML artifact overhead. They accept input from S3, execute your container, and write output to S3. That's exactly what solver execution needs. If you need Spot instance support for cost savings on long-running solves, Processing Jobs support managed Spot with automatic interruption handling, so you don't need to reach for Training Jobs just to get Spot checkpointing.</p>
 <p><strong>Amazon S3 for data lake and model artifacts.</strong> The input data (patient origin files, demographic projections, financial data, competitor intelligence) and output artifacts (solution files, scenario comparisons, sensitivity analyses) all live in S3. This provides durable, versioned storage with fine-grained access control.</p>
 <p><strong>AWS Glue for data integration and preparation.</strong> Network design requires pulling data from multiple source systems (EHR, financial systems, census data, competitor databases). Glue ETL jobs handle the extraction, transformation, and loading into the analytics-ready format the optimizer needs.</p>
 <p><strong>Amazon Redshift for analytical queries.</strong> Historical utilization data, patient origin analysis, and financial performance metrics live in Redshift. The demand forecasting models and gravity model parameter estimation query against this warehouse. For quarterly optimization runs, Redshift Serverless (pay-per-query) is more cost-effective than a provisioned cluster. Use provisioned only if the analytics warehouse serves other continuous workloads.</p>
@@ -1033,10 +1034,10 @@
 <li><a href="https://highs.dev/">HiGHS Solver (Open Source)</a></li>
 <li><a href="https://coin-or.github.io/pulp/">PuLP: Python Linear Programming Library</a></li>
 </ul>
-<p><strong>AWS Solutions and Blogs:</strong></p>
+<p><strong>Healthcare and Industry:</strong></p>
 <ul>
-<li><a href="https://aws.amazon.com/sagemaker/">Optimization with Amazon SageMaker</a></li>
-<li><a href="https://aws.amazon.com/health/">AWS Healthcare and Life Sciences Solutions</a></li>
+<li><a href="https://aws.amazon.com/health/">AWS Healthcare and Life Sciences</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">HIPAA on AWS: Architecting for Security and Compliance</a></li>
 </ul>
 <hr />
 <h2 id="estimated-implementation-time">Estimated Implementation Time</h2>

@@ -517,7 +517,7 @@
 <div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3
 </pre></div>
 
-<p>In production you would also configure an Amazon Bedrock Agent (or a custom Lambda-based orchestrator) with action groups defining the refill tools (<code>patient_lookup</code>, <code>medication_list_lookup</code>, <code>medication_resolution</code>, <code>lab_reconciliation</code>, <code>interaction_screening</code>, <code>protocol_evaluate</code>, <code>e_prescribe</code>, <code>clinical_routing</code>, <code>refill_status_check</code>, <code>cancel_refill_request</code>, <code>cosignature_enqueue</code>), each backed by a tool-implementation Lambda that wraps the institution's EHR FHIR API, the institution's clinical-decision-support layer (CDS Hooks where available), and the institution's e-prescribing platform (typically Surescripts-routed). You would also configure an Amazon Bedrock Knowledge Base ingesting curated content from S3 covering the medication-information corpus (each medication or class with its purpose, common questions, food-and-timing notes, side-effect summaries from the practice's preferred clinical reference), the patient-facing phrasings of the practice's refill protocol (so the bot can explain a routing decision in language the patient understands), and the practice's standing-order documentation (for staff-facing reasoning surfaces). You would configure an Amazon Bedrock Guardrail with restricted-topic filters for clinical-advice, dose-change-recommendation, medication-discontinuation-guidance, and controlled-substance-auto-approval categories, an API Gateway endpoint fronting the chat-handler Lambda, an AWS WAF web ACL with stricter rate limits on the refill endpoint than on either the FAQ or scheduling endpoints, the four DynamoDB tables (conversation-state, conversation-metadata, tool-call-ledger, cosignature-queue), an Amazon S3 bucket with Object Lock in compliance mode for the refill-event journal sized to the longest of HIPAA's six-year minimum, the state's medical-records-retention rules, and the institutional regulatory floor, an EventBridge bus for refill-lifecycle events (<code>conversation_started</code>, <code>refill_requested</code>, <code>refill_auto_approved</code>, <code>refill_routed</code>, <code>refill_denied</code>, <code>refill_failed</code>, <code>cosignature_pending</code>, <code>cosignature_completed</code>, <code>controlled_substance_routed</code>, <code>crisis_detected</code>, <code>conversation_closed</code>), a Kinesis Data Firehose delivery stream for the conversation-audit archive, AWS Secrets Manager secrets for the EHR and e-prescribing-platform credentials, and (where applicable) the Connect contact-center integration for the live-clinician handoff path. The demo replaces all of these with small mocks so the focus stays on the per-turn classification, identity-verification, medication-resolution, protocol-evaluation, e-prescribe-or-route, and disposition logic rather than on the platform plumbing.</p>
+<p>In production you would also configure an Amazon Bedrock Agent (or a custom Lambda-based orchestrator) with action groups defining the refill tools (<code>patient_lookup</code>, <code>medication_list_lookup</code>, <code>medication_resolution</code>, <code>lab_reconciliation</code>, <code>interaction_screening</code>, <code>protocol_evaluate</code>, <code>e_prescribe</code>, <code>clinical_routing</code>, <code>refill_status_check</code>, <code>cancel_refill_request</code>, <code>cosignature_enqueue</code>), each backed by a tool-implementation Lambda that wraps the institution's EHR FHIR API, the institution's clinical-decision-support layer (CDS Hooks where available), and the institution's e-prescribing platform (typically Surescripts-routed). You would also configure an Amazon Bedrock Knowledge Base ingesting curated content from S3 covering the medication-information corpus (each medication or class with its purpose, common questions, food-and-timing notes, side-effect summaries from the practice's preferred clinical reference), the patient-facing phrasings of the practice's refill protocol (so the bot can explain a routing decision in language the patient understands), and the practice's standing-order documentation (for staff-facing reasoning surfaces). You would configure an Amazon Bedrock Guardrail with restricted-topic filters for clinical-advice, dose-change-recommendation, medication-discontinuation-guidance, and controlled-substance-auto-approval categories, an API Gateway endpoint fronting the chat-handler Lambda, an AWS WAF web ACL with stricter rate limits on the refill endpoint than on either the FAQ or scheduling endpoints, the four DynamoDB tables (conversation-state, conversation-metadata, tool-call-ledger, cosignature-queue), an Amazon S3 bucket with Object Lock in compliance mode for the refill-event journal sized to the longest of HIPAA's six-year minimum, state-specific medical-records-retention rules, state-specific PDMP retention rules where applicable for controlled-substance-related records, state-specific pharmacy-record retention rules, state-specific consumer-privacy-law retention rules (CCPA/CPRA, VCDPA, CPA, etc.), per-channel retention obligations (TCPA/10DLC for SMS), and the institutional regulatory floor, an EventBridge bus for refill-lifecycle events (<code>conversation_started</code>, <code>refill_requested</code>, <code>refill_auto_approved</code>, <code>refill_routed</code>, <code>refill_denied</code>, <code>refill_failed</code>, <code>cosignature_pending</code>, <code>cosignature_completed</code>, <code>controlled_substance_routed</code>, <code>crisis_detected</code>, <code>conversation_closed</code>), a Kinesis Data Firehose delivery stream for the conversation-audit archive, AWS Secrets Manager secrets for the EHR and e-prescribing-platform credentials, and (where applicable) the Connect contact-center integration for the live-clinician handoff path. The demo replaces all of these with small mocks so the focus stays on the per-turn classification, identity-verification, medication-resolution, protocol-evaluation, e-prescribe-or-route, and disposition logic rather than on the platform plumbing.</p>
 <p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
 <ul>
 <li><code>bedrock:InvokeModel</code> for the intent-classifier model and for the orchestration model that decides tool calls and composes responses</li>
@@ -545,7 +545,7 @@
 <li><strong>Identity verification has a higher floor for refill actions.</strong> A patient logged into the patient portal asking to check on a pending refill needs lower assurance than an unauthenticated patient asking to e-prescribe a maintenance medication. Many institutions require authenticated portal sessions for any refill action that results in transmission. The demo's <code>IDENTITY_POLICY</code> table reflects this; production owns the policy as a versioned governance artifact reviewed by the privacy officer.</li>
 <li><strong>Prescriber co-signature is asynchronous but mandatory.</strong> Every auto-approved refill enqueues to the prescriber's co-signature queue with an SLA. The bot does not wait for the co-signature; the prescriber reviews within the institutional timeline (typically 24-72 hours). The demo's <code>cosignature_queue</code> table is the placeholder for what is normally a queue with SLA monitoring, escalation, and reporting wired into the prescriber's EHR inbox.</li>
 <li><strong>The refill-event journal is durable and separately governed.</strong> Conversation logs are PHI and have audit obligations; refill-event-journal records are clinical-record events and have medical-record-retention obligations. The demo writes both, but the production deployment has separate KMS keys, separate retention windows, and separate access controls for each.</li>
-<li><strong>Conversation logs are PHI by association.</strong> A patient interacting with the institution's refill bot has identified themselves as a patient of the institution and has discussed specific medications they take. The conversation log is HIPAA-relevant. Audit logging, encryption, access controls, and retention policies apply. The demo writes a redacted record; production writes through Firehose into an Object-Lock S3 bucket sized to the longest of HIPAA's six-year minimum, the state's medical-records-retention rules, and the institutional regulatory floor.</li>
+<li><strong>Conversation logs are PHI by association.</strong> A patient interacting with the institution's refill bot has identified themselves as a patient of the institution and has discussed specific medications they take. The conversation log is HIPAA-relevant. Audit logging, encryption, access controls, and retention policies apply. The demo writes a redacted record; production writes through Firehose into an Object-Lock S3 bucket sized to the longest of HIPAA's six-year minimum, state-specific medical-records-retention rules, state-specific PDMP and pharmacy-record retention rules where applicable, state-specific consumer-privacy-law retention rules, per-channel retention obligations, and the institutional regulatory floor.</li>
 <li><strong>The output check verifies refill claims against tool results.</strong> A bot that says &quot;your refill has been sent to Walgreens&quot; when the e-prescribe tool did not actually return success is a bot that lets patients assume their medication is on the way when it is not, which can be a clinical-safety event. The demo's <code>screen_output</code> extracts refill-confirmation claims and verifies that each claim is supported by a successful <code>e_prescribe</code> tool result; production extends this with stronger LLM-based claim-vs-evidence checks.</li>
 <li><strong>DynamoDB rejects Python <code>float</code>.</strong> Every confidence score, threshold, time-window, lab value, and numeric metadata field passes through <code>Decimal</code> on its way in and on its way out. The <code>_to_decimal</code> helper handles it.</li>
 <li><strong>The example collapses many Lambdas into a single Python file.</strong> In production the chat handler, the input-screening function, the identity-verification function, each tool-implementation function, the output-screening function, and the audit-archival function are separate Lambdas with their own IAM roles, error handling, retries, and DLQs. Comments call out where the boundaries should fall.</li>
@@ -1103,6 +1103,28 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_now_iso</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Current UTC time in ISO-8601 format.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_cosign_sla_tier</span><span class="p">(</span><span class="n">medication_class</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the co-signature SLA tier for a medication class.</span>
+<span class="sd">    Tighter SLA tiers for higher-risk classes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">high_priority_classes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;anticoagulant&quot;</span><span class="p">,</span> <span class="s2">&quot;antiarrhythmic&quot;</span><span class="p">,</span> <span class="s2">&quot;immunosuppressant&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">medication_class</span> <span class="ow">in</span> <span class="n">high_priority_classes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;urgent_24h&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;standard_48h&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_escalation_policy</span><span class="p">(</span>
+        <span class="n">prescriber_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">medication_class</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the escalation policy identifier for a prescriber</span>
+<span class="sd">    and medication class combination.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># In production this is looked up from a governance table.</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;escalation-</span><span class="si">{</span><span class="n">prescriber_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">medication_class</span><span class="si">}</span><span class="s2">&quot;</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_json_response</span><span class="p">(</span><span class="n">raw_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -2696,12 +2718,22 @@
             <span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">),</span>
         <span class="s2">&quot;protocol_version&quot;</span><span class="p">:</span>
             <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;protocol_version&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;medication_class_protocol_version&quot;</span><span class="p">:</span>
+            <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;medication_class_protocol_version&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;delegation_version&quot;</span><span class="p">:</span>
+            <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;delegation_version&quot;</span><span class="p">),</span>
         <span class="s2">&quot;rules_fired&quot;</span><span class="p">:</span>
             <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rules_fired&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="s2">&quot;sla_tier&quot;</span><span class="p">:</span>
+            <span class="n">_get_cosign_sla_tier</span><span class="p">(</span><span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;class&quot;</span><span class="p">)),</span>
         <span class="s2">&quot;sla_deadline&quot;</span><span class="p">:</span> <span class="p">(</span>
             <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
             <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">COSIGNATURE_SLA_HOURS</span><span class="p">)</span>
         <span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;escalation_policy&quot;</span><span class="p">:</span>
+            <span class="n">_get_escalation_policy</span><span class="p">(</span>
+                <span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prescribing_provider_id&quot;</span><span class="p">),</span>
+                <span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;class&quot;</span><span class="p">)),</span>
         <span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">,</span>
         <span class="s2">&quot;enqueued_at&quot;</span><span class="p">:</span> <span class="n">_now_iso</span><span class="p">(),</span>
         <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;pending&quot;</span><span class="p">,</span>
@@ -2716,6 +2748,13 @@
     <span class="p">})</span>
 
     <span class="c1"># Step 6D: write the refill-event journal.</span>
+    <span class="c1"># The journal carries only structural fields. Free-text</span>
+    <span class="c1"># context (data_consulted, rules_fired details,</span>
+    <span class="c1"># patient_stated_context) routes to the per-conversation</span>
+    <span class="c1"># archive in production; here we write rule-IDs only.</span>
+    <span class="n">rules_fired_ids</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rule_id&quot;</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">r</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rules_fired&quot;</span><span class="p">,</span> <span class="p">[])]</span>
     <span class="n">_write_refill_journal</span><span class="p">({</span>
         <span class="s2">&quot;event_type&quot;</span><span class="p">:</span>      <span class="s2">&quot;refill_auto_approved&quot;</span><span class="p">,</span>
         <span class="s2">&quot;event_id&quot;</span><span class="p">:</span>         <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
@@ -2733,8 +2772,17 @@
             <span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prescribing_provider_id&quot;</span><span class="p">),</span>
         <span class="s2">&quot;protocol_version&quot;</span><span class="p">:</span>
             <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;protocol_version&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;rules_fired&quot;</span><span class="p">:</span>
-            <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rules_fired&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="s2">&quot;medication_class_protocol_version&quot;</span><span class="p">:</span>
+            <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;medication_class_protocol_version&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;delegation_version&quot;</span><span class="p">:</span>
+            <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;delegation_version&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;rules_fired_summary&quot;</span><span class="p">:</span>   <span class="n">rules_fired_ids</span><span class="p">,</span>
+        <span class="s2">&quot;data_consulted_archive_ref&quot;</span><span class="p">:</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">/data_consulted&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rules_fired_archive_ref&quot;</span><span class="p">:</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">/rules_fired&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;patient_stated_context_archive_ref&quot;</span><span class="p">:</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">/patient_context&quot;</span><span class="p">,</span>
         <span class="s2">&quot;session_id&quot;</span><span class="p">:</span>      <span class="n">session_id</span><span class="p">,</span>
         <span class="s2">&quot;initiated_at&quot;</span><span class="p">:</span>    <span class="n">_now_iso</span><span class="p">(),</span>
     <span class="p">})</span>
@@ -3053,7 +3101,13 @@
 <span class="sd">    separately governed from the conversation log. In production</span>
 <span class="sd">    the bucket has Object Lock in compliance mode and a retention</span>
 <span class="sd">    period sized to the longest of HIPAA&#39;s six-year minimum,</span>
-<span class="sd">    state law, and the institutional regulatory floor.</span>
+<span class="sd">    state-specific medical-records retention rules,</span>
+<span class="sd">    state-specific PDMP retention rules where applicable for</span>
+<span class="sd">    controlled-substance-related records, state-specific</span>
+<span class="sd">    pharmacy-record retention rules, state-specific</span>
+<span class="sd">    consumer-privacy-law retention rules (CCPA/CPRA, VCDPA,</span>
+<span class="sd">    CPA, etc.), per-channel retention obligations (TCPA/10DLC</span>
+<span class="sd">    for SMS), and the institutional regulatory floor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">key</span> <span class="o">=</span> <span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">INSTITUTION_ID</span><span class="si">}</span><span class="s2">/&quot;</span>

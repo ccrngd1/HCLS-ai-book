@@ -1454,6 +1454,29 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">clinician_id</span> <span class="ow">in</span> <span class="n">CLINICIAN_VOICEPRINT_REGISTRY</span>
 
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_lookup_voiceprint_consent_version</span><span class="p">(</span><span class="n">clinician_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the version identifier of the biometric-data consent</span>
+<span class="sd">    the clinician signed at voiceprint enrollment. Returns None</span>
+<span class="sd">    if the clinician has not enrolled.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">clinician_id</span> <span class="ow">in</span> <span class="n">CLINICIAN_VOICEPRINT_REGISTRY</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;bipa-consent-v2.1&quot;</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_lookup_biometric_jurisdiction</span><span class="p">(</span><span class="n">room_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine the biometric-data jurisdiction from the room&#39;s</span>
+<span class="sd">    physical location. The clinic&#39;s state determines which</span>
+<span class="sd">    biometric-data law applies (BIPA in Illinois, CUBI in</span>
+<span class="sd">    Texas, RCW 19.375 in Washington, or none).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># In production, room_id maps to a clinic site which maps</span>
+    <span class="c1"># to a state. The demo returns a fixed jurisdiction.</span>
+    <span class="k">return</span> <span class="s2">&quot;IL&quot;</span>
+
 <span class="k">def</span><span class="w"> </span><span class="nf">encounter_start</span><span class="p">(</span><span class="n">encounter_id</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">,</span> <span class="n">clinician_id</span><span class="p">,</span>
                      <span class="n">clinician_specialty</span><span class="p">,</span> <span class="n">clinic_jurisdiction</span><span class="p">,</span>
                      <span class="n">visit_type</span><span class="p">,</span> <span class="n">room_id</span><span class="p">,</span>
@@ -1570,6 +1593,10 @@
         <span class="s2">&quot;canonical_transcript_ref&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;healthscribe_note_draft_ref&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;clinician_voiceprint_enrolled&quot;</span><span class="p">:</span> <span class="n">voiceprint_enrolled</span><span class="p">,</span>
+        <span class="s2">&quot;clinician_voiceprint_consent_version&quot;</span><span class="p">:</span>
+            <span class="n">_lookup_voiceprint_consent_version</span><span class="p">(</span><span class="n">clinician_id</span><span class="p">),</span>
+        <span class="s2">&quot;clinician_jurisdiction_for_biometric_compliance&quot;</span><span class="p">:</span>
+            <span class="n">_lookup_biometric_jurisdiction</span><span class="p">(</span><span class="n">room_id</span><span class="p">),</span>
         <span class="s2">&quot;avg_audio_quality_snr&quot;</span><span class="p">:</span>   <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.0&quot;</span><span class="p">),</span>
         <span class="s2">&quot;avg_streaming_asr_confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.0&quot;</span><span class="p">),</span>
         <span class="s2">&quot;avg_batch_asr_confidence&quot;</span><span class="p">:</span>     <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.0&quot;</span><span class="p">),</span>
@@ -2043,11 +2070,20 @@
 <span class="sd">    Verify that every claim in the rendered note has a</span>
 <span class="sd">    transcript citation or an EHR-source citation, score the</span>
 <span class="sd">    rendered content for citation grounding, and detect</span>
-<span class="sd">    contradictions or out-of-scope additions. Production runs</span>
-<span class="sd">    this as a cascade of cheaper rule-based checks (citation</span>
-<span class="sd">    presence, named-entity contradiction) followed by an</span>
-<span class="sd">    LLM-judge pass for the harder cases. The demo collapses</span>
-<span class="sd">    to a single LLM call.</span>
+<span class="sd">    contradictions or out-of-scope additions.</span>
+
+<span class="sd">    Production runs three layers:</span>
+<span class="sd">      Layer 1: citation grounding verification, schema</span>
+<span class="sd">        validation, exam-finding-fabrication detection</span>
+<span class="sd">        (blocks on failure).</span>
+<span class="sd">      Layer 2: LLM-judge faithfulness scoring, clinical-</span>
+<span class="sd">        rule-based contradiction detection (warns or blocks</span>
+<span class="sd">        depending on behavioral-health profile).</span>
+<span class="sd">      Layer 3: offline sampling review stratified by</span>
+<span class="sd">        specialty, room, audio-quality band, and language.</span>
+
+<span class="sd">    The demo collapses to a single LLM call that</span>
+<span class="sd">    approximates the combined scoring.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">session_id</span> <span class="o">=</span> <span class="n">session_context</span><span class="p">[</span><span class="s2">&quot;session_id&quot;</span><span class="p">]</span>
     <span class="n">encounter_id</span> <span class="o">=</span> <span class="n">session_context</span><span class="p">[</span><span class="s2">&quot;encounter_id&quot;</span><span class="p">]</span>
@@ -2431,7 +2467,13 @@
             <span class="n">item</span><span class="p">[</span><span class="s2">&quot;clinician_confirmed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="c1"># Step 5C: persist all extractions for clinician</span>
-    <span class="c1"># confirmation.</span>
+    <span class="c1"># confirmation. In production, the PHI-bearing</span>
+    <span class="c1"># extractions (with context_snippets) are written to</span>
+    <span class="c1"># a draft-extractions archive in S3 with KMS</span>
+    <span class="c1"># encryption, and only a reference and counts are</span>
+    <span class="c1"># stored in the note-state DynamoDB table. The demo</span>
+    <span class="c1"># stores them directly in the mock state for</span>
+    <span class="c1"># simplicity.</span>
     <span class="n">structured_extractions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;medications&quot;</span><span class="p">:</span>              <span class="n">coded_medications</span><span class="p">,</span>
         <span class="s2">&quot;conditions&quot;</span><span class="p">:</span>               <span class="n">coded_conditions</span><span class="p">,</span>
@@ -2976,6 +3018,11 @@
         <span class="s2">&quot;device_type&quot;</span><span class="p">:</span>            <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;device_type&quot;</span><span class="p">),</span>
         <span class="s2">&quot;voiceprint_enrolled&quot;</span><span class="p">:</span>
             <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clinician_voiceprint_enrolled&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;voiceprint_consent_version&quot;</span><span class="p">:</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clinician_voiceprint_consent_version&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;biometric_jurisdiction&quot;</span><span class="p">:</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;clinician_jurisdiction_for_biometric_compliance&quot;</span><span class="p">),</span>
         <span class="s2">&quot;audio_archive_ref&quot;</span><span class="p">:</span>      <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;audio_archive_ref&quot;</span><span class="p">),</span>
         <span class="s2">&quot;canonical_transcript_ref&quot;</span><span class="p">:</span>
             <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canonical_transcript_ref&quot;</span><span class="p">),</span>

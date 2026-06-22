@@ -1169,17 +1169,21 @@
     <span class="n">patient_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
     <span class="n">q_network</span><span class="p">:</span> <span class="n">QNetwork</span><span class="p">,</span>
     <span class="n">normalization_stats</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">distribution_stats</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generate a treatment recommendation for a sepsis patient.</span>
 
-<span class="sd">    Takes raw clinical values, normalizes them, runs through the Q-network,</span>
-<span class="sd">    applies safety constraints, and returns an interpretable recommendation.</span>
+<span class="sd">    Takes raw clinical values, normalizes them, checks for distribution shift,</span>
+<span class="sd">    runs through the Q-network, applies safety constraints, and returns an</span>
+<span class="sd">    interpretable recommendation.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        patient_state: Dictionary of current physiological values (raw, unnormalized).</span>
 <span class="sd">        q_network: Trained Q-network.</span>
 <span class="sd">        normalization_stats: Dict with &quot;mean&quot; and &quot;std&quot; arrays for each feature.</span>
+<span class="sd">        distribution_stats: Optional dict with &quot;mean&quot;, &quot;inv_cov&quot;, and &quot;ood_threshold&quot;</span>
+<span class="sd">            for Mahalanobis distance OOD detection. If None, skip OOD check.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Recommendation dictionary with action, interpretation, confidence, and drivers.</span>
@@ -1190,6 +1194,19 @@
     <span class="n">stds</span> <span class="o">=</span> <span class="n">normalization_stats</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span>
     <span class="c1"># Avoid division by zero for features with no variance.</span>
     <span class="n">normalized_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">raw_state</span> <span class="o">-</span> <span class="n">means</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">stds</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">)</span>
+
+    <span class="c1"># Distribution shift detection via Mahalanobis distance.</span>
+    <span class="n">ood_warning</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">distribution_stats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">normalized_state</span> <span class="o">-</span> <span class="n">distribution_stats</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+        <span class="n">mahal_dist</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">diff</span> <span class="o">@</span> <span class="n">distribution_stats</span><span class="p">[</span><span class="s2">&quot;inv_cov&quot;</span><span class="p">]</span> <span class="o">@</span> <span class="n">diff</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">mahal_dist</span> <span class="o">&gt;</span> <span class="n">distribution_stats</span><span class="p">[</span><span class="s2">&quot;ood_threshold&quot;</span><span class="p">]:</span>
+            <span class="n">ood_warning</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Patient state is outside the training distribution &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(Mahalanobis distance: </span><span class="si">{</span><span class="n">mahal_dist</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, threshold: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">distribution_stats</span><span class="p">[</span><span class="s1">&#39;ood_threshold&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">). &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Recommendation confidence is low.&quot;</span>
+            <span class="p">)</span>
 
     <span class="c1"># Get Q-values for all actions.</span>
     <span class="n">q_values</span> <span class="o">=</span> <span class="n">q_network</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">normalized_state</span><span class="p">)</span>
@@ -1204,6 +1221,10 @@
     <span class="c1"># Confidence: gap between best and second-best Q-value.</span>
     <span class="c1"># Larger gap = more confident the best action is clearly superior.</span>
     <span class="n">confidence</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sorted_q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">sorted_q</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_q</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+    <span class="c1"># If OOD detected, suppress confidence.</span>
+    <span class="k">if</span> <span class="n">ood_warning</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c1"># Decode action into clinical terms.</span>
     <span class="n">fluid_level</span><span class="p">,</span> <span class="n">vaso_level</span> <span class="o">=</span> <span class="n">decode_action</span><span class="p">(</span><span class="n">best_action</span><span class="p">)</span>
@@ -1225,7 +1246,7 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">top_indices</span>
     <span class="p">]</span>
 
-    <span class="k">return</span> <span class="p">{</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;recommended_action_id&quot;</span><span class="p">:</span> <span class="n">best_action</span><span class="p">,</span>
         <span class="s2">&quot;fluid_recommendation&quot;</span><span class="p">:</span> <span class="n">fluid_desc</span><span class="p">,</span>
         <span class="s2">&quot;vasopressor_recommendation&quot;</span><span class="p">:</span> <span class="n">vaso_desc</span><span class="p">,</span>
@@ -1239,6 +1260,11 @@
         <span class="p">],</span>
         <span class="s2">&quot;disclaimer&quot;</span><span class="p">:</span> <span class="s2">&quot;Advisory only. Clinical judgment supersedes all recommendations.&quot;</span><span class="p">,</span>
     <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">ood_warning</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;ood_warning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ood_warning</span>
+
+    <span class="k">return</span> <span class="n">result</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_fluid_level_description</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Human-readable description of a fluid level.&quot;&quot;&quot;</span>
@@ -1322,6 +1348,12 @@
 <span class="sd">    - Regulatory audit (who saw what recommendation, when)</span>
 <span class="sd">    - Outcome tracking (did following/ignoring recommendations correlate with outcomes?)</span>
 <span class="sd">    - Model monitoring (is the recommendation distribution shifting over time?)</span>
+
+<span class="sd">    For tamper-evident storage, configure the underlying S3 audit bucket with</span>
+<span class="sd">    Object Lock in compliance mode. This prevents deletion or overwrite for the</span>
+<span class="sd">    configured retention period (typically 7-10 years for clinical records). Even</span>
+<span class="sd">    the root account cannot delete locked objects during the retention window.</span>
+<span class="sd">    Alternatively, use a separate audit account with cross-account write-only access.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_CONFIG</span><span class="p">)</span>
     <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">AUDIT_TABLE</span><span class="p">)</span>
@@ -1339,9 +1371,54 @@
         <span class="s2">&quot;key_drivers&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;key_drivers&quot;</span><span class="p">],</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="s2">&quot;ood_warning&quot;</span> <span class="ow">in</span> <span class="n">recommendation</span><span class="p">:</span>
+        <span class="n">item</span><span class="p">[</span><span class="s2">&quot;ood_warning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;ood_warning&quot;</span><span class="p">]</span>
+
     <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
     <span class="c1"># PHI Safety: Never log the raw patient state values to the audit table.</span>
     <span class="c1"># Log only the recommendation and metadata.</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">publish_constraint_trigger_metrics</span><span class="p">(</span><span class="n">recommendations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">],</span> <span class="n">experiment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Publish safety constraint trigger rates to CloudWatch.</span>
+
+<span class="sd">    If any constraint fires on &gt;20% of recommendations in a 24-hour window,</span>
+<span class="sd">    that&#39;s a signal the policy may be drifting or the patient population is</span>
+<span class="sd">    shifting. Set CloudWatch Alarms on these metrics to notify clinical</span>
+<span class="sd">    informatics when trigger rates exceed acceptable thresholds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cloudwatch</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;cloudwatch&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_CONFIG</span><span class="p">)</span>
+
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommendations</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">constrained_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recommendations</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;safety_constraints_triggered&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">ood_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recommendations</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ood_warning&quot;</span><span class="p">))</span>
+
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;ConstraintTriggerRate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">constrained_count</span> <span class="o">/</span> <span class="n">total</span><span class="p">,</span>
+            <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;ExperimentId&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">experiment_id</span><span class="p">}],</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;OODRate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">ood_count</span> <span class="o">/</span> <span class="n">total</span><span class="p">,</span>
+            <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;ExperimentId&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">experiment_id</span><span class="p">}],</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="n">cloudwatch</span><span class="o">.</span><span class="n">put_metric_data</span><span class="p">(</span>
+        <span class="n">Namespace</span><span class="o">=</span><span class="s2">&quot;SepsisRL/SafetyConstraints&quot;</span><span class="p">,</span>
+        <span class="n">MetricData</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Published constraint metrics: trigger_rate=</span><span class="si">{</span><span class="n">constrained_count</span><span class="o">/</span><span class="n">total</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;ood_rate=</span><span class="si">{</span><span class="n">ood_count</span><span class="o">/</span><span class="n">total</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">publish_evaluation_metrics</span><span class="p">(</span><span class="n">eval_results</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">experiment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1566,10 +1643,10 @@
 <p><strong>Hyperparameter sensitivity analysis.</strong> The CQL alpha, discount factor, reward weights, and action discretization bins all affect the learned policy. You need systematic sweeps (SageMaker Hyperparameter Tuning) to understand how sensitive the policy is to these choices. A policy that changes dramatically with small hyperparameter changes is not trustworthy.</p>
 <p><strong>Clinician review interface.</strong> Before any deployment, domain experts need to review the learned policy. Show them: &quot;For patients in state X, the policy recommends action Y. Does this make clinical sense?&quot; Build a review tool that samples representative states and shows the policy's recommendations alongside what clinicians actually did.</p>
 <p><strong>Prospective shadow mode.</strong> Run the system in parallel with clinical care (generating recommendations but not showing them) for months. Compare its recommendations against actual decisions and outcomes. This is the minimum validation before any clinician-facing deployment.</p>
-<p><strong>Model versioning and drift detection.</strong> Track which model version generated each recommendation. Monitor for distribution shift: are you seeing patient states that are far from the training distribution? CloudWatch alarms on out-of-distribution detection metrics.</p>
+<p><strong>Model versioning and drift detection.</strong> Track which model version generated each recommendation. Use SageMaker Model Registry with approval workflows to version policies. Before promoting a new policy, run OPE comparing new vs. deployed policy. Deploy with a canary pattern (5-10% traffic) and automatically roll back if safety constraint trigger rates or clinician override rates degrade. Monitor for distribution shift: are you seeing patient states that are far from the training distribution? The Mahalanobis distance approach shown in <code>get_recommendation</code> above is one mechanism; CloudWatch alarms on OOD rates provide the alerting layer.</p>
 <p><strong>Error handling and retries.</strong> The code above has no error handling. Production needs: exponential backoff on API calls, graceful degradation if the model endpoint is unavailable, input validation (reject states with physiologically impossible values), and structured logging (never log PHI values, only metadata).</p>
-<p><strong>IAM least privilege.</strong> The training job needs different permissions than the inference endpoint. The inference endpoint should only be able to read the model artifact and write to the audit table. It should not have access to raw patient data or the ability to modify the model.</p>
-<p><strong>VPC isolation.</strong> SageMaker training jobs and endpoints processing PHI must run in a VPC with no internet access. Use VPC endpoints for S3, DynamoDB, CloudWatch, and SageMaker API calls. This prevents accidental data exfiltration.</p>
+<p><strong>IAM least privilege.</strong> The training job needs different permissions than the inference endpoint. Use separate IAM roles per pipeline stage: Glue ETL can read raw data and write processed trajectories, SageMaker Training can read processed data and write model artifacts, and the inference endpoint can only read the model artifact and write to the audit table. The inference role should not have access to raw patient data or the ability to modify the model. Scope each role to specific S3 prefixes and DynamoDB table ARNs.</p>
+<p><strong>VPC isolation.</strong> SageMaker training jobs and endpoints processing PHI must run in a VPC with no internet access. Use VPC endpoints for S3 (gateway, free), DynamoDB (gateway, free), CloudWatch Logs (interface), SageMaker API (interface), SageMaker Runtime (interface), and KMS (interface). Without the SageMaker API and Runtime interface endpoints, private subnet deployment requires a NAT Gateway (which becomes a PHI egress point) or fails entirely. Budget ~$60-70/month for interface endpoints across 2 AZs.</p>
 <p><strong>Regulatory pathway.</strong> If this system provides specific treatment recommendations (which it does), it likely requires FDA clearance as a Clinical Decision Support tool. The regulatory submission requires extensive documentation of the algorithm, training data, validation methodology, and intended use. This is a multi-year process that starts long before the code is written.</p>
 <hr />
 <p><em>← <a href="chapter15.04-sepsis-treatment-optimization.html">Recipe 15.4: Sepsis Treatment Optimization</a> · <a href="chapter15-preface.html">Chapter 15 Index</a> · <a href="chapter15.05-ventilator-weaning-protocols.html">Next: Recipe 15.5 →</a></em></p>
