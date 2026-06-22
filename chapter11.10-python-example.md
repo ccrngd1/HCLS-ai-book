@@ -122,6 +122,12 @@ secrets_client        = boto3.client("secretsmanager",
 pinpoint_client       = boto3.client("pinpoint",
                                      region_name=REGION,
                                      config=BOTO3_RETRY_CONFIG)
+# Note: secrets_client and pinpoint_client are declared for
+# completeness (the production architecture uses Secrets
+# Manager for upstream-system credentials and Pinpoint for
+# proactive recruitment messaging). The demo exercises them
+# symbolically; production wires them through their
+# respective tool-implementation Lambdas.
 connect_client        = boto3.client("connect",
                                      region_name=REGION,
                                      config=BOTO3_RETRY_CONFIG)
@@ -233,6 +239,16 @@ DISPOSITION_DECLINED_BY_PATIENT   = "DECLINED_BY_PATIENT"
 DISPOSITION_TRIAL_CLOSED          = "TRIAL_CLOSED_OR_PAUSED"
 DISPOSITION_OUT_OF_SCOPE          = "OUT_OF_SCOPE_ROUTED"
 DISPOSITION_EMERGENCY_ROUTED      = "EMERGENCY_ROUTED"
+
+DISPOSITIONS = {
+    DISPOSITION_DISQUALIFIED,
+    DISPOSITION_UNCERTAIN_PENDING,
+    DISPOSITION_LIKELY_ELIGIBLE,
+    DISPOSITION_DECLINED_BY_PATIENT,
+    DISPOSITION_TRIAL_CLOSED,
+    DISPOSITION_OUT_OF_SCOPE,
+    DISPOSITION_EMERGENCY_ROUTED,
+}
 
 # --- Trial-state codes ---
 TRIAL_STATE_OPEN                  = "OPEN_FOR_ENROLLMENT"
@@ -389,6 +405,12 @@ PHI_PATTERNS = {
     "mrn":       re.compile(r"\bMRN[:\s]*\d+\b", re.IGNORECASE),
     "dob":       re.compile(r"\b\d{1,2}/\d{1,2}/(?:19|20)\d{2}\b"),
     "zip5":      re.compile(r"\b\d{5}(?:-\d{4})?\b"),
+    # Note: the zip5 pattern over-matches (any 5-digit
+    # number). Production combines pattern-based redaction
+    # with a managed PII-detection service (Comprehend or
+    # Macie) for contextual precision. The pattern is
+    # acceptable for log-line redaction where false
+    # positives are preferable to false negatives.
     "name_hint": re.compile(
         r"\bmy name is\s+([A-Z][a-z]+\s+[A-Z][a-z]+)",
         re.IGNORECASE),
@@ -1464,6 +1486,12 @@ def receive_conversation_turn(*,
             "referral_source":     referral_source,
             "identity":            identity,
         }
+        record_funnel_stage(
+            session_id=session_id,
+            trial_id=trial_id,
+            stage=FUNNEL_STAGE_ENTERED,
+            metadata={"channel": channel,
+                      "referral_source": referral_source})
     else:
         conversation_state = _from_decimal(conversation_state)
         # Mid-conversation amendment-version drift triggers
@@ -2138,8 +2166,12 @@ def tool_recruitment_faq_retrieve(*, trial_id, question) -> dict:
         })
 
     matches = response.get("retrievalResults", [])
-    # Apply the per-trial filter post-hoc as the mock does
-    # not enforce the metadata filter natively.
+    # Defense-in-depth: production deployments rely on the
+    # index-time metadata filter (vectorSearchConfiguration
+    # above) for per-trial isolation correctness. This
+    # post-hoc check guards against misconfigured filters
+    # or index-rebuild races; it is not the primary
+    # isolation mechanism.
     matches = [
         m for m in matches
         if m.get("metadata", {}).get("trial_id") == trial_id
@@ -2236,6 +2268,13 @@ def tool_eligibility_response_capture(*, session_id,
         state = {"session_id": session_id, "trial_id": trial_id}
 
     responses = state.get("prescreen_responses", {})
+    # Record prescreen-started on the first captured criterion.
+    if not responses:
+        record_funnel_stage(
+            session_id=session_id,
+            trial_id=trial_id,
+            stage=FUNNEL_STAGE_PRESCREEN_STARTED,
+            metadata={"first_criterion": criterion_id})
     responses[criterion_id] = {
         "value":            patient_response_value,
         "unit":             patient_reported_unit,
@@ -2452,15 +2491,56 @@ def tool_prescreen_save_progress(*, session_id, trial_id,
     if current_disposition == DISPOSITION_DISQUALIFIED:
         _put_metric("PrescreenDisqualified", 1, {
             "trial_id": trial_id})
+        record_funnel_stage(
+            session_id=session_id,
+            trial_id=trial_id,
+            stage=FUNNEL_STAGE_PRESCREEN_COMPLETED,
+            metadata={"disposition": current_disposition})
     elif current_disposition == DISPOSITION_LIKELY_ELIGIBLE:
         _put_metric("PrescreenLikelyEligible", 1, {
             "trial_id": trial_id})
+        record_funnel_stage(
+            session_id=session_id,
+            trial_id=trial_id,
+            stage=FUNNEL_STAGE_PRESCREEN_COMPLETED,
+            metadata={"disposition": current_disposition})
     elif current_disposition == DISPOSITION_UNCERTAIN_PENDING:
         _put_metric("PrescreenUncertainPending", 1, {
             "trial_id": trial_id})
+        record_funnel_stage(
+            session_id=session_id,
+            trial_id=trial_id,
+            stage=FUNNEL_STAGE_PRESCREEN_COMPLETED,
+            metadata={"disposition": current_disposition})
 
     return {"outcome": "OK",
             "current_disposition": current_disposition}
+
+def compute_prescreen_disposition(prescreen_responses: dict) -> str:
+    """Aggregate per-criterion evaluation outcomes into a
+    final disposition. The deterministic engine owns the
+    disposition vocabulary: if any criterion evaluated to
+    NOT_MET, the patient is disqualified. If all evaluated
+    criteria are MET, the patient is likely eligible. If
+    any criteria are INDETERMINATE or REQUIRES_COORDINATOR,
+    the disposition is uncertain pending coordinator review.
+    If no criteria have been evaluated yet, default to
+    LIKELY_ELIGIBLE (the patient expressed interest and was
+    not disqualified by any evaluated criterion)."""
+    if not prescreen_responses:
+        return DISPOSITION_LIKELY_ELIGIBLE
+
+    outcomes = [
+        r.get("evaluation", EVAL_OUTCOME_INDETERMINATE)
+        for r in prescreen_responses.values()
+    ]
+    if any(o == EVAL_OUTCOME_NOT_MET for o in outcomes):
+        return DISPOSITION_DISQUALIFIED
+    if any(o in (EVAL_OUTCOME_INDETERMINATE,
+                 EVAL_OUTCOME_REQUIRES_COORDINATOR)
+           for o in outcomes):
+        return DISPOSITION_UNCERTAIN_PENDING
+    return DISPOSITION_LIKELY_ELIGIBLE
 ```
 
 ---
@@ -2564,18 +2644,35 @@ def screen_assistant_response(*,
     disclosures_shown = conversation_state.get(
         "disclosures_shown", [])
     if is_first_turn:
-        # The first-turn response should mention the chat-
-        # tool-not-person disclosure and the can-stop-any-
-        # time disclosure at minimum.
-        if ("chat" not in response_text.lower()
-                and "tool" not in response_text.lower()
-                and DISCLOSURE_ASSISTANT_NOT_PERSON
-                not in disclosures_shown):
-            findings.append({
-                "category":     "MISSING_DISCLOSURE",
-                "severity":     "WARN",
-                "disclosure":   DISCLOSURE_ASSISTANT_NOT_PERSON,
-            })
+        # Illustrative check: verify all required first-turn
+        # disclosures were surfaced. Production uses an
+        # explicit token taxonomy reviewed by the IRB rather
+        # than substring matching. This demo checks for
+        # keywords associated with each disclosure as a
+        # structural indicator.
+        disclosure_keywords = {
+            DISCLOSURE_ASSISTANT_NOT_PERSON: ["chat", "tool"],
+            DISCLOSURE_NOT_COORDINATOR: ["not", "coordinator"],
+            DISCLOSURE_CANNOT_ENROLL: ["can't enroll",
+                                       "cannot enroll"],
+            DISCLOSURE_CAN_STOP_ANY_TIME: ["stop", "any time"],
+            DISCLOSURE_REQUEST_COORDINATOR: ["coordinator",
+                                             "speak with"],
+            DISCLOSURE_PROVIDING_INFO_ONLY: ["not medical",
+                                             "information"],
+            DISCLOSURE_DATA_RETENTION_NOTICE: ["record",
+                                               "retain"],
+        }
+        lower_text = response_text.lower()
+        for disc_const, keywords in disclosure_keywords.items():
+            if disc_const in disclosures_shown:
+                continue
+            if not any(kw in lower_text for kw in keywords):
+                findings.append({
+                    "category":   "MISSING_DISCLOSURE",
+                    "severity":   "WARN",
+                    "disclosure": disc_const,
+                })
 
     # 4. Off-corpus assertion check. The response must
     #    not include trial-specific factual claims that
@@ -2601,9 +2698,24 @@ def screen_assistant_response(*,
     # 5. Bedrock Guardrail apply. In production this is the
     #    real bedrock_runtime.apply_guardrail call against
     #    the recruitment-tuned guardrail. The demo skips
-    #    the network call and assumes the guardrail
-    #    response is permitted unless a recommendation
-    #    pattern fires above.
+    #    the actual network call but shows the call shape
+    #    for reference.
+    try:
+        guardrail_response = bedrock_runtime.apply_guardrail(
+            guardrailIdentifier=GUARDRAIL_ID,
+            guardrailVersion=GUARDRAIL_VERSION,
+            source="OUTPUT",
+            content=[{"text": {"text": response_text}}])
+        if guardrail_response.get("action") == "GUARDRAIL_INTERVENED":
+            findings.append({
+                "category": "GUARDRAIL_BLOCKED",
+                "severity": "BLOCK",
+                "detail":   guardrail_response.get("outputs", []),
+            })
+    except Exception:
+        # The mock does not implement apply_guardrail;
+        # production wires this to the real endpoint.
+        pass
 
     # Decide overall verdict.
     blocked = any(f["severity"] == "BLOCK" for f in findings)
@@ -2734,6 +2846,13 @@ def tool_coordinator_handoff_request(*, session_id, trial_id,
         contact_response["ContactId"])
     table_state = dynamodb.Table(CONVERSATION_STATE_TABLE)
     table_state.put_item(Item=_to_decimal(state))
+
+    record_funnel_stage(
+        session_id=session_id,
+        trial_id=trial_id,
+        stage=FUNNEL_STAGE_HANDOFF_SCHEDULED,
+        metadata={"handoff_id": handoff_id,
+                  "disposition": disposition})
 
     # Emit funnel-stage event.
     _emit_event("RecruitmentEvent.HandoffQueued", {
@@ -3248,47 +3367,32 @@ def chat_handler(*,
     if state:
         state = _from_decimal(state)
         funnel_stage = state.get("funnel_stage")
-        prescreen_state = state.get("prescreen_state")
-        # TODO (TechWriter): Code review Issue 1 (WARNING).
-        # The state's prescreen_state can be "IN_PROGRESS"
-        # (set by tool_eligibility_response_capture) when
-        # the LLM never calls prescreen_save_progress before
-        # requesting handoff. The `or DISPOSITION_LIKELY_ELIGIBLE`
-        # fallback only triggers when prescreen_state is
-        # empty/None, not the string "IN_PROGRESS", which
-        # results in a recruitment-decision record persisted
-        # with disposition="IN_PROGRESS" outside the
-        # documented vocabulary. Fix options: (a) add an
-        # aggregator helper that the chat-handler calls
-        # before persisting (compute_prescreen_disposition
-        # _from_responses), normalizing per-criterion
-        # evaluations into a final DISPOSITION_* value; or
-        # (b) gate the `disposition=prescreen_state or ...`
-        # logic on `prescreen_state in DISPOSITIONS` and
-        # otherwise fall back to a documented default; or
-        # (c) make the orchestration prompt require the LLM
-        # to call prescreen_save_progress before requesting
-        # the handoff. Option (a) matches the
-        # deterministic-engine-owns-disposition discipline
-        # the prose advocates.
+        # Compute the final disposition from per-criterion
+        # evaluations. The deterministic engine owns the
+        # disposition: we aggregate per-criterion outcomes
+        # rather than trusting the raw prescreen_state
+        # field (which may still be "IN_PROGRESS" if the
+        # LLM never called prescreen_save_progress).
+        disposition = compute_prescreen_disposition(
+            state.get("prescreen_responses", {}))
         if funnel_stage == FUNNEL_STAGE_HANDOFF_SCHEDULED:
             persist_recruitment_decision(
                 session_id=session_id,
                 trial_id=trial_id,
-                disposition=prescreen_state or DISPOSITION_LIKELY_ELIGIBLE,
+                disposition=disposition,
                 prescreen_summary=build_prescreen_summary(
                     session_id=session_id,
                     trial_id=trial_id,
                     prescreen_responses=state.get(
                         "prescreen_responses", {}),
-                    disposition=prescreen_state or DISPOSITION_LIKELY_ELIGIBLE,
+                    disposition=disposition,
                     patient_questions_open=state.get(
                         "patient_questions_open", [])),
                 coordinator_handoff={
                     "handoff_id": state.get("handoff_id"),
                 },
                 notes="Coordinator handoff scheduled")
-        elif prescreen_state == DISPOSITION_DISQUALIFIED:
+        elif disposition == DISPOSITION_DISQUALIFIED:
             persist_recruitment_decision(
                 session_id=session_id,
                 trial_id=trial_id,
@@ -3516,31 +3620,8 @@ def _seed_demo_trial():
 def _seed_scripted_model_responses(trial_id):
     """Queue mock model responses for the demo turns. Real
     deployments use the real bedrock-runtime client."""
-    # TODO (TechWriter): Code review Issue 2 (WARNING).
-    # The mock currently queues six scripted responses
-    # across four turns, but only Turns 0 and 3 cleanly
-    # bracket the tool call with a corresponding end-of-turn
-    # text response. Turns 1 (logistics question -> FAQ
-    # retrieval) and 2 (age 52 capture -> eligibility
-    # response capture) fire tool calls then fall through
-    # to the default mock response, which is the unrelated
-    # coordinator-handoff fallback ("I appreciate your
-    # interest. I'd like to connect you with a research
-    # coordinator..."). The pedagogy issue: a learner
-    # reading the demo output sees a tool call name
-    # followed by a coordinator-handoff message that has
-    # nothing to do with the tool's purpose, and may infer
-    # that this is how the loop is supposed to work.
-    # Fix: either queue end-of-turn responses for Turns 1
-    # and 2 that actually reference the tool result (for
-    # example, "Visits run about 90 minutes over 12 months"
-    # after the FAQ retrieval, or "You're in the eligible
-    # age range" after capturing age 52), or restructure
-    # the demo so the scripted responses cleanly bracket
-    # each turn's tool call with the corresponding
-    # end-of-turn text. Two additional bedrock_runtime
-    # .queue_response({...}) calls in this function close
-    # the gap.
+    # Turn 0, iteration 0: disclosure + tool call to retrieve
+    # the protocol summary.
     bedrock_runtime.queue_response({
         "stop_reason": "tool_use",
         "content": [
@@ -3565,6 +3646,8 @@ def _seed_scripted_model_responses(trial_id):
             },
         ],
     })
+    # Turn 0, iteration 1: end-of-turn text referencing the
+    # protocol summary tool result.
     bedrock_runtime.queue_response({
         "stop_reason": "end_turn",
         "content": [{
@@ -3583,6 +3666,9 @@ def _seed_scripted_model_responses(trial_id):
             }],
         }],
     })
+    # Turn 1, iteration 0: FAQ/logistics question triggers
+    # the eligibility-question surface tool to begin the
+    # prescreen alongside answering the logistics question.
     bedrock_runtime.queue_response({
         "stop_reason": "tool_use",
         "content": [
@@ -3594,6 +3680,28 @@ def _seed_scripted_model_responses(trial_id):
             },
         ],
     })
+    # Turn 1, iteration 1: end-of-turn text referencing the
+    # surfaced eligibility criterion and answering the
+    # logistics question from the FAQ retrieval.
+    bedrock_runtime.queue_response({
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": (
+                "Per the IRB-approved visit schedule: visits "
+                "run about 90 minutes each over 12 months, "
+                "with visits every 4 weeks for the first 3 "
+                "months and then every 8 weeks after that. "
+                "To help with the initial screen, could you "
+                "tell me your age?"),
+            "citations": [{
+                "trial_id":  trial_id,
+                "section":   "visit_schedule",
+            }],
+        }],
+    })
+    # Turn 2, iteration 0: patient provides age, the model
+    # calls eligibility_response_capture with the value.
     bedrock_runtime.queue_response({
         "stop_reason": "tool_use",
         "content": [
@@ -3608,6 +3716,26 @@ def _seed_scripted_model_responses(trial_id):
             },
         ],
     })
+    # Turn 2, iteration 1: end-of-turn text confirming the
+    # criterion evaluation result.
+    bedrock_runtime.queue_response({
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": (
+                "Got it, 52. That's within the eligible "
+                "age range for this trial (18 to 75). "
+                "Would you like to continue with the "
+                "screen, or would you prefer to speak "
+                "with a research coordinator now?"),
+            "citations": [{
+                "trial_id":  trial_id,
+                "section":   "eligibility_criteria",
+            }],
+        }],
+    })
+    # Turn 3, iteration 0: patient requests coordinator
+    # handoff, the model calls coordinator_handoff_request.
     bedrock_runtime.queue_response({
         "stop_reason": "tool_use",
         "content": [
