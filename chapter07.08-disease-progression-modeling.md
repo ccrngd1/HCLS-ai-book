@@ -36,6 +36,8 @@ Disease progression modeling sits at the intersection of several difficult ML pr
 
 **Censoring.** Many patients in your training data haven't reached the endpoint yet. A patient with 3 years of CKD data who hasn't progressed to Stage 4 isn't a "non-progressor." They might progress next year. This is right-censoring, and it's the same problem that survival analysis was invented to handle. Ignoring it (treating censored patients as non-events) biases your model toward optimism.
 
+**Measurement bias in your primary biomarker.** If you're modeling CKD progression, eGFR is almost certainly your central feature. But eGFR itself carries a history of measurement bias. Until 2021, the standard CKD-EPI equation included a race coefficient that systematically overestimated kidney function in Black patients, potentially delaying referrals and transplant evaluations. The NKF/ASN Task Force recommended adopting the 2021 race-free CKD-EPI creatinine equation, and most labs have transitioned. But your training data likely spans years where the race-adjusted formula was standard. If you train on historical eGFR values without accounting for which equation generated them, you're encoding that bias into your model's learned trajectories. The fix: identify which eGFR equation was used for each historical measurement (check lab metadata), recalculate where possible using the 2021 race-free equation, and evaluate your trained model's performance stratified by race, sex, and age group. Disparate accuracy across subgroups isn't just a fairness concern; it's a signal that your model learned from biased input data.
+
 ### The Modeling Approaches
 
 There are several families of models used for disease progression, each with different strengths:

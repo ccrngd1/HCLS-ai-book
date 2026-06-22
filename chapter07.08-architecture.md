@@ -98,37 +98,62 @@ FUNCTION assemble_patient_timeline(patient_id, lookback_years):
     // We need labs, vitals, medications, and diagnoses over the lookback period.
     // Each record includes a timestamp so we can reconstruct the timeline.
     //
-    // IMPORTANT: Scope queries to clinically relevant data categories only.
-    // For CKD progression, retrieve specific LOINC codes (eGFR, creatinine,
-    // HbA1c, albumin, hemoglobin, potassium) and relevant condition categories
-    // (renal, cardiovascular, endocrine, metabolic). Do NOT query all patient
-    // data. The Minimum Necessary standard requires limiting access to what
-    // the model actually uses.
+    // PRIVACY: The HIPAA Minimum Necessary standard (45 CFR 164.502(b)) requires
+    // that you retrieve only the data elements your model actually uses. Do NOT
+    // query all patient data. Broad queries risk pulling 42 CFR Part 2 protected
+    // substance abuse records, psychotherapy notes, or other sensitive categories
+    // that require separate patient consent. Consult your privacy officer regarding
+    // consent requirements before assembling longitudinal datasets, especially
+    // when combining data across clinical systems.
+    //
+    // Scope lab queries to specific LOINC codes relevant to CKD progression:
+    //   - eGFR:        LOINC 98979-8 (CKD-EPI 2021, race-free)
+    //   - Creatinine:  LOINC 2160-0 (serum/plasma)
+    //   - HbA1c:       LOINC 4548-4
+    //   - Albumin:     LOINC 1751-7 (serum)
+    //   - Hemoglobin:  LOINC 718-7
+    //   - Potassium:   LOINC 2823-3 (serum/plasma)
+    //
+    // Scope condition queries to relevant ICD-10 categories:
+    //   - Renal:         N00-N39
+    //   - Cardiovascular: I00-I99
+    //   - Endocrine:     E00-E89 (includes diabetes)
+    //   - Metabolic:     E70-E88
 
     start_date = today minus lookback_years
 
-    // Retrieve lab results (eGFR, HbA1c, creatinine, albumin, etc.)
+    // Retrieve lab results filtered to specific LOINC codes.
+    // This satisfies Minimum Necessary: only the biomarkers the model uses.
+    relevant_loinc_codes = ["98979-8", "2160-0", "4548-4", "1751-7", "718-7", "2823-3"]
     labs = query FHIR Observation resources where:
         patient = patient_id
         date >= start_date
-        category = "laboratory"
+        code IN relevant_loinc_codes
     // Sort chronologically. Each lab has: code, value, unit, date.
 
-    // Retrieve medication history (what was prescribed, when, dosage)
+    // Retrieve medication history (what was prescribed, when, dosage).
+    // Filter to drug classes relevant to CKD management (ACE/ARB, SGLT2i,
+    // diabetes medications, antihypertensives, ESAs, phosphate binders).
     medications = query FHIR MedicationRequest resources where:
         patient = patient_id
         authoredOn >= start_date
     // Each medication has: drug code, dose, start date, end date (if stopped).
 
-    // Retrieve active conditions and their onset dates
+    // Retrieve conditions filtered to clinically relevant categories only.
+    // Do NOT retrieve all conditions. Substance abuse diagnoses (F10-F19)
+    // are protected under 42 CFR Part 2 and require explicit patient consent.
+    relevant_condition_categories = ["N00-N39", "I00-I99", "E00-E89"]
     conditions = query FHIR Condition resources where:
         patient = patient_id
         onset >= start_date OR clinicalStatus = "active"
+        code.category IN relevant_condition_categories
 
-    // Retrieve procedures (surgeries, dialysis sessions, etc.)
+    // Retrieve procedures limited to renal-relevant procedures
+    // (dialysis, transplant evaluation, biopsies, vascular access).
     procedures = query FHIR Procedure resources where:
         patient = patient_id
         performedDateTime >= start_date
+        code.category IN renal_procedure_codes
 
     // Assemble into a unified timeline structure
     timeline = {
@@ -137,7 +162,7 @@ FUNCTION assemble_patient_timeline(patient_id, lookback_years):
         medications:  medications sorted by start date,
         conditions:   conditions sorted by onset,
         procedures:   procedures sorted by date,
-        demographics: get patient demographics (age, sex, race, zip code)
+        demographics: get patient demographics (age, sex, zip code)
     }
 
     RETURN timeline
@@ -443,12 +468,32 @@ FUNCTION integrate_and_monitor(prediction, patient_id):
 | Training time (50K patient cohort) | 2-6 hours |
 | Retraining frequency | Quarterly (or when drift detected) |
 
+**Context on these benchmarks:** The Kidney Failure Risk Equation (KFRE) by Tangri et al. achieves C-statistics of 0.84-0.90 for predicting kidney failure (dialysis initiation or transplant) at 2-year and 5-year horizons. The KFRE uses only four variables (age, sex, eGFR, urine albumin-to-creatinine ratio) and predicts a binary endpoint (kidney failure yes/no). This recipe's benchmarks assume a general-purpose model predicting CKD stage progression, which is a broader and less sharply defined outcome than kidney failure specifically. Predicting "will eGFR drop below 30" across a heterogeneous population is inherently harder to discriminate than predicting "will this patient need dialysis," because stage progression includes patients with slow, clinically manageable declines alongside those heading for renal replacement therapy. If your use case is specifically kidney failure prediction, the KFRE is a validated clinical baseline you should benchmark against (and may be hard to beat with ML alone).
+
 **Where it struggles:**
 - Patients with very short observation histories (less than 12 months of data). The model needs trajectory information, and a single snapshot isn't enough.
 - Patients on novel therapies not represented in training data. New drugs change progression rates in ways the model hasn't seen.
 - Rapid, unexpected changes (acute kidney injury superimposed on chronic disease). The model predicts gradual progression, not sudden events.
 - Subgroups underrepresented in training data (rare diseases, pediatric populations, specific ethnic groups with different progression patterns).
 - Very long horizons (5+ years). Uncertainty compounds and predictions become too wide to be clinically actionable.
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the shape of a disease progression system. Here's what you'd still need to close before this touches real patients:
+
+**Validation governance.** A single temporal train/test split is not sufficient evidence for clinical deployment. You need external validation on an independent patient cohort (ideally from a different health system), prospective validation where predictions are generated before outcomes are known, and a formal model card documenting intended use, known limitations, and performance across subgroups. Most health systems require an AI governance committee sign-off before any model informs clinical decisions.
+
+**Causal inference for treatment effects.** The model as implemented conditions on current treatment (a pragmatic shortcut). It cannot answer "what if we change treatment?" For clinical decisions about treatment escalation, you need either a causal model (marginal structural models, G-computation) or a very clear disclaimer that predictions assume current management continues unchanged. Without this, a clinician might incorrectly interpret a high-risk prediction as inevitable rather than modifiable.
+
+**Fairness testing across subgroups.** Model performance must be evaluated separately by race, sex, age group, insurance type, and geographic region. A model with a 0.75 C-index overall might have a 0.82 C-index for well-represented subgroups and a 0.61 C-index for underrepresented ones. Disparate performance is a patient safety concern (missed high-risk patients in underserved groups) and a regulatory concern. The eGFR race coefficient history makes this especially important for CKD models.
+
+**Regulatory review.** Disease progression predictions that influence treatment decisions may qualify as clinical decision support (CDS) under FDA guidance. The 2022 FDA final guidance on CDS software distinguishes between "intended for" clinician use (potentially exempt if criteria are met) and systems that provide specific recommendations. Document your intended use clearly and consult regulatory counsel early. State medical practice regulations may also apply.
+
+**Drift detection with clinical feedback loops.** The monitoring system must detect not just statistical drift (feature distributions shifting) but clinical validity drift (are predictions still matching outcomes?). This requires a minimum of 6-12 months of accumulated predictions before you can assess calibration at the 12-month horizon, creating a long feedback loop. Plan for conservative operating postures during this initial deployment period.
+
+**EHR integration and workflow design.** A prediction buried in a standalone dashboard won't be used. Clinical integration requires SMART on FHIR apps or CDS Hooks that surface predictions during relevant encounters (nephrology visits, primary care chronic disease reviews), and UX that communicates uncertainty without overwhelming the clinician. Design the workflow with end users, not for them.
 
 ---
 
