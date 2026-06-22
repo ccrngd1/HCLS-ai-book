@@ -8,11 +8,15 @@
 
 **AWS Lambda for the optimization engine.** Bed assignment optimization for a single hospital (even a large one) is computationally lightweight. A 500-bed hospital with 20-40 pending assignments produces a problem that OR-Tools solves in under 2 seconds. Lambda's 15-minute timeout is more than sufficient, and the serverless model means you're not paying for idle compute between optimization runs. Package OR-Tools in a Lambda layer or container image.
 
-**Amazon Kinesis Data Streams for real-time state ingestion.** ADT events arrive as a stream (HL7 messages, FHIR notifications, or custom events from the EHR). Kinesis handles the ingestion at whatever rate your hospital generates events (typically hundreds to low thousands per hour) with ordering guarantees within a shard. The stream serves as a buffer between the event source and your processing logic.
+**Amazon Kinesis Data Streams for real-time state ingestion.** ADT events arrive as a stream (HL7 messages, FHIR notifications, or custom events from the EHR). Kinesis handles the ingestion at whatever rate your hospital generates events (typically hundreds to low thousands per hour) with ordering guarantees within a shard. The stream serves as a buffer between the event source and your processing logic. A single shard handles up to 1,000 records/second (roughly 3,600 events/hour), which is more than sufficient for most single-hospital deployments. For multi-campus systems, partition by facility ID so each campus gets ordering guarantees independently.
+
+Configure a dead-letter queue (SQS) on the Lambda event source mapping for the Kinesis consumer. If the event processor fails to handle an ADT event (malformed message, transient DynamoDB error after retries, code bug), the failed batch lands in the DLQ rather than blocking the shard. A lost ADT event means your state model diverges from physical reality: the bed state says "occupied" when the patient already discharged, or vice versa. Alarm on DLQ depth immediately and investigate any messages there. Even one stuck event can cascade into bad optimization recommendations.
 
 **Amazon DynamoDB for the state model.** The live bed state needs single-digit-millisecond reads (the optimization engine queries it every few minutes) and fast writes (every ADT event updates it). DynamoDB's key-value model maps naturally to bed state: partition key is bed ID, attributes are current occupant, status, constraints, and timestamps. A GSI on unit gives you fast unit-level queries.
 
-**Amazon ElastiCache (Redis) for the working state and debounce logic.** The debounce timer ("wait 60 seconds after the last state change before re-optimizing") and the in-flight recommendation state (which assignments have been recommended but not yet accepted) live in Redis. It's faster than DynamoDB for this pattern and supports TTLs natively for expiring stale recommendations.
+**Amazon ElastiCache (Redis) for the working state and debounce logic.** The debounce timer ("wait 60 seconds after the last state change before re-optimizing") and the in-flight recommendation state (which assignments have been recommended but not yet accepted) live in Redis. It's faster than DynamoDB for this pattern and supports TTLs natively for expiring stale recommendations. In production, deploy with Multi-AZ replication as the minimum configuration: a single Redis node going down shouldn't blind you to in-flight state.
+
+Graceful degradation when Redis is unavailable: if the primary node fails and replica promotion hasn't completed, fall back to a periodic EventBridge schedule for triggering optimization (you lose event-driven debouncing but keep the baseline cadence). If in-flight recommendation state is unreadable, treat all beds as potentially available and flag recommendations with a lower confidence score. The coordinator sees "confidence: LOW (state cache unavailable)" and knows to double-check manually. This is better than halting the system entirely.
 
 **AWS Step Functions for the optimization pipeline.** The sequence of "gather current state, run optimizer, validate results, publish recommendations" is a short workflow that benefits from Step Functions' error handling and retry logic. If the optimizer fails or times out, Step Functions handles the retry without custom code.
 
@@ -80,10 +84,16 @@ flowchart TD
 | IAM Permissions | lambda:InvokeFunction, kinesis:GetRecords/PutRecord, dynamodb:PutItem/GetItem/Query/UpdateItem, elasticache:Connect, states:StartExecution, execute-api:ManageConnections |
 | BAA | Required. Bed assignments reference patient identifiers, diagnoses, and isolation status. |
 | Encryption | S3 SSE-KMS for any stored data, DynamoDB encryption at rest, ElastiCache in-transit encryption, TLS everywhere |
-| VPC | Required. ElastiCache must be in VPC. Lambda functions accessing Redis need VPC configuration. EHR integration likely requires VPC connectivity (Direct Connect or VPN). |
+| VPC | Required. ElastiCache must be in VPC. Lambda functions accessing Redis need VPC configuration. EHR integration likely requires VPC connectivity (Direct Connect or VPN). Configure VPC endpoints to avoid NAT gateway costs and latency: DynamoDB (gateway, free), S3 (gateway, free), Kinesis (interface), Step Functions (interface), EventBridge (interface), CloudWatch Logs (interface), execute-api (interface), KMS (interface). Budget approximately $50-60/month for interface endpoints in a 3-AZ deployment. |
 | CloudTrail | Audit logging for all assignment decisions and overrides |
 | Sample Data | Synthetic ADT event streams with realistic arrival patterns. Synthetic bed inventory with constraint attributes. Never use real PHI in dev. |
 | Cost Estimate | ~$500-800/month base (Kinesis + DynamoDB + Lambda + ElastiCache). ~$1,000-1,500/month at scale with high event volumes and WebSocket connections. |
+
+### EHR Integration Network Path
+
+The ADT event feed is the lifeblood of this system. If it goes down, your state model drifts from reality within minutes. For on-premises EHR systems (Epic, Cerner, MEDITECH hosted in the hospital data center), use AWS Direct Connect as the primary path with a site-to-site VPN as backup. For cloud-hosted EHR instances, VPC peering or AWS PrivateLink provides the lowest-latency, most reliable connectivity without traversing the public internet.
+
+Monitor the connection health actively. If the ADT feed goes silent for more than 5 minutes, surface a stale-state warning in the bed management dashboard and reduce recommendation confidence scores. The optimizer is still running, but coordinators need to know the data feeding it might be outdated. Set a CloudWatch alarm on the Kinesis IncomingRecords metric: if it drops to zero during business hours (when a hospital is always generating ADT events), something is wrong with the integration path, not with patient flow.
 
 ## Ingredients
 
@@ -330,7 +340,12 @@ FUNCTION publish_recommendations(recommendations):
             reasoning = rec.reasoning,
             alternatives = rec.alternatives
         )
-        // TODO (TechWriter): Expert review A3 (MEDIUM). Add note: expired recommendations should trigger re-optimization for the affected patient. Patient must never silently fall out of the pending queue because a recommendation timed out.
+
+        // When a recommendation expires without coordinator action, the patient
+        // must re-enter the pending queue for the next optimization run. Never let
+        // a patient silently fall out of the system because a recommendation timed
+        // out. Use a DynamoDB TTL stream or a scheduled Lambda to detect expirations
+        // and mark the patient as "needs re-optimization."
 
         // Push to bed management coordinator via WebSocket
         notify_bed_coordinator(
@@ -341,8 +356,18 @@ FUNCTION publish_recommendations(recommendations):
     // Track outcomes for feedback loop
     SCHEDULE check_recommendation_outcomes(recommendations, after_minutes=30)
 
-    // TODO (TechWriter): Expert review S1 (HIGH). Add guidance on PHI minimization in WebSocket payloads: push only MRN + bed + confidence score; serve clinical reasoning on-demand via authenticated REST API, not proactively to all connected sessions.
-    // TODO (TechWriter): Expert review S3 (MEDIUM). Add note on WebSocket auth model: Lambda authorizer on $connect, unit-level filtering of recommendations, connection TTLs for idle sessions.
+    // PHI minimization: WebSocket payloads carry only the minimum needed for
+    // the coordinator to act: MRN (or internal patient ID), recommended bed ID,
+    // and confidence score. Clinical reasoning (diagnoses, isolation rationale,
+    // acuity justification) is served on-demand via an authenticated REST API
+    // call when the coordinator clicks into a specific recommendation. This avoids
+    // broadcasting PHI to all connected sessions on a unit.
+    //
+    // WebSocket authentication: use a Lambda authorizer on the $connect route
+    // to validate the coordinator's session token. Filter pushed recommendations
+    // by unit so coordinators only see their own unit's assignments. Set connection
+    // TTLs (e.g., 8 hours) and disconnect idle sessions after 30 minutes of
+    // inactivity to limit exposure surface.
 
 FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=NULL):
     IF action == "ACCEPT":
@@ -356,7 +381,13 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
         log_override(recommendation_id, override_reason)
         // This is a learning signal: why did the human disagree?
         queue_for_model_review(recommendation_id, override_reason)
-        // TODO (TechWriter): Expert review S2 (MEDIUM). Add note recommending structured override reason codes (SAFETY_CONCERN, PATIENT_REQUEST, etc.) with optional free-text flagged as PHI-containing and subject to separate access controls and retention policies.
+        // Use structured override reason codes for analytics:
+        // SAFETY_CONCERN, PATIENT_REQUEST, FAMILY_REQUEST, STAFFING_ISSUE,
+        // PHYSICIAN_PREFERENCE, EQUIPMENT_UNAVAILABLE, CLEANING_DELAY, OTHER.
+        // The optional free-text field that accompanies the code may contain PHI
+        // (patient names, clinical details). Flag it as PHI-containing, apply
+        // separate access controls, and set a retention policy aligned with your
+        // organization's minimum necessary standard.
 
     ELSE IF action == "DEFER":
         // Not ready to decide yet (waiting for discharge, cleaning, etc.)
@@ -433,6 +464,24 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
 - **Behavioral health patients:** Placement constraints are complex and often undocumented (elopement risk, self-harm precautions, specific room configurations). We've seen 60%+ override rates for behavioral health placements. The model just doesn't have the context that experienced staff carry in their heads.
 - **"Soft" bed blocks:** Some hospitals informally reserve beds for specific services ("those two beds are always for cardiology"). These aren't in any system but staff enforce them religiously. The optimizer doesn't know about them and gets overridden, and you'll spend weeks tracking down why acceptance rates are low on certain units.
 - **Discharge prediction uncertainty:** If your predicted discharge time is wrong by 2 hours, beds you planned on aren't available when you need them. The optimization is only as good as the discharge predictions feeding it, and those predictions are often optimistic.
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and example above demonstrate the optimization logic. A production deployment needs to close several gaps:
+
+**Formal validation testing.** Before go-live, you need to run the optimizer in shadow mode (generating recommendations alongside the human process without acting on them) for 4-8 weeks. Compare optimizer recommendations to actual human decisions. Measure where the optimizer agrees, where it disagrees, and whether its disagreements would have been better or worse. Document this validation evidence for your clinical safety review board.
+
+**EHR integration certification.** Connecting to a live ADT feed requires interface certification with your specific EHR vendor (Epic, Cerner, MEDITECH, etc.). Each vendor has its own integration testing, security review, and validation process. Budget 8-16 weeks for interface build and certification depending on the vendor and whether you use an integration engine (Rhapsody, Mirth Connect) as an intermediary.
+
+**Clinical safety review.** Any system that influences patient placement decisions needs review by your organization's clinical safety committee. They'll want to understand: what happens when the system is wrong? What's the blast radius of a bad recommendation? How do staff override? What's the fallback when the system is unavailable? Prepare a clinical safety case document addressing these questions.
+
+**Constraint completeness.** The model above handles the major hard constraints (acuity, isolation, gender, staffing). Production systems inevitably discover constraints nobody thought to document: "room 312 doesn't have working suction," "patients on service X always go to wing Y per attending preference," "that bed is technically available but the call light has been broken for a week." Build a lightweight constraint management UI so charge nurses can add temporary soft constraints without a code deploy.
+
+**Graceful degradation under load.** When the system is stressed (Redis unavailable, solver timeout, stale state), it should degrade to simpler heuristics rather than producing silence. A simple priority-queue fallback (highest-priority patient gets the first compatible bed) is better than nothing when the optimizer can't run.
+
+**Audit trail for regulatory compliance.** Every recommendation, acceptance, and override needs an immutable audit trail. Regulatory reviewers (Joint Commission, state health departments) may want to understand how placement decisions were made for a specific patient. Log the full context: input state snapshot, solver parameters, output recommendations, coordinator action, and timestamp. Retain for your organization's medical record retention period (typically 7-10 years for adults).
 
 ---
 
