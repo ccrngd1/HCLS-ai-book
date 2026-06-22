@@ -1,0 +1,390 @@
+# parallel_worker header: concurrency_limit=4 batch_id=batch-1782113990823-000041-4f9b55f55ad93812 iteration=1824 task_id=ch14-r09-findings persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1258 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m11200 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I need to understand the two findings:[0m[0m
+[0m[0m
+1. [1mL29 (A2)[22m: Add human override mechanism with bidirectional arrow on diagram[0m[0m
+2. [1mL31 (A1)[22m: Add failover/degradation subsection[0m[0m
+[0m[0m
+Let me also check the STYLE-GUIDE and RECIPE-GUIDE for reference, and the python example for consistency:[0m[0m
+[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m[38;5;244m (using tool: read)[0mReading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/STYLE-GUIDE.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4148 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-1824/STYLE-GUIDE.md
+[38;5;244m - Completed in 0.11s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, from line [38;5;141m80[0m to [38;5;141m200[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m5502 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+[38;5;244m - Completed in 0.3s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, from line [38;5;141m200[0m to [38;5;141m400[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9393 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, from line [38;5;141m400[0m to [38;5;141m600[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m10119 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, from line [38;5;141m600[0m to [38;5;141m820[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9352 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, from line [38;5;141m820[0m to [38;5;141m1000[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m8375 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, from line [38;5;141m1000[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4348 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a clear picture of both files and the two findings. Let me now implement the fixes:[0m[0m
+[0m[0m
+[1mFinding L29 (A2 - HIGH)[22m: Add bidirectional arrow between Staff Dashboard and scheduling engine + paragraph describing human override mechanism.[0m[0m
+[0m[0m
+[1mFinding L31 (A1 - HIGH)[22m: Add failover/degradation subsection.[0m[0m
+[0m[0m
+Let me apply both fixes to [38;5;10mchapter14.09-architecture.md[0m:[0m[0m
+I'll modify the following file: [38;5;141mchapter14.09-architecture.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add bidirectional arrow between Staff Dashboard and scheduling engine in the architecture diagram, and add Human Override Mechanism section describing drag-and-drop, locking, ad-hoc constraints, and re-solve capabilities
+
+[49m[39m  27, 27[0m:[39m[49m ### Architecture Diagram
+[0m[49m[39m  28, 28[0m:[39m[49m 
+[0m[49m[39m  29, 29[0m:[39m[49m ```mermaid
+[0m[49m[39m  30, 30[0m:[39m[49m flowchart TD
+[0m[49m[39m  31, 31[0m:[39m[49m     A[Oncology EHR\nTreatment Orders] -->|FHIR/HL7| B[EventBridge\nOrder Events]
+[0m[49m[39m  32, 32[0m:[39m[49m     B --> C[Lambda\nOrder Processor]
+[0m[49m[39m  33, 33[0m:[39m[49m     C --> D[DynamoDB\nScheduling Queue]
+[0m[49m[39m  34, 34[0m:[39m[49m     
+[0m[49m[39m  35, 35[0m:[39m[49m     E[Step Functions\nBatch Scheduler] -->|Nightly| F[Lambda\nDuration Predictor]
+[0m[49m[39m  36, 36[0m:[39m[49m     F -->|SageMaker Endpoint| G[ML Model\nInfusion Duration]
+[0m[49m[39m  37, 37[0m:[39m[49m     E --> H[Lambda\nConstraint Optimizer]
+[0m[49m[39m  38, 38[0m:[39m[49m     H -->|OR-Tools / Custom| I[Optimization Engine]
+[0m[49m[39m  39, 39[0m:[39m[49m     I --> J[DynamoDB\nPublished Schedule]
+[0m[49m[39m  40, 40[0m:[39m[49m     
+[0m[49m[39m  41, 41[0m:[39m[49m     J --> K[API Gateway\nSchedule API]
+[0m[49m[39m  42, 42[0m:[39m[49m     K --> L[Staff Dashboard]
+[0m[49m[39m  43, 43[0m:[39m[49m     K --> M[Patient Portal]
+[0m[49m[39m  44, 44[0m:[39m[49m     K --> N[Pharmacy System]
+[0m[49m[39m  45, 45[0m:[39m[49m     
+[0m[49m[38;5;9m- 46    [0m:[38;5;9m[49m     O[EventBridge\nDisruption Events] --> P[Lambda\nReal-Time Adjuster]
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m     L -->|Overrides| K
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m     K -->|Re-solve / Lock / Reassign| P[Lambda\nReal-Time Adjuster]
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m     O[EventBridge\nDisruption Events] --> P
+[0m[49m[39m  47, 50[0m:[39m[49m     P --> J
+[0m[49m[39m  48, 51[0m:[39m[49m     P --> N
+[0m[49m[39m  49, 52[0m:[39m[49m     
+[0m[49m[39m  50, 53[0m:[39m[49m     Q[S3\nSchedule History] --> E
+[0m[49m[39m  51, 54[0m:[39m[49m     G --> Q
+[0m[49m[39m  52, 55[0m:[39m[49m 
+[0m[49m[39m  53, 56[0m:[39m[49m     style I fill:#ff9,stroke:#333
+[0m[49m[39m  54, 57[0m:[39m[49m     style J fill:#9ff,stroke:#333
+[0m[49m[39m  55, 58[0m:[39m[49m     style G fill:#f9f,stroke:#333
+[0m[49m[38;5;9m- 56    [0m:[38;5;9m[49m ```
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m ### Human Override Mechanism
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m The optimizer produces a recommendation, not a commandment. Clinical staff must be able to override any scheduling decision. The staff dashboard provides four override actions:
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m **Drag-and-drop reassignment.** A charge nurse sees that Patient A is anxious about being near the window. She drags that patient's card from Chair 12 to Chair 5. The system validates the move (no overlap, nursing capacity still within bounds) and publishes the updated schedule. If the move creates a constraint violation, the dashboard shows the conflict and offers to re-solve the affected subset.
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m **Assignment locking.** Pharmacy has already prepped for Patient B in Chair 7 at 09:00. The charge nurse locks that assignment so subsequent re-solves cannot move it. Locked assignments become hard constraints in any future optimization pass.
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m **Ad-hoc constraint addition.** A patient calls ahead requesting to not be seated near another patient (family dispute, emotional response to seeing a specific regimen). The charge nurse adds a "not same section" constraint between the two patients and triggers a partial re-solve for the affected time window.
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m **Re-solve requests.** After several morning cancellations, the schedule has gaps. The charge nurse hits "re-optimize afternoon" to pack the remaining patients more efficiently. The re-solve treats locked assignments and already-started infusions as fixed, optimizing only the movable patients.
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m Every override writes an audit record: staff ID, timestamp, action type, before state, after state, and free-text reason. These records serve compliance (who changed the schedule and why?) and model improvement (if nurses always move first-dose patients to the chairs near the nursing station, that's a missing constraint the optimizer should learn).
+[0m[K
+Updating: [38;5;141mchapter14.09-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow apply Finding L31 (A1 - HIGH): Add failover/degradation subsection. I'll add it after the Ingredients section and before the Variations section:[0m[0m
+I'll modify the following file: [38;5;141mchapter14.09-architecture.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add Failover and Graceful Degradation section addressing batch optimizer failure, real-time adjuster timeout, and dashboard availability requirements
+
+[49m[39m  101, 101[0m:[39m[49m ---
+[0m[49m[39m  102, 102[0m:[39m[49m 
+[0m[49m[38;5;10m+      103[0m:[38;5;10m[49m ## Failover and Graceful Degradation
+[0m[49m[38;5;10m+      104[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      105[0m:[38;5;10m[49m The optimization layer enhances existing scheduling. It does not replace it. If the optimizer goes down, patients still need to be scheduled, pharmacy still needs to prep, and nurses still need assignments. Design for degradation from day one.
+[0m[49m[38;5;10m+      106[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      107[0m:[38;5;10m[49m ### Batch Optimizer Failure
+[0m[49m[38;5;10m+      108[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      109[0m:[38;5;10m[49m The Step Functions workflow that builds tomorrow's schedule runs at 2 AM. If it fails (solver timeout, infeasible constraints, Lambda error, SageMaker endpoint unavailable), the system has four hours to recover before staff arrive.
+[0m[49m[38;5;10m+      110[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      111[0m:[38;5;10m[49m **Retry policy.** Step Functions retries the batch job twice with 15-minute backoff. If the solver hits the time limit without finding a feasible solution, relax soft constraints (drop preference satisfaction, allow slight nursing overload) and retry. Log the relaxation for review.
+[0m[49m[38;5;10m+      112[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      113[0m:[38;5;10m[49m **Fallback to template-based schedule.** If the batch optimizer has not produced a published schedule by 6 AM, the system falls back to the template-based schedule. Every center already has one: it's the "default" schedule pattern that rotating patients get assigned to before optimization exists. The system copies last week's same-day template (e.g., last Monday's schedule as a template for this Monday), slots in today's patients by protocol duration, and publishes to DynamoDB with a "TEMPLATE_FALLBACK" status flag. Staff see a yellow banner: "Today's schedule was generated from the template. Manual adjustments may be needed."
+[0m[49m[38;5;10m+      114[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      115[0m:[38;5;10m[49m **Alert chain.** CloudWatch alarm fires if the batch job has not written a schedule to DynamoDB by 5:30 AM. The alarm triggers SNS notification to the on-call engineer and the charge nurse's pager. Include the Step Functions execution URL in the alert so the engineer can diagnose immediately.
+[0m[49m[38;5;10m+      116[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      117[0m:[38;5;10m[49m ### Real-Time Adjuster Timeout
+[0m[49m[38;5;10m+      118[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      119[0m:[38;5;10m[49m The real-time adjuster fires on disruption events (patient late, cancellation, extended duration). It must respond quickly because staff are waiting.
+[0m[49m[38;5;10m+      120[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      121[0m:[38;5;10m[49m **Timeout threshold.** If the real-time adjuster Lambda does not return a valid adjustment within 5 seconds, the invocation is considered failed. The function's timeout is set to 10 seconds (giving 5 seconds for the solver and 5 seconds for validation and persistence), but the caller treats anything over 5 seconds as a timeout.
+[0m[49m[38;5;10m+      122[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      123[0m:[38;5;10m[49m **Fallback to human queue.** On timeout, the disruption event routes to the charge nurse's manual resolution queue in the staff dashboard. The event appears with a red flag: "Automatic resolution timed out. Manual reassignment needed." The staff dashboard still shows the current schedule (pre-disruption state) so the nurse has full context.
+[0m[49m[38;5;10m+      124[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      125[0m:[38;5;10m[49m **Consecutive failure detection.** If 3 or more consecutive real-time adjustments exceed the 5-second threshold, CloudWatch fires an alarm. This pattern usually indicates either degraded SageMaker endpoint latency, DynamoDB throttling, or a schedule state that's become too fragmented for quick re-optimization. The alert tells the engineer to check endpoint health and consider a full re-solve of the remaining day.
+[0m[49m[38;5;10m+      126[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      127[0m:[38;5;10m[49m ### Dashboard Availability
+[0m[49m[38;5;10m+      128[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      129[0m:[38;5;10m[49m The staff dashboard must display the current schedule regardless of optimizer availability. It reads directly from DynamoDB (the published schedule table), not from the optimization engine. Even if every Lambda function is down, the dashboard shows the last-published schedule. The architecture separates "schedule generation" (can fail) from "schedule display" (must always work).
+[0m[49m[38;5;10m+      130[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      131[0m:[38;5;10m[49m If the DynamoDB table itself becomes unreachable (region-level issue), the dashboard falls back to a cached copy in the browser's local storage, updated on every successful fetch. The cache shows a staleness indicator: "Last updated 3 minutes ago" in green, or "Last updated 45 minutes ago, connection issues" in amber.
+[0m[49m[38;5;10m+      132[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      133[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      134[0m:[38;5;10m[49m 
+[0m[49m[39m  103, 135[0m:[39m[49m ## Variations and Extensions
+[0m[K
+Updating: [38;5;141mchapter14.09-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me verify there are no em dashes in the new content and check that the file looks correct:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m for pattern: [38;5;141m\u2014|\u2013[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '\u2014|\u2013' in /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood, no em or en dashes. Now let me verify the new sections read correctly:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m, from line [38;5;141m35[0m to [38;5;141m100[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4863 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m, from line [38;5;141m100[0m to [38;5;141m150[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m5217 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mBoth fixes are in place. Now let me also check the Python example's "Gap to Production" section for consistency. The python example already mentions "Staff override workflow" in its gap section, and the architecture now has the full mechanism documented. They're consistent.[0m[0m
+[0m[0m
+Let me also verify the Python example mentions the fallback behavior that the architecture now describes. Looking at the gap section, it says: "If the optimizer fails, fall back to the previous day's template rather than leaving staff with no schedule." This aligns well with the architecture's new failover section.[0m[0m
+[0m[0m
+Now let me clear the resolved findings from the todo file:[0m[0m
+I'll create the following file: [38;5;141mchapter14.09-todo.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Remove resolved findings from the todo file
+
+[49m[39m  1, 1[0m:[39m[49m # Open TODOs: Recipe 14.9: Chemotherapy Scheduling
+[0m[49m[39m  2, 2[0m:[39m[49m 
+[0m[49m[39m  3, 3[0m:[39m[49m > Auto-extracted 2026-06-18 from inline source comments (2 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+[0m[49m[39m  4, 4[0m:[39m[49m 
+[0m[49m[38;5;9m- 5   [0m:[38;5;9m[49m ## architecture — `chapter14.09-architecture.md`
+[0m[49m[38;5;9m- 6   [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m- 7   [0m:[38;5;9m[49m - **L29** — TODO (TechWriter): Expert review A2 (HIGH). Add bidirectional arrow between Staff Dashboard and scheduling engine. Add paragraph describing human override mechanism: drag-and-drop reassignment, assignment locking, ad-hoc constraint addition, re-solve requests. Log all overrides with staff ID and reason. Track override frequency to identify missing model constraints. The recipe's Honest Take already advises "Allow overrides" but the architecture doesn't implement it.
+[0m[49m[38;5;9m- 8   [0m:[38;5;9m[49m - **L31** — TODO (TechWriter): Expert review A1 (HIGH). Add failover/degradation subsection. The optimization layer enhances existing scheduling; it does not replace it. Define: if batch optimizer fails by 6 AM, fall back to template-based schedule. If real-time adjuster times out (>5s), route to human scheduler queue. Staff dashboard must show current schedule regardless of optimizer availability. Alert if batch job fails or real-time latency exceeds 5s for 3+ consecutive events.
+[0m[49m[38;5;10m+    5[0m:[38;5;10m[49m (All findings resolved.)
+[0m[K
+Replacing: [38;5;141mchapter14.09-todo.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me do a final check that there are no [38;5;10m<!-- TODO -->[0m comments in the architecture file:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m for pattern: [38;5;141mtodo[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mClean. Let me also verify the full file is still structurally sound by checking the end:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m, from line [38;5;141m185[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m562 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mAll good. Both findings are resolved:[0m[0m
+[0m[0m
+[1mFinding L29 (Expert review A2 - HIGH):[22m Added bidirectional arrows in the Mermaid diagram ([38;5;10mL -->|Overrides| K[0m and [38;5;10mK -->|Re-solve / Lock / Reassign| P[0m) and a full "Human Override Mechanism" subsection describing drag-and-drop reassignment, assignment locking, ad-hoc constraint addition, re-solve requests, and audit logging with override frequency tracking.[0m[0m
+[0m[0m
+[1mFinding L31 (Expert review A1 - HIGH):[22m Added a "Failover and Graceful Degradation" section with three subsections:[0m[0m
+- **Batch Optimizer Failure**: retry policy, 6 AM fallback to template-based schedule, alert chain at 5:30 AM[0m[0m
+- **Real-Time Adjuster Timeout**: 5-second threshold, fallback to human scheduler queue, alarm after 3+ consecutive timeouts[0m[0m
+- **Dashboard Availability**: reads from DynamoDB regardless of optimizer state, browser local storage cache as last resort[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 11.86 • Time: 1m 57s
+
+[0m[1G[0m[0m[?25hBoth fixes are consistent with the Python example's "Gap to Production" section (which already mentioned template fallback and staff override workflow). The todo file has been cleared of resolved entries.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m258 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe todo file shows all findings have been resolved. Let me verify the source files exist and check for consistency and any issues.[0m[0m
+[0m[0m
+[0m[0m
+Searching for files: [38;5;141m**/chapter14*09*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1824[0m[38;5;244m (using tool: glob)[0mSearching for files: [38;5;141m**/14.09*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1824[0m[38;5;244m (using tool: glob)[0mSearching for files: [38;5;141m**/14*09*chemo*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1824[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m10 files[0m under /tmp/ralph-worktrees/iter-1824
+[38;5;244m - Completed in 0.40s[0m
+
+
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244m**/14.09*[0m under /tmp/ralph-worktrees/iter-1824
+[38;5;244m - Completed in 0.37s[0m
+
+
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244m**/14*09*chemo*[0m under /tmp/ralph-worktrees/iter-1824
+[38;5;244m - Completed in 0.22s[0m
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m16855 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m50953 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m37820 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me check for em dashes in the source files and verify the todo file state:[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md[0m for pattern: [38;5;141m—[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m for pattern: [38;5;141m—[0m
+↱ Operation 3: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m for pattern: [38;5;141m—[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNo em dashes in any source files. Let me check for any [38;5;10m<!-- TODO -->[0m comments in the source files and verify the review files to understand what findings existed:[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md[0m for pattern: [38;5;141mtodo[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md[0m for pattern: [38;5;141mtodo[0m
+↱ Operation 3: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md[0m for pattern: [38;5;141mtodo[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-1824/chapter14.09-architecture.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-1824/chapter14.09-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mThere is a [38;5;10m// TODO[0m comment still present in the main recipe file (chapter14.09-chemotherapy-scheduling.md) at line 352. The todo file says "(All findings resolved.)" but this inline TODO remains in the source. Let me also check the review files to understand what the original findings were:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-expert-review.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-code-review.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m7426 bytes[0m from /tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m6517 bytes[0m from /tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-code-review.md[0m, from line [38;5;141m80[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m8384 bytes[0m from /tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-code-review.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-expert-review.md[0m, from line [38;5;141m80[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m26521 bytes[0m from /tmp/ralph-worktrees/iter-1824/reviews/chapter14.09-expert-review.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have full context. Let me verify the current state of the todo file and check for the critical issues:[0m[0m
+[0m[0m
+1. The todo file claims all findings are resolved[0m[0m
+2. But there's still a [38;5;10m// TODO[0m comment in the main recipe (line 352)[0m[0m
+3. I need to verify that the code-review findings (the critical CP-SAT constraint errors) were actually fixed in the python example[0m[0m
+4. I need to verify that the expert-review findings (failover, human override, IAM, etc.) were addressed in the architecture companion[0m[0m
+[0m[0m
+The code review had 2 ERROR findings (no-overlap constraint logic, nursing capacity half-reification) and several WARNINGs (pharmacy half-reification, unused WEIGHTS dict, preference half-reification). Let me check if these were fixed in the Python example by looking at the constraint formulations I already read.[0m[0m
+[0m[0m
+Looking at the Python example I already read:[0m[0m
+[0m[0m
+[1mFinding 1 (No-overlap constraint):[22m The current code uses proper full reification with [38;5;10msame_chair[0m / [38;5;10msame_chair.Not()[0m and a single [38;5;10mi_before_j[0m boolean - this matches the fix suggested in the review. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 2 (Nursing capacity half-reification):[22m The current code has proper channeling with [38;5;10mends_before[0m, [38;5;10mstarts_after[0m, and [38;5;10mAddBoolOr([ends_before, starts_after]).OnlyEnforceIf(overlaps.Not())[0m. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 3 (Pharmacy half-reification):[22m The current code has [38;5;10mbefore_hour[0m, [38;5;10mafter_hour[0m booleans with [38;5;10mAddBoolOr([before_hour, after_hour]).OnlyEnforceIf(prep_in_hour.Not())[0m. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 4 (WEIGHTS dict unused):[22m The current code has a comment: "Note: This simplified example only implements utilization and preference objectives in the solver. The full weight structure is documented here to show the production objective described in the main recipe's pseudocode." ✅ Fixed (explained, not removed).[0m[0m
+[0m[0m
+[1mFinding 5 (Preference half-reification):[22m The current code has [38;5;10mtoo_early[0m, [38;5;10mtoo_late[0m booleans with [38;5;10mAddBoolOr([too_early, too_late]).OnlyEnforceIf(in_window.Not())[0m. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 6 (get_nursing_demand_at_offset unused):[22m The current code has a note in the docstring: "Note: This function is not used in the simplified optimizer below, which uses average attention per protocol as an approximation." ✅ Fixed (explained).[0m[0m
+[0m[0m
+[1mFinding 7 (Disruption handler mutates in place):[22m The current code has: "Note: This function mutates the schedule dict in place for simplicity. Production code would work on a copy and only commit changes after validation, enabling rollback if the adjustment creates new conflicts." ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 8 (Pharmacy prep before day start):[22m The current code has: "Note: pharmacy operating hours may extend before center opening (e.g., pharmacy starts at 6 AM for 7 AM patients). This model only counts preps within center hours. Production systems would model pharmacy capacity on its own timeline." ✅ Fixed.[0m[0m
+[0m[0m
+Now for the expert review findings in the architecture companion:[0m[0m
+[0m[0m
+[1mFinding 1 (Failover strategy):[22m The architecture companion has a "Failover and Graceful Degradation" section covering batch optimizer failure, real-time adjuster timeout, and dashboard availability. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 2 (Human override mechanism):[22m The architecture companion has a "Human Override Mechanism" section covering drag-and-drop, locking, ad-hoc constraints, and re-solve requests. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 3 (IAM permissions):[22m The prerequisites table has expanded IAM with resource-scoped permissions. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 4 (Drug stability constraint):[22m The main recipe still has the [38;5;10m// TODO[0m comment at line 352. ❌ NOT fixed.[0m[0m
+[0m[0m
+[1mFinding 5 (Patient notification PHI):[22m The main recipe has a note after [38;5;10msend_patient_notification[0m about respecting preferences and minimizing PHI. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 6 (Schedule modification authorization):[22m The main recipe has a paragraph before Step 6 about authentication and authorization. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 7 (VPC endpoints):[22m The architecture companion prerequisites table enumerates all VPC endpoints. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 8 (TODO items in Additional Resources):[22m The architecture companion has verified references (Hahn-Goldberg, Turkcan, ONS guidelines, OR-Tools Lambda packaging). ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 9 (Multi-day regimens):[22m Mentioned in Variations as "Treatment Sequencing Optimization". ✅ Addressed.[0m[0m
+[0m[0m
+[1mFinding 10 (Internal vs external API):[22m The architecture companion has a note about separate API stages. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 11 (Solver logs PHI):[22m The architecture companion S3 section mentions Object Lock, lifecycle, bucket policies. ✅ Fixed.[0m[0m
+[0m[0m
+[1mFinding 12 (DynamoDB voice):[22m The architecture companion DynamoDB paragraph leads with operational need. ✅ Fixed.[0m[0m
+[0m[0m
+The critical remaining issue: [1mthere is still a [38;5;10m// TODO[0m comment in the main recipe file[22m at line 352 (the drug stability constraint in pseudocode Step 4). The task spec says "Do not reintroduce [38;5;10m<!-- TODO -->[0m comments into the source files" and also says findings should be resolved. Let me check lines around 352 more carefully:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md[0m, from line [38;5;141m345[0m to [38;5;141m365[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1105 bytes[0m from /tmp/ralph-worktrees/iter-1824/chapter14.09-chemotherapy-scheduling.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThis is a clear unresolved finding. The [38;5;10m// TODO[0m comment describes expert review finding A3 (drug stability constraint logic gap) and it's still in the source file. The todo file incorrectly claims all findings are resolved.[0m[0m
+[0m[0m
+Additionally, looking at the constraint above the TODO, it still uses the undefined [38;5;10mprep_completion_time(request)[0m function, which is the exact problem identified in finding A3. The constraint was never actually fixed - only the TODO annotation was left noting what needs to be done.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 6.98 • Time: 1m 12s
+
+[0m[1G[0m[0m[?25h{"verdict": "fail", "rationale": "Expert review finding A3 (drug stability constraint, MEDIUM) is not resolved. The main recipe at line 352 still contains a [38;5;10m// TODO (TechWriter)[0m inline comment describing the unfixed issue, and the pseudocode still uses the undefined [38;5;10mprep_completion_time(request)[0m function. The todo file incorrectly states '(All findings resolved.)' without either fixing this in the source or deferring it with a [NEEDS HUMAN] note."}

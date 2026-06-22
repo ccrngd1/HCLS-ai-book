@@ -194,6 +194,56 @@ def get_available_units(fleet, required_capability="BLS"):
         if unit_level >= required_level:
             available.append(unit)
     return available
+
+def validate_gps_fix(gps_event, previous_fix=None, service_area_bounds=None):
+    """
+    Validate a GPS position fix before accepting it into fleet state.
+
+    In production, these checks run in the Kinesis consumer Lambda before
+    the DynamoDB write. Invalid fixes are logged to a GPS anomalies table
+    for fleet maintenance review but do not update the unit's position.
+
+    Args:
+        gps_event: dict with unit_id, latitude, longitude, timestamp, speed
+        previous_fix: the last accepted fix for this unit (for movement checks)
+        service_area_bounds: dict with min_lat, max_lat, min_lon, max_lon
+
+    Returns:
+        (is_valid, reason) tuple. If invalid, reason explains why.
+    """
+    lat = gps_event.get("latitude", 0)
+    lon = gps_event.get("longitude", 0)
+
+    # Check for GPS default/null coordinates (common when device loses lock)
+    if lat == 0 and lon == 0:
+        return False, "null_coordinates"
+
+    # Bounds check: must be within service area (with buffer for mutual aid)
+    if service_area_bounds:
+        buffer = 0.5  # ~55 km buffer for mutual aid runs
+        if not (service_area_bounds["min_lat"] - buffer <= lat
+                <= service_area_bounds["max_lat"] + buffer):
+            return False, "latitude_out_of_bounds"
+        if not (service_area_bounds["min_lon"] - buffer <= lon
+                <= service_area_bounds["max_lon"] + buffer):
+            return False, "longitude_out_of_bounds"
+
+    # Speed plausibility: ambulances do not exceed 200 km/h
+    if gps_event.get("speed", 0) > 200:
+        return False, "speed_implausible"
+
+    # Movement plausibility: check against previous fix
+    if previous_fix:
+        distance_km = haversine_distance_km(
+            previous_fix["latitude"], previous_fix["longitude"], lat, lon
+        )
+        time_delta_s = (
+            gps_event["timestamp"] - previous_fix["timestamp"]
+        ).total_seconds()
+        if time_delta_s > 0 and distance_km / (time_delta_s / 3600) > 200:
+            return False, "impossible_movement"
+
+    return True, "ok"
 ```
 
 ---
@@ -690,10 +740,14 @@ def store_dispatch_decision(decision):
     - What were the alternatives?
     - What was the estimated response time?
     - What hospital was recommended?
+    - Did the dispatcher accept or override the recommendation?
 
-    In production, this table has a TTL for old records (retain 7 years
-    per state EMS record retention requirements) and is encrypted with
-    a KMS CMK.
+    In production, this table uses an IAM policy that denies UpdateItem and
+    DeleteItem for all principals except a break-glass role. Records are
+    immutable once written. Retention: 10 years minimum (state EMS record
+    retention requirements vary; default to the most stringent). After 12
+    months, records export to S3 with Object Lock in Compliance mode for
+    tamper-evident long-term archival.
     """
     table = dynamodb.Table(DISPATCH_TABLE_NAME)
 
@@ -799,6 +853,11 @@ def dispatch_ambulance(call):
             assigned["travel_time_seconds"]
             <= RESPONSE_TIME_TARGETS[call["priority"]]
         ),
+        # Dispatcher-in-the-loop fields (populated by the dispatcher console
+        # in production; here we simulate auto-accept for Priority 1):
+        "dispatcher_action": "auto_dispatched" if call["priority"] == 1 else "pending",
+        "dispatcher_id": None,  # filled by dispatcher console on accept/override
+        "override_reason_code": None,
     }
 
     logger.info("  Meets target: %s (%ds vs %ds threshold)",
