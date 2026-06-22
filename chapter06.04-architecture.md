@@ -340,7 +340,15 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_m
             run_date         = run_date                    // when this assignment was computed
             key_drivers      = top 3 features with highest // which features most influenced this
                                z-scores for this patient   // patient's tier (for explainability)
-            // TODO (TechWriter): Expert review SEC-3 (MEDIUM). Consider whether key_drivers should live in the operational DynamoDB table or only in the S3 analytics layer. If the tier label alone suffices for workflow routing, storing drivers only in S3 reduces the table's sensitivity. Document this as a data minimization tradeoff.
+            //
+            // DATA MINIMIZATION DECISION: key_drivers increases the DynamoDB table's
+            // sensitivity (it exposes granular clinical values, not just the tier label).
+            // If care managers need explainability at the point of care, include it here.
+            // If the tier label alone suffices for workflow routing and detailed drivers
+            // are only needed during clinical review, store drivers only in the S3 Parquet
+            // output and omit them from the operational table. This reduces the blast
+            // radius of any access control failure on the DynamoDB table.
+            //
             expires_at       = run_date + 90 days          // tier assignments should be refreshed
                                                            // quarterly; stale assignments get flagged
 
@@ -399,13 +407,17 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_m
 
 ## Why This Isn't Production-Ready
 
-**Refresh orchestration.** The pseudocode runs once. Production needs a scheduled pipeline (monthly or quarterly) with monitoring for data freshness, job failures, and tier distribution drift. If your source data feed is delayed, the pipeline should wait rather than run on stale data.
+**Failure handling.** The pseudocode assumes every step succeeds. Production pipelines need per-step error handling. Use Step Functions to orchestrate the pipeline: if the Glue ETL fails, alert and halt (don't cluster on stale or partial data). If SageMaker clustering fails (convergence issues, instance capacity), retry once with a larger instance; if it still fails, alert (likely a data quality issue). If DynamoDB batch writes fail for some patients, route those patient IDs to a Dead Letter Queue (SQS) for manual review. Silent pipeline failures mean patients miss tier assignments and potentially miss interventions. No patient should silently fall through the cracks.
+
+**Refresh orchestration.** The pseudocode runs once. Production needs a scheduled pipeline triggered by EventBridge on a cron schedule (e.g., first Sunday of each quarter). The Step Functions workflow should: (1) verify source data freshness and abort if the EHR extract is more than 7 days old, (2) run the full pipeline (Glue ETL, SageMaker clustering, DynamoDB writes), (3) compare new tier assignments against the previous run and emit tier-change events to an SNS topic for care management alerting, (4) update a CloudWatch metric for "patients with expired tier assignments" so ops can alert if the pipeline fails silently or runs late. If your source data feed is delayed, the workflow should wait rather than proceed on stale data.
 
 **Tier migration tracking.** When a patient moves from Tier 1 to Tier 2 between runs, that's a clinical event that should trigger a care management alert. The pseudocode doesn't track changes between runs or generate notifications.
 
+**Audit trail for tier assignments.** CloudTrail logs API calls, but clinical governance needs application-level audit trails. Maintain an append-only log of tier assignments: patient_id, previous_tier, new_tier, run_date, model_version (hash of FEATURE_SET config), and pipeline_execution_id. Store this in S3 with versioning enabled and object lock (immutable, append-only). This supports clinical governance review when tier changes trigger care plan modifications, and satisfies audit requirements for explainable care management decisions.
+
 **Multi-disease coordination.** A patient might be in the "severe" tier for diabetes and the "mild" tier for COPD. Care management needs a unified view across disease-specific stratifications. That coordination layer is not addressed here.
 
-**Model versioning.** When you change the feature set or weights, all tier assignments change. You need versioning so downstream systems know which model version produced which assignments, and so you can compare performance across versions.
+**Model versioning and feature store.** When you change the feature set or weights, all tier assignments change. You need versioning so downstream systems know which model version produced which assignments, and so you can compare performance across versions. For production, consider SageMaker Feature Store to version and share the patient feature matrix across models (severity stratification, readmission risk, cost prediction all consume overlapping features). Each stratification run should record the feature set version (a hash of the FEATURE_SET configuration) alongside tier assignments. This enables reproducibility (re-run with the same features), comparison (did adding trajectory features improve outcome correlation?), and audit (which feature set was active when patient X was assigned to Tier 3?).
 
 ---
 
