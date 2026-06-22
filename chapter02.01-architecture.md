@@ -278,6 +278,26 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern end to end. Deploying it to a health system processing thousands of messages per day requires closing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will cost you time:
+
+**No provider review UI.** The pipeline stores drafts in DynamoDB, but there's no interface for providers to review, edit, approve, or reject them. This is typically the largest implementation effort: building a review queue integrated into the provider's existing EHR workflow (or as a standalone application with EHR context). Without it, the drafts sit in a table doing nothing.
+
+**No feedback capture layer.** The Expected Results section references approval rates as the north-star metric, but the architecture doesn't include the mechanism to capture provider actions (approved, edited, rejected) or the edit diffs. You need either an append-only event log or provider-action fields on the draft record. Without this, you cannot measure whether the system is helping or generating noise.
+
+**Single-region, no failover.** The architecture runs in a single AWS region. If that region has a Bedrock outage or a Lambda service disruption, draft generation stops entirely. A production deployment needs a degradation strategy: fall back to a different model, route messages to the manual queue, or replicate the pipeline cross-region for critical volumes.
+
+**No prompt governance workflow.** Prompt changes directly affect clinical communications. The architecture stores prompts in S3 with versioning, but there's no approval workflow for prompt updates, no staged rollout, and no automated rollback if approval rates degrade. Treat prompt changes like code deployments: review, test with synthetic messages, canary, then full rollout.
+
+**Incomplete audit trail.** CloudTrail and model invocation logging capture API calls, but the full audit story requires correlating: which patient message triggered which prompt version, which context was assembled, what the model produced, what the provider changed, and what was ultimately sent. This correlation layer (typically a separate audit table or event stream joining draft records with provider actions and sent messages) is essential for compliance reviews and incident investigation.
+
+**No consent or opt-out mechanism.** Some patients or providers may not want AI-generated drafts involved in their communications. The architecture assumes all messages flow through the pipeline. Production needs a consent check (at the patient level, provider level, or both) that routes opted-out messages directly to the manual queue.
+
+**Classification accuracy is untested.** The keyword-based intent classifier in Step 1 has no accuracy measurement. In production, misclassification means the wrong context gets assembled, which means the draft is grounded in irrelevant data. You need a labeled evaluation set, accuracy metrics per intent, and a fallback path for low-confidence classifications.
+
+---
+
 ## Variations and Extensions
 
 **Multi-language support.** Many patient populations communicate in languages other than English. Add a language detection step before generation and include language-specific instructions in the system prompt. Most foundation models handle Spanish, Mandarin, Vietnamese, and other common languages well. Validate tone and medical terminology accuracy with native-speaking clinical staff before deploying.
