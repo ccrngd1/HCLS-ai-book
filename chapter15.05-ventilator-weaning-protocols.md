@@ -128,6 +128,10 @@ The reward function is where clinical judgment meets engineering, and it's surpr
 
 What I'd do differently if starting over: I'd spend 80% of my time on data quality and state representation, and 20% on the RL algorithm. The algorithm choice matters less than the quality of the state signal and the reward definition. I'd also start with a much simpler action space (binary: "ready for SBT" vs. "not ready") before attempting the full multi-action formulation.
 
+Model rollback is something you need to plan for before you deploy, not after something goes wrong. Run new models in shadow mode first: both old and new policies receive the same patient states and generate recommendations, but only the old model's recommendations reach clinicians. Monitor the agreement rate between old and new. If the new model diverges dramatically (say, clinician override rate exceeds 50% for 48 hours), that's your rollback trigger. You want to detect degradation before patients are affected, not after.
+
+Operational monitoring is the other piece people underestimate. Track feature distributions against your training data statistics. If the input features drift beyond two standard deviations for sustained periods, your model is seeing patients it wasn't trained on. Track the safety filter override rate: if it starts climbing, the model's recommendations are increasingly unsafe. Track clinician agreement rate over time as a proxy for recommendation quality. If clinicians used to follow 70% of recommendations and now follow 40%, something changed, and you need to investigate whether it's the model degrading or the patient population shifting.
+
 ---
 
 ## Related Recipes
@@ -138,3 +142,11 @@ What I'd do differently if starting over: I'd spend 80% of my time on data quali
 - **Recipe 7.9 (Mortality Risk Scoring, ICU):** The risk scores from this recipe could serve as features in the RL state representation.
 
 ---
+
+## Tags
+
+`reinforcement-learning` · `icu` · `ventilator` · `weaning` · `offline-rl` · `clinical-decision-support` · `sequential-decisions` · `safety-constraints` · `sagemaker`
+
+---
+
+*← [Recipe 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) · [Chapter 15 Index](chapter15-preface) · [Recipe 15.6: Glucose Control in ICU →](chapter15.06-glucose-control-icu)*

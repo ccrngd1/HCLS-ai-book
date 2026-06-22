@@ -8,7 +8,7 @@
 
 **Amazon SageMaker for RL model training and hosting.** SageMaker provides managed infrastructure for training RL models at scale, including support for custom RL algorithms via script mode. The training jobs handle the compute-intensive batch RL training on historical data, and SageMaker endpoints serve real-time inference for the policy engine.
 
-**Amazon Kinesis Data Streams for real-time data ingestion.** Ventilator data, vital signs, and lab results arrive as streams. Kinesis handles the high-throughput, low-latency ingestion needed to keep the patient state current. It also provides replay capability for reprocessing historical data during model retraining.
+**Amazon Kinesis Data Streams for real-time data ingestion.** Ventilator data, vital signs, and lab results arrive as streams. Kinesis handles the high-throughput, low-latency ingestion needed to keep the patient state current. It also provides replay capability for reprocessing historical data during model retraining. The Kinesis-to-Lambda event source mapping is configured with `bisect-batch-on-function-error` enabled and an SQS dead-letter queue (DLQ) for records that exhaust retries. A CloudWatch alarm fires when DLQ depth exceeds zero, because any record landing there means the patient state table is going stale. If DynamoDB hasn't received a state update for a given patient in 15 minutes, downstream components flag that patient's recommendations as "stale state, low confidence" and surface the staleness in the clinician dashboard. Silent data loss in this path is a patient safety concern: the RL model would be making recommendations based on outdated information.
 
 **AWS Lambda for state construction and safety filtering.** The stateless transformation from raw clinical events to structured state vectors is a natural Lambda workload. The safety filter (rule-based constraint checking) runs as a separate Lambda to maintain separation of concerns.
 
@@ -24,6 +24,8 @@
 flowchart TD
     A[EHR / Ventilator / Monitors] -->|HL7/FHIR Events| B[Kinesis Data Streams]
     B --> C[Lambda: State Constructor]
+    B -->|Failed records| DLQ[SQS Dead-Letter Queue]
+    DLQ -->|Alarm: depth > 0| CW[CloudWatch Alarm]
     C --> D[DynamoDB: Patient State]
     D --> E[SageMaker Endpoint: RL Policy]
     E --> F[Lambda: Safety Filter]
@@ -38,6 +40,7 @@ flowchart TD
     style B fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
     style D fill:#9ff,stroke:#333
+    style DLQ fill:#f66,stroke:#333
 ```
 
 ## Prerequisites
@@ -322,6 +325,28 @@ FUNCTION track_outcome(patient_id, episode_id):
 - Rapid deterioration events where the state changes faster than the model's update frequency
 - Patients on multiple simultaneous interventions where attributing outcomes to weaning decisions is ambiguous
 - Night shifts where documentation is sparser and state construction has more missing values
+
+---
+
+## Why This Isn't Production-Ready
+
+This architecture demonstrates the shape of an RL-based ventilator weaning system. The following gaps must be closed before it touches a real patient:
+
+**Clinical validation.** No offline evaluation, no matter how sophisticated, replaces a prospective randomized controlled trial. The off-policy estimates in Expected Results carry wide confidence intervals, and the assumptions they rely on (overlap, no unmeasured confounders) are almost certainly violated. You need IRB approval and a formal clinical trial protocol.
+
+**Regulatory pathway.** An RL system that influences ventilator management decisions likely falls under FDA oversight as a Clinical Decision Support tool. Depending on the deployment model (locked vs. adaptive), you may need 510(k) clearance or De Novo classification. The regulatory framework for adaptive algorithms is still maturing.
+
+**Data quality infrastructure.** The state constructor assumes clean, timestamped data arriving reliably. Real EHR integrations involve HL7v2 parsing edge cases, duplicate messages, out-of-order delivery, interface engine downtime, and data fields that change meaning between software upgrades. You need extensive data validation, reconciliation logic, and graceful degradation when feeds go dark.
+
+**Model drift monitoring.** Patient populations shift (new admission patterns, protocol changes, staffing differences). The model was trained on historical data that may not represent current practice. You need continuous monitoring of feature distributions, recommendation acceptance rates, and outcome metrics, with automated alerts when drift exceeds thresholds. On AWS, use SageMaker Model Monitor to track feature distribution drift against training data baselines, and CloudWatch custom metrics for clinician agreement rate and safety filter override rate. Alert when features drift beyond 2 standard deviations for sustained periods (4+ hours in an ICU context).
+
+**Model rollback strategy.** Use SageMaker production variants to run shadow traffic: both old and new policies receive the same patient states, but only the validated model's recommendations are surfaced. Monitor the agreement rate between old and new models. Define a rollback trigger (e.g., clinician override rate exceeds 50% for 48 hours, or safety filter override rate doubles). When triggered, shift 100% of traffic back to the previous model variant via UpdateEndpointWeightsAndCapacities, which completes in seconds without endpoint downtime.
+
+**Failure mode testing.** What happens when the SageMaker endpoint is down? When DynamoDB throttles? When Kinesis has a partition split? Every failure mode must result in a safe default (typically "maintain current settings, alert the clinician that the system is degraded"), never in a dangerous recommendation delivered without context.
+
+**Explainability.** Clinicians need to understand why the model recommends what it does. A raw Q-value is not an explanation. You need feature attribution (SHAP, attention weights, or counterfactual explanations) integrated into the dashboard so the clinician can assess whether the model is attending to the right signals.
+
+**Multi-site generalization.** A model trained on one institution's data may not transfer to another. Ventilator management practices, documentation patterns, patient demographics, and even the brand of ventilator vary between hospitals. You need a transfer learning or fine-tuning strategy for each deployment site.
 
 ---
 
