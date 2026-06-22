@@ -18,6 +18,8 @@ The challenge: there are no labels. Nobody has pre-defined what the subtypes are
 
 This is research-grade work. It requires clinical collaboration from day one, rigorous statistical validation, and the intellectual honesty to admit when your clusters are artifacts of data quality rather than biology.
 
+One more thing before you start writing code: disease subtype discovery using patient data almost always requires Institutional Review Board (IRB) review before you can access real patient records. The key question is whether your project qualifies as research or quality improvement (QI). If you're generating generalizable knowledge (planning to publish, developing new classification systems), it's research and needs full IRB review. If you're strictly improving internal care processes with no intent to generalize, some institutions classify it as QI, which has a lighter approval path. The distinction is not always clear-cut, and many institutions default to full review when unsupervised learning is involved because the outputs are unpredictable by definition. IRB timelines range from 4 to 12 weeks depending on the institution and whether you need a full board review or qualify for expedited review. Factor this into the "Basic" implementation estimate (4-6 weeks of development plus 4-12 weeks of IRB is 8-18 weeks before you touch real data). Some teams start development on synthetic or de-identified data while the IRB application is pending, which is the right move.
+
 ---
 
 ## The Technology: How Unsupervised Clustering Discovers Disease Subtypes

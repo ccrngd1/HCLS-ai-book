@@ -10,7 +10,11 @@
 
 **Amazon SageMaker for ML compute and experimentation.** Disease subtype discovery is inherently iterative. You'll run dozens of clustering experiments with different feature sets, algorithms, and parameters before finding stable, clinically meaningful subtypes. SageMaker provides managed Jupyter notebooks for exploration, built-in implementations of K-means and PCA, and the ability to bring custom algorithms (GMM, HDBSCAN, consensus clustering) in containers. The experiment tracking in SageMaker Experiments lets you compare runs systematically rather than losing track of which parameter combination produced which result.
 
+**A note on notebook hardening for research workloads.** Interactive notebooks with PHI access carry higher risk than automated pipelines because researchers can download data, install arbitrary packages, and run ad-hoc queries. Use SageMaker Studio with domain-level VPC configuration rather than standalone notebook instances. Disable root access on any notebook instances you do use. Apply lifecycle configurations that restrict pip and conda to approved internal package mirrors (preventing exfiltration via malicious packages). Enable notebook audit logging through CloudTrail to capture who ran what, when. These controls add 1-2 days of setup but prevent the scenario where a researcher accidentally installs a package that phones home with patient data.
+
 **Amazon S3 for data lake storage.** The feature extraction pipeline pulls from multiple source systems (labs, medications, diagnoses, notes) and materializes a patient-feature matrix that may be hundreds of megabytes to several gigabytes. S3 provides durable, encrypted storage for both the raw extracted features and the intermediate/final clustering results. Versioning lets you reproduce any analysis from any point in time.
+
+**Data retention for experiment artifacts.** Research workloads accumulate large volumes of intermediate results (feature matrices, cluster assignments, model artifacts) that contain PHI-derived data. Implement S3 lifecycle policies to transition experiment artifacts to S3 Glacier after your institution's active-use retention period (typically 90-180 days) and delete them after the maximum retention period required by your data governance policy (typically 6-7 years for research data). Maintain a manifest of patient IDs per experiment (stored separately from the data itself) to support HIPAA amendment requests and accounting-of-disclosures obligations. When a patient exercises their right to access or amend their records, you need to know which experiments included their data without having to thaw every archived artifact.
 
 **AWS Glue for ETL and feature extraction.** Building the patient-feature matrix requires joining across multiple data domains, handling temporal logic (which lab value to use when there are multiple?), and applying business rules (how to encode medication history). Glue's Spark-based ETL handles this at scale, and the Glue Data Catalog provides schema management for the feature tables.
 
@@ -298,6 +302,18 @@ FUNCTION validate_and_characterize(cohort, feature_matrix, labels, outcomes_data
     RETURN characterization, report
 ```
 
+#### From Research Finding to Deployed Classifier
+
+Steps 1-6 above produce a research artifact: a set of validated disease subtypes discovered through unsupervised clustering. Step 7 below crosses into deployment territory. That transition deserves explicit attention because the gap between "we found interesting clusters" and "the system assigns subtypes to new patients in production" is where most research projects stall.
+
+**Prospective validation on a temporal holdout.** Before deploying, validate on patients who were diagnosed after your training cohort's time window. If you discovered subtypes using 2022-2024 data, validate on 2025 patients. Do the same clusters appear? Do they have the same outcome differences? Temporal validation is more rigorous than random train/test splits because it tests whether the subtypes generalize forward in time, not just to held-out patients from the same era.
+
+**FDA and regulatory considerations.** If the subtype classifier influences clinical decisions (treatment selection, risk stratification for intervention), it may qualify as Clinical Decision Support (CDS) under the 21st Century Cures Act. CDS that meets all four criteria in Section 3060 (displays information, intended for clinician review, does not provide a specific treatment recommendation for a specific patient without enabling independent review, allows the clinician to independently review the basis) is exempt from FDA device regulation. If your system directly recommends treatment based on subtype assignment, it likely falls under FDA oversight. Consult your regulatory team before deployment.
+
+**Clinical governance approval.** Most health systems require a clinical governance committee (sometimes called a clinical informatics committee or a model oversight board) to approve any algorithm that surfaces in clinical workflows. Prepare documentation covering: what the model does, how it was validated, what its failure modes are, who is responsible for monitoring, and what the rollback plan is if it produces harmful recommendations.
+
+**Drift monitoring strategy.** Patient populations change over time (new treatments, new referral patterns, demographic shifts). The subtypes you discovered in 2024 may not remain stable indefinitely. Deploy monitoring that tracks: (1) the distribution of subtype assignments over time (if Cluster 3 suddenly doubles in size, something changed), (2) the confidence scores of the classifier (declining average confidence suggests the population is drifting away from the training distribution), and (3) outcome differences between subtypes (if subtypes converge in outcomes, they may no longer be clinically useful). Set triggers for re-analysis when drift exceeds defined thresholds.
+
 **Step 7: Build subtype classifier for new patients.** Once subtypes are validated, you need a way to assign new patients to the discovered subtypes without re-running the full clustering pipeline.
 
 Train a supervised classifier (random forest, gradient boosting) on the original cohort using the cluster labels as the target. This classifier can then be deployed as a real-time endpoint that takes a new patient's features and returns their predicted subtype. Consider adding a confidence threshold: if the maximum predicted probability is below 0.6, flag the patient as "unclassifiable" rather than forcing assignment to a subtype. These boundary patients may represent emerging subtypes not captured in the original discovery cohort.
@@ -409,6 +425,24 @@ FUNCTION train_subtype_classifier(feature_matrix, validated_labels):
 **Memory note:** Consensus clustering memory scales quadratically with cohort size (the N x N consensus matrix). For the 14,000-patient example, an ml.m5.4xlarge (64 GB RAM) is sufficient. For cohorts above 20,000 patients, consider block-diagonal approximation, sparse consensus matrices (only store entries above a threshold), or mini-batch consensus approaches.
 
 **Where it struggles:** Diseases with continuous spectrums rather than discrete subtypes (the clusters are real but boundaries are fuzzy). Cohorts with high missingness (clusters reflect data availability). Small cohorts (< 1,000 patients) where statistical power is insufficient. Features that are confounded by treatment (patients on different drugs look different because of the drugs, not because of underlying biology).
+
+---
+
+## Why This Isn't Production-Ready
+
+This pipeline produces validated research-grade subtypes and a trained classifier. Getting from here to a system that runs in clinical workflows requires closing several gaps:
+
+**Model governance and version control.** A production subtype system needs a model registry (SageMaker Model Registry or equivalent) that tracks which model version is deployed, who approved it, what training data it was trained on, and what its validation metrics were at approval time. When you retrain on updated data, the new model goes through the same clinical governance approval as the original before it replaces the production endpoint.
+
+**Drift monitoring and retraining triggers.** Patient populations change. New treatments shift feature distributions. Your 2024 subtypes may not cleanly separate 2026 patients. Production requires automated monitoring of prediction confidence distributions, subtype prevalence trends, and outcome differences between subtypes. Define explicit thresholds (e.g., average classifier confidence drops below 0.7, or outcome differences between subtypes narrow by more than 30%) that trigger re-analysis.
+
+**Clinical workflow integration.** A subtype assignment sitting in DynamoDB is useless unless it surfaces where clinicians make decisions. That means integration with the EHR (as a patient flag, a BPA, or a dashboard element), which requires HL7 FHIR interfaces, EHR vendor approval processes, and clinical workflow design to ensure the subtype information appears at the right moment without causing alert fatigue.
+
+**Handling "unclassifiable" patients.** The confidence threshold that flags boundary patients needs a clinical workflow: who reviews these patients? How often? What happens when enough unclassifiable patients accumulate that they might represent a new subtype not in the original discovery?
+
+**Access controls for subtype labels.** Subtype assignments are derived PHI. They need the same access controls as other clinical data: role-based access, audit logging, minimum necessary access principle. A researcher who discovered the subtypes should not automatically have ongoing access to production subtype assignments for all patients.
+
+**Rollback plan.** If the subtypes turn out to produce harmful recommendations (e.g., a subtype label causes clinicians to withhold a beneficial treatment), you need a documented rollback plan that removes the subtype information from clinical workflows within a defined timeframe.
 
 ---
 
