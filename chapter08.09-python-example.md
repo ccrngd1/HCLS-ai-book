@@ -647,12 +647,46 @@ def generate_candidate_pairs(entities, sentences, full_text):
                 if sentence_distance <= MAX_SENTENCE_DISTANCE + 1:
                     candidates.append((entity_a, entity_b, "nearest_anchor"))
                     seen_pairs.add(pair_key)
+                    continue
+
+            # Heuristic 5: Section-anchored pairs (cross-section relationships).
+            # Events in different sections that share a temporal expression or are
+            # both anchored to the same clinical episode (e.g., HPI events linked to
+            # Hospital Course events in discharge summaries).
+            if (entity_a.get("section") and entity_b.get("section") and
+                entity_a["section"] != entity_b["section"]):
+                if _shared_temporal_anchor(entity_a, entity_b, all_entities, full_text):
+                    candidates.append((entity_a, entity_b, "section_anchored"))
+                    seen_pairs.add(pair_key)
 
     logger.info(
         "Generated %d candidate pairs from %d entities",
         len(candidates), len(all_entities)
     )
     return candidates
+
+
+def _shared_temporal_anchor(entity_a, entity_b, all_entities, full_text):
+    """
+    Check if two entities from different sections share a temporal anchor.
+
+    Two events share an anchor if they are both within MAX_SENTENCE_DISTANCE
+    of the same temporal expression, or if they reference the same clinical
+    episode marker (e.g., same admission date, same procedure reference).
+    """
+    # Find temporal expressions near each entity.
+    temporal_exprs = [e for e in all_entities if e["entity_type"] == "TEMPORAL_EXPRESSION"]
+    a_offset = entity_a["begin_offset"]
+    b_offset = entity_b["begin_offset"]
+
+    for texpr in temporal_exprs:
+        t_offset = texpr["begin_offset"]
+        # If the temporal expression is within 500 characters of both entities,
+        # they likely share a temporal anchor.
+        if abs(t_offset - a_offset) < 500 and abs(t_offset - b_offset) < 500:
+            return True
+
+    return False
 ```
 
 ---
