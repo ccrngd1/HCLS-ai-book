@@ -402,6 +402,24 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
 
 ---
 
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the pattern. Deploying this to a coding or billing team requires closing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will bite you:
+
+**No query authorization layer.** The API Gateway endpoint in this pattern has no tenant isolation. In a multi-payer environment where payer-specific cross-walks exist (see the Variations section), you need to ensure that Payer A cannot query Payer B's proprietary cross-walk edges. This means an authorization layer that maps API callers to their permitted payer IDs and injects those constraints into every openCypher query. Without it, you have a cross-tenant data leakage risk.
+
+**No graceful version transition.** The version update step flushes the entire Redis cache, which means every query immediately after an October update hits Neptune cold. At scale, this creates a latency spike and a cost spike (Neptune I/O charges). A production system would implement a cache-warming step that pre-populates the top 1,000 most-queried codes before cutting over to the new version.
+
+**No rollback strategy.** If the annual ETL corrupts the graph (bad parse, partial load), there's no mechanism to revert. Production requires Neptune snapshots before every load, a canary validation step that checks known-good query results after loading, and an automated rollback path if validation fails. Neptune snapshots are cheap; debugging a corrupted graph under pressure is not.
+
+**No rate limiting per consumer.** The API Gateway throttling is global, not per-consumer. If your analytics platform fires a batch of 10,000 hierarchy queries for a population health report, it starves real-time coding tools of capacity. Per-consumer usage plans with differentiated rate limits (high burst for interactive tools, lower sustained for batch) prevent this.
+
+**No audit trail for PHI-adjacent queries.** Code lookups are PHI-adjacent when they include patient context (which patient triggered this code lookup). CloudTrail captures API Gateway invocations but not the query parameters. If your compliance team needs to answer "who queried codes related to Patient X's conditions," you need application-level audit logging that captures the caller identity, the codes queried, and the timestamp in a tamper-evident store.
+
+**Lambda cold starts in VPC.** Lambda functions in a VPC incur cold start penalties (several seconds on first invocation after idle). For an interactive coding tool where clinicians expect sub-second responses, a cold start is unacceptable. Production options: provisioned concurrency (eliminates cold starts but costs money during idle hours), or a lightweight keep-warm mechanism that pings the function on a schedule.
+
+---
+
 ## Variations and Extensions
 
 **Coding assistance with similarity search.** Combine the hierarchy graph with a text embedding model. When a coder types a free-text description ("chest wall pain after coughing"), embed it, find the nearest code descriptions in vector space, then use the graph to show the full context: parent codes, sibling codes, and exclusions. The graph turns a flat similarity search into a navigable decision tree.
