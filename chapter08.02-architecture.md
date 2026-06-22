@@ -296,6 +296,22 @@ Input: "The doctor was very thorough and explained everything clearly. But I wai
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Deploying this at an actual health system requires closing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will bite you:
+
+**PHI leakage through aspect text.** Step 3 stores the source sentence text in DynamoDB alongside the aspect classification. If the PHI redaction in Step 1 missed something (and it will, at the 1-5% miss rate), that leaked PHI now lives in your analytics database and shows up in dashboards. Production systems need a second-pass validation: before storing `aspect.text`, run it through a regex-based check for common PHI patterns (phone numbers, dates of birth, email addresses) as a belt-and-suspenders layer on top of Comprehend Medical. Alternatively, store only a sentence hash and retrieve the original from the redacted bucket on demand.
+
+**Model drift without retraining.** Your custom aspect classifier was trained on historical feedback. Patient concerns shift over time (telehealth barely existed pre-2020; now it dominates access complaints). Without periodic retraining on fresh labeled data, classification accuracy degrades silently. The dashboards keep showing numbers, but those numbers become less trustworthy. Implement a monthly sampling workflow: pull 100 random classifications, have a human verify them, and track accuracy over time. Retrain when accuracy drops below your threshold (typically 80%).
+
+**Alert fatigue and threshold tuning.** The `needs_attention` flag uses hardcoded confidence thresholds (0.85 for negative sentiment). In practice, these thresholds need per-department calibration. A 0.85 threshold might generate 3 alerts/day for cardiology and 50/day for the ED (because ED feedback is inherently more negative). Production requires configurable thresholds per department, a ramp-up period to establish baselines, and a feedback loop where reviewers can mark alerts as "not actionable" to tune sensitivity.
+
+**Sentence tokenization edge cases.** The pseudocode says "split into sentences" but medical feedback is messy. Patients write run-on sentences, use abbreviations ("appt.", "Dr.", "dept."), and mix bullet points with prose. A naive period-split will mangle the text. Production needs a proper NLP tokenizer (spaCy, NLTK Punkt) deployed as a Lambda layer, plus fallback logic for text shorter than 10 words (classify the whole thing rather than splitting).
+
+**No feedback loop to source systems.** The pipeline analyzes and stores, but never writes back. When a provider consistently gets negative communication scores, that insight stays trapped in a dashboard. Production systems integrate with quality management workflows: auto-generate coaching referrals, feed into provider scorecards, or trigger patient recovery outreach. Each integration is its own project with its own compliance requirements.
+
+---
+
 ## Variations and Extensions
 
 **Trend alerting with statistical significance.** Instead of alerting on any negative feedback, implement a rolling baseline per department/aspect and alert only when current sentiment deviates more than 2 standard deviations from the 90-day average. This filters noise and surfaces genuine shifts. Use a simple CUSUM (cumulative sum) control chart, which is well-suited to detecting small, sustained changes that point-based thresholds miss.
