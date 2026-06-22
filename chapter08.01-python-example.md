@@ -15,7 +15,7 @@ pip install boto3
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
 - `comprehend:ClassifyDocument` (for the custom classifier endpoint)
-- `comprehend-medical:DetectEntitiesV2` (for entity enrichment)
+- `comprehendmedical:DetectEntitiesV2` (for entity enrichment)
 - `dynamodb:GetItem`, `dynamodb:PutItem` (abbreviation table + results table)
 - `sqs:SendMessage` (review queue)
 
@@ -211,7 +211,7 @@ def enrich_with_entities(preprocessed_text: str) -> list:
         for entity in response.get("Entities", []):
             entities.append({
                 "text": entity["Text"],
-                "type": entity["Type"],           # e.g., DX_NAME, SYMPTOM
+                "type": entity["Type"],           # e.g., DX_NAME, SYSTEM_ORGAN_SITE, TEST_NAME
                 "category": entity["Category"],   # e.g., MEDICAL_CONDITION, ANATOMY
                 "score": entity["Score"],
             })

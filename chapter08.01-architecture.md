@@ -44,7 +44,7 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend, Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SQS, Amazon API Gateway |
-| **IAM Permissions** | Resource-scoped statements: `comprehend:ClassifyDocument` on the classifier endpoint ARN; `comprehend:DetectEntities` on `*` (Comprehend Medical is stateless, no resource ARN); `s3:GetObject` and `s3:PutObject` on the training-data bucket ARN only; `dynamodb:GetItem` on the abbreviation-map table ARN (config data, no PHI); `dynamodb:GetItem` + `dynamodb:PutItem` on the classification-results table ARN (contains PHI, separate key policy); `sqs:SendMessage` on the review queue ARN only. Separate config-level access (abbreviation map) from PHI-level access (classification results) using distinct IAM policy statements so that a compromised read-only path cannot write to PHI stores. |
+| **IAM Permissions** | Resource-scoped statements: `comprehend:ClassifyDocument` on the classifier endpoint ARN; `comprehendmedical:DetectEntitiesV2` on `*` (Comprehend Medical is stateless, no resource ARN); `s3:GetObject` and `s3:PutObject` on the training-data bucket ARN only; `dynamodb:GetItem` on the abbreviation-map table ARN (config data, no PHI); `dynamodb:GetItem` + `dynamodb:PutItem` on the classification-results table ARN (contains PHI, separate key policy); `sqs:SendMessage` on the review queue ARN only. Separate config-level access (abbreviation map) from PHI-level access (classification results) using distinct IAM policy statements so that a compromised read-only path cannot write to PHI stores. |
 | **SQS Security** | Queue policy restricts `sqs:ReceiveMessage` to the review application's IAM role only (no other principal can dequeue PHI). Set message retention to match your review SLA (e.g., 24 hours, not the default 4 days) so PHI does not persist longer than operationally necessary. Configure a dead-letter queue (DLQ) with `maxReceiveCount: 3` for messages that fail processing repeatedly. Encrypt with SSE-KMS (customer-managed key). An unscoped queue with default retention is a compliance gap when messages contain chief complaint text. |
 | **BAA** | AWS BAA signed (chief complaints are PHI; they describe why a patient is seeking care) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (customer-managed KMS key for the classification-results table); SQS: SSE-KMS (customer-managed key); all API calls over TLS |
@@ -141,12 +141,12 @@ FUNCTION enrich_with_entities(preprocessed_text):
         text = preprocessed_text
 
     // Extract detected entities and their types.
-    // Example: "chest pain" might return [{ text: "chest pain", type: "SYMPTOM", score: 0.97 }]
+    // Example: "chest pain" might return [{ text: "chest pain", type: "DX_NAME", category: "MEDICAL_CONDITION", score: 0.97 }]
     entities = empty list
     FOR each entity in response.Entities:
         append to entities: {
             text: entity.Text,       // the span of text identified
-            type: entity.Type,       // SYMPTOM, DIAGNOSIS, ANATOMY, etc.
+            type: entity.Type,       // DX_NAME, SYSTEM_ORGAN_SITE, TEST_NAME, etc.
             category: entity.Category,   // MEDICAL_CONDITION, ANATOMY, etc.
             score: entity.Score       // confidence in this detection
         }
