@@ -206,20 +206,63 @@ flowchart LR
 
 ```pseudocode
 ON dictation_start_request(clinician_session, note_context):
-    // Step 1A: validate the clinician session is current
-    // and the SMART on FHIR launch context (if present) is
-    // fresh.
-    // TODO (TechWriter): Expert review A7 (MEDIUM). Specify the
-    // SMART on FHIR token lifecycle for hours-long dictation
-    // sessions: pre-emptive refresh window, refresh-failure handling
-    // (graceful prompt for re-authentication on signature
-    // submission), token storage in Secrets Manager with a short-
-    // TTL cache rather than DynamoDB, and audit events on token-
-    // lifecycle transitions. Dictation lifecycles can span hours
-    // from start to EHR submission, so the architecture must handle
-    // mid-workflow token expiry without losing dictated audio.
+    // Step 1A: validate the clinician session and manage
+    // SMART on FHIR token lifecycle.
+    //
+    // Dictation sessions can span hours from activation
+    // to final EHR submission. The SMART on FHIR access
+    // token typically expires in 15-60 minutes. The
+    // architecture handles this with:
+    //
+    // - Pre-emptive refresh: when the token's remaining
+    //   lifetime drops below 5 minutes, the session
+    //   orchestrator triggers a background refresh using
+    //   the refresh_token grant. The new access_token is
+    //   stored in Secrets Manager (short-TTL cache with
+    //   automatic rotation, not DynamoDB) so the EHR
+    //   handoff Lambda always reads the current token at
+    //   invocation time.
+    //
+    // - Refresh-failure handling: if the refresh grant
+    //   fails (revoked session, IdP outage), the system
+    //   does NOT discard dictated audio. The dictation
+    //   continues through formatting and review. At
+    //   signature submission (the only step requiring a
+    //   live EHR token), the client prompts the clinician
+    //   to re-authenticate. On successful re-auth, the
+    //   pipeline resumes from the EHR handoff step.
+    //
+    // - Audit events: token_refresh_succeeded,
+    //   token_refresh_failed, re_authentication_prompted,
+    //   re_authentication_completed are emitted to
+    //   EventBridge for the audit trail.
+    //
+    // - Token storage: Secrets Manager with a per-session
+    //   secret (lifecycle tied to session duration), not
+    //   DynamoDB. The session-state table holds a
+    //   reference to the secret ARN, not the token value.
     IF NOT clinician_session.is_valid():
         RETURN error("re-authenticate")
+
+    // Check token freshness; trigger pre-emptive refresh
+    // if within the refresh window.
+    token_remaining = clinician_session.token_expires_at - now()
+    IF token_remaining < TOKEN_PREEMPTIVE_REFRESH_WINDOW:
+        refresh_result = refresh_smart_token(
+            clinician_session.refresh_token,
+            clinician_session.session_secret_arn)
+        IF NOT refresh_result.success:
+            // Log the failure; do not block session open.
+            // The re-auth prompt will fire at signature time.
+            EventBridge.PutEvents([{
+                source: "dictation",
+                detail_type: "token_refresh_failed",
+                detail: {
+                    session_id: clinician_session.session_id,
+                    clinician_id: clinician_session.clinician_id,
+                    reason: refresh_result.error
+                }
+            }])
 
     // Step 1B: load per-clinician configuration. This
     // includes the custom vocabulary list, the specialty,
@@ -339,22 +382,52 @@ FUNCTION stream_audio_to_asr(session_id, audio_stream):
 
     avg_confidence = mean([w.confidence for w in word_level_results]) if word_level_results else 0.0
 
-    // Step 2C: persist the verbatim transcript and the
-    // per-word details for the formatting and review
-    // stages.
-    // TODO (TechWriter): Expert review S1 (HIGH). Rewrite Step 2C
-    // and Step 7C so PHI content (verbatim transcript, word-level
-    // results, EHR API responses) lives in a secure transcript
-    // archive (S3 with KMS, same governance as the audio bucket)
-    // and only references, hashes, and structural metadata land in
-    // dictation_metadata. The audit record at Step 8A already uses
-    // archive references; the upstream working store must adopt the
-    // same discipline. Add a cross-cutting design point on
-    // references-not-content for all PHI-handling stages.
+    // Step 2C: persist PHI content in the secure transcript
+    // archive (S3 with KMS, same governance as the audio
+    // bucket). Only references, hashes, and structural
+    // metadata land in the dictation_metadata table.
+    //
+    // CROSS-CUTTING DESIGN POINT: References, Not Content.
+    // Every PHI-bearing artifact (verbatim transcript,
+    // word-level results, formatted note, EHR API
+    // responses, structured-field suggestions) is stored
+    // in the KMS-encrypted transcript archive (S3). The
+    // DynamoDB metadata table holds only:
+    //   - S3 URIs pointing to the archive objects
+    //   - Content hashes for integrity verification
+    //   - Structural metadata (lengths, counts, scores)
+    //   - Status and lifecycle timestamps
+    // This discipline ensures that a DynamoDB table scan
+    // or a leaked table backup does not expose PHI. All
+    // PHI access flows through S3 with KMS decryption,
+    // CloudTrail data-event logging, and bucket-policy
+    // enforcement.
+
+    // Write the verbatim transcript to the secure archive.
+    transcript_archive_key = (
+        f"transcripts/{session_id}/verbatim.json")
+    transcript_archive_uri = s3.put_object(
+        bucket: TRANSCRIPT_ARCHIVE_BUCKET,
+        key: transcript_archive_key,
+        body: json.encode({
+            verbatim_transcript: verbatim_transcript,
+            word_level_results: word_level_results
+        }),
+        server_side_encryption: "aws:kms",
+        kms_key_id: TRANSCRIPT_ARCHIVE_KMS_KEY)
+
+    transcript_hash = sha256(verbatim_transcript)
+
+    // Metadata table gets references and structural
+    // metadata only.
     dictation_metadata_table.put({
         session_id: session_id,
-        verbatim_transcript: verbatim_transcript,
-        word_level_results: word_level_results,
+        verbatim_transcript_archive_ref:
+            transcript_archive_uri,
+        verbatim_transcript_hash: transcript_hash,
+        verbatim_transcript_length_chars:
+            len(verbatim_transcript),
+        word_count: len(word_level_results),
         avg_confidence: avg_confidence,
         transcribed_at: now(),
         status: "transcribed"
@@ -472,25 +545,64 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
     // draft; it returns a refined draft and a set of
     // structured-field suggestions. Treat the output
     // as a draft, never as authoritative.
-    // TODO (TechWriter): Expert review S2 (MEDIUM). Specify
-    // prompt-injection mitigation for the LLM formatter: wrap the
-    // verbatim transcript in explicit delimiters
-    // (e.g., <verbatim_transcript>...</verbatim_transcript>),
-    // instruct the model to treat the transcript as untrusted user
-    // data and not as instructions, request strict structured output
-    // (JSON schema or XML tag boundaries) that the orchestrator
-    // validates before accepting, and add prompt-injection
-    // monitoring that flags structural divergence between the
-    // LLM draft and the rule-based draft for operational review.
-    // TODO (TechWriter): Expert review A6 (MEDIUM). Specify a
-    // foundation-model-and-prompt versioning pattern: versioned
-    // model identifiers, prompt versions, rule-catalog versions,
-    // and per-specialty configuration versions in source control;
-    // canary inference profile with traffic-shift; rollback-on-
-    // regression gated by a held-out evaluation set with specialty,
-    // accent, and high-risk-substitution coverage; version stamps
-    // on every dictation audit record so a forensic review can
-    // reconstruct which calibration produced a given note.
+    //
+    // PROMPT-INJECTION MITIGATION:
+    // The verbatim transcript is untrusted user data. A
+    // clinician could (accidentally or deliberately)
+    // dictate text that looks like LLM instructions. The
+    // architecture defends against this with:
+    //
+    // 1. Explicit delimiters: the transcript is wrapped in
+    //    <verbatim_transcript>...</verbatim_transcript>
+    //    tags. The system prompt instructs the model to
+    //    treat content within those tags as opaque clinical
+    //    text, never as instructions.
+    //
+    // 2. Structured-output enforcement: the model is
+    //    instructed to return strict JSON (with a schema
+    //    that the orchestrator validates before accepting).
+    //    Free-form text responses are rejected.
+    //
+    // 3. Output validation: the orchestrator checks that
+    //    the JSON output conforms to the expected schema.
+    //    Responses that fail validation are discarded and
+    //    the rule-based draft is used instead.
+    //
+    // 4. Divergence monitoring: a background comparator
+    //    flags cases where the LLM draft diverges
+    //    structurally from the rule-based draft (unexpected
+    //    sections, removed content, added content not in
+    //    the verbatim source). Structural divergence above
+    //    threshold triggers an operational alert for review.
+    // FOUNDATION-MODEL-AND-PROMPT VERSIONING:
+    // Every component that influences the formatted output
+    // is versioned and tracked per dictation:
+    //
+    // - Model identifiers: pinned Bedrock model version
+    //   (e.g., anthropic.claude-3-5-sonnet-20240620-v1:0)
+    // - Prompt versions: formatter-prompt-v1.4,
+    //   faithfulness-prompt-v1.2 (stored in source control)
+    // - Rule-catalog versions: rule-formatter-v3.2,
+    //   critical-errors-v1.1 (stored in source control)
+    // - Per-specialty configuration versions: tracked in
+    //   the per-specialty config table with effective dates
+    //
+    // Deployment pattern:
+    // - Canary inference profile: new model or prompt
+    //   versions are deployed to a canary inference profile
+    //   that receives a configurable traffic percentage
+    //   (start at 5%, ramp to 100% over days).
+    // - Rollback-on-regression: a held-out evaluation set
+    //   (per specialty, per accent group, with high-risk-
+    //   substitution coverage) gates the canary. If the
+    //   canary's critical-error rate or faithfulness score
+    //   regresses beyond threshold, traffic automatically
+    //   shifts back to the prior version.
+    // - Version stamps: every dictation audit record
+    //   carries the model_id, prompt_version,
+    //   rule_catalog_version, and specialty_config_version
+    //   so a forensic review can reconstruct which
+    //   calibration produced a given note.
     IF LLM_POST_PROCESSING_ENABLED:
         llm_response = bedrock.invoke_model(
             model_id: CLINICAL_FORMATTER_MODEL,
@@ -509,21 +621,53 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
         // surfaced for clinician review; the LLM output
         // is never silently substituted for the rule-
         // based draft when faithfulness is suspect.
-        // TODO (TechWriter): Expert review A3 (MEDIUM). Specify the
-        // faithfulness-check architecture concretely: claim
-        // extraction over verbatim transcript and LLM draft, claim-
-        // by-claim semantic-equivalence comparison, severity-tier
-        // classification of warnings (clinical-claim addition,
-        // negation flip, dose change, hedging removal on a clinical
-        // assertion as high-severity; minor stylistic divergence as
-        // low-severity), high-severity-triggers-rule-based-fallback
-        // disposition, and a paired offline Faithfulness Program
-        // (held-out evaluation set per specialty, regression gate on
-        // model updates, named ownership at the clinical-quality
-        // officer). Cross-reference the critical-error-detection
-        // primitive (Finding A1) and the prompt-injection mitigation
-        // (Finding S2) as the recipe's combined LLM-clinical-safety
-        // substrate.
+        // FAITHFULNESS-CHECK ARCHITECTURE:
+        // The check runs as a three-phase pipeline:
+        //
+        // Phase 1 - Claim extraction: extract atomic clinical
+        //   claims from both the verbatim transcript and the
+        //   LLM draft (medications with doses, conditions with
+        //   negation status, procedures with laterality,
+        //   temporal assertions, hedging qualifiers).
+        //
+        // Phase 2 - Claim-by-claim comparison: for each claim
+        //   in the verbatim, verify semantic equivalence in
+        //   the LLM draft. For each claim in the LLM draft,
+        //   verify it has a source in the verbatim.
+        //
+        // Phase 3 - Severity-tier classification:
+        //   HIGH: clinical-claim addition (present in LLM
+        //     draft, absent in verbatim), negation flip,
+        //     dose change, hedging removal on a clinical
+        //     assertion, laterality change.
+        //   LOW: minor stylistic divergence, synonym
+        //     substitution without clinical-meaning change,
+        //     formatting-only changes.
+        //
+        // Disposition:
+        // - Any HIGH-severity warning triggers fallback to
+        //   the rule-based draft. The LLM draft is offered
+        //   as a "suggested alternative" for clinician
+        //   comparison only.
+        // - LOW-severity warnings are surfaced in the
+        //   review pane as tracked changes but do not block
+        //   the LLM draft from being the primary view.
+        //
+        // Offline Faithfulness Program:
+        // - Held-out evaluation set per specialty (100+
+        //   verbatim-and-faithful-formatted pairs).
+        // - Run on every model update, prompt update, or
+        //   rule-catalog update.
+        // - Regression gate: any increase in HIGH-severity
+        //   findings blocks the update.
+        // - Named ownership: clinical-quality officer.
+        // - Review cadence: monthly, plus on every model
+        //   or prompt version change.
+        //
+        // Cross-references: the critical-error-detection
+        // primitive (laterality, negation, drug-name
+        // confusables) and the prompt-injection mitigation
+        // form the combined LLM-clinical-safety substrate.
         faithfulness_check = check_faithfulness(
             verbatim_transcript: verbatim_transcript,
             llm_draft: llm_response.formatted_note)
@@ -542,41 +686,138 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
     RETURN template_with_content
 ```
 
+**Step 4.5: Critical-error detection.** Scan the formatted note for clinically-dangerous word substitutions before presenting it to the clinician in the read-edit-sign view. This is the single most important safety gate in the pipeline. Critical errors (laterality flips, negation flips, drug-name confusables, dose-by-order-of-magnitude errors) are detected via per-specialty high-risk-substitution catalogs. These catalogs are version-controlled clinical-safety documents owned by the clinical-quality officer. Skip this step and the 0.5% of dictations containing a laterality error pass through to clinician review without any visual emphasis, relying entirely on the clinician to catch a single-phoneme error in a wall of text.
+
+```pseudocode
+FUNCTION detect_critical_errors(verbatim_transcript, formatted_note, specialty):
+    // The high-risk-substitution catalogs are per-specialty.
+    // Each catalog entry defines:
+    //   - A pair of confusable terms (left/right, no/not,
+    //     morphine/naloxone, etc.)
+    //   - A severity tier (HIGH: laterality, negation,
+    //     drug-name; MEDIUM: dose-direction, symptom-pair)
+    //   - The detection method (exact-match, regex, or
+    //     NLI-based for negation-scope detection)
+    catalog = load_critical_error_catalog(specialty)
+
+    detections = []
+    FOR rule IN catalog.rules:
+        matches = rule.detect(
+            verbatim: verbatim_transcript,
+            formatted: formatted_note)
+        FOR match IN matches:
+            detections.append({
+                rule_id: rule.id,
+                severity: rule.severity,
+                source_term: match.source_term,
+                target_term: match.target_term,
+                span_in_formatted: match.span,
+                context: match.surrounding_context,
+                disposition: "clinician_confirmation_required"
+                    if rule.severity == "HIGH"
+                    else "highlight_in_review"
+            })
+
+    // HIGH-severity detections require explicit clinician
+    // confirmation before signature. The review pane renders
+    // these with a distinct visual treatment (red highlight,
+    // inline confirmation checkbox) that cannot be dismissed
+    // without interaction.
+    //
+    // Aggregate detection-rate metric: the clinical-quality
+    // officer monitors CriticalErrorDetectionsPerThousand in
+    // CloudWatch with a monthly review cadence. A sustained
+    // increase in detection rate signals model drift or a
+    // vocabulary gap that needs investigation.
+    cloudwatch.put_metric(
+        namespace: "Dictation",
+        metric_name: "CriticalErrorDetections",
+        value: len(detections),
+        dimensions: {
+            specialty: specialty,
+            severity: "HIGH" if any(
+                d.severity == "HIGH" for d in detections)
+                else "MEDIUM_OR_BELOW"
+        })
+
+    RETURN {
+        detections: detections,
+        has_high_severity: any(
+            d.severity == "HIGH" for d in detections),
+        catalog_version: catalog.version
+    }
+```
+
 **Step 5: Extract structured-field suggestions from the dictation.** Run Amazon Comprehend Medical (and optionally a Bedrock model with a structured-extraction prompt) over the verbatim transcript and the formatted note. Extract medications, problems, allergies, vitals, and procedures with coded references. Cross-check against the patient's structured chart and surface discrepancies. Skip this step and the dictation produces narrative text that never makes it into the structured chart, which is the entire reason the clinician was tempted to type it directly into the structured fields in the first place.
 
 ```pseudocode
 FUNCTION extract_structured_fields(verbatim_transcript, formatted_note, patient_context):
     // Step 5A: run Comprehend Medical to extract
     // coded clinical entities.
-    // TODO (TechWriter): Expert review A11 (MEDIUM). The Comprehend
-    // Medical API surface is split: detect_entities_v2 returns
-    // categorized entities without ontology codes; infer_rx_norm,
-    // infer_icd10_cm, and (where the institution stores SNOMED)
-    // infer_snomed_ct return ontology-linked entities. Specify the
-    // multi-call pattern explicitly with merge-by-character-offset
-    // and update the cost estimate to reflect the multi-call
-    // overhead. The pseudocode's lookup_rxnorm and lookup_icd10
-    // helpers should be implemented as infer_rx_norm and
-    // infer_icd10_cm calls in production.
-    comp_med_result = comprehend_medical.detect_entities_v2(
+    //
+    // The Comprehend Medical API surface is split across
+    // multiple calls:
+    // - detect_entities_v2: returns categorized entities
+    //   (MEDICATION, MEDICAL_CONDITION, ANATOMY, etc.)
+    //   with spans and confidence, but without ontology
+    //   codes.
+    // - infer_rx_norm: returns RxNorm-linked medication
+    //   entities with concept IDs.
+    // - infer_icd10_cm: returns ICD-10-CM-linked condition
+    //   entities with concept codes.
+    // - infer_snomed_ct (where the institution stores
+    //   SNOMED): returns SNOMED-CT-linked entities.
+    //
+    // The pipeline calls all relevant endpoints and merges
+    // results by character offset:
+    //   1. Call detect_entities_v2 for the full entity map.
+    //   2. Call infer_rx_norm for medication ontology codes.
+    //   3. Call infer_icd10_cm for condition ontology codes.
+    //   4. Merge by matching entity begin_offset/end_offset
+    //      across responses.
+    //
+    // Cost note: this multi-call pattern means per-dictation
+    // Comprehend Medical cost is 2-4x a single call. Factor
+    // this into the cost estimate (the prerequisite section's
+    // $200-500/month estimate accounts for this multiplier).
+
+    // Call 1: detect_entities_v2 for full entity categorization
+    entities_result = comprehend_medical.detect_entities_v2(
         text: verbatim_transcript)
+
+    // Call 2: infer_rx_norm for RxNorm codes on medications
+    rxnorm_result = comprehend_medical.infer_rx_norm(
+        text: verbatim_transcript)
+
+    // Call 3: infer_icd10_cm for ICD-10 codes on conditions
+    icd10_result = comprehend_medical.infer_icd10_cm(
+        text: verbatim_transcript)
+
+    // Merge results by character offset. The detect_entities_v2
+    // response provides the canonical entity boundaries; the
+    // infer_* responses provide the ontology linkage for the
+    // same spans.
+    merged_entities = merge_by_character_offset(
+        entities: entities_result.entities,
+        rxnorm_entities: rxnorm_result.entities,
+        icd10_entities: icd10_result.entities)
 
     // Comprehend Medical returns entities like:
     // { Type: "MEDICATION", Text: "lisinopril",
     //   Attributes: [{ Type: "DOSAGE", Text: "10 mg" },
     //                { Type: "FREQUENCY", Text: "daily" }],
+    //   RxNormConcepts: [{ Code: "29046", ... }],
     //   ... }
-    // Plus RxNorm codes when InferRxNorm is called.
+    // After merge, each entity carries both its category
+    // and its ontology linkage.
 
     medications = []
     conditions = []
     allergies = []
 
-    FOR entity IN comp_med_result.entities:
+    FOR entity IN merged_entities:
         IF entity.category == "MEDICATION":
-            // RxNorm linking via InferRxNorm or a
-            // separate normalization step.
-            rxnorm_code = lookup_rxnorm(entity.text)
+            rxnorm_code = entity.rxnorm_concept_id
             medications.append({
                 source_text: entity.text,
                 rxnorm_code: rxnorm_code,
@@ -588,7 +829,7 @@ FUNCTION extract_structured_fields(verbatim_transcript, formatted_note, patient_
                 confidence: entity.score
             })
         ELIF entity.category == "MEDICAL_CONDITION":
-            icd10_code = lookup_icd10(entity.text)
+            icd10_code = entity.icd10_concept_code
             conditions.append({
                 source_text: entity.text,
                 icd10_code: icd10_code,
@@ -729,16 +970,53 @@ FUNCTION render_review_view(session_id, formatted_note, structured_suggestions, 
 ```pseudocode
 FUNCTION handoff_to_ehr(session_id, signed_note, structured_decisions, patient_context, clinician_session):
     // Step 7A: create the note in the EHR.
-    // TODO (TechWriter): Expert review A5 (MEDIUM). Specify the
-    // idempotency-key composition for dictation submission:
-    // (clinician_id, session_id, encounter_id, signature_timestamp).
-    // The dictation-metadata table holds the recently-submitted-
-    // notes list; on submission, the architecture checks for a
-    // prior submission with the same key and returns the prior
-    // note_id on match. Also prefer the FHIR API's idempotency
-    // headers where the EHR vendor's API supports them. On
-    // duplicate-detection, record both the original submission and
-    // the duplicate-detection event in the audit.
+    //
+    // IDEMPOTENCY-KEY COMPOSITION:
+    // The dictation submission uses a composite idempotency
+    // key: (clinician_id, session_id, encounter_id,
+    // signature_timestamp). Before submission, the
+    // architecture checks the dictation-metadata table for
+    // a prior submission with the same key. On match,
+    // return the prior note_id without creating a duplicate.
+    //
+    // Implementation:
+    // 1. Compute the idempotency key from the session.
+    // 2. Conditional check against the dictation-metadata
+    //    table's recently-submitted-notes list.
+    // 3. If a match exists: log the duplicate-detection
+    //    event in the audit trail, return the prior
+    //    note_id.
+    // 4. If no match: submit to the EHR API.
+    // 5. Where the EHR vendor's FHIR API supports
+    //    idempotency headers (If-None-Match or vendor-
+    //    specific), include them as defense-in-depth.
+    // 6. On duplicate-detection, record both the original
+    //    submission event and the duplicate-detection
+    //    event in the audit.
+    idempotency_key = build_idempotency_key(
+        clinician_id: clinician_session.clinician_id,
+        session_id: session_id,
+        encounter_id: patient_context.encounter_id,
+        signature_timestamp: signed_note.signature.timestamp)
+
+    prior_submission = dictation_metadata_table.query(
+        idempotency_key: idempotency_key,
+        status: "signed_and_handed_off")
+
+    IF prior_submission:
+        EventBridge.PutEvents([{
+            source: "dictation",
+            detail_type: "dictation_duplicate_detected",
+            detail: {
+                session_id: session_id,
+                prior_note_id: prior_submission.note_id,
+                idempotency_key: idempotency_key
+            }
+        }])
+        RETURN {
+            note_id: prior_submission.note_id,
+            duplicate: true
+        }
     note_creation_response = fhir_client.create_note(
         patient_id: patient_context.patient_id,
         encounter_id: patient_context.encounter_id,
@@ -783,11 +1061,30 @@ FUNCTION handoff_to_ehr(session_id, signed_note, structured_decisions, patient_c
             ...
 
     // Step 7C: update the dictation-metadata record.
+    // Per the references-not-content discipline (see Step
+    // 2C), the signed note content is archived in S3; the
+    // metadata table stores only the archive reference,
+    // structural counts, and lifecycle state.
+    signed_note_archive_key = (
+        f"notes/{session_id}/signed-note.json")
+    signed_note_archive_uri = s3.put_object(
+        bucket: TRANSCRIPT_ARCHIVE_BUCKET,
+        key: signed_note_archive_key,
+        body: json.encode({
+            formatted_text: signed_note.formatted_text,
+            structured_results: structured_results
+        }),
+        server_side_encryption: "aws:kms",
+        kms_key_id: TRANSCRIPT_ARCHIVE_KMS_KEY)
+
     dictation_metadata_table.put({
         session_id: session_id,
         ...
         note_id: note_id,
-        structured_results: structured_results,
+        signed_note_archive_ref: signed_note_archive_uri,
+        structured_accepted_count: count(
+            structured_results, where: status == "applied"),
+        idempotency_key: idempotency_key,
         signed_at: signed_note.signature.timestamp,
         status: "signed_and_handed_off"
     })
@@ -872,18 +1169,57 @@ FUNCTION audit_archive_and_adapt(session_id, signed_note, corrections, structure
     // the per-clinician custom vocabulary and, when
     // applicable, for the per-clinician acoustic model
     // adaptation.
-    // TODO (TechWriter): Expert review A4 (MEDIUM). Architect the
-    // per-clinician adaptation pipeline beyond event publication:
-    // default cadence (weekly batch for vocabulary, quarterly batch
-    // for acoustic), default scope (vocabulary-only as institutional
-    // default; acoustic adaptation as opt-in via SageMaker), held-
-    // out per-clinician validation set with regression gate (5%
-    // deterioration on per-clinician corrections-per-note or ASR
-    // confidence triggers automatic rollback), per-clinician model
-    // versioning, and a privacy-preserving aggregation pattern
-    // (federated learning or differentially private aggregation)
-    // for institution-wide vocabulary improvements that does not
-    // leak per-clinician corrections.
+    //
+    // PER-CLINICIAN ADAPTATION PIPELINE:
+    //
+    // Cadence:
+    // - Vocabulary adaptation: weekly batch. Corrections
+    //   accumulated over the week are analyzed; recurring
+    //   patterns (the same word corrected 3+ times)
+    //   trigger automatic custom-vocabulary additions.
+    // - Acoustic adaptation: quarterly batch, opt-in via
+    //   SageMaker. Requires institutional privacy-officer
+    //   approval and clinician consent for audio retention
+    //   beyond the QA window.
+    //
+    // Scope:
+    // - Vocabulary-only: the institutional default. Low
+    //   operational cost, no audio retention beyond QA.
+    // - Acoustic adaptation: opt-in for clinicians whose
+    //   per-clinician error rate remains elevated after
+    //   vocabulary adaptation stabilizes. Requires
+    //   SageMaker training jobs on the clinician's
+    //   accumulated audio.
+    //
+    // Validation gate:
+    // - Each clinician's adaptation is validated against a
+    //   held-out per-clinician evaluation set (10-20
+    //   dictation segments with known correct transcripts).
+    // - Regression threshold: if corrections-per-note or
+    //   ASR confidence deteriorates by more than 5%
+    //   relative to the prior vocabulary version, the
+    //   update is automatically rolled back.
+    // - The regression gate runs as a Step Functions
+    //   sub-workflow triggered by the adaptation batch.
+    //
+    // Per-clinician model versioning:
+    // - Each vocabulary update is versioned (clinician-
+    //   jdoe-vocab-v17). The dictation-metadata record
+    //   carries the vocabulary version active at
+    //   transcription time.
+    // - Rollback: the prior version remains in the
+    //   Transcribe Medical custom-vocabulary registry;
+    //   rollback is a configuration pointer change.
+    //
+    // Privacy-preserving aggregation:
+    // - Institution-wide vocabulary improvements derive
+    //   from aggregated correction patterns (e.g., "ten
+    //   clinicians all correct 'metoclopramide' from the
+    //   same mistranscription"). The aggregation uses
+    //   k-anonymity (only patterns appearing across k>=5
+    //   clinicians are promoted to the institutional
+    //   vocabulary) so individual correction streams are
+    //   not leaked to the institution-wide model.
     FOR correction IN corrections:
         adaptation_event = {
             clinician_id: audit_record.clinician_id,
@@ -920,20 +1256,77 @@ FUNCTION audit_archive_and_adapt(session_id, signed_note, corrections, structure
         metric_name: "ASRAvgConfidence",
         value: metadata.avg_confidence,
         dimensions: { specialty: metadata.specialty })
-    // TODO (TechWriter): Expert review A2 (HIGH). Promote
-    // cohort-stratified accuracy monitoring from prose into the
-    // architecture pattern. Specify the cohort-dimensions allow-list
-    // (per-clinician identifier as load-bearing axis, plus opt-in
-    // language background, inferred accent group, specialty,
-    // experience level, deployment site), per-cohort metrics
-    // (corrections-per-note, time-to-sign, adoption rate,
-    // abandonment rate, critical-error rate), per-cohort sample-size
-    // minimums, and disparity-alert thresholds. Name ownership at
-    // the equity-monitoring committee with monthly review cadence
-    // and at the clinical-quality officer for critical-error-rate
-    // cohort disparities. Use cohort-axis-hash labels for sensitive
-    // dimensions in CloudWatch metrics; route demographic-stratified
-    // analytics through Athena over the audit archive.
+
+    // COHORT-STRATIFIED ACCURACY MONITORING:
+    //
+    // Voice ASR systematically underperforms for some speaker
+    // demographics. The architecture explicitly monitors
+    // accuracy across cohort dimensions and alerts on
+    // disparities.
+    //
+    // Cohort dimensions (allow-list):
+    // - Per-clinician identifier (the load-bearing axis;
+    //   every metric is available per clinician)
+    // - Opt-in language background (declared at onboarding)
+    // - Inferred accent group (derived from ASR adaptation
+    //   metadata, not self-reported)
+    // - Specialty
+    // - Experience level (years since residency completion)
+    // - Deployment site
+    //
+    // Per-cohort metrics:
+    // - Corrections-per-note (median and p90)
+    // - Time-to-sign (median and p90)
+    // - Adoption rate (sessions per clinician per week)
+    // - Abandonment rate (started but unsigned dictations)
+    // - Critical-error rate (detections per 1000 dictations)
+    //
+    // Per-cohort sample-size minimums:
+    // - Metrics are only published for cohorts with at
+    //   least 30 dictations in the measurement window (to
+    //   avoid noisy alerting on low-volume cohorts).
+    //
+    // Disparity-alert thresholds:
+    // - If any cohort's corrections-per-note median exceeds
+    //   the institution-wide median by more than 2x, alert.
+    // - If any cohort's critical-error rate exceeds the
+    //   institution-wide rate by more than 3x, alert at
+    //   HIGH severity.
+    // - Alerts route to the equity-monitoring committee for
+    //   monthly review and to the clinical-quality officer
+    //   for critical-error-rate cohort disparities.
+    //
+    // Implementation:
+    // - Sensitive cohort dimensions (language background,
+    //   accent group) use cohort-axis-hash labels in
+    //   CloudWatch metrics (not plaintext demographic
+    //   values). The hash-to-label mapping lives in a
+    //   restricted-access reference table.
+    // - Demographic-stratified analytics (the detailed
+    //   breakdowns for the equity committee) route through
+    //   Athena over the audit archive, not through
+    //   CloudWatch dashboards, so access is governed by
+    //   the audit-archive IAM policy.
+
+    // Emit per-clinician cohort metrics for downstream
+    // stratified analysis.
+    cloudwatch.put_metric(
+        namespace: "Dictation",
+        metric_name: "CorrectionsPerNote_ByClinician",
+        value: len(corrections),
+        dimensions: {
+            clinician_id: audit_record.clinician_id,
+            specialty: metadata.specialty,
+            site: metadata.deployment_site
+        })
+    cloudwatch.put_metric(
+        namespace: "Dictation",
+        metric_name: "CriticalErrorDetections",
+        value: metadata.critical_error_count or 0,
+        dimensions: {
+            specialty: metadata.specialty,
+            site: metadata.deployment_site
+        })
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter10.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -1106,6 +1499,26 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Voice-command vocabulary review and versioning.** The set of voice commands the system recognizes is a clinical-safety artifact. Treat it with version control, change review by clinical operations (not by the engineering team unilaterally), scheduled refresh cadence, and a documented escalation path when a misexecution surfaces. Track command-execution telemetry (which commands are used, which fail, which produce unintended actions) and feed it into the review.
 
 **Specialty-specific tuning programs.** A radiology dictation flow, an emergency-medicine flow, and a primary-care flow have different vocabulary distributions, different formatting conventions, and different clinician expectations. Build the configuration so per-specialty tuning is first-class: specialty-specific custom vocabularies, specialty-specific note templates, specialty-specific LLM prompts, specialty-specific critical-error rules. Pilot per specialty rather than across the institution, and pilot before broader rollout.
+
+**WebSocket audio streaming posture.** The streaming audio path requires explicit attention to: connection-time authentication (a Lambda authorizer validates the clinician's Cognito token before the WebSocket upgrade completes), account-level concurrent-connection limits (request a quota increase during deployment planning; the default API Gateway WebSocket limit is typically adequate for pilot but may need raising for institution-wide rollout), idle-timeout interaction with long-form dictation (extend the idle timeout or implement a client-side keep-alive ping so a clinician's natural pause does not drop the connection mid-dictation; the default WebSocket idle timeout is 10 minutes, which is shorter than some long operative notes), and the binary-message-type frame format (audio frames stream as binary WebSocket messages; control messages like end-of-stream and abort use text frames with a JSON envelope).
+
+**Device-to-cloud transport posture.** The dictation device (workstation headset, handheld recorder, mobile phone) transmits audio over a TLS-encrypted WebSocket. For institutional devices on managed networks, add: certificate pinning to the API Gateway endpoint (prevents MITM on the audio stream), clinical-device VLAN network segmentation (dictation traffic isolated from general-purpose network traffic), and device-identity authentication via mutual TLS or device certificates (prevents unauthorized devices from opening dictation sessions). Reference the institutional clinical-device-management team for per-device-fleet certificate provisioning.
+
+**Orchestrator Lambda resource-based policy.** The session-orchestrator Lambda's resource-based policy should be pinned to the production API Gateway stage ARN. The policy rejects invocations from any other API Gateway, any other stage (including dev and staging stages), or any other principal. As defense-in-depth, the Lambda handler validates the `requestContext.apiId` from the event payload against a production-constant configuration value at runtime. This prevents a misconfigured integration or a lateral-movement attack from invoking the production orchestrator through an unexpected path.
+
+**Audit-log retention floor.** The dictation audit log retention must meet the longest of: HIPAA's six-year minimum, state-specific medical-records-retention rules (which for certain patient populations such as pediatric records can extend to age-of-majority-plus-multiple-years), the EHR vendor's audit-retention floor, the longest-retained signed note's retention period (the audit trail must outlive the signed note it documents), and the institutional regulatory floor. S3 Object Lock compliance mode with a retention period computed from these inputs at deployment time. Legal-hold capability (suspending deletion for specific clinicians or patients during litigation) must be configurable without engineering intervention.
+
+**Voice biometric data governance.** The dictation system captures voice data that qualifies as biometric information under several state laws (BIPA in Illinois, GIPA in Texas, and similar laws in other states). Production deployment requires: clinician consent at onboarding (explicit, informed consent for voice-data collection and processing), separation of biometric retention from general dictation retention (voice-profile adaptation data has its own lifecycle, distinct from clinical-audio QA retention), per-clinician right-to-deletion (the clinician can request deletion of their voice-adaptation profile and accumulated audio at any time; the deletion is verifiable), and cross-jurisdictional considerations for institutions operating across multiple states. Reference the institutional employment-and-compliance team for per-jurisdiction consent-form templates and retention-period guidance.
+
+**Audio-retention configuration.** The architecture supports three explicit audio-retention modes, selectable per institution: retain-briefly (7-30 day window, KMS-encrypted in S3, lifecycle-policy deletion, access logged through CloudTrail) as the recommended default for QA and short-term adaptation feedback; discard-immediately (audio deleted within minutes of successful transcription) as the conservative alternative for institutions with strict PHI-minimization requirements; retain-longer (requires explicit clinician consent at onboarding and a documented retention purpose such as acoustic-model adaptation or quality-improvement research). The audit log (signed notes, corrections, lifecycle events) serves as the long-term forensic-reconstruction substrate; audio retention is short-term QA-and-adaptation, not archival.
+
+**PrivateLink-preferred EHR connectivity.** When integrating with EHR vendor APIs, the egress hierarchy is: PrivateLink (preferred where the EHR vendor publishes a VPC endpoint service), private peering via Direct Connect or Transit Gateway (typical for on-premise EHR deployments), site-to-site VPN (acceptable fallback), public Internet with TLS (last resort, acceptable only for cloud-hosted EHR APIs that do not offer a private connectivity option). The choice affects latency (PrivateLink and Direct Connect are lower-latency than VPN or public Internet) and compliance posture (PrivateLink keeps PHI off the public Internet entirely).
+
+**Disaster recovery topology.** Each pipeline stage has an explicit failover policy: Transcribe Medical regional outage triggers cross-region failover (a secondary region with pre-provisioned custom vocabulary) or batch-mode fallback (queue audio for retry when the region recovers; clinician sees "transcription will be available shortly" rather than lost audio). Bedrock model unavailability triggers rule-based-formatter fallback (lower-quality formatting but no data loss; the clinician still gets the verbatim transcript in the review pane). Comprehend Medical unavailability triggers manual structured-field-entry fallback (the formatted note is complete but structured-field suggestions are absent; the clinician enters structured fields manually). EHR API unreachable triggers signed-note-queue-for-retry (the signed note is durably queued in Step Functions with exponential backoff; the clinician sees "note saved, EHR submission pending" rather than a failure). Failover-detection triggers are CloudWatch alarms on per-stage error rates with consecutive-failure thresholds. Failover-back triggers require manual confirmation after stability window. Quarterly DR-test cadence validates each failover path in a staging environment.
+
+**Per-language pipeline pattern.** Even when shipping English-first, the configuration scaffolding should not assume a single language at the architecture level. Build for day-one multilingual readiness: per-clinician language declared at onboarding (stored in the per-clinician-config table), per-language Transcribe Medical configuration and custom vocabulary (separate vocabulary resources per language), per-language LLM-formatter prompts (prompt templates parameterized by language with per-language evaluation sets), per-language formatting rules (number, date, and abbreviation canonicalization is language-specific). The deployment launches with English-only; the configuration is language-parameterized from the start so adding Spanish, French, or Mandarin is a configuration expansion, not an architecture redesign.
+
+**Default Bedrock model recommendation.** For the LLM formatter and faithfulness checker, the default recommendation is the Claude model family on Bedrock (Claude 3.5 Sonnet or Claude 3 Haiku depending on latency-vs-quality trade-off). The Claude family has a longer-standing track record of HIPAA-eligibility on Bedrock, strong performance on clinical-text formatting tasks, and well-characterized behavior with healthcare vocabulary. Verify the specific model's BAA coverage at build time against the [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). If the chosen model loses BAA coverage or is deprecated, the canary inference profile pattern (see versioning above) supports rapid cutover to an alternative model.
 
 **EHR integration depth and breadth.** The pseudocode handles note creation and structured-field updates. Production deployments typically need more: co-signature workflows for trainees, late-addendum support, integration with order entry (so a dictated medication suggestion can be drafted as a CPOE order for the clinician to review and sign separately), and integration with billing-code suggestion engines. Each integration point requires the same explicit-confirmation rigor as the structured-field updates above.
 

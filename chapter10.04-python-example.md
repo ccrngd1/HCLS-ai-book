@@ -11,7 +11,7 @@
 You will need the AWS SDK for Python:
 
 ```bash
-pip install boto3
+pip install boto3 amazon-transcribe
 ```
 
 In production you would also configure an Amazon API Gateway WebSocket API for the streaming-audio endpoint plus a REST API for dictation lifecycle and final note submission, an Amazon Cognito user pool federated to the institutional identity provider for clinician authentication, a SMART on FHIR launch context handoff with the host EHR, an Amazon Transcribe Medical custom vocabulary per institution (and optionally per specialty, per clinician), an Amazon Bedrock inference profile pinned to a specific clinical-formatter model and region, the Lambda functions that orchestrate each pipeline stage (the session opener, the ASR result handler, the formatter wrapper, the structured-field extractor wrapper, the EHR handoff, the audit writer, the adaptation-feedback emitter), an AWS Step Functions state machine that durably orchestrates the dictation-to-signed-note workflow with retry semantics, DynamoDB tables that hold session state, dictation metadata across the lifecycle, and per-clinician configuration (custom vocabulary, preferred templates, macros, adaptation parameters), AWS Secrets Manager secrets for the EHR API credentials and the SMART on FHIR backend-services signing keys, an Amazon EventBridge bus for cross-system events (`dictation_started`, `dictation_transcribed`, `dictation_signed`, `dictation_failed`), Amazon S3 buckets for audio recordings (with brief-retention lifecycle) and the long-term audit archive (with Object Lock in compliance mode), and customer-managed KMS keys for every PHI-bearing data class. The demo replaces all of these with small mocks so the focus stays on the per-stage processing logic rather than on the cloud-resource provisioning.
@@ -93,25 +93,22 @@ BOTO3_RETRY_CONFIG = Config(
 # These boto3 clients are declared at module level so a real Lambda
 # deployment reuses them across warm invocations. The demo below
 # uses Mock* classes instead; the real clients are never invoked here.
-# TODO (TechWriter): Code review W1 (WARNING). Streaming Transcribe
-# Medical does not run through the boto3 transcribe client. The
-# StartMedicalStreamTranscription operation is HTTP/2 and is wrapped
-# by the standalone amazon-transcribe-streaming-sdk Python package
-# (TranscribeStreamingClient.start_medical_stream_transcription),
-# which is separate from boto3. Either rename `transcribe_client`
-# below to `transcribe_batch_client` (keeping it for batch and
-# vocabulary-management operations only) or remove it, and add a
-# Setup-section line noting that streaming Transcribe Medical
-# requires `pip install amazon-transcribe`. Update the comments in
-# Step 1E and Step 2A and the "Real Transcribe Medical streaming
-# wiring" paragraph in the Gap section to clarify the streaming-
-# SDK dependency rather than implying the boto3 client.
+#
+# IMPORTANT: Streaming Transcribe Medical does NOT use the boto3
+# transcribe client. The StartMedicalStreamTranscription API is
+# HTTP/2 and requires the standalone amazon-transcribe-streaming-sdk
+# (TranscribeStreamingClient.start_medical_stream_transcription).
+# Install with: pip install amazon-transcribe
+#
+# The boto3 client below (transcribe_batch_client) handles only
+# batch transcription jobs and vocabulary management
+# (CreateMedicalVocabulary, UpdateMedicalVocabulary, etc.).
 REGION = "us-east-1"
 dynamodb              = boto3.resource("dynamodb", region_name=REGION,
                                           config=BOTO3_RETRY_CONFIG)
 s3_client             = boto3.client("s3", region_name=REGION,
                                           config=BOTO3_RETRY_CONFIG)
-transcribe_client     = boto3.client("transcribe", region_name=REGION,
+transcribe_batch_client = boto3.client("transcribe", region_name=REGION,
                                           config=BOTO3_RETRY_CONFIG)
 bedrock_runtime       = boto3.client("bedrock-runtime", region_name=REGION,
                                           config=BOTO3_RETRY_CONFIG)
@@ -1513,19 +1510,15 @@ def format_and_structure(disambiguated, asr_result, session_context):
     template   = session_context["template"]
     verbatim   = asr_result["verbatim"]
 
-    # TODO (TechWriter): Code review W2 (WARNING). The pseudocode's
-    # Step 4B applies disambiguated["structural_events"] (navigation
-    # commands like "new paragraph", "go to section X") to a section
-    # cursor that decides which template field each content segment
-    # lands in. This Python collapses everything into the rule-based
-    # section-header detector and never reads structural_events,
-    # which leaves a meaningful pseudocode-to-Python gap. Either add
-    # a small apply_structural_events helper that walks events in
-    # time order and routes content into template sections, or add
-    # an explicit comment here that the demo intentionally uses only
-    # the rule-based path while production drives a section cursor
-    # off structural_events. See main recipe Step 4B for the full
-    # pattern.
+    # NOTE: The pseudocode's Step 4B applies structural_events
+    # (navigation commands like "new paragraph", "go to section X")
+    # to a section cursor that routes content into template fields.
+    # This demo intentionally uses only the rule-based section-
+    # header detection path for simplicity. In production, implement
+    # an apply_structural_events helper that walks events in time
+    # order and drives a section cursor off the command stream.
+    # See the main recipe's Step 4B for the full pattern.
+    #
     # Step 4A: rule-based formatting pass. Punctuation inference,
     # capitalization, number-and-date canonicalization, section
     # header detection. Lower latency than the LLM, deterministic.
