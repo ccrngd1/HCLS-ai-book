@@ -133,7 +133,7 @@ Unlike supervised learning, there's no ground truth for "correct" SDOH phenotype
                                                               [Intervention Matching]
 ```
 
-**Stage 1: NLP Extraction.** Process clinical notes through an SDOH-specific NLP pipeline. Extract mentions, classify assertions, resolve temporality. Output: per-patient, per-encounter SDOH mention records with domain, polarity, and timestamp.
+**Stage 1: NLP Extraction.** Process clinical notes through an SDOH-specific NLP pipeline. Extract mentions, classify assertions, resolve temporality. Output: per-patient, per-encounter SDOH mention records with domain, polarity, and timestamp. Notes that fail extraction (malformed text, service timeouts, model errors) should route to a dead-letter queue rather than silently dropping. Downstream feature assembly must distinguish "no SDOH mentions extracted" (the model ran and found nothing) from "extraction never attempted" (the note never reached the NLP pipeline). Set a monitoring alarm on DLQ depth: if it exceeds a threshold (say, 5% of daily note volume), silent NLP failures are creating ambiguous gaps indistinguishable from legitimate absence of SDOH mentions.
 
 **Stage 2: Feature Assembly.** Combine NLP extractions, structured screening responses, and geocoded community indicators into a unified patient feature vector. Handle missingness explicitly (distinguish "screened negative" from "never screened"). Apply temporal weighting (recent signals matter more than old ones).
 
@@ -157,7 +157,7 @@ NLP extraction quality varies wildly by note type. Social work assessments are g
 
 The equity audit is not optional. I've seen SDOH phenotyping projects produce clusters that are effectively racial categories with extra steps. If your "multi-domain social complexity" cluster is 85% patients of color, you need to ask hard questions about whether you're measuring social determinants or measuring structural racism. Both are real, but the interventions are different, and the risk of misuse is high.
 
-Staleness is a real operational problem. Social circumstances change. A phenotype assigned 18 months ago based on a note from a crisis period may not reflect a patient's current situation. Build re-evaluation triggers: new screening data, new social work notes, address changes, or simple time-based expiration.
+Staleness is a real operational problem. Social circumstances change. A phenotype assigned 18 months ago based on a note from a crisis period may not reflect a patient's current situation. Build re-evaluation triggers: new screening data, new social work notes, address changes, or simple time-based expiration. A common cadence pattern: weekly incremental assignment (assign new patients to existing centroids) with monthly full re-clustering and equity audit. The cadence should be driven by rate of new SDOH data accumulation, not calendar alone. If your health system processes 500 new social work notes per day, weekly re-clustering makes sense. If you get a trickle of 20 notes per week, monthly is fine.
 
 The intervention matching is where the value lives, and it's where most projects stall. Phenotyping without a clear "so what" is an academic exercise. Before you build the clustering, make sure you have community resources to connect patients to. A phenotype of "food insecurity" is only useful if you have a food assistance referral pathway ready.
 

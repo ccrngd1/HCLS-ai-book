@@ -517,10 +517,15 @@ def characterize_phenotypes(
 
 ## Step 5: Store Phenotype Assignments
 
-*The pseudocode calls this `store_phenotype_assignment(patient_id, phenotype, confidence, feature_snapshot)`. This writes each patient's phenotype to DynamoDB for real-time lookup by care management systems. Includes a staleness date so downstream systems know when to trigger re-evaluation.*
+*The pseudocode calls this `store_phenotype_assignment(patient_id, phenotype, confidence, feature_snapshot)`. This writes each patient's phenotype to DynamoDB for real-time lookup by care management systems. Includes a staleness date so downstream systems know when to trigger re-evaluation. Note: the feature snapshot itself is derived PHI. In production, store the full snapshot in S3 (KMS-encrypted) and write only the S3 URI to DynamoDB. This reduces the PHI surface in the real-time lookup store.*
 
 ```python
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
+s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+
+# In production, the feature snapshot bucket holds derived PHI subject to
+# the same retention and access controls as source clinical data.
+SNAPSHOT_BUCKET = "phenotype-feature-snapshots"
 
 def store_phenotype_assignment(
     patient_id: str,
@@ -538,6 +543,9 @@ def store_phenotype_assignment(
     - When it expires (stale_after date)
     - The model version that produced it (for reproducibility)
 
+    The feature snapshot (derived PHI) is stored in S3 and referenced
+    by URI in DynamoDB to reduce PHI surface in the real-time store.
+
     Args:
         patient_id: Patient identifier (partition key).
         phenotype: The phenotype profile dict from characterize_phenotypes.
@@ -554,6 +562,16 @@ def store_phenotype_assignment(
     now = datetime.datetime.now(timezone.utc)
     stale_date = (now + datetime.timedelta(days=STALENESS_THRESHOLD_DAYS)).date()
 
+    # In production, write the feature snapshot to S3 and store the URI:
+    # snapshot_key = f"snapshots/{patient_id}/{now.strftime('%Y%m%dT%H%M%S')}.json"
+    # s3_client.put_object(
+    #     Bucket=SNAPSHOT_BUCKET,
+    #     Key=snapshot_key,
+    #     Body=json.dumps(feature_snapshot),
+    #     ServerSideEncryption="aws:kms",
+    # )
+    # snapshot_uri = f"s3://{SNAPSHOT_BUCKET}/{snapshot_key}"
+
     record = {
         "patient_id": patient_id,
         "phenotype_id": phenotype["cluster_id"],
@@ -563,6 +581,7 @@ def store_phenotype_assignment(
         "assigned_date": now.isoformat(),
         "stale_after": stale_date.isoformat(),
         "version": model_version,
+        # "feature_snapshot_uri": snapshot_uri,  # Production: S3 reference, not inline PHI
     }
 
     table.put_item(Item=record)

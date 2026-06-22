@@ -16,7 +16,7 @@
 
 **AWS Glue for ETL and feature assembly.** Glue jobs handle the integration of multiple data sources (EHR extracts, screening databases, census data) into the unified feature matrix. Glue's schema-on-read approach handles the heterogeneous source formats without requiring a rigid upfront schema.
 
-**Amazon DynamoDB for phenotype assignments.** The final phenotype label for each patient needs to be queryable in real time by care management systems. DynamoDB provides single-digit-millisecond lookups by patient ID.
+**Amazon DynamoDB for phenotype assignments.** The final phenotype label for each patient needs to be queryable in real time by care management systems. DynamoDB provides single-digit-millisecond lookups by patient ID. Each phenotype lookup at the care management integration point must be application-level audit logged: requesting user or system identity, patient_id, timestamp, and phenotype returned. This satisfies HIPAA accounting-of-disclosures requirements. The audit log is separate from CloudTrail (which captures API-level access) because the disclosure semantics require recording who requested the clinical interpretation, not just which IAM principal called GetItem.
 
 **AWS Lambda for orchestration.** Event-driven triggers coordinate the pipeline: new notes arrive, NLP extraction fires, features update, phenotype re-assignment runs on schedule.
 
@@ -176,10 +176,20 @@ FUNCTION assemble_patient_features(patient_id, lookback_months = 24):
         // All screening scores remain NULL (not zero)
 
     // --- Community-level features ---
+    // PHI note: geocoding patient addresses is a sensitive operation.
+    // Geocode at zip+4 level (not full street address) when census-tract
+    // precision suffices for ADI/SVI lookup. This reduces PHI exposure
+    // while maintaining the geographic resolution needed for community indicators.
+    // Call Location Service via VPC endpoint to keep address data off the public internet.
+    // Cache geocode results in the feature store so repeated pipeline runs
+    // don't retransmit addresses. Log each geocoding call in the application
+    // audit log (patient_id, timestamp, zip+4 sent, census_tract returned).
     address = get most recent address for patient_id
     IF address exists:
-        geocode_result = call LocationService.SearchPlaceIndex(Text = address)
+        zip_plus_4 = extract_zip_plus_4(address)  // reduce to zip+4 for census-tract lookup
+        geocode_result = call LocationService.SearchPlaceIndex(Text = zip_plus_4)
         census_tract = lookup_census_tract(geocode_result.coordinates)
+        audit_log("geocode_lookup", patient_id, timestamp, zip_plus_4, census_tract)
 
         features["adi_national_rank"] = lookup_adi(census_tract)          // 1-100, higher = more deprived
         features["food_desert_flag"] = lookup_food_desert(census_tract)   // binary
@@ -298,6 +308,13 @@ FUNCTION characterize_phenotypes(feature_matrix, cluster_labels, patient_demogra
 STALENESS_THRESHOLD_DAYS = 180  // re-evaluate phenotype if older than 6 months
 
 FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_snapshot):
+    // NOTE: feature_snapshot is derived PHI, subject to the same retention
+    // and access controls as the source clinical data. To reduce PHI surface
+    // in the real-time lookup store, store the full snapshot in S3 (KMS-encrypted,
+    // lifecycle-managed) and reference it by URI in DynamoDB.
+    snapshot_s3_uri = write feature_snapshot to S3 at
+        s3://phenotype-bucket/snapshots/{patient_id}/{timestamp}.json
+
     write to DynamoDB table "patient-phenotypes":
         patient_id       = patient_id
         phenotype_id     = phenotype.cluster_id
@@ -305,7 +322,7 @@ FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_s
         confidence       = confidence                    // membership probability (0-1)
         assigned_date    = current UTC timestamp
         dominant_domains = phenotype.dominant_domains    // for quick reference without full lookup
-        feature_snapshot = feature_snapshot              // the features at time of assignment
+        feature_snapshot_uri = snapshot_s3_uri           // S3 reference, not inline PHI
         stale_after      = today + STALENESS_THRESHOLD_DAYS
         version          = clustering model version     // track which model produced this
 ```
@@ -402,6 +419,24 @@ FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_s
 - Indirect SDOH language ("patient seems stressed about bills") has lower extraction recall than explicit mentions
 - Community-level indicators are proxies; they don't capture individual circumstances within a neighborhood
 - Temporal dynamics: a patient's phenotype can change faster than the re-clustering cadence
+
+---
+
+## Why This Isn't Production-Ready
+
+This architecture demonstrates the full pipeline shape, but several gaps remain before you'd trust it with real patient populations:
+
+**NLP model training data.** The SDOH NER model requires annotated clinical text from your organization's notes. Annotation guidelines, inter-annotator agreement thresholds, and IRB-approved access to training data are prerequisites that take months. Without site-specific fine-tuning, extraction recall for indirect SDOH language will sit around 40-50% instead of the 65-80% a tuned model achieves.
+
+**Missing input validation.** The pseudocode trusts its inputs. Production needs validation at every boundary: note text length limits, patient ID format checks, screening score range enforcement, and geocoding result plausibility checks. A single malformed input shouldn't crash the pipeline or produce a silently wrong phenotype.
+
+**No circuit breakers.** If Comprehend Medical or the SageMaker endpoint degrades, the pipeline will accumulate failures without back-pressure. Production needs circuit breakers that pause ingestion when error rates exceed thresholds, route failures to dead-letter queues, and alert the operations team.
+
+**Cluster stability monitoring.** The pipeline produces phenotypes but doesn't monitor whether they remain stable across runs. Production needs drift detection: if a monthly re-clustering produces dramatically different cluster boundaries, that's a signal that the underlying data distribution has shifted and clinical teams need to re-validate the phenotype definitions.
+
+**No consent tracking.** Some organizations require explicit patient consent for SDOH data collection and use. This architecture doesn't model consent status. Production may need to filter patients from clustering based on consent records and track which patients opted out of phenotype-based outreach.
+
+**Limited disaster recovery.** DynamoDB provides durability, but the full pipeline (trained models, feature store state, phenotype catalog) needs a recovery plan. Model artifacts, cluster definitions, and the mapping between phenotype IDs and intervention pathways all need versioned backups.
 
 ---
 
