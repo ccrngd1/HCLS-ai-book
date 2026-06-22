@@ -282,6 +282,8 @@ def extract_entities(note_text: str) -> dict:
 
     # Normalize medication names to RxNorm codes.
     # This enables cross-note aggregation: "amlodipine" and "Norvasc" map to the same CUI.
+    # Production optimization: cache results by med["text"] to avoid duplicate API calls.
+    # A note mentioning the same drug multiple times only needs one InferRxNorm lookup.
     for med in medications:
         rxnorm_response = comprehend_medical.infer_rx_norm(Text=med["text"])
         concepts = rxnorm_response.get("Entities", [])
@@ -391,15 +393,17 @@ def detect_adverse_events(
                 "since starting", "after beginning", "after starting",
                 "since initiating", "days after", "weeks after", "onset after"
             ]
+            temporal_found = False
             for temporal in temporals:
+                if temporal_found:
+                    break
                 temporal_text = temporal["text"].lower()
                 for keyword in temporal_keywords:
                     if keyword in temporal_text:
                         evidence_score += 0.3
                         evidence_reasons.append(f"temporal_association: {temporal['text']}")
+                        temporal_found = True
                         break
-                if evidence_score >= 0.3 and "temporal_association" in str(evidence_reasons):
-                    break
 
             # ----- Layer 3: Text proximity -----
             # Entities in the same sentence or adjacent sentences are more likely
@@ -463,10 +467,11 @@ def classify_severity(detected_event: dict, note_text: str) -> tuple:
             if indicator in context_window:
                 return grade, indicator
 
-    # Default: if documented at all, assume moderate. Grade 1 events are
-    # often not documented. Absence of severity language suggests the clinician
-    # found it noteworthy enough to write down.
-    return "grade_2_moderate", "default_no_indicators"
+    # Default: if no severity indicators found, assume Grade 1 (mild).
+    # Rationale: absence of severity language is consistent with routine mentions.
+    # Events with actual clinical impact will have documentation context
+    # ("dose reduced," "admitted," "discontinued") that indicator matching catches.
+    return "grade_1_mild", "default_no_indicators"
 ```
 
 ---
@@ -513,12 +518,20 @@ def store_adverse_event(
     table.put_item(Item=ae_record)
 
     # High-severity: Grade 3+ triggers immediate notification.
+    # IMPORTANT: Never include patient_id or note_id in SNS messages.
+    # Subscriber endpoints may not all be within your HIPAA-covered boundary.
     if severity in ("grade_3_severe", "grade_4_life_threatening"):
         sns.publish(
             TopicArn=SNS_CRITICAL_TOPIC,
             Subject=f"High-severity adverse event detected: {severity}",
             Message=json.dumps(
-                {k: str(v) for k, v in ae_record.items()},
+                {
+                    "ae_id": ae_id,
+                    "severity": severity,
+                    "medication": detected_event["medication"],
+                    "event_description": detected_event["event"],
+                    "dashboard_link": f"https://safety-dashboard.internal/ae/{ae_id}",
+                },
                 indent=2,
             ),
         )
@@ -557,6 +570,8 @@ def aggregate_signals(time_window_days: int = 30) -> list:
     recent_events = response.get("Items", [])
 
     # Group by normalized drug-event pair.
+    # Note: Uses set() for O(1) dedup and tuple keys for compound grouping.
+    # Convert sets to lists and tuples to strings if you need JSON serialization.
     pair_counts = {}
     for event in recent_events:
         pair_key = (event.get("rxnorm_code", "unknown"), event["event_description"].lower())
@@ -656,7 +671,8 @@ def process_note(note: dict) -> list:
         # ae_record = store_adverse_event(note, ae, severity, indicator)
         # results.append(ae_record)
 
-        # For demonstration, build the record without writing to DynamoDB
+        # For demonstration, build the record without writing to DynamoDB.
+        # Demo uses simplified field names; store_adverse_event uses the full schema.
         results.append({
             "ae_id": f"ae-demo-{uuid.uuid4().hex[:8]}",
             "patient_id": note["patient_id"],
