@@ -121,6 +121,11 @@ def detect_sections(note_text: str) -> list[dict]:
         "text": "",
     }
 
+    # Track our position in the original text using a running offset counter.
+    # This avoids str.index() which returns the first occurrence and breaks
+    # when duplicate header text appears in the note.
+    running_offset = 0
+
     for line in note_text.split("\n"):
         match = header_pattern.match(line)
         if match:
@@ -143,11 +148,15 @@ def detect_sections(note_text: str) -> list[dict]:
             current_section = {
                 "header": header_text,
                 "category": category,
-                "start": note_text.index(line),  # TODO (TechWriter): Code review Finding 1 (WARNING). str.index() returns first occurrence; duplicate headers get wrong offset. Use running offset counter instead.
+                "start": running_offset,
                 "text": "",
             }
         else:
             current_section["text"] += line + "\n"
+
+        # Advance offset: line length + 1 for the newline character that
+        # split() consumed.
+        running_offset += len(line) + 1
 
     # Don't forget the last section.
     if current_section["text"].strip():
@@ -405,7 +414,7 @@ def store_medication_extraction(
         # Build the structured record.
         record = {
             "patient_id": patient_id,
-            "sort_key": f"{extraction_ts}#{note_id}#{med['begin']}",
+            "sort_key": f"{note_id}#{med['text']}#{med['begin']}",
             "note_id": note_id,
             "medication_text": med["text"],
             "rxcui": rxnorm["rxcui"],
@@ -428,7 +437,10 @@ def store_medication_extraction(
 
         structured_meds.append(record)
 
-        # Write to DynamoDB. Partition key: patient_id, sort key: composite.
+        # Write to DynamoDB. Partition key: patient_id, sort key: composite of
+        # note_id + medication_text + begin_offset. This design is idempotent:
+        # reprocessing the same note overwrites existing records rather than
+        # creating duplicates (which would happen with extraction_ts in the key).
         table.put_item(Item=record)
 
     # Write full extraction to S3 for audit trail and reprocessing.

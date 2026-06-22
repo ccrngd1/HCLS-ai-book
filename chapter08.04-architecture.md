@@ -16,6 +16,8 @@
 
 **Amazon DynamoDB for medication list storage.** The normalized medication extractions need fast point-lookups by patient ID (for reconciliation workflows) and time-range queries (for medication history). DynamoDB's key-value model with sort keys supports both access patterns efficiently.
 
+**Amazon SQS for dead letter queues.** Lambda invocations from S3 events are asynchronous and can fail (Comprehend Medical throttling, malformed notes, notes exceeding the 20,000-character limit). Without a DLQ, those failures retry a few times and then vanish silently. In a clinical pipeline, a silently lost note means a gap in the medication record with no visible signal. An SQS dead letter queue captures every failed extraction for retry or investigation. Set a CloudWatch alarm on queue depth so operations knows when notes are piling up.
+
 **AWS Step Functions for batch orchestration.** When processing thousands of historical notes, Step Functions provides workflow coordination, retry handling, and progress visibility that raw Lambda invocations lack.
 
 ### Architecture Diagram
@@ -30,18 +32,21 @@ flowchart LR
     E -->|RxCUI Candidates| C
     C -->|Structured Meds| F[DynamoDB\npatient-medications]
     C -->|Full Extraction| G[S3\nresults/]
+    C -.->|On Failure| H[SQS\nDead Letter Queue]
+    H -.->|Alarm| I[CloudWatch\nDLQ Alarm]
 
     style B fill:#f9f,stroke:#333
     style D fill:#ff9,stroke:#333
     style E fill:#ff9,stroke:#333
     style F fill:#9ff,stroke:#333
+    style H fill:#f66,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions (for batch) |
+| **AWS Services** | Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SQS (dead letter queue), AWS Step Functions (for batch) |
 | **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:BatchWriteItem`, `dynamodb:Query`. Standard Lambda execution role permissions for CloudWatch Logs assumed (use `AWSLambdaBasicExecutionRole` managed policy or grant `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents` explicitly). |
 
 | **BAA** | AWS BAA signed (required: clinical notes contain PHI) |
@@ -50,6 +55,7 @@ flowchart LR
 | **CloudTrail** | Enabled: log all Comprehend Medical and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic clinical notes with medication mentions. MIMIC-III (with DUA) provides realistic note structures. Never use real patient notes in dev without proper IRB/DUA. |
 | **Cost Estimate** | Comprehend Medical DetectEntities: ~$0.01 per 100 characters (minimum 3 units per request). InferRxNorm: ~$0.01 per 100 characters. A typical 2000-character note: ~$0.20 for detection + $0.03-0.10 for RxNorm inference (depending on medication count). Total per note: ~$0.23-0.50 depending on note length and number of medications. Batch pricing available for high volume. |
+| **Regional Availability** | Comprehend Medical is available in a limited set of regions (us-east-1, us-east-2, us-west-2, eu-west-1, eu-west-2, ap-southeast-2, ca-central-1 as of 2024). Data residency requirements may constrain region selection. If your organization requires data to remain within a specific geography (common for EU or Canadian patient data), confirm Comprehend Medical availability in a compliant region before designing the pipeline. |
 
 ### Ingredients
 
@@ -59,6 +65,7 @@ flowchart LR
 | **Amazon S3** | Stores incoming clinical notes and extraction results; encrypted with KMS |
 | **AWS Lambda** | Orchestrates extraction: receives note, calls APIs, assembles structured output |
 | **Amazon DynamoDB** | Stores normalized medication lists for patient-level queries |
+| **Amazon SQS** | Dead letter queue for failed Lambda extractions (throttling, oversized notes, malformed input) |
 | **AWS Step Functions** | Coordinates batch processing of historical notes |
 | **AWS KMS** | Manages encryption keys for S3 and DynamoDB |
 | **Amazon CloudWatch** | Logs, metrics, alarms for extraction failures and API throttling |
@@ -255,11 +262,15 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
         append structured_med to structured_meds
 
     // Write all extractions to the database.
-    // Partition key: patient_id. Sort key: extraction_ts + note_id.
-    // This enables queries like "all medications for patient X" and
-    // "medications extracted from note Y."
+    // Partition key: patient_id. Sort key: note_id + medication_text + begin_offset.
+    // Using note_id + medication_text + begin_offset as the sort key ensures
+    // idempotency: if the same note is reprocessed (S3 at-least-once delivery,
+    // pipeline reruns), the write overwrites the previous extraction rather than
+    // creating duplicates. This is preferable to using extraction_ts as the sort
+    // key, which would create a new record on every reprocessing of the same note.
     batch_write to DynamoDB table "patient-medications":
         items = structured_meds
+        condition: use note_id + medication_text + begin_offset as sort key (overwrites on reprocessing)
 
     // Also write full extraction details to S3 for audit and reprocessing.
     write JSON to S3: results/{patient_id}/{note_id}/medications.json
@@ -369,6 +380,22 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
 
 ---
 
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the pattern. Deploying this against real clinical notes at scale requires addressing several gaps that are intentionally outside the scope of a cookbook recipe:
+
+**Pharmacist review workflow.** Medications flagged as `NEEDS_REVIEW` or `UNMATCHED` need a human in the loop. This recipe stores the flag but doesn't implement the review queue, the pharmacist UI, or the approval workflow that updates the record once adjudicated. In practice, you'd route these to a FHIR Task, an EHR work item, or a custom review application with SLA tracking and escalation logic. Without it, low-confidence extractions sit in limbo indefinitely.
+
+**Multi-language clinical notes.** Comprehend Medical is trained on English clinical text. Patient populations with multilingual providers (or notes that mix English with Spanish, Chinese, or other languages) produce extraction gaps. A production system needs either language detection with routing to language-specific models, or a translation preprocessing step, with careful handling of medical terminology that doesn't translate cleanly (brand names, local drug formulations).
+
+**Deduplication across repeated processing.** S3 event notifications are at-least-once, and operational reruns (backfills, error recovery) reprocess notes that have already been extracted. The idempotent sort key design in Step 5 handles exact duplicates, but edge cases remain: if extraction logic changes between runs (new model version, updated thresholds), you get conflicting records for the same medication mention. A production system needs a versioning strategy and conflict resolution policy.
+
+**Integration testing against real clinical note diversity.** The section detection logic works well for structured notes from major EHR vendors (Epic, Cerner, MEDITECH), but clinical documentation is wildly heterogeneous. Dictated notes, templated notes, copy-forward notes, and scanned-then-OCR'd notes all have different formatting patterns. A production system needs a test suite built from representative samples of your actual note corpus, with regression testing as you encounter new formats.
+
+**Dead letter queue operations.** The DLQ captures failed extractions, but someone needs to actually investigate and reprocess them. A production system needs a runbook for DLQ triage: is the failure transient (throttling, retry it), permanent (note too long, chunk and reprocess), or data quality (malformed encoding, fix upstream). Without this operational process, the DLQ just becomes a graveyard.
+
+---
+
 ## Variations and Extensions
 
 **Medication reconciliation pipeline.** Extend this recipe by comparing extracted medications across multiple notes for the same patient (admission note vs. discharge summary vs. outpatient visit). Identify discrepancies: added medications, discontinued medications, dose changes. Feed discrepancies into a reconciliation workflow for pharmacist review. This is where the real clinical value lives, because medication discrepancies during transitions of care are a leading source of adverse events.
@@ -389,8 +416,7 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
 - [Amazon Comprehend Medical Entity Types (MEDICATION category)](https://docs.aws.amazon.com/comprehend-medical/latest/dev/textanalysis-entitiesv2.html)
 
 **AWS Sample Repos:**
-- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates integration of Comprehend Medical entity extraction with FHIR resources, including medication extraction patterns
-- [`amazon-comprehend-medical-entity-extraction`](https://github.com/aws-samples/amazon-comprehend-medical-entity-extraction): Basic entity extraction pipeline using Comprehend Medical with Lambda orchestration
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates integration of Comprehend Medical entity extraction with FHIR resources, including medication extraction patterns (archived, still useful as reference)
 
 **External Resources:**
 - [RxNorm Overview (National Library of Medicine)](https://www.nlm.nih.gov/research/umls/rxnorm/overview.html): Documentation for the standard medication terminology used for normalization
