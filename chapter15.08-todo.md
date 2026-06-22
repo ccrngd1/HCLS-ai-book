@@ -1,12 +1,9 @@
 # Open TODOs: Recipe 15.8: Chemotherapy Dose Optimization
 
-> Auto-extracted 2026-06-18 from inline source comments (3 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
-
 ## main — `chapter15.08-chemotherapy-dose-optimization.md`
 
-- **L65** — TODO (TechWriter): Expert review A3 (LOW). CQL's conservatism partially mitigates confounding by staying close to historical behavior, but does not eliminate it. Consider adding a note about propensity-weighted trajectories or doubly-robust estimators for stronger causal claims.
-- **L67** — TODO (TechWriter): Verify current status of any prospective RL dosing trials (check clinicaltrials.gov)
+- [NEEDS HUMAN] **L67** — Verify current status of prospective RL dosing trials on clinicaltrials.gov. Cannot be confirmed without live database access; author should check and update the sentence "randomized trials of RL-based dosing are only beginning to be proposed" if any have since been registered or completed.
 
 ## architecture — `chapter15.08-architecture.md`
 
-- **L502** — TODO (TechWriter): Verify these citations are accurate and add DOIs if available
+- [NEEDS HUMAN] **L502** — The Tang et al. citation ("Clinician-in-the-loop decision making: Reinforcement learning with near-optimal batch queries," NeurIPS, 2020) could not be confidently verified. Author should confirm exact title, venue, and year, then add DOI. The other two citations (Gottesman 2019, Kumar 2020) have been verified and updated with DOIs.

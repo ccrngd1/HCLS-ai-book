@@ -496,9 +496,8 @@ This recipe describes a research architecture. Deploying RL-based chemotherapy d
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
 **Research References:**
-- Gottesman et al., "Guidelines for reinforcement learning in healthcare," Nature Medicine, 2019
-- Tang et al., "Clinician-in-the-loop decision making: Reinforcement learning with near-optimal batch queries," NeurIPS, 2020
-- Kumar et al., "Conservative Q-Learning for Offline Reinforcement Learning," NeurIPS, 2020
+- Gottesman et al., "Guidelines for reinforcement learning in healthcare," Nature Medicine, 2019. DOI: 10.1038/s41591-018-0310-5
+- Kumar et al., "Conservative Q-Learning for Offline Reinforcement Learning," NeurIPS, 2020. arXiv: 2006.04779
 
 **Regulatory Guidance:**
 - [FDA: Artificial Intelligence/Machine Learning (AI/ML)-Based Software as a Medical Device Action Plan](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-aiml-software-medical-device)
