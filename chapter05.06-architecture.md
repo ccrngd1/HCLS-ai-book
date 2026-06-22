@@ -623,19 +623,35 @@ FUNCTION link_encounter(cluster, clinical_encounters_for_patient,
         scored.append({encounter, score})
 
     best = max(scored, key=lambda c: c.score.composite)
-    // TODO (TechWriter): Expert review A3 (MEDIUM). Greedy
-    // per-cluster best-score assignment is the simpler
-    // pattern; for patients with multiple candidate clusters
-    // and multiple candidate encounters in the same window,
-    // production should run a joint-evaluation pass
-    // (linear-sum-assignment over the per-pair score matrix,
-    // e.g. Hungarian algorithm) that maximizes the global
-    // score across the assignment rather than picking each
-    // cluster's local best independently. The Honest Take
-    // names this as the would-do-differently-the-second-time
-    // observation; add a labeled Step 4D or a Variations
-    // entry that details the joint pattern so the pseudocode
-    // matches the operational guidance.
+
+    // Step 4D: joint-evaluation for multi-candidate patients.
+    // The greedy per-cluster best-score assignment above is the
+    // simpler pattern and works when the patient has only one
+    // candidate cluster in the window. When the patient has
+    // multiple candidate clusters and multiple candidate
+    // encounters in the same window, run a joint-evaluation pass
+    // that maximizes the global score across the assignment. Build
+    // a score matrix (rows = clusters, columns = candidate
+    // encounters), then apply linear-sum-assignment (the Hungarian
+    // algorithm or scipy.optimize.linear_sum_assignment). The
+    // global-optimum assignment avoids scrambling: the greedy
+    // approach might assign cluster A to encounter X (local best
+    // for A), leaving cluster B with no high-scoring option, when
+    // the globally-optimal assignment is A-to-Y plus B-to-X.
+    //
+    // Trigger the joint path when the patient has more than one
+    // cluster with overlapping date windows and more than one
+    // candidate encounter for any of those clusters. This is the
+    // would-do-differently-the-second-time observation from The
+    // Honest Take: build the joint version first.
+    IF patient_has_multiple_overlapping_clusters(cluster):
+        best = joint_evaluation_assignment(
+            clusters_in_window,
+            candidates_for_each_cluster,
+            score_function=compute_encounter_link_score)
+            // Returns the assignment for this specific cluster
+            // after globally optimizing across all clusters in
+            // the patient's current window.
 
     // Step 4C: apply confidence thresholds. Tighter than
     // patient-level thresholds because encounter linkage
@@ -798,13 +814,19 @@ FUNCTION persist_and_emit(linkage_decision, attribution_decision):
     // reads the current version and returns version + 1; the
     // write is conditional on no-other-write-since-read to
     // prevent racing writers.
-    // TODO (TechWriter): Expert review A11 (LOW). Make the
-    // (encounter_cluster_id, version) compound-key shape
-    // explicit in the persistence schema specification above
-    // so the Python companion's hardcoded version=1 plus
-    // attribute_not_exists(encounter_cluster_id) condition
-    // (which precludes re-link after invalidation) can be
-    // promoted to a working production pattern.
+    // Persistence uses a compound primary key:
+    //   partition key = encounter_cluster_id
+    //   sort key = version (integer, monotonically increasing)
+    // A GSI on (encounter_cluster_id, current_flag) allows
+    // single-item reads of the current version. Prior versions
+    // are retained as separate items for forensic reconstruction.
+    // The next_version_for function reads the current max version
+    // and returns version + 1; the write uses a condition
+    // expression (attribute_not_exists(version)) on the new sort
+    // key value to prevent racing writers from clobbering each
+    // other. On invalidation and re-link, a new version item is
+    // written and the previous version's current_flag is removed
+    // in the same TransactWriteItems call.
     linkage_record = {
         encounter_cluster_id: linkage_decision.cluster_id,
         local_patient_id: linkage_decision.local_patient_id,
@@ -829,8 +851,8 @@ FUNCTION persist_and_emit(linkage_decision, attribution_decision):
     // Use a TransactWriteItems plus an outbox row drained by
     // a separate Lambda or DynamoDB Streams consumer so that
     // partial failures do not leave the linkage table out of
-    // sync with the event stream. <!-- Same chapter pattern
-    // as 5.5 expert review A1 -->
+    // sync with the event stream. Same chapter pattern as
+    // recipe 5.5.
     DynamoDB.TransactWriteItems([
         PutItem("claims-clinical-linkage", linkage_record),
         PutItem("linkage-outbox", {
@@ -850,16 +872,16 @@ FUNCTION persist_and_emit(linkage_decision, attribution_decision):
     // Step 6B: archive the curated linkage record to S3.
     // The S3 archive is the long-term substrate for
     // analytics; DynamoDB is the operational read path.
-    // TODO (TechWriter): Expert review A2 (MEDIUM). Move the
-    // S3 archive write into the outbox-drainer flow alongside
-    // the EventBridge emit so DynamoDB and S3 stay consistent
-    // on partial failure. The drainer (triggered by DynamoDB
-    // Streams on linkage-outbox) writes to S3 first, then
-    // emits to EventBridge, then marks the outbox row
-    // COMPLETED; both side effects must succeed before the
-    // row is marked COMPLETED. Idempotent at outbox_id.
-    // CloudWatch alarms fire on outbox-row age exceeding the
-    // SLA. Reference Recipe 5.5 expert review A1.
+    // The archive write happens in the outbox-drainer flow
+    // (triggered by DynamoDB Streams on the linkage-outbox
+    // table) alongside the EventBridge emit. The drainer
+    // writes to S3 first, then emits to EventBridge, then
+    // marks the outbox row COMPLETED. Both side effects must
+    // succeed before the row is marked COMPLETED; idempotent
+    // at outbox_id. CloudWatch alarms fire on outbox-row age
+    // exceeding the operational SLA (typically 5 minutes for
+    // the daily pipeline, 60 seconds for the per-event path).
+    // This keeps DynamoDB and S3 consistent on partial failure.
     write_to_s3(linkage_record,
                 bucket="match-derived",
                 key="encounter-linkages/" +
@@ -1106,7 +1128,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Coding lifecycle and CDI integration.** The institution's coding department produces the final coded claims, often after a CDI (clinical documentation improvement) review cycle that may take days to weeks after discharge. The linkage runs against the claims that have made it through coding; encounters whose claims are still in coding limbo are linked later. Coordinate the linkage cadence with the coding cycle so that the linkage gets the post-CDI version of the claims rather than the initial pre-CDI submission.
 
-**Threshold calibration and approval governance.** The encounter-link thresholds, the patient-link thresholds, the date-tolerance values, and the per-feature weights are calibrated against an institutional gold set. Re-calibration runs periodically and on detection of cohort-stratified disparity above the institutional threshold. Re-calibration produces a candidate threshold set; institutional review (analytics governance committee, compliance, clinical informatics, equity-monitoring committee) reviews the confusion matrix and the cohort-disparity impact before promoting the candidate to production. Each linkage record references the configuration version active at decision time. Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5. 
+**Threshold calibration and approval governance.** The encounter-link thresholds, the patient-link thresholds, the date-tolerance values, and the per-feature weights are calibrated against an institutional gold set. Re-calibration runs periodically and on detection of cohort-stratified disparity above the institutional threshold. Re-calibration produces a candidate threshold set; institutional review (analytics governance committee, compliance, clinical informatics, equity-monitoring committee) reviews the confusion matrix and the cohort-disparity impact before promoting the candidate to production. Each linkage record references the configuration version active at decision time. Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.
 
 **Review tooling for the linkage queues.** Three distinct review queues each need their own tooling. The patient-link review queue surfaces the candidate-patient details with the demographic comparison; the encounter-link review queue surfaces the candidate-encounter details with the date, provider, diagnosis, and procedure comparison; the line-item review queue surfaces unattributed line items with their CPT/HCPCS codes and the available vocabulary mappings. Each tool emits the reviewer's decision back into the matcher's training signal. Build the tools with the same care as the analytics pipeline; the matcher's accuracy depends on it. 
 
@@ -1114,13 +1136,41 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Patient-access reports.** Under HIPAA and the 21st Century Cures Act, patients have a right to see who has accessed their health data. The linkage table holds claims data the institution received from payers; the patient's right to know what data the institution holds about them includes that data. Build the patient-access-report generator from the linkage table and the audit log so the institution can respond to patient requests. The same pattern as recipe 5.5 applies. 
 
-**Idempotency and retry semantics.** The pipeline must handle duplicate-event delivery, partner-side retries, and Glue job re-runs without producing duplicate linkage records or scrambled audit logs. Use the (encounter_cluster_id, version) tuple as the idempotency key for linkage writes; use claim_id and encounter_id as natural keys for the upstream stages. Configure DLQs on every Lambda path and Glue job; Step Functions Catch states route terminal failures to the DLQ so stuck workflows are visible. Same chapter pattern as 5.3, 5.4, 5.5. 
+**Idempotency and retry semantics.** The pipeline must handle duplicate-event delivery, partner-side retries, and Glue job re-runs without producing duplicate linkage records or scrambled audit logs. Per-stage idempotency keys: normalize-claims uses `(source_file_key, source_file_offset)`; normalize-clinical uses `(encounter_id, source_extract_timestamp)`; link-patient uses `(claim_id, cross_ref_version)`; cluster-claims uses `(local_patient_id, cluster_anchor_date, encounter_class)`; link-encounter uses `(encounter_cluster_id, matcher_config_version)`; attribute-care-events uses `(encounter_cluster_id, vocabulary_version)`; persist-and-emit uses `(encounter_cluster_id, version)`; invalidate-on-event uses `(invalidation_event_source, invalidation_event_id)`. Each stage has its own DLQ. CloudWatch alarms fire on DLQ depth exceeding zero records or on any workflow stuck longer than 15 minutes. Step Functions Catch states route terminal failures to the DLQ so stuck workflows are visible. Same chapter pattern as 5.3, 5.4, 5.5. 
 
 **Cohort-stratified accuracy monitoring discipline.** The CloudWatch metrics with cohort-bucket dimensions, the QuickSight dashboard, the institutional review cadence, and the disparity-alarm thresholds are architecture-level commitments, not bolt-ons. Specify the operational thresholds, the per-axis aggregation, the disparity-metric definitions, and the institutional response protocol. Cohort-stratified link-rate disparity > 0.05 = MEDIUM alarm; cohort-stratified linkage-error-rate disparity > 0.02 = HIGH (analytics integrity). Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.
 
 **Initial backfill and onboarding.** Standing up the linkage pipeline involves a substantial one-time backfill: every historical claim and every historical encounter in the analysis window gets linked. This is a Glue job that runs at scale, with attention to: cohort-stratified accuracy monitoring during the backfill (the backfill is a one-time opportunity to surface cohort issues at scale); suppression of routine event emission during the backfill (downstream consumers refresh from a single backfill_complete marker rather than millions of individual events); governance approval at each stage. Plan onboarding as a project with its own timeline.
 
 **Compliance and operational ownership.** Claims-to-clinical linkage sits at the intersection of revenue cycle, clinical informatics, analytics, compliance, and IT. Establish clear operational ownership: who tunes the thresholds, who reviews the cohort-disparity reports, who handles the payer-feed quality issues, who owns the vocabulary-map updates, who responds to invalidation backlogs. The pipeline works only when the operational ownership is clear and funded.
+
+**Threshold calibration governance and versioned configuration.** The encounter-link thresholds, the patient-link thresholds, the date-tolerance values, and the per-feature weights live in a versioned configuration table (DynamoDB or S3-backed). A SageMaker calibration job produces the candidate configuration set from the latest gold-set labels. Promotion to production requires a per-cohort impact analysis (how does the candidate configuration change the link rate, the false-merge rate, and the attribution coverage for each cohort bucket) as a required artifact at the promotion gate. The institutional governance committee (clinical informatics, compliance, equity monitoring) reviews the impact analysis and approves or rejects. Each linkage record references the configuration version active at decision time so a future audit can reconstruct which thresholds were in effect when a particular linkage was decided. Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.
+
+**Event-schema contract.** Each event emitted to EventBridge carries a defined envelope: `source`, `detail_type`, `detail.encounter_cluster_id`, `detail.local_patient_id`, `detail.linked_clinical_encounter_id` (where applicable), `detail.event_id`, `detail.previous_state`, `detail.new_state`, `detail.detected_at`, `detail.matcher_config_version`, `detail.vocabulary_versions`, and `detail.permitted_uses` (from per-payer data-use tagging). Downstream consumers subscribe to specific `detail_type` values and acknowledge processing via a CloudWatch metric (`{consumer}.events_processed`). The schema follows a versioning policy: additive fields are non-breaking; removal or type changes require a deprecation cadence (new detail_type variant published alongside the old one for at least two release cycles, with CloudWatch alarms on unacknowledged events to catch consumers that have not migrated).
+
+**Vocabulary-version promotion governance.** Vocabulary-map updates (annual ICD-10, CPT, and RxNorm refreshes plus payer-specific updates) flow through a promotion gate before reaching production. The gate requires: regression test against the gold set (attribution coverage must not regress beyond a configured tolerance); cohort-stratified attribution-coverage evaluation (no cohort may degrade more than the institutional threshold); institutional governance committee review with clinical-informatics, compliance, and equity-monitoring sign-off. The rollback path re-attributes affected linkages under the prior vocabulary version; operational reads are served from the prior version during rollback, with an SLA-bounded rollback completion time. A cross-cohort impact analysis is a required artifact at the promotion gate.
+
+**Back-fill-behavior contract.** The pipeline operates on a sliding window (90 to 180 days, configurable per encounter class). Late-arriving claims trigger re-linking within the window. Each linkage record carries a `claims_completeness_estimate` attribute (the fraction of expected claims that have arrived, computed from the payer-specific historical arrival distribution) and a `next_review_date` attribute (the date by which remaining late-arriving claims would have arrived based on the payer's lag profile). Downstream consumers use these attributes to distinguish "linkage is stable, use for reporting" from "linkage is still accumulating, defer quality-measure calculation." Per-payer late-arrival metrics (median lag, p95 lag, completeness curve) are monitored with CloudWatch alarms on payer-specific degradation.
+
+**Encounter-class compatibility matrix.** The class-compatibility scorer in Step 4 uses a versioned configuration artifact that maps `(claim_encounter_class, ehr_encounter_class)` pairs to compatibility scores in the range [0, 1]. Same-class pairs score 1.0. Known-transition pairs (observation to inpatient, ED to observation, same-day surgery to observation) score per the institution's revenue-cycle conventions. Incompatible pairs score 0. The matrix is reviewed quarterly with the revenue-cycle and clinical-informatics teams; updates flow through the same threshold-calibration governance as the encounter-link weights. Each linkage record references the class-compatibility matrix version active at link time.
+
+**Patient-access and provider-access read path.** API Gateway with the institution's patient-portal authentication (Cognito federated with the institutional IdP) or mTLS for system-to-system provider-directory clients. A Lambda authorizer binds the requesting principal to the patient_id (patient-access) or validates the treatment relationship (provider-access). The Lambda handler retrieves the linkage record, applies the sensitivity filter (see below), retrieves the audit-trail entries showing what was previously disclosed, and returns the response. The audit log records every patient-access and provider-access read with the requesting principal, the records returned, and the sensitivity filters applied. Compliance with the 21st Century Cures Act information-blocking provisions is enforced at this read path; the analytics-only architecture (Athena, QuickSight) is deliberately distinct and does not serve patient or provider requests directly.
+
+**On-demand API surface for operational use cases.** The on-demand linkage path (for ER physicians, discharge planners, care managers who need real-time outside-care visibility) runs through API Gateway with WAF. The institution's clinician-authentication path (Cognito federated with the institutional IdP or mTLS for system-to-system clients) gates access. Per-caller rate limits sit below the operational-session capacity ceiling. The cached result has a session-bounded TTL (typically the duration of the clinical session, with a maximum of 24 hours) and is invalidated on coverage-change or patient-merge events. Audit logging captures every read.
+
+**Per-audience column and row distinctions.** Lake Formation enforces differentiated views per audience: quality-measurement teams see the encounter-linked aggregate without constituent-claim detail; risk-adjustment teams see diagnosis-concordance detail with constituent-claim primary diagnoses; outcomes-research teams see a de-identified longitudinal record with Safe Harbor or Limited Data Set treatment of dates, ZIP codes, and identifiers; audit teams see the full record. The de-identification pattern for the outcomes-research view applies Safe Harbor transformations (date shifting within a calendar year, ZIP truncation to three digits, removal of direct identifiers) as a materialized view in S3 refreshed on the daily pipeline cadence.
+
+**Identity-boundary and producer-signed envelopes.** The per-claim-arrival Lambda, the invalidation Lambda, the read API for downstream consumers, and the cross-recipe EventBridge fan-out consumers all require producer-signed envelopes: `source_system`, `source_record_id`, `event_id`, `signed_payload`, and `signature`. Per-event-source allow-lists are tied to producer signing keys; only events from known, authorized producers are accepted. Each Glue job runs under an execution-role scoped to its pipeline stage (Step Functions invokes only the role appropriate for the current step). Scoped Resource ARN examples for the highest-stakes actions: `dynamodb:UpdateItem` on `arn:aws:dynamodb:<region>:<account>:table/claims-clinical-linkage`; `s3:PutObject` on `arn:aws:s3:::<env>-claims-raw/audit/*`; `events:PutEvents` on `arn:aws:events:<region>:<account>:event-bus/claims-clinical-events`; `dynamodb:GetItem` on `arn:aws:dynamodb:<region>:<account>:table/mrn-memberid-cross-reference`. Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.
+
+**Retention posture.** Retention is governed by the longest of: HIPAA records-retention (six years from creation or last effective date); payer trading-partner agreement retention (varies, often seven to ten years); state medical-records-retention (varies by state, up to ten years for adults, longer for minors); research IRB retention where applicable; Medicare claim-related retention (up to ten years); and HCC risk-adjustment data-validation retention where the institution participates in Medicare Advantage. Audit logs live in a dedicated S3 bucket with Object Lock in Compliance mode and a lifecycle to S3 Glacier Deep Archive after 90 days. CloudTrail data events are forwarded to a dedicated audit AWS account. Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.
+
+**Per-payer data-use tagging.** Each linkage record carries a `permitted_uses` array derived from the trading-partner agreement for the claim's source payer. Lake Formation row-level filters enforce data-use constraints: a requesting principal's authorized-use-context must intersect the linkage record's `permitted_uses` before the row is returned. Sub-processor disclosure contractual requirements apply for self-funded employer plans through TPAs. Incident-notification windows for clinical-safety-relevant incidents (wrong-patient-linkage producing a wrong clinical action) are typically 24 to 72 hours, tighter than the standard HIPAA 60-day breach notification given the clinical-safety stakes. Audit-rights contractual requirements for payer claims-feed quality (data-completeness profiles, on-time delivery rates, late-arrival distributions) are tracked. Vocabulary-license tracking on each linkage record demonstrates compliance with the vocabulary license alongside the payer-data license.
+
+**Review-queue audit posture.** Each of the three review queues (patient-link, encounter-link, line-item) captures: reviewer identity (with appropriate authentication), decision, stated reason, configuration version active at the time, threshold or vocabulary-map version active at the time, and any reviewer-supplied additional context. The line-item-review queue adds vocabulary-map-update audit fields: source citation, regression-test result, governance-committee approval reference. A pre-assignment conflict-of-interest check runs against an institutional registry before routing a case to a reviewer.
+
+**Sensitive-encounter filtering.** External encounters surfaced through the claims feed carry their own disclosure considerations. A patient seen at an outside facility for sensitive care (mental health, reproductive health, substance use) may have a privacy expectation that the institution should honor before surfacing the encounter to internal consumers. External encounters from claims with sensitivity-marked CPT, HCPCS, or ICD-10 codes (42 CFR Part 2 service-type codes, certain reproductive-health codes in jurisdictions with applicable state law) flow through a sensitivity filter before reaching the longitudinal-record-assembler or the care-management workflow. The audit log records what was filtered and why. Same pattern as recipe 5.5.
+
+**Networking posture.** HIE and payer egress is configured as distinct outbound proxy rules with non-overlapping allow-lists scoped to compute roles. Per-role rate limits sit below the partner's published rate limits. Egress connections are CloudWatch-logged for forensic auditing. At payer-feed volumes exceeding approximately 500K transactions per month per payer, evaluate the partner's PrivateLink endpoint where available; the cost trade-off (PrivateLink endpoint hourly fee plus per-GB data-transfer fee vs NAT Gateway data-transfer fee) is institution-specific. Same chapter pattern as 5.3, 5.4, 5.5.
 
 ---
 
