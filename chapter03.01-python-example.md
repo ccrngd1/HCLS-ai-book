@@ -19,8 +19,8 @@ Your environment needs credentials configured (via environment variables, an ins
 - `dynamodb:PutItem`, `dynamodb:Query`, `dynamodb:GetItem` on the `claim-history` and `claim-labels` tables (and on the `content_hash_index` GSI on `claim-history`)
 - `s3:GetObject` on the raw 837 bucket, `s3:PutObject` on the normalized-claims and labels buckets
 - `sqs:SendMessage` on the review queue ARN
-- `events:PutEvents` on the EventBridge bus (for publishing examiner-verdict events from the workstation side)
 - `cloudwatch:PutMetricData` for the operational metrics
+- (On the examiner workstation side, not in this file: `events:PutEvents` on the EventBridge bus for publishing verdict events)
 
 Scope each Lambda's IAM role to the specific resource ARNs it touches. The tutorial-level permissions above are fine for learning and will fail any serious IAM review. In production, each of the three Lambdas (parser, detector, label-writer) gets its own role with the minimum permissions for its job.
 
@@ -56,6 +56,9 @@ from boto3.dynamodb.conditions import Key
 # service is a re-identification risk even without a name), so we log
 # structural metadata only. Never log full claim bodies, member IDs, diagnosis
 # codes, or similarity score components in regular application logs.
+# logging.basicConfig is a no-op when Lambda configures the root logger, but
+# it makes structured log lines visible when running this file directly.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -72,7 +75,9 @@ dynamodb = boto3.resource("dynamodb", region_name=REGION, config=BOTO3_RETRY_CON
 s3_client = boto3.client("s3", region_name=REGION, config=BOTO3_RETRY_CONFIG)
 sqs_client = boto3.client("sqs", region_name=REGION, config=BOTO3_RETRY_CONFIG)
 cloudwatch = boto3.client("cloudwatch", region_name=REGION, config=BOTO3_RETRY_CONFIG)
-eventbridge = boto3.client("events", region_name=REGION, config=BOTO3_RETRY_CONFIG)
+# The examiner workstation (a separate component, not included here) publishes
+# verdict events to EventBridge. This file's on_examiner_verdict is a consumer
+# of those events and does not need the events client.
 
 # --- Resource Names ---
 # Fill these in with your actual resource names.
@@ -84,9 +89,18 @@ LABELS_BUCKET = "my-claim-labels"
 REVIEW_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/123456789012/claim-review-queue"
 EVENT_BUS_NAME = "claim-events"
 
-# Deploy-time guardrail: catch unreplaced example values.
-assert "123456789012" not in REVIEW_QUEUE_URL, \
-    "REVIEW_QUEUE_URL still uses the example AWS account ID. Replace before deploying."
+# Customer-managed KMS key ARNs. Distinct keys per bucket so rotation and
+# access grants can be scoped independently. Replace with your actual ARNs.
+NORMALIZED_CLAIMS_CMK_ARN = "arn:aws:kms:us-east-1:123456789012:key/your-normalized-claims-key-id"
+LABELS_CMK_ARN = "arn:aws:kms:us-east-1:123456789012:key/your-labels-key-id"
+
+# Runtime guardrail: warn on unreplaced placeholder values so the reader
+# knows which constants still need real values, without blocking import.
+if "123456789012" in REVIEW_QUEUE_URL:
+    logger.warning(
+        "REVIEW_QUEUE_URL still uses the example AWS account ID. "
+        "Replace before deploying; route_claim will attempt to call a queue that does not exist."
+    )
 
 # --- Scorer Version ---
 # Every routing decision and every captured label records the scorer version
@@ -243,16 +257,15 @@ def normalize_claim(raw_claim: dict) -> dict:
         str(normalized["billed_amount"]),
     ])
 
-    # Blocking hash: coarser than the content hash. The goal is to group
-    # claims into small buckets such that any two claims in the same bucket
-    # are plausibly duplicates. The date is rounded to YYYY-MM so nearby-
-    # date claims land in the same block; date proximity is scored later.
-    # The billing NPI is truncated to its first four digits so claims from
-    # the same billing organization land together even if the individual
-    # rendering NPI shifts between submissions.
+    # Blocking hash: coarser than content_hash, used to find candidates for
+    # fuzzy comparison. We block on patient + month; NPI variation across
+    # submissions is handled by per-field NPI similarity in the scorer.
+    # NPIs are issued sequentially by NPPES and have no hierarchical structure
+    # by organization, so an NPI prefix is not a usable org-level block.
+    # For multi-NPI organizations (same tax ID, different NPIs), feed a
+    # provider-hierarchy lookup into the blocking key; see Recipe 5.1.
     blocking_hash = _sha256_of_parts([
         normalized["patient_id"],
-        normalized["billing_npi"][:4],
         normalized["date_of_service"][:7],  # YYYY-MM
     ])
 
@@ -354,6 +367,7 @@ def persist_normalized_claim(normalized: dict) -> None:
         # Enforce it at the bucket policy level as well; don't rely on the
         # per-PutObject flag alone.
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=NORMALIZED_CLAIMS_CMK_ARN,
     )
 
     logger.info(
@@ -792,9 +806,10 @@ def on_examiner_verdict(event: dict) -> None:
         "examiner_id":              event["examiner_id"],
         "verdict":                  event["verdict"],
         "reasoning_code":           event["reasoning_code"],
-        # Free-text reasoning may include PHI references. Encrypt at rest
-        # and scope read access tightly. Retention follows your PHI policy.
-        "reasoning_text":           event.get("reasoning_text", ""),
+        # Free-text reasoning may include PHI references. Scrub common
+        # identifier patterns before writing to the long-lived label store.
+        # The structured reasoning_code carries the operational signal.
+        "reasoning_text":           _scrub_phi_text(event.get("reasoning_text", "")),
         "scorer_version":           event["scorer_version"],
         "score_at_decision":        _to_decimal(event["score_at_decision"]),
         "components_at_decision":   {
@@ -820,6 +835,7 @@ def on_examiner_verdict(event: dict) -> None:
         Body=json.dumps(label, default=str).encode("utf-8"),
         ContentType="application/json",
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=LABELS_CMK_ARN,
     )
 
     # Operational metrics. Verdict distribution over time is an early
@@ -837,6 +853,35 @@ def on_examiner_verdict(event: dict) -> None:
             "review_sec":     int(review_duration_sec),
         },
     )
+
+def _scrub_phi_text(text: str) -> str:
+    """
+    Best-effort PHI minimization on examiner free-text reasoning.
+
+    Examiners working with patient records open in another tab routinely
+    reference MRNs, NPIs, names, and dates of birth in their free-text
+    justifications. The structured reasoning_code carries the operational
+    signal; free text is supplementary. Strip common identifier patterns
+    before writing to the long-lived label store.
+
+    For production, replace this regex-based pass with AWS Comprehend
+    Medical PHI detection (DetectPHI API) for higher recall.
+    """
+    if not text:
+        return text
+    # MRN-shaped strings (6-10 digits in identifier contexts)
+    text = re.sub(r"\bMRN[\s:#]*\d{6,10}\b", "[REDACTED_MRN]", text, flags=re.IGNORECASE)
+    # NPI-shaped strings (10-digit numbers)
+    text = re.sub(r"\b\d{10}\b", "[REDACTED_NPI]", text)
+    # Names following common honorifics
+    text = re.sub(r"\b(Dr|Mr|Mrs|Ms|Miss)\.?\s+[A-Z][a-z]+", r"\1. [REDACTED_NAME]", text)
+    # DOB patterns (MM/DD/YYYY, YYYY-MM-DD)
+    text = re.sub(r"\b\d{1,2}/\d{1,2}/\d{4}\b", "[REDACTED_DOB]", text)
+    text = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", "[REDACTED_DATE]", text)
+    # Phone numbers (US patterns)
+    text = re.sub(r"\b\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b", "[REDACTED_PHONE]", text)
+    return text
+
 
 def _validate_verdict_event(event: dict) -> None:
     """
