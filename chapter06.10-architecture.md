@@ -403,6 +403,22 @@ Sample output for a validated multi-morbidity pattern:
 
 ---
 
+## Why This Isn't Production-Ready
+
+**No clinical validation loop.** The pseudocode discovers patterns and writes them to S3. A production system needs a structured clinical review workflow where domain experts confirm or reject each pattern before it informs care decisions. Build a review interface (QuickSight + a simple approval API) where clinicians can annotate patterns as "clinically meaningful," "known but uninteresting," or "likely artifact." Track inter-rater agreement. Patterns should not reach care management teams without at least two clinical reviewers agreeing on relevance.
+
+**Missing incremental update strategy.** The pipeline rebuilds everything from scratch on each run. Production populations change daily: new patients enroll, existing patients acquire new diagnoses, some patients disenroll or die. You need incremental logic that updates the patient-condition matrix, re-evaluates affected patterns, and flags patterns whose metrics shifted significantly since the last run, without reprocessing the entire population each time.
+
+**No drift detection.** Coding practice changes, ICD-10 annual updates, EHR system migrations, and population shifts can all invalidate previously discovered patterns. A production deployment monitors pattern stability across runs and alerts when validated patterns degrade (support drops below threshold, lift changes by more than 20%) or when new high-lift patterns emerge that were absent in prior runs.
+
+**Insufficient access controls for pattern outputs.** The pseudocode writes results to S3 without distinguishing aggregate pattern statistics (safe for broad distribution) from patient-level membership lists (PHI requiring strict access control). Production needs separate S3 prefixes with different IAM policies: aggregate summaries accessible to analytics teams, patient-level data restricted to clinical users with a legitimate treatment relationship.
+
+**No reproducibility guarantees.** Bootstrap resampling uses random seeds that are not captured in the output metadata. If a clinical reviewer asks "why did pattern X appear in last month's run but not this month's?", you cannot reproduce the exact prior result. Log all random seeds, library versions, and parameter configurations alongside each run's outputs. Store them as pipeline metadata in S3 alongside results.
+
+**Population definition governance.** The pseudocode accepts a `population_criteria` parameter without validation. In production, population definitions (who is included, what lookback period, which encounter types count) need versioning, approval workflows, and audit trails. A subtle criteria change can dramatically alter discovered patterns. Lock population definitions behind a configuration management process.
+
+---
+
 ## Variations and Extensions
 
 ### Variation 1: Medication-Condition Interaction Patterns
