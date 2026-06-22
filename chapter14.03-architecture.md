@@ -436,6 +436,22 @@ FUNCTION check_and_reorder(inventory_event):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The pseudocode demonstrates the optimization pipeline end-to-end. Moving to production requires closing several gaps:
+
+**ERP integration is bidirectional and messy.** This recipe assumes you can pull inventory levels and push purchase orders via clean APIs. In practice, ERP systems (Infor, Oracle, Workday) expose inconsistent interfaces, batch-only feeds, or require HL7/EDI translation layers. The "push PO to procurement" step alone can take months of integration work, especially when you need to handle acknowledgments, partial shipments, and order amendments flowing back.
+
+**Solver infeasibility handling.** The MIP solver can return infeasible (no valid solution exists given constraints) or hit time limits without proving optimality. Production systems need graceful degradation: fall back to the previous period's policies, alert supply chain managers, and log which constraints caused infeasibility. The pseudocode assumes the solver always succeeds, which is optimistic.
+
+**Expiration and lot tracking.** Healthcare inventory includes items with expiration dates (reagents, biologics, medications). A production system must incorporate shelf life into the optimization: ordering too much of a short-dated item wastes money even if the reorder math is perfect. FIFO/FEFO (first expired, first out) logic in the execution engine adds significant complexity.
+
+**Recall and formulary change propagation.** When the FDA issues a recall or the pharmacy committee removes an item from formulary, the optimization pipeline needs to react within hours, not wait for the next nightly batch. Production systems need an interrupt mechanism that can invalidate policies mid-cycle and trigger emergency reorder logic for substitute items.
+
+**Audit trail and regulatory compliance.** For controlled substances and implantable devices, regulators require full chain-of-custody documentation. The optimization system's decisions (why this quantity, why this timing) must be explainable and traceable. DynamoDB's policy store needs versioning with immutable history, not just current-state snapshots.
+
+---
+
 ## Variations and Extensions
 
 **Multi-location optimization.** Health systems with multiple facilities can optimize across locations: redistribute excess inventory from one site to another rather than ordering new stock. This adds transfer costs and inter-facility logistics but can significantly reduce system-wide inventory investment. The solver becomes a network flow problem with transshipment nodes.
