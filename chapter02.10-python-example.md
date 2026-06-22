@@ -321,6 +321,12 @@ def start_reasoning_run(trigger: dict) -> dict:
     """
     Initialize a reasoning run and persist the record.
 
+    Uses a deterministic run_id derived from the event key so that duplicate
+    EventBridge deliveries (at-least-once) resolve to the same execution
+    rather than spawning a redundant pipeline run. A DynamoDB conditional
+    write plus a deterministic Step Functions execution name provide two
+    layers of idempotency.
+
     Args:
         trigger: Dict with:
             - trigger_type:   "ed_presentation" | "admission" | "imaging_finalized"
@@ -334,24 +340,38 @@ def start_reasoning_run(trigger: dict) -> dict:
     Returns:
         Dict with run_id and initial status.
     """
-    run_id = str(uuid.uuid4())
+    # Deterministic run_id: same (patient, encounter, scenario) always yields
+    # the same UUID, so duplicate EventBridge deliveries are idempotent.
+    event_key = (
+        f"{trigger.get('patient_id', '')}:"
+        f"{trigger.get('encounter_id', '')}:"
+        f"{trigger.get('scenario', 'comprehensive_reasoning')}"
+    )
+    MM_REASONING_NAMESPACE = uuid.UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+    run_id = str(uuid.uuid5(MM_REASONING_NAMESPACE, event_key))
     now_iso = _now_iso()
 
-    # Persist early. If any later step fails, we have a record of what was
-    # triggered and for whom. The run record carries PHI (patient_id), so
-    # the table uses KMS CMK encryption.
+    # Conditional write: only create the run record if this run_id does not
+    # already exist. If the condition fails, this is a duplicate delivery.
     runs_table = dynamodb.Table(REASONING_RUNS_TABLE)
-    runs_table.put_item(Item=_to_decimal_safe({
-        "run_id":        run_id,
-        "trigger_type":  trigger.get("trigger_type"),
-        "patient_id":    trigger.get("patient_id"),
-        "encounter_id":  trigger.get("encounter_id", ""),
-        "scenario":      trigger.get("scenario", "comprehensive_reasoning"),
-        "clinician_id":  trigger.get("clinician_id"),
-        "status":        "INITIATED",
-        "initiated_at":  now_iso,
-        "trigger_payload": trigger.get("payload", {}),
-    }))
+    try:
+        runs_table.put_item(
+            Item=_to_decimal_safe({
+                "run_id":        run_id,
+                "trigger_type":  trigger.get("trigger_type"),
+                "patient_id":    trigger.get("patient_id"),
+                "encounter_id":  trigger.get("encounter_id", ""),
+                "scenario":      trigger.get("scenario", "comprehensive_reasoning"),
+                "clinician_id":  trigger.get("clinician_id"),
+                "status":        "INITIATED",
+                "initiated_at":  now_iso,
+                "trigger_payload": trigger.get("payload", {}),
+            }),
+            ConditionExpression="attribute_not_exists(run_id)",
+        )
+    except runs_table.meta.client.exceptions.ConditionalCheckFailedException:
+        logger.info("Duplicate delivery detected for run_id %s; returning idempotently", run_id)
+        return {"run_id": run_id, "status": "ALREADY_EXISTS", "initiated_at": now_iso}
 
     logger.info("Started reasoning run %s for patient %s scenario %s",
                 run_id, trigger.get("patient_id"), trigger.get("scenario"))
@@ -1047,6 +1067,12 @@ def scope_gate(scenario: str, modality_inventory: dict, patient_id: str,
     """
     Decide whether to proceed with reasoning, scope down, or defer.
 
+    Handles three categories of missing modalities:
+      - "failed" (retrieval error): route to retry, not proceed.
+      - missing required: defer with explanation.
+      - missing recommended: per-scenario handler decides scope_down,
+        proceed_capped, or defer.
+
     Returns:
         Dict with proceed (bool), scoped_to (scenario to reason on),
         reason, and defer_reason if applicable.
@@ -1057,6 +1083,7 @@ def scope_gate(scenario: str, modality_inventory: dict, patient_id: str,
         "reason":        "",
         "defer_reason":  None,
         "missing":       [],
+        "completeness_cap": None,
     }
 
     # Suppression check
@@ -1073,6 +1100,23 @@ def scope_gate(scenario: str, modality_inventory: dict, patient_id: str,
                         return decision
                 except ValueError:
                     pass
+
+    # Route "failed" modalities to retry before evaluating availability.
+    # A modality with status "failed" is a transient error (timeout,
+    # throttle, vendor 500), not genuinely absent.
+    failed_modalities = [
+        m for m, info in modality_inventory.items()
+        if isinstance(info, dict) and info.get("status") == "failed"
+    ]
+    if failed_modalities:
+        decision["proceed"] = False
+        decision["defer_reason"] = "modality_retrieval_failed_pending_retry"
+        decision["missing"] = failed_modalities
+        decision["reason"] = (
+            f"Modality retrieval failed for: {', '.join(failed_modalities)}. "
+            "Retrying before proceeding."
+        )
+        return decision
 
     # Required-modality check
     requirements = SCENARIO_MODALITY_REQUIREMENTS.get(
@@ -1094,29 +1138,75 @@ def scope_gate(scenario: str, modality_inventory: dict, patient_id: str,
         )
         return decision
 
-    # Recommended-modality check: proceed but may scope down
+    # Recommended-modality check for ALL scenarios. Each scenario defines
+    # a handler for missing recommended modalities:
+    #   (a) scope_down: narrow to a sub-scenario
+    #   (b) proceed_capped: proceed with completeness_cap="low"
+    #   (c) defer: the recommended modality is effectively required
     missing_recommended = [
         r for r in recommended
         if not _modality_available(modality_inventory, r)
     ]
 
-    if scenario == "comprehensive_reasoning" and missing_recommended:
-        # Scope down when possible
-        if _modality_available(modality_inventory, "imaging"):
-            decision["scoped_to"] = "ed_dyspnea_workup" if \
-                _modality_available(modality_inventory, "imaging_chest") else scenario
-        else:
+    if missing_recommended:
+        handler = _recommended_missing_handler(scenario, missing_recommended,
+                                               modality_inventory)
+        if handler["action"] == "scope_down":
+            decision["scoped_to"] = handler["narrower_scenario"]
+            decision["proceed"] = True
+            decision["reason"] = "scoped_down_due_to_missing_recommended"
+            decision["missing"] = missing_recommended
+            return decision
+        elif handler["action"] == "proceed_capped":
             decision["scoped_to"] = scenario
-        decision["proceed"] = True
-        decision["reason"] = "scoped_down_due_to_missing_recommended"
-        decision["missing"] = missing_recommended
-        return decision
+            decision["proceed"] = True
+            decision["completeness_cap"] = "low"
+            decision["reason"] = "proceeding_with_reduced_completeness"
+            decision["missing"] = missing_recommended
+            return decision
+        elif handler["action"] == "defer":
+            decision["proceed"] = False
+            decision["defer_reason"] = "recommended_modality_effectively_required"
+            decision["missing"] = missing_recommended
+            decision["reason"] = handler.get("defer_rationale", "")
+            return decision
 
     decision["proceed"] = True
     decision["scoped_to"] = scenario
     decision["reason"] = "all_required_modalities_present"
     decision["missing"] = missing_recommended  # informational
     return decision
+
+
+def _recommended_missing_handler(scenario: str, missing: list,
+                                  inventory: dict) -> dict:
+    """
+    Per-scenario logic for handling missing recommended modalities.
+
+    Returns dict with action ("scope_down" | "proceed_capped" | "defer")
+    and supporting fields (narrower_scenario or defer_rationale).
+    """
+    # comprehensive_reasoning: scope down to a focused scenario
+    if scenario == "comprehensive_reasoning":
+        if _modality_available(inventory, "imaging_chest"):
+            return {"action": "scope_down",
+                    "narrower_scenario": "ed_dyspnea_workup"}
+        return {"action": "scope_down",
+                "narrower_scenario": "structured_only_reasoning"}
+
+    # ed_dyspnea_workup: if ECG is missing and scenario includes ACS reasoning,
+    # defer because ECG is effectively required for ACS-inclusive workup.
+    if scenario == "ed_dyspnea_workup":
+        if "ecg" in missing:
+            return {"action": "defer",
+                    "defer_rationale": (
+                        "ECG is effectively required for ED dyspnea workup "
+                        "that includes ACS-inclusive reasoning."
+                    )}
+        return {"action": "proceed_capped"}
+
+    # Default for other scenarios: proceed with reduced completeness.
+    return {"action": "proceed_capped"}
 
 def _modality_available(inventory: dict, requirement: str) -> bool:
     """Check whether a requirement token is satisfied by the inventory."""
@@ -1276,6 +1366,78 @@ def _hybrid_search(client, index: str, queries: list, scenario: str,
 def _case_analog_corpus_enabled(scenario: str) -> bool:
     """Whether a curated case-analog corpus exists for this scenario."""
     return scenario in ("oncology_treatment_planning", "hf_management")
+```
+
+---
+
+## Step 6b: PHI Minimization Before Prompt Construction
+
+*Bedrock under BAA is compliant for PHI, but the HIPAA minimum-necessary principle applies inside the BAA boundary as well. Before assembling the reasoning prompt, strip direct identifiers (MRN, DOB, patient name, address, phone, email, payer or NPI identifiers) from the serialized state. The rendered output re-associates reasoning to the patient via run_id plus patient_id; identifiers do not need to round-trip through the model prompt.*
+
+```python
+# Direct identifier field names to strip from structured data
+_PHI_DIRECT_IDENTIFIER_KEYS = frozenset([
+    "mrn", "medical_record_number", "date_of_birth", "dob",
+    "patient_name", "name", "address", "street", "city", "state",
+    "zip", "postal_code", "phone", "telephone", "email",
+    "email_address", "payer_id", "member_id", "subscriber_id",
+    "npi", "provider_npi", "ssn", "social_security_number",
+])
+
+import copy
+import re
+
+# Regex pattern that matches common PHI patterns in free text.
+# This is a simplified illustrative pattern; production systems use
+# a dedicated de-identification library (e.g., Philter, scrubadub,
+# or a Comprehend Medical PII detection pass).
+_PHI_PATTERN = re.compile(
+    r"\b(?:\d{3}-\d{2}-\d{4})"       # SSN
+    r"|(?:\d{10})"                     # phone (10 digits)
+    r"|(?:\d{3}[-.]\d{3}[-.]\d{4})"   # phone formatted
+    r"|(?:[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})"  # email
+    r"|(?:MRN[:\s]*\w+)"              # MRN label
+    , re.IGNORECASE
+)
+
+
+def _minimize_phi_for_prompt(patient_state: dict) -> dict:
+    """
+    Return a deep copy of patient_state with direct identifiers stripped.
+
+    This satisfies the HIPAA minimum-necessary principle: the reasoning
+    model does not need MRN, DOB, name, address, phone, email, payer,
+    or NPI identifiers to perform clinical reasoning. The rendered output
+    re-associates via run_id + patient_id downstream.
+    """
+    minimized = copy.deepcopy(patient_state)
+
+    # Strip identifier keys from structured context
+    sc = minimized.get("structured_context", {})
+    for key in list(sc.keys()):
+        if key.lower() in _PHI_DIRECT_IDENTIFIER_KEYS:
+            del sc[key]
+
+    # Redact identifiers in note content and key passages
+    for note in minimized.get("notes", []):
+        if "content" in note:
+            note["content"] = _PHI_PATTERN.sub("[REDACTED]", note["content"])
+        for passage in note.get("key_passages", []):
+            if isinstance(passage, dict) and "text" in passage:
+                passage["text"] = _PHI_PATTERN.sub("[REDACTED]", passage["text"])
+
+    # Redact identifiers in imaging report text
+    for img in minimized.get("imaging_records", []):
+        if "report_text" in img:
+            img["report_text"] = _PHI_PATTERN.sub("[REDACTED]", img["report_text"])
+
+    # Redact identifiers in ECG machine interpretation
+    for ecg in minimized.get("ecg_records", []):
+        if "machine_interpretation" in ecg:
+            ecg["machine_interpretation"] = _PHI_PATTERN.sub(
+                "[REDACTED]", ecg["machine_interpretation"])
+
+    return minimized
 ```
 
 ---
@@ -2110,6 +2272,13 @@ def run_multi_modal_reasoning(trigger: dict) -> dict:
         scope_decision["scoped_to"], patient_state, modality_inventory,
     )
 
+    # Step 6b: PHI minimization before prompt construction.
+    # Bedrock under BAA is compliant for PHI, but minimum-necessary applies
+    # inside the BAA boundary. Strip direct identifiers that the reasoning
+    # layer does not need; the rendered output re-associates via run_id.
+    print("Step 6b: Minimizing PHI for prompt...")
+    minimized_state = _minimize_phi_for_prompt(patient_state)
+
     # Steps 7+8: generation + validation loop
     generation_result = None
     validation_result = None
@@ -2121,7 +2290,7 @@ def run_multi_modal_reasoning(trigger: dict) -> dict:
         print(f"Step 7 (attempt {attempt}): Invoking reasoning layer...")
         generation_result = invoke_reasoning_layer(
             scenario=scope_decision["scoped_to"],
-            patient_state=patient_state,
+            patient_state=minimized_state,
             modality_inventory=modality_inventory,
             retrieved=retrieved,
             safety_findings=safety_findings,
