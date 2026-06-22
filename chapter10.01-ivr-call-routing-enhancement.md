@@ -138,7 +138,7 @@ A few practical updates worth knowing.
 
 **Healthcare-specific intent libraries exist as starting points.** A few vendors have published or sell pretrained intent libraries for healthcare phone interactions. These cover the standard intents (appointment, refill, billing, results, nurse line) with example utterances and slot definitions. Using one of these as a starting point can save several months of intent-design work, and you customize the long tail for your specific practice.
 
-**Voice biometrics for caller identification is operationally available but operationally fraught.** Modern voice biometric systems can identify a caller from a few seconds of speech. This is tempting for IVR (skip the date-of-birth verification, just listen to who's calling). It's also a substantial privacy and regulatory concern (voiceprints are biometric data, regulated under BIPA and similar state laws), and the false-acceptance and false-rejection rates have to be calibrated carefully. Recipe 10 covers voice-biometrics generally; for IVR specifically, our recommendation is to skip it in MVP and revisit only if there's a clear business case that justifies the regulatory overhead.
+**Voice biometrics for caller identification is operationally available but operationally fraught.** Modern voice biometric systems can identify a caller from a few seconds of speech. This is tempting for IVR (skip the date-of-birth verification, just listen to who's calling). It's also a substantial privacy and regulatory concern (voiceprints are biometric data, regulated under BIPA and similar state laws), and the false-acceptance and false-rejection rates have to be calibrated carefully. Voice biometrics is covered as a variation later in this chapter; for IVR specifically, our recommendation is to skip it in MVP and revisit only if there's a clear business case that justifies the regulatory overhead.
 
 ---
 
@@ -252,9 +252,31 @@ A natural-language IVR splits cleanly into five logical stages: telephony ingres
 │   [Aggregate metrics]                                     │
 │    - Containment rate (calls fulfilled without agent)     │
 │    - Top intents and their accuracy                       │
-│    - Subgroup-stratified accuracy (age cohorts, language, │
-│      accent groups where data is available)               │
+│    - Subgroup-stratified accuracy (see equity monitoring  │
+│      below)                                                │
 │    - Mean handle time, abandon rate, escalation rate      │
+│                                                            │
+│   [Equity monitoring: subgroup-stratified accuracy]       │
+│    - Primary equity dimension: accent and language         │
+│      disparity (the IVR's largest equity stake)           │
+│    - Cohort dimensions: age band, preferred language,     │
+│      geographic region, accent group, primary insurance   │
+│      type (coarse SES proxy), accessibility flag          │
+│    - Per-cohort metrics: containment rate, intent-        │
+│      classification accuracy, time-to-clinical-triage,   │
+│      abandon rate, repeated-low-confidence-turn rate,     │
+│      verification-failure rate                            │
+│    - Per-cohort sample-size minimums:                     │
+│      >= 200 in window: reliable                           │
+│      50-199: noisy, report with wide confidence interval  │
+│      < 50: aggregate into parent cohort, do not report    │
+│      separately                                           │
+│    - Disparity-alert thresholds:                          │
+│      containment gap > 10 points                          │
+│      accuracy gap > 5 points                              │
+│      time-to-triage gap > 30 seconds                      │
+│    - Named ownership: equity-monitoring committee with    │
+│      monthly review cadence                               │
 │           │                                                │
 │           ▼                                                │
 │   [Output: continuous improvement signals fed back to     │
@@ -275,6 +297,8 @@ A few cross-cutting design points that the architecture has to bake in from the 
 
 **Recordings are PHI; treat them accordingly.** Call recordings are PHI, full stop, regardless of whether the caller's name is captured (it usually is, somewhere in the call). The recording infrastructure runs under a BAA, encrypted at rest with customer-managed keys, with access controls that match the rest of the institution's PHI handling.
 
+**Transcripts are PHI; they live under the same governance as recordings.** Transcripts generated from the ASR layer carry the same PHI classification as the recordings they derive from. They live in the secure transcript archive under the same governance as the recordings, and the audit log carries only references and structural metadata (transcript archive reference, transcript length, transcript hash), never the raw content. Any downstream system that consumes transcripts (analytics, quality assurance, bot improvement) either consumes the redacted-transcript variant or operates under the same PHI governance tier.
+
 **The ML pipeline has to degrade gracefully.** If the intent classifier is unavailable for any reason, the system should fall back to a DTMF menu rather than failing. If the ASR vendor is having an outage, the system should detect this and switch to DTMF mode automatically. The IVR is the front door, and a broken front door is much worse than an inelegant one.
 
 ---
@@ -293,7 +317,7 @@ A third trap is over-eager self-service expansion. The temptation, once the basi
 
 A fourth trap is ignoring the fact that the IVR is a fraud target. Once the IVR can release information (your appointment is on Friday, the lab result is normal, the prescription was sent to your usual pharmacy) or trigger actions (refill submitted, appointment confirmed), it becomes a target for social engineers attempting to obtain information or actions under someone else's identity. The verification discipline matters. The pattern-based anomaly detection (caller making rapid attempts across multiple identities, caller using a phone number that's never appeared before for this patient) matters. The institution that ignores this learns about it from a fraud incident. 
 
-The thing that surprises people coming from consumer voice-AI backgrounds is how much of the work is in the back-office integrations. The intent classifier is one Lambda. The fulfillment that actually queues a refill against the e-prescribing system, fetches an appointment from the scheduling system, looks up the patient in the EHR, all that touches systems that were never designed to be called from a real-time IVR Lambda. Integration tier-of-evidence latencies, vendor API rate limits, vendor authentication complexity, and the perpetual "what does this field actually mean" calibration with the institution's existing implementation all dominate the engineering effort.  A 95% bot-accuracy doesn't help if the fulfillment Lambda times out because the EHR API is having a slow morning.
+The thing that surprises people coming from consumer voice-AI backgrounds is how much of the work is in the back-office integrations. The intent classifier is one Lambda. The fulfillment that actually queues a refill against the e-prescribing system, fetches an appointment from the scheduling system, looks up the patient in the EHR, all that touches systems that were never designed to be called from a real-time IVR Lambda. Integration latencies across tiered back-office systems, vendor API rate limits, vendor authentication complexity, and the perpetual "what does this field actually mean" calibration with the institution's existing implementation all dominate the engineering effort.  A 95% bot-accuracy doesn't help if the fulfillment Lambda times out because the EHR API is having a slow morning.
 
 The thing that surprises people coming from IT-operations backgrounds is how much the patient experience layer matters. The IVR is a patient-facing product. The institution's patients form impressions about the institution from their IVR interactions, often before they ever set foot in the building. Investments in voice-talent for the recorded prompts, in conversational design for the dialog flow, in usability testing with representative patient populations (including patients with hearing impairments, patients with limited English proficiency, patients with cognitive impairments) compound over time into the institutional reputation that drives patient retention and referrals. The IT-operations framing of "we built a system that routes calls correctly" leaves substantial value on the table compared with the patient-experience framing of "we built a front door that respects the patients walking through it."
 
