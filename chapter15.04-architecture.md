@@ -14,9 +14,9 @@
 
 **AWS Glue for ETL and cohort construction.** Extracting sepsis cohorts from raw EHR data involves complex SQL-like transformations: joining diagnosis tables with lab results, vital signs, and medication administration records; applying Sepsis-3 criteria; constructing time-aligned trajectories. Glue handles this at scale without provisioning Spark clusters manually.
 
-**Amazon DynamoDB for policy serving.** Once a policy is validated and approved for clinical decision support, the state-to-action mapping needs to be served with low latency. For discrete state spaces, DynamoDB provides single-digit-millisecond lookups. For neural network policies, SageMaker endpoints handle inference.
+**Amazon DynamoDB for policy serving (discrete state space path).** If you discretize the continuous state space into clusters (typically ~750 k-means clusters over the physiological feature space), the resulting policy is a lookup table: cluster ID maps to action ID. DynamoDB provides single-digit-millisecond lookups for this table. This path trades off representational fidelity for interpretability and serving simplicity. The tradeoff: discretization loses information between cluster boundaries, but the policy is easy to inspect, audit, and explain.
 
-**Amazon SageMaker Endpoints for real-time inference.** If the policy uses a neural network (continuous state space), a SageMaker real-time endpoint serves predictions. The clinician-facing system sends the current patient state, the endpoint returns the recommended action with confidence information.
+**Amazon SageMaker Endpoints for real-time inference (continuous state space path).** This recipe's code uses continuous states with a neural Q-network served as a SageMaker real-time endpoint. The clinician-facing system sends the raw patient state vector, the endpoint runs it through the neural network and returns the recommended action with confidence information. This path preserves full state information but makes the policy harder to interpret. Choose one approach: discrete (DynamoDB) for interpretability, continuous (SageMaker endpoint) for expressiveness. The rest of this recipe assumes the continuous/neural network path.
 
 **AWS Step Functions for pipeline orchestration.** The full pipeline (data extraction, preprocessing, training, evaluation, model registration) is a multi-step workflow with dependencies. Step Functions coordinates the sequence, handles retries, and provides visibility into pipeline state.
 
@@ -51,11 +51,17 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Step Functions, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+| **IAM Roles** | Separate role per pipeline stage (least-privilege): |
+
+| | *Glue ETL role:* `glue:StartJobRun`, `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/raw/*`, `s3:PutObject` on `arn:aws:s3:::sepsis-rl-trajectories/processed/*`, `kms:Decrypt`/`kms:GenerateDataKey` for the data KMS key |
+| | *SageMaker Training role:* `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/processed/*`, `s3:PutObject` on `arn:aws:s3:::sepsis-rl-trajectories/models/*`, `sagemaker:CreateTrainingJob`, `sagemaker:AddTags`, `kms:Decrypt`/`kms:GenerateDataKey` for training volume KMS key |
+| | *SageMaker Inference role:* `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/models/*` (read model artifact only), `sagemaker:InvokeEndpoint`, `dynamodb:PutItem` on the audit table, `cloudwatch:PutMetricData`. No access to raw patient data. |
+| | *Step Functions orchestration role:* `states:StartExecution`, `glue:StartJobRun`, `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`. Cannot read S3 data directly; delegates to the stage-specific roles. |
 
 | **BAA** | AWS BAA signed (required: patient physiological data is PHI) |
+| **De-identification** | Training data should be de-identified per HIPAA Safe Harbor (remove 18 identifiers) or used under a Limited Data Set with a Data Use Agreement. Replace patient IDs with pseudonymous identifiers before trajectory construction. The trained model artifact (neural network weights) is not itself PHI because it does not contain individually identifiable information, but the trajectory dataset absolutely is. |
 | **Encryption** | S3: SSE-KMS for all trajectory data and model artifacts; DynamoDB: encryption at rest; SageMaker: KMS-encrypted training volumes and endpoints; all API calls over TLS |
-| **VPC** | Production: SageMaker in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs. No public internet access for training jobs processing PHI. |
+| **VPC** | Production: SageMaker in VPC with VPC endpoints for S3 (gateway, free), DynamoDB (gateway, free), CloudWatch Logs (interface), SageMaker API (interface), SageMaker Runtime (interface), and KMS (interface). Without SageMaker API and Runtime endpoints, private subnet deployment requires a NAT Gateway (which becomes an egress point for PHI) or fails entirely. Interface endpoints cost ~$7.20/month per endpoint per AZ. Budget 4-5 interface endpoints across 2 AZs: ~$60-70/month for network isolation. No public internet access for training jobs processing PHI. |
 
 | **CloudTrail** | Enabled: log all SageMaker, S3, and Glue API calls for audit trail |
 | **Data Requirements** | Minimum 10,000-20,000 sepsis episodes with complete trajectory data (vitals q4h, labs, medication administration records). MIMIC-III/IV for research; institutional EHR data for production. |
@@ -292,6 +298,45 @@ FUNCTION apply_safety_constraints(state, candidate_actions):
     RETURN safe_actions
 ```
 
+**Step 4b: Safety constraint monitoring.** Every time a safety constraint fires, that's signal. If constraints are triggering on a large fraction of recommendations, something is wrong: the policy may be drifting, the patient population may be shifting, or the constraint thresholds need recalibration. Publish constraint trigger rates to CloudWatch and alarm when they exceed acceptable thresholds.
+
+```pseudocode
+FUNCTION monitor_constraint_triggers(recommendation_batch, window_hours = 24):
+    // Track how often each constraint fires over a rolling window.
+    // If any constraint fires on >20% of recommendations in 24 hours,
+    // alert clinical informatics for review.
+
+    constraint_counts = {
+        "map_vasopressor_floor": 0,
+        "fluid_overload_cap": 0,
+        "lactate_rising_hold": 0,
+        "sofa_zero_treatment_block": 0,
+        "any_constraint": 0,
+    }
+    total_recommendations = length(recommendation_batch)
+
+    FOR each recommendation in recommendation_batch:
+        IF recommendation.constraints_triggered is not empty:
+            constraint_counts["any_constraint"] += 1
+            FOR each constraint_name in recommendation.constraints_triggered:
+                constraint_counts[constraint_name] += 1
+
+    // Publish per-constraint trigger rates to CloudWatch as custom metrics.
+    FOR each (constraint_name, count) in constraint_counts:
+        trigger_rate = count / total_recommendations
+        publish_metric(
+            namespace = "SepsisRL/SafetyConstraints",
+            metric_name = constraint_name + "_trigger_rate",
+            value = trigger_rate,
+            unit = "None"
+        )
+
+    // CloudWatch Alarm: any_constraint_trigger_rate > 0.20 for 1 consecutive period
+    // Action: notify clinical informatics team via SNS
+    // This threshold means the policy is disagreeing with safety boundaries
+    // on more than 1 in 5 recommendations, which warrants human review.
+```
+
 **Step 5: Off-policy evaluation.** Before anyone even thinks about showing this to a clinician, you need to estimate how well the learned policy would have performed compared to what actually happened. This is off-policy evaluation (OPE), and it's the hardest part of the entire pipeline. You're asking: "If we had followed this policy instead of what the clinicians did, would patients have done better?" You can't know for certain without actually deploying it (which you won't do without extensive validation). OPE gives you an estimate with uncertainty bounds. Use multiple methods and be honest about the limitations.
 
 ```pseudocode
@@ -336,6 +381,59 @@ FUNCTION evaluate_policy_offline(learned_policy, test_trajectories, behavior_pol
     }
 ```
 
+**Step 5b: Distribution shift detection.** The policy was trained on historical data. At inference time, you will encounter patient states the training data never covered. Blindly serving recommendations for out-of-distribution (OOD) states is dangerous. You need a mechanism to detect when a patient's state is far from anything the model trained on, suppress low-confidence recommendations, and alert operators when OOD rates climb.
+
+The approach: during training, compute the mean and covariance of the state feature vectors across all training transitions. At inference time, compute the Mahalanobis distance between the incoming state and the training distribution. States with high Mahalanobis distance are OOD. The threshold can be calibrated on the training set (e.g., 99th percentile of training distances).
+
+```pseudocode
+FUNCTION compute_training_distribution(all_training_states):
+    // Compute multivariate statistics from training data.
+    // These are stored alongside the model artifact for use at inference time.
+    mean_vector = mean(all_training_states, axis=0)        // shape: (state_dim,)
+    covariance_matrix = covariance(all_training_states)    // shape: (state_dim, state_dim)
+    // Regularize covariance to ensure invertibility (add small diagonal).
+    covariance_matrix += 1e-6 * identity_matrix(state_dim)
+    inverse_covariance = invert(covariance_matrix)
+
+    // Compute Mahalanobis distances for all training states to set threshold.
+    training_distances = []
+    FOR each state in all_training_states:
+        diff = state - mean_vector
+        distance = sqrt(diff^T @ inverse_covariance @ diff)
+        training_distances.append(distance)
+
+    // Use 99th percentile as OOD threshold.
+    ood_threshold = percentile(training_distances, 99)
+
+    RETURN {mean_vector, inverse_covariance, ood_threshold}
+
+FUNCTION check_distribution_shift(state, distribution_stats):
+    diff = state - distribution_stats.mean_vector
+    mahalanobis_distance = sqrt(diff^T @ distribution_stats.inverse_covariance @ diff)
+
+    is_ood = (mahalanobis_distance > distribution_stats.ood_threshold)
+
+    // Publish OOD metrics to CloudWatch.
+    publish_metric("SepsisRL/DistributionShift", "MahalanobisDistance", mahalanobis_distance)
+    publish_metric("SepsisRL/DistributionShift", "OODFlag", 1 if is_ood else 0)
+
+    IF is_ood:
+        // Suppress recommendation confidence. Don't remove it entirely
+        // (clinician may still find it informative), but flag clearly.
+        RETURN {
+            "ood_detected": true,
+            "mahalanobis_distance": mahalanobis_distance,
+            "suppress_confidence": true,
+            "warning": "Patient state is outside the training distribution. Recommendation confidence is low."
+        }
+    ELSE:
+        RETURN {"ood_detected": false, "mahalanobis_distance": mahalanobis_distance}
+
+// CloudWatch Alarm: track rolling OOD percentage.
+// If >5% of recommendations in a 24-hour window are OOD, alert the team.
+// Rising OOD rates indicate population drift or a data pipeline issue.
+```
+
 **Step 6: Clinical decision support interface.** If (and only if) the policy passes off-policy evaluation, clinical review, and institutional approval, it can be deployed as a decision support tool. Not an autonomous agent. A recommendation system that shows clinicians what the policy suggests, along with confidence information and the reasoning (which state features are driving the recommendation). The clinician always makes the final decision. The system is advisory only.
 
 ```pseudocode
@@ -361,6 +459,16 @@ FUNCTION serve_recommendation(patient_state, policy_endpoint):
 
     // Log every recommendation for audit and outcome tracking.
     log_to_audit_trail(patient_state, recommendation, timestamp)
+
+    // Audit storage must be tamper-evident. Options:
+    // 1. S3 Object Lock (compliance mode): prevents deletion or overwrite for a
+    //    configurable retention period. Even the root account cannot delete objects
+    //    during the retention window.
+    // 2. CloudWatch Logs with a resource policy preventing DeleteLogGroup/DeleteLogStream.
+    // 3. Separate audit account: write-only cross-account access (the production account
+    //    can write audit records but cannot read or delete them).
+    // Compliance mode Object Lock is the simplest path. Set retention to match your
+    // institutional record retention policy (typically 7-10 years for clinical data).
 
     RETURN recommendation
 ```
@@ -432,6 +540,8 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this as
 
 **Model updating and drift.** Treatment patterns change. New drugs become available. Patient populations shift. The model needs a retraining pipeline with drift detection. But retraining an RL policy on new data and validating it is not a simple model refresh; it requires re-running the full evaluation pipeline.
 
+**Model versioning and rollback.** Use SageMaker Model Registry with approval workflows to track every policy version. Before promoting a new policy, run OPE comparing new vs. currently-deployed policy on the same held-out data. Deploy using a canary pattern: route 5-10% of recommendations through the new policy while monitoring safety constraint trigger rates and clinician override rates. If either metric degrades beyond a threshold (e.g., constraint triggers increase by >5 percentage points, or override rate increases by >10 percentage points), automatically roll back to the previous approved model version. The rollback should be automated via CloudWatch Alarms triggering a Step Functions state that swaps the endpoint back to the previous model artifact.
+
 **Liability and accountability.** If a clinician follows the system's recommendation and the patient has a bad outcome, who is responsible? This is an unsolved legal and ethical question. Most institutions will require that the system be clearly advisory and that clinicians document their independent clinical reasoning.
 
 ---
@@ -441,6 +551,8 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this as
 **Multi-agent formulation.** Instead of a single policy for all sepsis patients, train separate policies for different sepsis subtypes (pulmonary, abdominal, urinary source) or severity strata. Patients with different infection sources may have different optimal treatment trajectories. This requires larger datasets but can improve policy quality for each subgroup.
 
 **Incorporating antibiotic timing.** The standard formulation focuses on fluids and vasopressors. Extending the action space to include antibiotic timing decisions (early broad-spectrum vs. waiting for cultures) adds clinical relevance but increases the action space complexity. Each hour of antibiotic delay in sepsis is associated with increased mortality, making this a high-value extension.
+
+**Reward function experimentation.** The reward function encodes your clinical priorities, and small changes produce meaningfully different policies. Parameterize the reward weights (survival bonus, SOFA improvement coefficient, lactate clearance bonus) and train multiple policies in parallel across a grid of reward configurations. Use SageMaker Experiments to track which reward parameters produced which policy, then compare all candidate policies using the OPE pipeline. This reveals how sensitive the policy is to reward design choices. If two very different reward functions produce similar policies, that's reassuring. If small reward changes flip the policy's behavior, the reward function needs more careful calibration with clinical input.
 
 **Explainable policy with counterfactual reasoning.** Instead of just recommending an action, show the clinician: "If you give 500 mL more fluid, the model estimates MAP will improve by 5 mmHg within 2 hours. If you increase vasopressors instead, the estimated MAP improvement is 8 mmHg but with higher risk of arrhythmia." This requires learning a transition model in addition to the policy, but dramatically improves clinical trust and utility.
 

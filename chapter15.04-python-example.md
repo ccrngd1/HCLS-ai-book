@@ -693,17 +693,21 @@ def get_recommendation(
     patient_state: Dict,
     q_network: QNetwork,
     normalization_stats: Dict,
+    distribution_stats: Optional[Dict] = None,
 ) -> Dict:
     """
     Generate a treatment recommendation for a sepsis patient.
 
-    Takes raw clinical values, normalizes them, runs through the Q-network,
-    applies safety constraints, and returns an interpretable recommendation.
+    Takes raw clinical values, normalizes them, checks for distribution shift,
+    runs through the Q-network, applies safety constraints, and returns an
+    interpretable recommendation.
 
     Args:
         patient_state: Dictionary of current physiological values (raw, unnormalized).
         q_network: Trained Q-network.
         normalization_stats: Dict with "mean" and "std" arrays for each feature.
+        distribution_stats: Optional dict with "mean", "inv_cov", and "ood_threshold"
+            for Mahalanobis distance OOD detection. If None, skip OOD check.
 
     Returns:
         Recommendation dictionary with action, interpretation, confidence, and drivers.
@@ -714,6 +718,19 @@ def get_recommendation(
     stds = normalization_stats["std"]
     # Avoid division by zero for features with no variance.
     normalized_state = (raw_state - means) / np.maximum(stds, 1e-8)
+
+    # Distribution shift detection via Mahalanobis distance.
+    ood_warning = None
+    if distribution_stats is not None:
+        diff = normalized_state - distribution_stats["mean"]
+        mahal_dist = float(np.sqrt(diff @ distribution_stats["inv_cov"] @ diff))
+        if mahal_dist > distribution_stats["ood_threshold"]:
+            ood_warning = (
+                f"Patient state is outside the training distribution "
+                f"(Mahalanobis distance: {mahal_dist:.1f}, threshold: "
+                f"{distribution_stats['ood_threshold']:.1f}). "
+                f"Recommendation confidence is low."
+            )
 
     # Get Q-values for all actions.
     q_values = q_network.forward(normalized_state)
@@ -728,6 +745,10 @@ def get_recommendation(
     # Confidence: gap between best and second-best Q-value.
     # Larger gap = more confident the best action is clearly superior.
     confidence = float(sorted_q[0] - sorted_q[1]) if len(sorted_q) > 1 else 0.0
+
+    # If OOD detected, suppress confidence.
+    if ood_warning is not None:
+        confidence = 0.0
 
     # Decode action into clinical terms.
     fluid_level, vaso_level = decode_action(best_action)
@@ -749,7 +770,7 @@ def get_recommendation(
         for i in top_indices
     ]
 
-    return {
+    result = {
         "recommended_action_id": best_action,
         "fluid_recommendation": fluid_desc,
         "vasopressor_recommendation": vaso_desc,
@@ -763,6 +784,11 @@ def get_recommendation(
         ],
         "disclaimer": "Advisory only. Clinical judgment supersedes all recommendations.",
     }
+
+    if ood_warning is not None:
+        result["ood_warning"] = ood_warning
+
+    return result
 
 def _fluid_level_description(level: int) -> str:
     """Human-readable description of a fluid level."""
@@ -850,6 +876,12 @@ def log_recommendation_to_dynamodb(patient_id: str, recommendation: Dict):
     - Regulatory audit (who saw what recommendation, when)
     - Outcome tracking (did following/ignoring recommendations correlate with outcomes?)
     - Model monitoring (is the recommendation distribution shifting over time?)
+
+    For tamper-evident storage, configure the underlying S3 audit bucket with
+    Object Lock in compliance mode. This prevents deletion or overwrite for the
+    configured retention period (typically 7-10 years for clinical records). Even
+    the root account cannot delete locked objects during the retention window.
+    Alternatively, use a separate audit account with cross-account write-only access.
     """
     dynamodb = boto3.resource("dynamodb", config=BOTO3_CONFIG)
     table = dynamodb.Table(AUDIT_TABLE)
@@ -867,9 +899,54 @@ def log_recommendation_to_dynamodb(patient_id: str, recommendation: Dict):
         "key_drivers": recommendation["key_drivers"],
     }
 
+    if "ood_warning" in recommendation:
+        item["ood_warning"] = recommendation["ood_warning"]
+
     table.put_item(Item=item)
     # PHI Safety: Never log the raw patient state values to the audit table.
     # Log only the recommendation and metadata.
+
+def publish_constraint_trigger_metrics(recommendations: List[Dict], experiment_id: str):
+    """
+    Publish safety constraint trigger rates to CloudWatch.
+
+    If any constraint fires on >20% of recommendations in a 24-hour window,
+    that's a signal the policy may be drifting or the patient population is
+    shifting. Set CloudWatch Alarms on these metrics to notify clinical
+    informatics when trigger rates exceed acceptable thresholds.
+    """
+    cloudwatch = boto3.client("cloudwatch", config=BOTO3_CONFIG)
+
+    total = len(recommendations)
+    if total == 0:
+        return
+
+    constrained_count = sum(
+        1 for r in recommendations if r.get("safety_constraints_triggered")
+    )
+    ood_count = sum(1 for r in recommendations if r.get("ood_warning"))
+
+    metrics = [
+        {
+            "MetricName": "ConstraintTriggerRate",
+            "Value": constrained_count / total,
+            "Unit": "None",
+            "Dimensions": [{"Name": "ExperimentId", "Value": experiment_id}],
+        },
+        {
+            "MetricName": "OODRate",
+            "Value": ood_count / total,
+            "Unit": "None",
+            "Dimensions": [{"Name": "ExperimentId", "Value": experiment_id}],
+        },
+    ]
+
+    cloudwatch.put_metric_data(
+        Namespace="SepsisRL/SafetyConstraints",
+        MetricData=metrics,
+    )
+    print(f"Published constraint metrics: trigger_rate={constrained_count/total:.2%}, "
+          f"ood_rate={ood_count/total:.2%}")
 
 def publish_evaluation_metrics(eval_results: Dict, experiment_id: str):
     """
@@ -1107,13 +1184,13 @@ The code above demonstrates the mechanics of offline RL for sepsis treatment. He
 
 **Prospective shadow mode.** Run the system in parallel with clinical care (generating recommendations but not showing them) for months. Compare its recommendations against actual decisions and outcomes. This is the minimum validation before any clinician-facing deployment.
 
-**Model versioning and drift detection.** Track which model version generated each recommendation. Monitor for distribution shift: are you seeing patient states that are far from the training distribution? CloudWatch alarms on out-of-distribution detection metrics.
+**Model versioning and drift detection.** Track which model version generated each recommendation. Use SageMaker Model Registry with approval workflows to version policies. Before promoting a new policy, run OPE comparing new vs. deployed policy. Deploy with a canary pattern (5-10% traffic) and automatically roll back if safety constraint trigger rates or clinician override rates degrade. Monitor for distribution shift: are you seeing patient states that are far from the training distribution? The Mahalanobis distance approach shown in `get_recommendation` above is one mechanism; CloudWatch alarms on OOD rates provide the alerting layer.
 
 **Error handling and retries.** The code above has no error handling. Production needs: exponential backoff on API calls, graceful degradation if the model endpoint is unavailable, input validation (reject states with physiologically impossible values), and structured logging (never log PHI values, only metadata).
 
-**IAM least privilege.** The training job needs different permissions than the inference endpoint. The inference endpoint should only be able to read the model artifact and write to the audit table. It should not have access to raw patient data or the ability to modify the model.
+**IAM least privilege.** The training job needs different permissions than the inference endpoint. Use separate IAM roles per pipeline stage: Glue ETL can read raw data and write processed trajectories, SageMaker Training can read processed data and write model artifacts, and the inference endpoint can only read the model artifact and write to the audit table. The inference role should not have access to raw patient data or the ability to modify the model. Scope each role to specific S3 prefixes and DynamoDB table ARNs.
 
-**VPC isolation.** SageMaker training jobs and endpoints processing PHI must run in a VPC with no internet access. Use VPC endpoints for S3, DynamoDB, CloudWatch, and SageMaker API calls. This prevents accidental data exfiltration.
+**VPC isolation.** SageMaker training jobs and endpoints processing PHI must run in a VPC with no internet access. Use VPC endpoints for S3 (gateway, free), DynamoDB (gateway, free), CloudWatch Logs (interface), SageMaker API (interface), SageMaker Runtime (interface), and KMS (interface). Without the SageMaker API and Runtime interface endpoints, private subnet deployment requires a NAT Gateway (which becomes a PHI egress point) or fails entirely. Budget ~$60-70/month for interface endpoints across 2 AZs.
 
 **Regulatory pathway.** If this system provides specific treatment recommendations (which it does), it likely requires FDA clearance as a Clinical Decision Support tool. The regulatory submission requires extensive documentation of the algorithm, training data, validation methodology, and intended use. This is a multi-year process that starts long before the code is written.
 
