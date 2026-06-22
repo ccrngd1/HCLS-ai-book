@@ -498,6 +498,7 @@ def store_predictions(
     appointment_ids: list[str],
     scheduled_dates: list[str],
     model_version: str = "v1.0.0",
+    pipeline_run_id: str = None,
 ) -> int:
     """
     Write scored predictions to DynamoDB for downstream consumption.
@@ -506,47 +507,65 @@ def store_predictions(
     probability, the risk tier, and metadata for auditability. The action
     engine and scheduling UI both read from this table.
 
+    Uses a conditional write to avoid overwriting predictions that the action
+    engine has already acted upon. If acted_at exists on the record, the write
+    is skipped to preserve the audit trail.
+
     Args:
         predictions: List of no-show probabilities (0.0 to 1.0).
         appointment_ids: Corresponding appointment IDs.
         scheduled_dates: Corresponding scheduled dates (ISO format strings).
         model_version: Version string for the model that produced these scores.
+        pipeline_run_id: Unique ID for this scoring run (for audit traceability).
 
     Returns:
         Number of predictions stored.
     """
     table = dynamodb.Table(PREDICTIONS_TABLE)
     scored_at = datetime.datetime.now(timezone.utc).isoformat()
+    run_id = pipeline_run_id or f"run-{scored_at}"
     count = 0
+    skipped = 0
 
     # Use batch_writer for efficient bulk writes.
     # DynamoDB batch_writer handles chunking into 25-item batches
     # and automatic retries for unprocessed items.
-    with table.batch_writer() as batch:
-        for appt_id, probability, sched_date in zip(
-            appointment_ids, predictions, scheduled_dates
-        ):
-            risk_tier = classify_risk(probability)
+    #
+    # NOTE: batch_writer does NOT support ConditionExpression. For the
+    # conditional write (skip if acted_at exists), we fall back to
+    # individual put_item calls. In production with high volume, consider
+    # batching the non-conditional writes and only using put_item for
+    # records that might have been acted upon (query first).
+    for appt_id, probability, sched_date in zip(
+        appointment_ids, predictions, scheduled_dates
+    ):
+        risk_tier = classify_risk(probability)
 
-            item = {
-                "appointment_id": appt_id,
-                "scheduled_date": sched_date,
-                # DynamoDB does not accept Python floats. Wrap in Decimal.
-                # str() first to avoid floating-point representation artifacts.
-                "no_show_probability": Decimal(str(round(probability, 4))),
-                "risk_tier": risk_tier,
-                "model_version": model_version,
-                "scored_at": scored_at,
-                # The main recipe also stores top contributing features (features_used)
-                # for explainability. Computing per-prediction feature importance
-                # requires SHAP values, which adds complexity beyond this example.
-                # See SageMaker Clarify for production feature attribution.
-            }
+        item = {
+            "appointment_id": appt_id,
+            "scheduled_date": sched_date,
+            "no_show_probability": Decimal(str(round(probability, 4))),
+            "risk_tier": risk_tier,
+            "model_version": model_version,
+            "pipeline_run_id": run_id,
+            "scored_at": scored_at,
+        }
 
-            batch.put_item(Item=item)
+        try:
+            table.put_item(
+                Item=item,
+                # Do not overwrite if the action engine already acted on this record.
+                ConditionExpression="attribute_not_exists(acted_at)",
+            )
             count += 1
+        except table.meta.client.exceptions.ConditionalCheckFailedException:
+            # Record was already acted upon. Skip it.
+            skipped += 1
 
-    logger.info("Stored %d predictions in DynamoDB", count)
+    logger.info(
+        "Stored %d predictions in DynamoDB (%d skipped, already acted upon)",
+        count, skipped,
+    )
     return count
 ```
 
@@ -669,6 +688,101 @@ def run_action_engine(target_date: str) -> dict:
         actions_taken["medium_risk_interventions"],
     )
     return actions_taken
+```
+
+---
+
+## Step 7: Ground Truth Collection and Model Monitoring
+
+*The architecture companion's Step 6 describes collecting actual outcomes after appointments occur, computing rolling AUC, and triggering retraining when performance degrades. Here's the Lambda logic that closes that feedback loop.*
+
+```python
+def collect_ground_truth(target_date: str, actuals: list[dict]) -> dict:
+    """
+    Join predictions with actual outcomes and compute model performance metrics.
+
+    Runs nightly (triggered by EventBridge), one day after the appointment date.
+    Compares what the model predicted against what actually happened, computes
+    rolling AUC, and publishes metrics to CloudWatch.
+
+    Args:
+        target_date: ISO date string for the appointment date to evaluate
+            (typically yesterday).
+        actuals: List of dicts with appointment_id and actual_status
+            ("completed" or "no_show") from the scheduling system.
+
+    Returns:
+        Dict with daily_auc, prediction_count, and retrain_triggered flag.
+    """
+    from sklearn.metrics import roc_auc_score, brier_score_loss
+
+    cloudwatch = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
+
+    # Query all predictions for appointments on target_date.
+    table = dynamodb.Table(PREDICTIONS_TABLE)
+    response = table.query(
+        IndexName="scheduled-date-index",
+        KeyConditionExpression=Key("scheduled_date").eq(target_date),
+    )
+    predictions = {
+        item["appointment_id"]: float(item["no_show_probability"])
+        for item in response.get("Items", [])
+    }
+
+    # Join predictions with actuals.
+    y_true = []
+    y_scores = []
+    for actual in actuals:
+        appt_id = actual["appointment_id"]
+        if appt_id in predictions:
+            y_true.append(1 if actual["actual_status"] == "no_show" else 0)
+            y_scores.append(predictions[appt_id])
+
+    if len(y_true) < 10:
+        logger.warning(
+            "Only %d joined records for %s; skipping metric computation.",
+            len(y_true), target_date,
+        )
+        return {"daily_auc": None, "prediction_count": len(y_true), "retrain_triggered": False}
+
+    daily_auc = roc_auc_score(y_true, y_scores)
+    daily_brier = brier_score_loss(y_true, y_scores)
+
+    # Publish to CloudWatch.
+    cloudwatch.put_metric_data(
+        Namespace="NoShowModel",
+        MetricData=[
+            {"MetricName": "DailyAUC", "Value": daily_auc, "Unit": "None"},
+            {"MetricName": "DailyBrierScore", "Value": daily_brier, "Unit": "None"},
+            {"MetricName": "PredictionCount", "Value": len(y_true), "Unit": "Count"},
+        ],
+    )
+
+    logger.info(
+        "Ground truth for %s: AUC=%.3f, Brier=%.4f, n=%d",
+        target_date, daily_auc, daily_brier, len(y_true),
+    )
+
+    # Check if retraining is needed.
+    # In production, compute a 30-day rolling AUC from CloudWatch metrics
+    # rather than a single-day value (too noisy). Here we demonstrate the
+    # threshold check against the daily value for simplicity.
+    AUC_RETRAIN_THRESHOLD = 0.72
+    retrain_triggered = daily_auc < AUC_RETRAIN_THRESHOLD
+
+    if retrain_triggered:
+        logger.warning(
+            "AUC %.3f below threshold %.2f. Retraining should be triggered.",
+            daily_auc, AUC_RETRAIN_THRESHOLD,
+        )
+        # In production: publish to an EventBridge event or SNS topic
+        # that triggers the retraining pipeline.
+
+    return {
+        "daily_auc": daily_auc,
+        "prediction_count": len(y_true),
+        "retrain_triggered": retrain_triggered,
+    }
 ```
 
 ---

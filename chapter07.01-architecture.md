@@ -36,10 +36,17 @@ flowchart TD
     G -->|Read Predictions| I
     I -->|High-Risk| J[SNS / SES\nReminder Service]
     I -->|Flag Slot| K[Scheduling System\nOverbook Queue]
+    L[Lambda\nGround Truth Collector] -->|Join Outcomes| G
+    A -->|Actual Outcomes| L
+    L -->|Rolling AUC| M[CloudWatch\nModel Metrics]
+    M -->|AUC Below Threshold| H
+    L -->|Ground Truth| C
+    H -->|Trigger Retrain| D
 
     style D fill:#ff9,stroke:#333
     style F fill:#ff9,stroke:#333
     style G fill:#9ff,stroke:#333
+    style L fill:#f9f,stroke:#333
 ```
 
 ### Prerequisites
@@ -213,20 +220,32 @@ FUNCTION score_upcoming_appointments(model_path, features_path):
 
 **Step 4: Store predictions.** Write each prediction to DynamoDB so downstream systems can look them up quickly. The primary key is the appointment ID; a secondary index on scheduled date enables range queries like "all high-risk appointments for tomorrow." Each record includes the probability, the model version (for auditability), and a timestamp. This step bridges the ML pipeline and the operational systems. Without it, predictions exist only as a file in S3 that nothing can easily query.
 
+Important: use a conditional write to avoid overwriting predictions that downstream systems have already acted on. If the action engine has already triggered a reminder for a given appointment (recorded via an `acted_at` attribute), blindly overwriting that record loses the audit trail. Use a condition expression like `attribute_not_exists(acted_at)` so that re-runs of the scoring pipeline don't clobber records mid-workflow. Alternatively, append a `pipeline_run_id` to each record so you can trace exactly which pipeline run produced a given prediction, even after multiple scoring passes.
+
 ```pseudocode
 FUNCTION store_predictions(predictions):
     // Write each prediction to DynamoDB for fast downstream access.
     // The action engine and scheduling UI both read from this table.
+    //
+    // IMPORTANT: Use a conditional write to prevent overwriting records
+    // that have already been acted upon. If the action engine set
+    // "acted_at" on a record, we must not clobber it with a fresh prediction.
     FOR each prediction in predictions:
-        write to DynamoDB table "appointment-predictions":
-            appointment_id     = prediction.appointment_id       // primary key
-            scheduled_date     = prediction.scheduled_date       // sort key + GSI for date queries
-            no_show_probability = prediction.probability         // 0.0 to 1.0
-            risk_tier          = classify_risk(prediction.probability)  // "low", "medium", "high"
-            model_version      = current_model_version           // which model produced this
-            scored_at          = current UTC timestamp           // when the prediction was made
-            features_used      = prediction.top_features         // top 3 contributing features
-                                                                 // (for explainability in the UI)
+        write to DynamoDB table "appointment-predictions"
+            WITH ConditionExpression: attribute_not_exists(acted_at)
+            item:
+                appointment_id     = prediction.appointment_id       // primary key
+                scheduled_date     = prediction.scheduled_date       // sort key + GSI for date queries
+                no_show_probability = prediction.probability         // 0.0 to 1.0
+                risk_tier          = classify_risk(prediction.probability)  // "low", "medium", "high"
+                model_version      = current_model_version           // which model produced this
+                pipeline_run_id    = current_pipeline_run_id         // unique per scoring run for audit
+                scored_at          = current UTC timestamp           // when the prediction was made
+                features_used      = prediction.top_features         // top 3 contributing features
+                                                                     // (for explainability in the UI)
+        ON ConditionalCheckFailed:
+            // Record was already acted on. Log and skip; do not overwrite.
+            log("Skipping {prediction.appointment_id}: already acted upon")
 
 FUNCTION classify_risk(probability):
     // Convert continuous probability into actionable tiers.
@@ -279,6 +298,64 @@ FUNCTION run_action_engine(target_date):
     log("Actions triggered: {count(high_risk)} high-risk, {count(medium_risk)} medium-risk")
 ```
 
+**Step 6: Ground truth collection and model monitoring.** After the appointment date passes, you know the actual outcome: did the patient show up or not? A nightly Lambda (or scheduled Glue job) joins predictions with actual outcomes from the scheduling system, computes rolling model performance metrics, publishes them to CloudWatch, and triggers retraining when performance drops below an acceptable threshold. Without this feedback loop, your model silently degrades as patient behavior shifts, new providers join, or your practice adds telehealth options. You won't notice until someone asks "why aren't our no-show reminders working anymore?"
+
+```pseudocode
+FUNCTION collect_ground_truth_and_monitor():
+    // Runs nightly via EventBridge, one day after the appointment date.
+    // Joins predictions (from DynamoDB) with actual outcomes (from scheduling system).
+
+    yesterday = today - 1 day
+
+    // Pull all predictions for appointments that occurred yesterday.
+    predictions = query DynamoDB "appointment-predictions"
+                  WHERE scheduled_date = yesterday
+
+    // Pull actual outcomes from the scheduling system.
+    // Each appointment now has a final status: "completed", "no_show", "cancelled", "rescheduled".
+    actuals = query scheduling_system
+              WHERE appointment_date = yesterday
+              AND status IN ("completed", "no_show")
+              // Exclude cancelled/rescheduled since those aren't true no-show events.
+
+    // Join predictions to actuals by appointment_id.
+    joined = inner_join(predictions, actuals, on="appointment_id")
+
+    // Compute performance metrics on this batch.
+    y_true = [1 if row.actual_status == "no_show" else 0 for row in joined]
+    y_pred = [row.no_show_probability for row in joined]
+
+    daily_auc = compute_auc_roc(y_true, y_pred)
+    daily_brier = compute_brier_score(y_true, y_pred)
+    daily_count = count(joined)
+
+    // Compute a 30-day rolling AUC for stability (single-day AUC is noisy).
+    rolling_auc = compute_rolling_auc(window_days=30)
+
+    // Publish metrics to CloudWatch for dashboarding and alarming.
+    publish_metric("ModelPerformance/DailyAUC", daily_auc)
+    publish_metric("ModelPerformance/RollingAUC30d", rolling_auc)
+    publish_metric("ModelPerformance/DailyBrierScore", daily_brier)
+    publish_metric("ModelPerformance/PredictionCount", daily_count)
+
+    // Check if rolling AUC has dropped below the retraining threshold.
+    // 0.72 is a reasonable floor; below this, the model is barely better than
+    // basic heuristics (e.g., "flag everyone with prior no-shows").
+    AUC_RETRAIN_THRESHOLD = 0.72
+
+    IF rolling_auc < AUC_RETRAIN_THRESHOLD:
+        log("Rolling AUC ({rolling_auc}) below threshold ({AUC_RETRAIN_THRESHOLD}). Triggering retrain.")
+        // Publish a CloudWatch alarm that triggers the retraining pipeline via EventBridge.
+        trigger_retraining_pipeline()
+    ELSE:
+        log("Model performance OK. Rolling AUC: {rolling_auc}")
+
+    // Write ground truth back to a training-data bucket so the next retrain
+    // incorporates these recent outcomes. This closes the feedback loop.
+    write_ground_truth_to_s3(joined, path="s3://ml-data/features/training/ground_truth/{yesterday}.parquet")
+    RETURN {daily_auc, rolling_auc, daily_count}
+```
+
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -327,6 +404,26 @@ FUNCTION run_action_engine(target_date):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above is complete enough to score appointments and trigger reminders. But there's a meaningful set of gaps between "works in a demo" and "runs reliably for a 50-provider health system." Here's what a production deployment must close:
+
+**Fairness auditing.** Before you deploy a model that influences which patients receive outreach, you must evaluate performance across patient subgroups: by race/ethnicity, insurance type, age, language preference, and zip code. If the model systematically under-predicts no-shows for one group (or over-predicts for another), your intervention engine amplifies that bias. Run stratified AUC analysis on every retrain. Set alerting thresholds on subgroup performance gaps, not just overall AUC. This is both an ethical obligation and a regulatory exposure.
+
+**Intervention attribution and A/B testing.** You have a measurement problem: once you send a reminder to a high-risk patient and they show up, did the model help or would they have shown up anyway? Without a controlled experiment (randomly withholding interventions from a subset of high-risk patients), you cannot measure the causal impact of the system. Design your A/B testing framework before you launch, not after. Track the per-group no-show rate over time to quantify the lift from model-driven interventions.
+
+**Drift detection beyond AUC.** Step 6 monitors overall model accuracy, but production systems also need feature drift detection. If the distribution of lead times shifts (because your booking system changed defaults) or patient demographics change (because you opened a new location), the model may degrade in ways that AUC alone doesn't catch immediately. Monitor input feature distributions with statistical tests (KS test, population stability index) and alert when they shift significantly from the training distribution.
+
+**PHI minimization in the action layer.** The reminder messages, staff notifications, and overbooking flags all reference patient data. In production, ensure that SMS content never includes clinical details (visit type, provider name, diagnosis codes). Use a secure patient portal link instead. Log intervention events with appointment IDs, but do not log the message content itself in CloudWatch (where access controls may be broader than your HIPAA minimum-necessary standard).
+
+**Graceful degradation.** What happens when the scoring pipeline fails? The action engine should not silently do nothing. Build fallback logic: if DynamoDB has no predictions for tomorrow (because the batch job failed), fall back to your existing standard reminder workflow. Alert the ML team that predictions are stale. Never let a pipeline failure silently eliminate patient outreach.
+
+**Consent and opt-out.** Patients may opt out of automated reminders (or out of being scored by a predictive model entirely, depending on your consent framework). The action engine must check opt-out status before triggering any intervention. Store opt-out preferences in your patient master and filter them at action time, not at scoring time (you still want predictions for capacity planning even if you won't remind that patient directly).
+
+**Retraining data quality.** The ground-truth loop in Step 6 feeds outcomes back into training data. But scheduling system outcomes can be noisy: a "completed" status might mean the patient showed up 45 minutes late, or that staff marked it complete by accident. Build data quality checks on your training labels. Flag suspicious patterns (e.g., a provider whose patients have a 0% no-show rate, which probably means they aren't recording no-shows properly).
+
+---
+
 ## Variations and Extensions
 
 **Real-time scoring at booking time.** Instead of nightly batch scoring, trigger a prediction the moment an appointment is booked. This enables immediate intervention: "We notice this slot is 6 weeks out. Would you like us to send you a reminder the week before?" Requires a SageMaker real-time endpoint instead of batch transform, which costs more but enables proactive engagement.
@@ -349,10 +446,8 @@ FUNCTION run_action_engine(target_date):
 
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including XGBoost for binary classification, batch transform, and model monitoring
-- [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare-specific ML examples on AWS including predictive analytics patterns
 
 **AWS Solutions and Blogs:**
-- [Machine Learning Best Practices in Healthcare and Life Sciences (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/ml-best-practices-healthcare-life-sciences/ml-best-practices-healthcare-life-sciences.html)
 - [Predictive Analytics with Amazon SageMaker (AWS Blog)](https://aws.amazon.com/blogs/machine-learning/tag/predictive-analytics/)
 
 ---
