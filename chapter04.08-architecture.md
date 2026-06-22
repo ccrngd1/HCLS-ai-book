@@ -550,19 +550,79 @@ FUNCTION evaluate_and_gate_pair_models(treatment_pair_id, run_date):
     // the treatment-comparison-pairs table. On rejection, the
     // training-status is set to evaluation-failed and the team
     // investigates.
+
+FUNCTION sweep_pending_governance_tasks(run_date):
+    // Runs daily via EventBridge. Enforces SLA escalation so model
+    // artifacts do not sit in pending_review indefinitely while
+    // drifted prior models continue to serve.
     //
-    // TODO (TechWriter): Expert review A2 (HIGH). The governance
-    // review task carries an sla_review_by field but the pseudocode
-    // does not specify the SLA-and-escalation pathway: per-tier SLAs
-    // (14 days for tier-1, 28 days for tier-2 and above), 75% and
-    // 100% notification escalation, default-deferral after first
-    // SLA expiry, default-retirement after second SLA expiry (never
-    // auto-promote), per-cohort review-latency monitoring as part
-    // of equity instrumentation. Without this, model artifacts can
-    // sit in pending_review indefinitely while drifted prior models
-    // continue to serve. Reference Recipe 4.7 Finding A3 as the
-    // sibling pattern. Add a sweep_pending_governance_tasks function
-    // and document defaults in the architecture pattern.
+    // SLA policy (per catalog model-risk tier):
+    //   Tier 1 (high-risk SaMD pathway):  14 days review SLA
+    //   Tier 2 and above (lower-risk):    28 days review SLA
+    //
+    // Escalation progression:
+    //   75% of SLA elapsed:  notification to assigned reviewers
+    //   100% of SLA elapsed: escalation to governance-committee chair
+    //                         plus clinical informatics lead
+    //   First SLA expiry +7: default-deferral (status = "deferred",
+    //                         pair continues serving prior model)
+    //   Second SLA expiry:   default-retirement (pair status =
+    //                         "retired_governance_timeout"; pair stops
+    //                         serving; never auto-promote)
+    //
+    // The system never auto-promotes; unreviewed models either get
+    // human approval or the pair degrades gracefully.
+
+    pending_tasks = DynamoDB.Query("governance-review-tasks",
+        filter = "status = :s",
+        params = { :s = "pending_review" })
+
+    FOR each task in pending_tasks:
+        pair = DynamoDB.GetItem("treatment-comparison-pairs", task.treatment_pair_id)
+        sla_days = 14 IF pair.model_risk_tier == "tier_1" ELSE 28
+        elapsed_days = days_between(task.created_at, run_date)
+        elapsed_fraction = elapsed_days / sla_days
+
+        IF elapsed_fraction >= 2.0:
+            // Second SLA expiry: retire the pair. Never auto-promote.
+            DynamoDB.UpdateItem("treatment-comparison-pairs",
+                key = task.treatment_pair_id,
+                updates = { training_status: "retired_governance_timeout" })
+            DynamoDB.UpdateItem("governance-review-tasks",
+                key = task.task_id,
+                updates = { status: "retired_timeout" })
+            Kinesis.PutRecord(stream = "trx-events", record = {
+                event_type:        "governance_pair_retired_timeout",
+                treatment_pair_id: task.treatment_pair_id,
+                elapsed_days:      elapsed_days,
+                timestamp:         current UTC timestamp
+            })
+        ELSE IF elapsed_fraction >= 1.0 + (7.0 / sla_days):
+            // First SLA expiry +7 days: default-deferral.
+            DynamoDB.UpdateItem("governance-review-tasks",
+                key = task.task_id,
+                updates = { status: "deferred" })
+            Kinesis.PutRecord(stream = "trx-events", record = {
+                event_type:        "governance_review_deferred",
+                treatment_pair_id: task.treatment_pair_id,
+                elapsed_days:      elapsed_days,
+                timestamp:         current UTC timestamp
+            })
+        ELSE IF elapsed_fraction >= 1.0:
+            // 100% SLA: escalate to committee chair.
+            notify(CATALOG.governance_escalation_contacts[task.treatment_pair_id],
+                   "governance_sla_expired", task)
+        ELSE IF elapsed_fraction >= 0.75:
+            // 75% SLA: reminder to assigned reviewers.
+            notify(task.reviewer_assignments, "governance_sla_warning", task)
+
+    // Equity instrumentation: per-cohort review latency. If reviews
+    // for pairs affecting certain demographic cohorts take
+    // systematically longer, that latency is itself a fairness signal.
+    CloudWatch.PutMetricData(
+        Namespace = "TrxGovernance",
+        MetricData = compute_review_latency_by_cohort(pending_tasks)
+    )
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter04.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -661,19 +721,52 @@ FUNCTION score_patient(patient_id, request_context):
         ood_flag = compute_ood_flag(patient_features, pair, cohort_summary)
             // { is_ood, severity, reasons }
             //
-            // TODO (TechWriter): Expert review A3 (HIGH). Specify
-            // the OOD severity bands as policy in the pseudocode:
-            // severity < 0.50 present normally with standard
-            // uncertainty caveats; 0.50 <= severity < 0.85 present
-            // with explicit OOD warning text; severity >= 0.85
-            // suppress the pair (mark scoring_status =
-            // "suppressed_oodflag", exclude from the briefing's
-            // numeric comparison, render an "estimate suppressed"
-            // line). Co-specify with the validator's
-            // uncertainty-completeness layer in Step 5. Document
-            // suppression as the chapter's most defensive
-            // clinical-safety primitive; per-pair overrides allowed
-            // in the catalog when clinically warranted.
+            // OOD severity bands (policy):
+            //   severity < 0.50:  present normally with standard
+            //     uncertainty caveats. The patient is within the
+            //     training distribution; confidence intervals reflect
+            //     the statistical uncertainty of the estimate.
+            //   0.50 <= severity < 0.85:  present with explicit OOD
+            //     warning text. The briefing must include: "This
+            //     estimate is based on a limited number of similar
+            //     patients. Treat with additional clinical skepticism."
+            //     The validator's uncertainty-completeness layer
+            //     enforces the warning presence.
+            //   severity >= 0.85:  suppress the pair. Mark
+            //     scoring_status = "suppressed_oodflag", exclude from
+            //     the briefing's numeric comparison, render an
+            //     "estimate suppressed: insufficient similar patients"
+            //     line in the briefing. Suppression is the chapter's
+            //     most defensive clinical-safety primitive: it is
+            //     better to say nothing than to present an estimate
+            //     the training data cannot support.
+            //   Per-pair catalog overrides: allowed when clinically
+            //     warranted (e.g., a pair with strong RCT backing
+            //     may tolerate higher OOD severity because the
+            //     external evidence backstops the estimate). Overrides
+            //     require governance-committee approval and are
+            //     logged as catalog change events.
+
+        // Apply OOD suppression policy before appending to results.
+        IF ood_flag.severity >= 0.85 AND NOT pair.ood_override_approved:
+            pair_results.append({
+                treatment_pair_id:    pair.pair_id,
+                treatment_id:         pair.treatment_id,
+                comparator_id:        pair.comparator_id,
+                scoring_status:       "suppressed_oodflag",
+                ood_flag:             ood_flag,
+                suppression_reason:   "severity " + str(ood_flag.severity) +
+                                      " exceeds 0.85 threshold"
+            })
+            Kinesis.PutRecord(stream = "trx-events", record = {
+                event_type:        "treatment_scoring_oodflag_triggered",
+                patient_id:        patient_id,
+                treatment_pair_id: pair.pair_id,
+                ood_severity:      ood_flag.severity,
+                action:            "suppressed",
+                timestamp:         current UTC timestamp
+            })
+            CONTINUE  // skip the rest of this pair
 
         // Step 4F: sensitivity-analysis bounds. The pre-computed
         // sensitivity results from Step 3 bound how much unmeasured
@@ -762,28 +855,76 @@ FUNCTION generate_briefing(scoring_run_id):
     // last line of defense before the briefing reaches the
     // clinician.
     validation_result = validate_briefing(briefing_parsed, observed_context = briefing_context)
-        // Layers:
-        // 1. Schema and length: required fields present, no oversize
-        //    text, every required caveat present.
-        // 2. Fact grounding: every clinical fact in the briefing
-        //    must trace to a specific field in the scoring result;
-        //    the LLM cannot introduce treatment effect estimates,
-        //    cohort sizes, or outcome figures not in observed_context.
-        // 3. Recommendation language: strict pattern matching for
-        //    recommendation phrasing ("should prescribe", "is the
-        //    best choice", "recommended treatment"); any matches
-        //    cause the briefing to be regenerated with stricter
-        //    guidance, and a third strike falls back to a templated
-        //    comparison view without LLM narration.
-        // 4. Uncertainty completeness: every estimate mentioned must
-        //    be accompanied by its confidence interval and any
-        //    OOD flags or disagreement flags must be surfaced
-        //    explicitly in the briefing.
-        // 5. Required caveats: explicit acknowledgment of
-        //    observational-data limitations, the conditional-average
-        //    nature of the estimates, and the clinician's role as
-        //    decision-maker.
-        // 
+        // Four-layer validator specification (shared pattern with
+        // Recipes 4.5 through 4.7, extended here with
+        // recommendation-language and uncertainty-completeness
+        // layers specific to treatment response prediction):
+        //
+        // Layer 1 - Schema and length:
+        //   Required fields present (headline, comparison_paragraph,
+        //   per_treatment_summary, uncertainty_summary, caveats).
+        //   No field exceeds 2000 characters. Every required caveat
+        //   (observational-data, conditional-average, clinician-as-
+        //   decision-maker) present in the caveats array.
+        //
+        // Layer 2 - Recommendation-language detection:
+        //   Strict pattern matching against 11+ aggressive
+        //   recommendation patterns:
+        //     "should prescribe", "is the best choice",
+        //     "recommended treatment", "we recommend",
+        //     "the preferred option", "clearly superior",
+        //     "patients should receive", "evidence supports
+        //     prescribing", "optimal choice", "first-line
+        //     recommendation", "treatment of choice"
+        //   Plus contextual patterns that imply selection even
+        //   without explicit recommendation verbs (e.g., "given
+        //   this patient's profile, [treatment X]" without a
+        //   comparative framing). Any match: regenerate with
+        //   feedback on the first attempt, regenerate in strict
+        //   mode on the second attempt, fall back to templated
+        //   on the third.
+        //
+        // Layer 3 - Fact grounding:
+        //   Every numeric value cited in the briefing text must
+        //   trace byte-for-byte to a field in
+        //   observed_context.pair_results. The validator parses
+        //   all numeric tokens from the generated text and
+        //   verifies each appears in the structured scoring data.
+        //   Fabricated statistics, hallucinated cohort sizes, or
+        //   invented confidence intervals trigger immediate
+        //   regeneration without a second chance (the fact-grounding
+        //   violation is more dangerous than a recommendation-
+        //   language violation because it is harder for the
+        //   clinician to catch).
+        //
+        // Layer 4 - Uncertainty completeness:
+        //   Every cited point estimate must be accompanied by its
+        //   confidence interval in the same sentence or adjacent
+        //   clause. Every pair with an OOD warning (severity >= 0.50)
+        //   must have the OOD warning surfaced explicitly in the
+        //   briefing body. Every pair with a disagreement flag must
+        //   have the disagreement surfaced. When any pair in the
+        //   result set has been suppressed (severity >= 0.85), the
+        //   briefing must include an "estimate suppressed" line for
+        //   that pair rather than silently omitting it.
+        //
+        // Layer 5 - Required caveats:
+        //   The caveats array must include: (a) observational-data
+        //   limitations, (b) the conditional-average nature of the
+        //   estimates (not individual guarantees), (c) the
+        //   clinician's role as decision-maker, (d) patient
+        //   preferences not modeled. Missing caveats trigger
+        //   regeneration with the specific missing caveat listed
+        //   in validator feedback.
+        //
+        // Failure-handling progression:
+        //   Attempt 1: regenerate with validator feedback appended
+        //     to the prompt (the LLM sees what failed and why).
+        //   Attempt 2: regenerate in strict_mode (template-guided
+        //     generation with field-by-field constraints).
+        //   Attempt 3: fall back to render_templated_briefing(),
+        //     which is deterministic and always passes validation.
+        //     Emit briefing_validator_fallback event for monitoring.
 
     IF NOT validation_result.passed:
         IF validation_result.failure_count < MAX_REGENERATION_ATTEMPTS:
@@ -848,22 +989,38 @@ FUNCTION record_decision(scoring_run_id, decision_payload):
     scoring = DynamoDB.GetItem("scoring-results", scoring_run_id)
     briefing = lookup_latest_briefing(scoring_run_id)
 
-    // TODO (TechWriter): Expert review S1 (HIGH). Add patient-
-    // identity-boundary checks immediately after the scoring
-    // lookup: validate the calling clinician has a treatment
-    // relationship to scoring.patient_id, validate that
-    // decision_payload.chosen_treatment_id is in the scoring run's
-    // eligible_pairs (the clinician cannot record a decision for
-    // a treatment the model did not score), and validate
-    // decision_payload.scoring_run_id matches scoring_run_id when
-    // both are present. Emit decision_authorization_violation,
-    // decision_treatment_mismatch, and decision_scoring_run_mismatch
-    // metrics on failures and reject the write. The artifact being
-    // mutated is a clinical-decision audit record; misrouted
-    // decisions contaminate the audit trail and break the Cures Act
-    // CDS exemption argument. Reference 4.4 through 4.7 chapter
-    // pattern; the regulated-decision audit-trail posture earns the
-    // HIGH severity here.
+    // Identity-boundary checks. The artifact being mutated is a
+    // clinical-decision audit record; misrouted decisions
+    // contaminate the audit trail and break the Cures Act CDS
+    // exemption argument.
+
+    // Check 1: clinician has a treatment relationship to the patient.
+    IF NOT validate_treatment_relationship(
+            decision_payload.clinician_id, scoring.patient_id):
+        CloudWatch.PutMetricData("TrxDecisionBoundary",
+            "decision_authorization_violation", 1)
+        RETURN { status: "rejected",
+                 reason: "clinician_not_authorized_for_patient" }
+
+    // Check 2: chosen treatment must be in the scoring run's
+    // eligible pairs. The clinician cannot record a decision for
+    // a treatment the model did not score.
+    IF decision_payload.chosen_treatment_id != "none":
+        scored_treatment_ids = extract_treatment_ids(scoring.pair_results)
+        IF decision_payload.chosen_treatment_id NOT IN scored_treatment_ids:
+            CloudWatch.PutMetricData("TrxDecisionBoundary",
+                "decision_treatment_mismatch", 1)
+            RETURN { status: "rejected",
+                     reason: "chosen_treatment_not_in_scored_pairs" }
+
+    // Check 3: scoring_run_id consistency when the payload carries
+    // its own reference.
+    IF decision_payload.scoring_run_id IS NOT NULL
+       AND decision_payload.scoring_run_id != scoring_run_id:
+        CloudWatch.PutMetricData("TrxDecisionBoundary",
+            "decision_scoring_run_mismatch", 1)
+        RETURN { status: "rejected",
+                 reason: "scoring_run_id_mismatch" }
 
     decision = {
         decision_id:           new UUID,
@@ -908,102 +1065,115 @@ FUNCTION match_outcome(decision_id, run_date):
     // against the prediction at decision time, and persist the
     // prediction-outcome pair.
     decision = DynamoDB.GetItem("decision-records", decision_id)
-    pair = lookup_pair_for_treatment(decision.chosen_treatment_id)
-    // TODO (TechWriter): Expert review A11 (MEDIUM). Specify the
-    // mapping. chosen_treatment_id can correspond to multiple pairs
-    // in a single scoring run (GLP-1 was scored against SGLT2,
+
+    // Identity-boundary checks (mirroring record_decision):
+    // no duplicate matching, timing-window consistency, no
+    // superseded decision versions.
+    existing_match = DynamoDB.Query("prediction-outcome-pairs",
+        filter = "decision_id = :d AND outcome_status = :o",
+        params = { :d = decision_id, :o = "observed" })
+    IF len(existing_match) > 0:
+        CloudWatch.PutMetricData("TrxOutcomeBoundary",
+            "duplicate_outcome_match_rejected", 1)
+        RETURN { status: "rejected", reason: "already_matched" }
+
+    // chosen_treatment_id can correspond to multiple pairs in a
+    // single scoring run (e.g., GLP-1 was scored against SGLT2,
     // sulfonylurea, and basal insulin in three separate pairs).
-    // The methodologically-correct choice is to iterate over all
+    // The methodologically-correct approach is to iterate over all
     // pairs for the chosen treatment and persist multiple
     // prediction-outcome rows per decision; the calibration analysis
     // accounts for the per-patient repeated-measures structure.
-    // TODO (TechWriter): Expert review A9 (MEDIUM). Iterate over
-    // all outcomes defined for the pair (primary + secondary +
-    // safety), not just pair.primary_outcome. Without this,
-    // surveillance only catches drift on a single outcome and
-    // misses cardiovascular, weight, and adverse-event signals
-    // that the model trains on but the surveillance pipeline
-    // ignores.
+    eligible_pairs = lookup_all_pairs_for_treatment(
+        decision.chosen_treatment_id, decision.predictions_at_decision)
 
-    actual_outcome = compute_actual_outcome(
-        patient_id = decision.patient_id,
-        outcome_def = pair.primary_outcome,
-        index_date = decision.decision_recorded_at,
-        as_of_date = run_date)
-        // returns { value, observed, censored, censor_reason }
+    IF len(eligible_pairs) == 0:
+        RETURN { status: "no_pair_found" }
 
-    IF NOT actual_outcome.observed:
-        // Censored (lost to follow-up, switched treatments, plan
-        // disenrolled). Record the censoring and skip prediction
-        // matching; censored cases inform a separate analysis.
-        DynamoDB.PutItem("prediction-outcome-pairs", {
-            pair_id:           new UUID,
-            decision_id:       decision_id,
-            patient_id:        decision.patient_id,
-            scoring_run_id:    decision.scoring_run_id,
-            outcome_status:    "censored",
-            censor_reason:     actual_outcome.censor_reason,
-            recorded_at:       run_date
-        })
-        RETURN
+    // Hoist cohort features outside the per-pair, per-outcome loop.
+    // With multiple pairs and multiple outcomes per pair, redundant
+    // lookups multiply; compute once per patient.
+    cohort_features = lookup_cohort_features(decision.patient_id)
 
-    // Find the prediction at decision time that corresponds to the
-    // chosen treatment.
-    chosen_prediction = find_prediction_for_treatment(
-        decision.predictions_at_decision, decision.chosen_treatment_id)
+    // Iterate over all pairs the chosen treatment was scored against,
+    // and for each pair iterate over all outcomes (primary, secondary,
+    // and safety). Without this, surveillance only catches drift on
+    // the primary outcome and misses cardiovascular, weight, and
+    // adverse-event signals.
+    FOR each pair in eligible_pairs:
+        protocol = lookup_protocol(pair)
 
-    // TODO (TechWriter): Expert review A1 (HIGH). The fields below
-    // conflate two distinct quantities. chosen_prediction.point_estimate
-    // is the per-pair CATE estimate
-    // E[Y(treatment) - Y(comparator) | X], a treatment-effect
-    // *difference*. actual_outcome.value is the patient's
-    // single-arm observed outcome Y(treatment_chosen). These are
-    // not directly comparable; Marcus did not receive the comparator
-    // and his counterfactual is unobserved. Persisting them under
-    // names that suggest comparability (predicted_outcome vs
-    // actual_outcome) feeds run_calibration_drift_detection a
-    // miscalibrated slope. Two fixes acceptable: (Option A) rename
-    // the field to predicted_treatment_effect, persist the
-    // single-arm observed_outcome separately, and document the
-    // CATE-vs-outcome distinction; replace the naive ratio-of-means
-    // slope with IPTW-weighted aggregate-CATE re-estimation in
-    // run_calibration_drift_detection. (Option B) implement the
-    // IPTW-weighted aggregation as a first-class component. Either
-    // way, surveillance must preserve the methodological discipline
-    // the Technology section establishes. Coordinates with the
-    // Python companion's Finding 3 fix.
-    // TODO (TechWriter): Expert review S1 (HIGH). Add the same
-    // identity-boundary checks here as in record_decision: validate
-    // the decision_id has not already been matched (no duplicate
-    // prediction-outcome pair), validate the run_date is consistent
-    // with the protocol's primary-outcome timing window, and
-    // validate the decision-record version has not been superseded
-    // by a replay or reprocessing event.
-    DynamoDB.PutItem("prediction-outcome-pairs", {
-        pair_id:               new UUID,
-        decision_id:           decision_id,
-        patient_id:            decision.patient_id,
-        scoring_run_id:        decision.scoring_run_id,
-        chosen_treatment_id:   decision.chosen_treatment_id,
-        chosen_pair_id:        pair.pair_id,
-        predicted_outcome:     chosen_prediction.point_estimate,
-        predicted_ci:          [chosen_prediction.ci_low, chosen_prediction.ci_high],
-        actual_outcome:        actual_outcome.value,
-        outcome_status:        "observed",
-        ood_flag_at_decision:  chosen_prediction.ood_flag,
-        cohort_features:       lookup_cohort_features(decision.patient_id),
-        recorded_at:           run_date
-    })
+        // Validate run_date is consistent with the protocol's
+        // outcome timing window for at least one outcome.
+        IF NOT any_outcome_in_timing_window(protocol, decision.decision_recorded_at, run_date):
+            CONTINUE
 
-    Kinesis.PutRecord(stream = "trx-events", record = {
-        event_type:        "treatment_outcome_observed",
-        patient_id:        decision.patient_id,
-        decision_id:       decision_id,
-        chosen_pair_id:    pair.pair_id,
-        predicted:         chosen_prediction.point_estimate,
-        actual:            actual_outcome.value,
-        timestamp:         current UTC timestamp
-    })
+        FOR each outcome_def in protocol.outcomes:
+            // Check timing window for this specific outcome.
+            IF NOT outcome_in_timing_window(outcome_def, decision.decision_recorded_at, run_date):
+                CONTINUE
+
+            actual_outcome = compute_actual_outcome(
+                patient_id   = decision.patient_id,
+                outcome_def  = outcome_def,
+                index_date   = decision.decision_recorded_at,
+                as_of_date   = run_date)
+
+            IF NOT actual_outcome.observed:
+                DynamoDB.PutItem("prediction-outcome-pairs", {
+                    pair_id:           new UUID,
+                    decision_id:       decision_id,
+                    patient_id:        decision.patient_id,
+                    scoring_run_id:    decision.scoring_run_id,
+                    chosen_pair_id:    pair.pair_id,
+                    outcome_id:        outcome_def.outcome_id,
+                    outcome_status:    "censored",
+                    censor_reason:     actual_outcome.censor_reason,
+                    recorded_at:       run_date
+                })
+                CONTINUE
+
+            // Find the prediction at decision time for this pair.
+            chosen_prediction = find_prediction_for_pair(
+                decision.predictions_at_decision, pair.pair_id)
+
+            // The predicted value is a CATE: E[Y(treatment) -
+            // Y(comparator) | X], a treatment-effect *difference*.
+            // The actual outcome is the single-arm observed value
+            // Y(treatment_chosen). These are not directly comparable
+            // because the counterfactual Y(comparator) is unobserved.
+            // Persist the fields with unambiguous names; downstream
+            // calibration uses IPTW-weighted aggregate CATE
+            // re-estimation rather than naive predicted-vs-observed
+            // slope.
+            DynamoDB.PutItem("prediction-outcome-pairs", {
+                pair_id:                    new UUID,
+                decision_id:                decision_id,
+                patient_id:                 decision.patient_id,
+                scoring_run_id:             decision.scoring_run_id,
+                chosen_treatment_id:        decision.chosen_treatment_id,
+                chosen_pair_id:             pair.pair_id,
+                outcome_id:                 outcome_def.outcome_id,
+                predicted_treatment_effect: chosen_prediction.point_estimate,
+                predicted_effect_ci:        [chosen_prediction.ci_low,
+                                             chosen_prediction.ci_high],
+                observed_single_arm_outcome: actual_outcome.value,
+                outcome_status:             "observed",
+                ood_flag_at_decision:       chosen_prediction.ood_flag,
+                cohort_features:            cohort_features,
+                recorded_at:                run_date
+            })
+
+            Kinesis.PutRecord(stream = "trx-events", record = {
+                event_type:        "treatment_outcome_observed",
+                patient_id:        decision.patient_id,
+                decision_id:       decision_id,
+                chosen_pair_id:    pair.pair_id,
+                outcome_id:        outcome_def.outcome_id,
+                predicted_effect:  chosen_prediction.point_estimate,
+                observed_outcome:  actual_outcome.value,
+                timestamp:         current UTC timestamp
+            })
 
 FUNCTION run_calibration_drift_detection(run_date):
     // Aggregate the prediction-outcome pairs accumulated since the
@@ -1051,29 +1221,45 @@ FUNCTION run_calibration_drift_detection(run_date):
         // overall calibration is stable, cohort-specific drift may
         // be widening disparities.
         //
-        // TODO (TechWriter): Expert review A4 (HIGH). Specify
-        // COHORT_DRIFT_ALERT_THRESHOLD and DRIFT_ALERT_THRESHOLD
-        // (and MIN_DRIFT_DETECTION_SAMPLE) as policy in the
-        // pseudocode rather than referencing them undefined.
-        // Default thresholds: DRIFT_ALERT_THRESHOLD = 0.15,
-        // COHORT_DRIFT_ALERT_THRESHOLD = 0.10 (tighter than overall
-        // because disparate impact can hide in overall stability),
-        // MIN_DRIFT_DETECTION_SAMPLE = 100 per cohort and 500
-        // overall. Document per-axis-per-pair overrides set by the
-        // cross-functional review committee, and frame chronic
-        // suppression-via-insufficient-sample as itself a fairness
-        // signal (a cohort whose enrollment is structurally low
-        // across pairs is one the system is systematically
-        // under-serving). Reference the Obermeyer 2019 framing
-        // already in the recipe.
+        // Surveillance threshold policy (defaults):
+        //   DRIFT_ALERT_THRESHOLD = 0.15 (overall calibration slope
+        //     or intercept change from baseline that triggers alert)
+        //   COHORT_DRIFT_ALERT_THRESHOLD = 0.10 (tighter than overall
+        //     because disparate impact can hide in aggregate stability;
+        //     a cohort drifting at 0.10 while the whole population
+        //     holds at 0.05 means the cohort is absorbing the
+        //     degradation that the overall metric masks)
+        //   MIN_DRIFT_DETECTION_SAMPLE = 500 overall, 100 per cohort
+        //     (below these floors, the test is underpowered and the
+        //     system reports "insufficient_sample" rather than a
+        //     misleading number)
+        //
+        // Per-axis-per-pair overrides: the cross-functional review
+        // committee can set tighter or looser thresholds per
+        // fairness axis per pair. Overrides are stored in the
+        // treatment catalog and logged as catalog change events.
+        //
+        // Chronic insufficient-sample framing: a cohort whose
+        // enrollment is structurally low across multiple pairs
+        // is one the system is systematically under-serving. The
+        // surveillance dashboard surfaces "chronic insufficient
+        // sample" as its own fairness signal: if a cohort never
+        // reaches the MIN_DRIFT_DETECTION_SAMPLE floor across three
+        // consecutive surveillance windows, an alert fires to the
+        // equity lead with the explicit framing that the model
+        // cannot be validated for that population.
         FOR cohort_axis, cohort_drift in drift_signal.per_cohort_drift:
-            IF cohort_drift.severity >= COHORT_DRIFT_ALERT_THRESHOLD:
+            cohort_threshold = CATALOG.get_cohort_threshold(
+                pair.pair_id, cohort_axis,
+                default = COHORT_DRIFT_ALERT_THRESHOLD)
+            IF cohort_drift.severity >= cohort_threshold:
                 DynamoDB.PutItem("surveillance-alerts", {
                     alert_id:            new UUID,
                     alert_type:          "cohort_calibration_drift",
                     treatment_pair_id:   pair.pair_id,
                     cohort_axis:         cohort_axis,
                     drift_signal:        cohort_drift,
+                    threshold_applied:   cohort_threshold,
                     triggered_at:        run_date,
                     review_status:       "pending"
                 })
@@ -1088,7 +1274,7 @@ FUNCTION run_calibration_drift_detection(run_date):
 ```json
 {
   "patient_id": "pat-007842",
-  "scoring_run_id": "score-2026-04-22-pat-007842-7c3a",
+  "scoring_run_id": "score-7c3a9f2e04b1d8a6",
   "request_context": {
     "clinician_id": "clinician-0142",
     "index_condition": "type_2_diabetes_inadequately_controlled_on_metformin",
@@ -1161,8 +1347,8 @@ FUNCTION run_calibration_drift_detection(run_date):
 
 ```json
 {
-  "briefing_id": "brief-2026-04-22-pat-007842-2f1a",
-  "scoring_run_id": "score-2026-04-22-pat-007842-7c3a",
+  "briefing_id": "brief-6d4e2a81c9f03b72",
+  "scoring_run_id": "score-7c3a9f2e04b1d8a6",
   "patient_id": "pat-007842",
   "headline": "Comparison of GLP-1 versus SGLT2 versus sulfonylurea for second-line therapy. Estimates are model-derived from observational data and intended to inform, not replace, clinical judgment.",
   "comparison_paragraph": "For a patient with this profile (eGFR 64 declining, BMI 34, calcium score 240, albuminuria), the model estimates greater 90-day A1c reduction on GLP-1 than on SGLT2 by 0.62 percentage points (95 percent CI 0.31 to 0.94). The model estimates similar 90-day A1c reduction on GLP-1 versus sulfonylurea, with a wide confidence interval that crosses zero (point estimate 0.34 pp better on GLP-1; 95 percent CI 0.71 pp better to 0.03 pp worse). Cardiovascular and renal outcomes are not in the primary 90-day estimate; secondary outcomes from the cohort suggest weight reduction is substantially greater on GLP-1 and SGLT2 than on sulfonylurea. The cohort underlying the GLP-1 versus SGLT2 estimate has 1,284 patients with strong condition match; estimator agreement is strong; the patient is in-distribution.",
@@ -1193,22 +1379,22 @@ FUNCTION run_calibration_drift_detection(run_date):
 
 ```json
 {
-  "pair_id": "po-2026-07-21-pat-007842-glp1",
-  "decision_id": "dec-2026-04-22-pat-007842-glp1",
+  "pair_id": "po-8c2f4a91b7e3d605",
+  "decision_id": "dec-a41e7c930bf28d64",
   "patient_id": "pat-007842",
-  "scoring_run_id": "score-2026-04-22-pat-007842-7c3a",
+  "scoring_run_id": "score-7c3a9f2e04b1d8a6",
   "chosen_treatment_id": "glp1_receptor_agonist_class",
   "chosen_pair_id": "t2d-glp1-vs-sglt2",
-  "predicted_outcome": -1.41,
-  "predicted_ci": [-1.78, -1.04],
-  "actual_outcome": -1.62,
+  "outcome_id": "a1c_change_at_90_days",
+  "predicted_treatment_effect": -0.62,
+  "predicted_effect_ci": [-0.94, -0.31],
+  "observed_single_arm_outcome": -1.62,
   "outcome_status": "observed",
   "ood_flag_at_decision": { "is_ood": false, "severity": 0.18 },
   "cohort_features": {
     "language": "en",
     "sdoh_cohort": "moderate_food_security",
-    "age_band": "55-64",
-    "race_ethnicity_self_report": "non_hispanic_white"
+    "age_band": "55-64"
   },
   "recorded_at": "2026-07-21"
 }
@@ -1241,6 +1427,116 @@ FUNCTION run_calibration_drift_detection(run_date):
 - **Cohort fairness in the response model.** If historical prescribing concentrated GLP-1 in certain demographic groups (because of access, insurance, clinician preferences, or patient preferences), the cohort underlying the model is demographically skewed, and the CATE estimates may not generalize cleanly to demographic groups underrepresented in the cohort. Cohort-stratified calibration and explicit fairness instrumentation are how you avoid the Obermeyer-style failure mode at scale.
 - **Clinician override patterns concentrated in specific cohorts.** If clinicians override the model's predictions at substantially different rates for patients in different demographic groups, the override pattern itself is a fairness signal. The override-rate dashboard surfaces this; the policy response is harder.
 - **Adverse-event surveillance at low base rates.** Severe adverse events from any individual drug are rare; detecting unexpected adverse-event rate increases requires either a large patient population or a long surveillance window or both. Single-institution surveillance is underpowered for many adverse-event signals; consortium and network-based surveillance (Sentinel, OHDSI) is the methodologically appropriate response.
+
+**Model retraining trigger and promotion path (A10).** The SageMaker training-job trigger and model-promotion path for the propensity, outcome, and CATE-ensemble models follows the EventBridge-trigger plus SageMaker-Model-Registry-with-canary-run pattern from Recipes 4.4 through 4.7, with the additional governance gate from Step 3:
+
+- EventBridge scheduled rule fires the weekly-retrain Step Functions state machine.
+- Per treatment-comparator pair (ten to thirty pairs), the state machine starts a SageMaker Pipeline that trains the propensity model, the outcome model(s), and the CATE ensemble (two to three estimators).
+- Each trained artifact registers in the SageMaker Model Registry under the pair's model group, with metadata (cohort version, training-cohort S3 path, training metrics, calibration-test results, fairness-test results).
+- The pipeline's post-training step runs the calibration and fairness evaluations from Step 3.
+- On "green" evaluation status: the pipeline creates a governance-review task and waits. On approval (human decision event routed through EventBridge), the pipeline promotes the new model package to the "Production" stage in the Model Registry and updates the real-time endpoint alias to point to the new artifact. A canary run (scoring a held-out patient cohort and comparing results to the prior model version) gates the alias swap; if the canary diverges beyond a threshold, the swap aborts and alerts fire.
+- On "yellow": governance review is mandatory. On "red": the pipeline suspends the pair and alerts the clinical informatics team.
+- With three or more model artifacts per pair times ten to thirty pairs, the model registry uses a hierarchical model-group structure: one group per pair, one package per training run, and the "Production" alias always points to the currently-approved package.
+
+**SMART on FHIR and CDS Hooks credential posture (N2).** The clinician-facing scoring API is the highest-stakes integration in Chapter 4. The credential posture:
+
+- SMART on FHIR launches: OAuth 2.0 with PKCE. JWT validation against the EHR's JWKS endpoint with audience and issuer pinning. Launch context includes requesting clinician, patient context, and encounter context. Tokens scoped to `patient/*.read` and `user/*.read` for the scoring request.
+- CDS Hooks calls: mutual TLS or HMAC-signed bearer tokens with replay protection (timestamp plus nonce; reject requests with timestamps older than 5 minutes). The signing secret rotates on a 90-day schedule.
+- OAuth client secrets and HMAC signing keys stored in AWS Secrets Manager with KMS envelope encryption. Automatic rotation via a Secrets Manager rotation Lambda on a 90-day schedule.
+- Per-EHR-tenant TLS certificates managed via AWS Certificate Manager. Separate certificates per tenant; no wildcard sharing across tenants.
+- Per-tenant audit logging: every SMART launch captures (launch context, requesting clinician, patient context, scoring API response metadata). Every CDS Hooks call captures (hook trigger, requesting system, patient context, response latency, validator status). All audit records flow to CloudTrail and the scoring-API-audit S3 bucket.
+
+**Patient consent flow and shared-decision capture (A6).** The consent layer handles four distinct consent types:
+
+- (a) Consent to the use of model-derived predictions in the patient's care. Captured at the point of care when the clinician first presents the briefing. Stored in the decision-records table alongside the clinician's treatment decision. Without this consent, the briefing is not surfaced (the clinician sees a "patient consent required" interstitial).
+- (b) Consent to ongoing data use for model retraining. Captured separately (typically during onboarding or annual consent refresh). Stored in the patient-profile DynamoDB table with a versioned consent-status field. Patients who decline retraining consent have their prediction-outcome pairs excluded from the training cohort by a pre-training filter in the cohort-construction pipeline.
+- (c) Capture of the patient's stated preferences and their influence on the chosen treatment. The decision-record schema includes a `shared_decision_indicators` field that records whether the patient summary was shared, whether the patient expressed a preference, and what that preference was. Preferences are structured (treatment preference, route preference, cost sensitivity, side-effect tolerance) rather than free-text.
+- (d) Right to withdraw consent. A consent-withdrawal event triggers: exclusion of the patient's future data from retraining cohorts, suppression of model-derived predictions at future visits (the scoring orchestrator checks consent status before scoring), and retention of historical decision records for audit purposes (withdrawal does not retroactively delete audit artifacts; it stops new predictions).
+
+**Adverse-event surveillance as first-class pseudocode (A5).** Integrated with calibration drift detection in Step 6:
+
+```pseudocode
+FUNCTION run_adverse_event_surveillance(run_date):
+    // Per treatment-comparator pair: define the adverse events of
+    // interest at model promotion, establish expected rates, compute
+    // observed rates, and fire alerts when observed exceeds expected.
+    FOR each pair in CATALOG.list_production_pairs():
+        ae_definitions = pair.adverse_event_definitions
+            // Example for GLP-1:
+            //   pancreatitis, severe_gi_event
+            // Example for SGLT2:
+            //   diabetic_ketoacidosis, fourniers_gangrene
+            // Example for sulfonylurea:
+            //   severe_hypoglycemia_hospitalization
+
+        FOR each ae_def in ae_definitions:
+            // Expected rate from training data and trial data,
+            // established at model promotion.
+            expected_rate = ae_def.expected_rate_per_million_patient_days
+
+            // Observed rate in the surveillance window.
+            exposure_days = compute_exposure_days(
+                pair, ae_def, run_date, SURVEILLANCE_WINDOW_DAYS)
+            IF exposure_days < ae_def.minimum_exposure_floor:
+                CONTINUE  // underpowered; skip this AE for this window
+
+            observed_events = count_adverse_events(
+                pair, ae_def, run_date, SURVEILLANCE_WINDOW_DAYS)
+            observed_rate = observed_events / (exposure_days / 1_000_000)
+
+            // Statistical test: Poisson exact test at p < 0.01.
+            p_value = poisson_exact_test(observed_events,
+                expected_rate * exposure_days / 1_000_000)
+
+            IF p_value < 0.01:
+                // Fire alert. Include cohort-stratified breakdown.
+                stratified_rates = compute_ae_rates_by_cohort(
+                    pair, ae_def, run_date, SURVEILLANCE_WINDOW_DAYS)
+
+                DynamoDB.PutItem("surveillance-alerts", {
+                    alert_id:          new UUID,
+                    alert_type:        "adverse_event_signal",
+                    treatment_pair_id: pair.pair_id,
+                    adverse_event:     ae_def.event_id,
+                    expected_rate:     expected_rate,
+                    observed_rate:     observed_rate,
+                    observed_events:   observed_events,
+                    exposure_days:     exposure_days,
+                    p_value:           p_value,
+                    stratified_rates:  stratified_rates,
+                    triggered_at:      run_date,
+                    review_status:     "pending"
+                })
+                // Sentinel and OHDSI are the consortium-scale path
+                // for cross-institution signal confirmation.
+```
+
+**Patient-facing summary validator (A7).** Distinct from the clinician-facing validator; the patient-facing path has its own `validate_patient_summary` function:
+
+- Layer 1: reading-level enforcement per the Recipe 4.2 pattern (Flesch-Kincaid grade level 6 to 8; sentences under 20 words average; no medical jargon without parenthetical lay explanation).
+- Layer 2: prohibition of probabilistic point estimates rendered as percentages ("62 percent chance" is confusing to patients) and prohibition of "you will [outcome]" framing. Instead, require cohort-based phrasing: "among patients similar to you, treatment A was associated with [outcome description]."
+- Layer 3: recommendation-language patterns (same as clinician validator) plus patient-specific extensions: prohibition of "your doctor recommends" or "this is the right treatment for you" (the system informs; the clinician and patient decide together).
+- Layer 4: required content including shared-decision framing ("this information is meant to help you and your doctor discuss options together"), approved-claim-language compliance (no statements that would constitute off-label promotion), and a clear statement that the patient should ask their doctor about anything unclear.
+
+**Cohort-feature cache optimization (A8).** The `lookup_cohort_features(patient_id)` call is hoisted out of per-pair loops throughout the pipeline:
+
+- In Step 4 (score_patient): compute cohort features once before the per-pair scoring loop rather than inside it. With 5 to 10 eligible pairs per patient, the redundant Feature Store lookups multiply.
+- In Step 6 (match_outcome): as implemented in the corrected pseudocode above, cohort features are computed once per patient before the per-pair, per-outcome iteration.
+- In the monthly surveillance run (run_calibration_drift_detection): batch-fetch cohort features for all patients in the surveillance window before iterating per-pair. With thousands of patients per surveillance run and multiple pairs per patient, the redundant lookups are O(patients * pairs) without the cache versus O(patients) with it.
+
+**De-identification posture for treatment-response briefings (S4).** The Privacy specification for Bedrock prompts and briefing text:
+
+- Clinical features passed to the LLM use banded values: eGFR_band (e.g., "45-59"), BMI_band (e.g., "30-35"), A1c_band (e.g., "8.5-9.0"). Precise lab values are never passed in the prompt; the banding is sufficient for the briefing's clinical context.
+- Demographic attributes (race, ethnicity, language, SDOH cohort) are excluded from prompts by default. Opt-in requires explicit pharmacy-and-therapeutics-committee approval documented in the treatment catalog, and is limited to cases where the attribute is clinically relevant (e.g., pharmacogenomic indications where ancestry is a proxy for allele frequency). Opt-in decisions are logged as catalog governance events.
+- No patient_id or clinician_id in prompts. The prompt receives an opaque session token; the mapping from session token to patient and clinician lives only in the scoring orchestrator's memory and the audit log.
+- Minimum-necessary disclosure remains the architectural posture even for HIPAA-eligible services. The briefing needs the clinical context to be useful; it does not need the patient's identity.
+- Briefing text stored in the briefings DynamoDB table is PHI (it describes a specific patient's clinical situation and predicted treatment outcomes). Apply clinical-record-equivalent encryption and access controls.
+
+**DLQ coverage on all Lambda paths.** Three DLQ patterns in this architecture:
+
+- (a) Step Functions to Lambda pipeline: each Lambda task in the weekly-retrain, monthly-surveillance, and nightly-cohort state machines has a Catch clause pointing to an SQS failure queue keyed on (run_id, stage, treatment_pair_id). The Step Functions retry policy retries transient failures (throttles, timeouts) twice with exponential backoff; terminal failures (validation errors, data-quality failures) route directly to the DLQ without retry.
+- (b) Kinesis to state-machine-worker Lambda: the event source mapping configures an OnFailure destination (SQS DLQ). Failed event batches land in the DLQ with the original event payload and failure metadata. A CloudWatch alarm fires when the DLQ depth exceeds zero; the operational team triages within the DLQ retention window.
+- (c) SageMaker Real-Time inference failures on the point-of-care scoring path: the scoring orchestrator Lambda catches inference errors (endpoint throttling, model errors, timeout) and returns a degraded-state response: `{ scoring_status: "scoring_temporarily_unavailable", reason: "inference_service_error" }`. The response is explicit, not a partial or stale prediction. The clinician interface renders "treatment comparison temporarily unavailable; clinical judgment without model input applies" rather than silently serving a cached or incomplete result. The scoring orchestrator emits a `scoring_inference_failure` metric that feeds a CloudWatch alarm.
 
 ---
 

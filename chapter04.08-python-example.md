@@ -2416,10 +2416,16 @@ def match_outcome(decision_id: str, run_date: str,
         "scoring_run_id":       decision["scoring_run_id"],
         "chosen_treatment_id":  chosen_treatment_id,
         "chosen_pair_id":       pair["pair_id"],
-        "predicted_outcome":    chosen_prediction.get("point_estimate"),
-        "predicted_ci_low":     chosen_prediction.get("ci_low"),
-        "predicted_ci_high":    chosen_prediction.get("ci_high"),
-        "actual_outcome":       actual_outcome["value"],
+        # Note: predicted_treatment_effect is the CATE estimate
+        # E[Y(treatment) - Y(comparator) | X], a treatment-effect
+        # *difference*. observed_single_arm_outcome is the patient's
+        # actual Y(treatment_chosen). These are not directly comparable;
+        # downstream calibration uses IPTW-weighted aggregate CATE
+        # re-estimation rather than naive predicted-vs-observed slope.
+        "predicted_treatment_effect": chosen_prediction.get("point_estimate"),
+        "predicted_effect_ci_low":    chosen_prediction.get("ci_low"),
+        "predicted_effect_ci_high":   chosen_prediction.get("ci_high"),
+        "observed_single_arm_outcome": actual_outcome["value"],
         "outcome_status":       "observed",
         "ood_flag_at_decision": chosen_prediction.get("ood_flag", {}),
         "cohort_features":      cohort_features,
@@ -2661,10 +2667,10 @@ def _compute_calibration_from_pairs(pairs: list) -> dict:
         return {"calibration_slope": 0.0,
                  "calibration_intercept": 0.0,
                  "n_pairs": 0}
-    predicted = [p["predicted_outcome"] for p in pairs
-                  if p.get("predicted_outcome") is not None]
-    actual = [p["actual_outcome"] for p in pairs
-                if p.get("actual_outcome") is not None]
+    predicted = [p["predicted_treatment_effect"] for p in pairs
+                  if p.get("predicted_treatment_effect") is not None]
+    actual = [p["observed_single_arm_outcome"] for p in pairs
+                if p.get("observed_single_arm_outcome") is not None]
     if not predicted or not actual:
         return {"calibration_slope": 0.0,
                  "calibration_intercept": 0.0,
@@ -2807,8 +2813,8 @@ def run_full_demo_cycle(patients_list: list,
         SAMPLE_PAIR_CATALOG,
     )
     print(f"  Outcome match: status={outcome_match.get('outcome_status')}; "
-          f"predicted={outcome_match.get('predicted_outcome')}; "
-          f"actual={outcome_match.get('actual_outcome')}")
+          f"predicted_effect={outcome_match.get('predicted_treatment_effect')}; "
+          f"observed={outcome_match.get('observed_single_arm_outcome')}")
 
     # Calibration drift detection pass.
     print("\nStep 6: calibration drift detection sweep...")
