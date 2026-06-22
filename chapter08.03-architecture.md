@@ -52,7 +52,7 @@ flowchart LR
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest (default). API Gateway: TLS 1.2 in transit. Lambda environment variables encrypted with KMS. CloudWatch log groups: configure KMS encryption (logs may contain clinical text fragments). |
 | **VPC** | Production: Lambda in VPC with VPC endpoints for Comprehend Medical, DynamoDB, S3, KMS, and CloudWatch Logs. Enable Private DNS on all VPC endpoints. For EHR systems connected via Direct Connect or VPN, use a Private REST API in API Gateway with an interface VPC endpoint (`execute-api`) so clinical notes never traverse the public internet. For external EHR systems, use mutual TLS (mTLS) on the API Gateway custom domain. |
 | **CloudTrail** | Enabled for all Comprehend Medical, S3, and DynamoDB API calls. Clinical notes are PHI; full audit trail is required. |
-| **Sample Data** | MIMIC-III (freely available after credentialing) contains discharge summaries with ICD codes. CMS publishes ICD-10-CM code descriptions and guidelines. Use synthetic notes for development; never use real PHI in non-production environments. |
+| **Sample Data** | MIMIC-IV (freely available after PhysioNet credentialing) contains discharge summaries with ICD codes. CMS publishes ICD-10-CM code descriptions and guidelines. Use synthetic notes for development; never use real PHI in non-production environments. |
 | **Cost Estimate** | Comprehend Medical InferICD10CM: $0.01 per 100 characters (UTF-8). A typical progress note of 2,000-5,000 characters costs $0.20-$0.50 per InferICD10CM call. DetectEntitiesV2: same pricing. Combined: $0.40-$1.00 per note if you call both APIs on the full text. Section-targeted approach (calling only on Assessment/Plan, typically 500-1,500 chars): $0.05-$0.15 per note. |
 
 ### Ingredients
@@ -69,6 +69,47 @@ flowchart LR
 | **Amazon CloudWatch** | Operational metrics: suggestion latency, confidence distributions, API error rates, coder acceptance rates. |
 
 ### Pseudocode Walkthrough
+
+**Step 0: Validate input before processing.** Before spending API credits on Comprehend Medical calls, validate the incoming request. Bad input (truncated payloads, binary garbage, empty strings) should fail fast with a clear error rather than producing garbage suggestions that erode coder trust.
+
+```pseudocode
+FUNCTION validate_request(request):
+    // Verify required fields are present.
+    IF request.encounter_id is missing OR request.encounter_id is empty:
+        RETURN error("Missing encounter_id")
+
+    IF request.clinical_note is missing OR request.clinical_note is empty:
+        RETURN error("Missing clinical_note text")
+
+    // Verify encounter_id format. Prevents injection and simplifies downstream lookups.
+    // Adjust pattern to match your EHR's identifier format.
+    IF NOT matches_pattern(request.encounter_id, "^[A-Za-z0-9\\-]{5,64}$"):
+        RETURN error("Invalid encounter_id format")
+
+    // Verify UTF-8 encoding and reject binary/null bytes.
+    // Clinical notes are text. Binary payloads indicate a malformed request
+    // (or someone sending a PDF instead of extracted text).
+    IF contains_null_bytes(request.clinical_note):
+        RETURN error("Note contains null bytes; expected UTF-8 text")
+
+    IF NOT is_valid_utf8(request.clinical_note):
+        RETURN error("Note is not valid UTF-8")
+
+    // Enforce minimum length. A 20-character "note" can't contain
+    // enough clinical context for meaningful code suggestion.
+    IF length(request.clinical_note) < 50:
+        RETURN error("Note too short for code suggestion (minimum 50 characters)")
+
+    // Extract requester identity from request headers.
+    // HIPAA minimum necessary: log who requested suggestions for this encounter.
+    requester_id = request.headers["X-Requester-Id"]
+    IF requester_id is missing OR requester_id is empty:
+        RETURN error("Missing X-Requester-Id header (coder identity required)")
+
+    RETURN valid(requester_id)
+```
+
+At the API Gateway level, configure request validation, rate limiting (per API key, scoped to your EHR integration clients), and mutual TLS or IAM authorization. This prevents cost-based denial-of-service: without rate limits, a misconfigured EHR integration could blast thousands of requests per second and run up a significant Comprehend Medical bill before anyone notices. Start with a conservative throttle (50 requests per second per client) and increase based on observed traffic patterns.
 
 **Step 1: Receive and preprocess the clinical note.** Notes arrive from the EHR via API call (synchronous workflow for real-time suggestions in the coding UI) or via a batch file drop (async workflow for overnight processing). The preprocessing step segments the note into clinically relevant sections and identifies the highest-value text for code suggestion. The Assessment and Plan section contains the most explicitly codable content. The Problem List is often a bulleted list of active diagnoses. Sending the entire 5,000-word note to Comprehend Medical works, but it's expensive and introduces noise from review-of-systems negations and template boilerplate.
 
@@ -145,9 +186,39 @@ MINIMUM_CONFIDENCE_THRESHOLD = 0.30
 MAX_CANDIDATES_PER_ENTITY = 5
 
 FUNCTION infer_icd10_codes(coding_text):
-    // Call the Comprehend Medical InferICD10CM API.
-    response = call ComprehendMedical.InferICD10CM with:
-        Text = coding_text
+    // Call the Comprehend Medical InferICD10CM API with retry logic.
+    // Comprehend Medical can throttle under load or experience transient errors.
+    // Retry with exponential backoff: 1s, then 2s. After 2 retries, fail gracefully.
+    MAX_RETRIES = 2
+    RETRY_DELAYS = [1 second, 2 seconds]
+
+    response = null
+    FOR attempt = 0 TO MAX_RETRIES:
+        TRY:
+            response = call ComprehendMedical.InferICD10CM with:
+                Text = coding_text
+            BREAK  // success, exit retry loop
+        CATCH ThrottlingException, ServiceUnavailableException:
+            IF attempt < MAX_RETRIES:
+                wait(RETRY_DELAYS[attempt])
+                CONTINUE
+            ELSE:
+                // All retries exhausted. Return a valid empty response
+                // rather than HTTP 500. The coder can still work without suggestions.
+                log_warning("InferICD10CM unavailable after retries", encounter_id)
+                RETURN {
+                    suggestions: empty list,
+                    suggestion_count: 0,
+                    status: "service_unavailable"
+                }
+        CATCH InvalidRequestException:
+            // Input text issue (too long, invalid encoding). Don't retry.
+            log_error("Invalid request to InferICD10CM", encounter_id)
+            RETURN {
+                suggestions: empty list,
+                suggestion_count: 0,
+                status: "invalid_input"
+            }
 
     suggestions = empty list
 
@@ -292,14 +363,15 @@ FUNCTION group_by_category_prefix(ranked_list):
     RETURN sort groups by max confidence of their suggestions descending
 ```
 
-**Step 5: Store suggestions and return to coder.** The final step persists the suggestion record for audit and feedback tracking, then returns the ranked suggestion list to the coding interface. The response format is designed for easy integration with coding UIs: grouped by diagnostic category, with evidence text highlighting so the coder can see exactly which text triggered each suggestion.
+**Step 5: Store suggestions and return to coder.** The final step persists the suggestion record for audit and feedback tracking, then returns the ranked suggestion list to the coding interface. The response format is designed for easy integration with coding UIs: grouped by diagnostic category, with evidence text highlighting so the coder can see exactly which text triggered each suggestion. The `requester_id` (extracted from the EHR session context in Step 0) is stored alongside the suggestion for HIPAA minimum necessary compliance: you need to know who triggered each suggestion request.
 
 ```pseudocode
-FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_entities):
+FUNCTION store_and_respond(encounter_id, note_id, requester_id, grouped_suggestions, context_entities):
     // Build the suggestion record for storage and response.
     suggestion_record = {
         encounter_id: encounter_id,
         note_id: note_id,
+        requester_id: requester_id,         // HIPAA minimum necessary: who triggered this request
         suggested_at: current UTC timestamp (ISO 8601),
         suggestion_groups: grouped_suggestions,
         context: context_entities,
@@ -315,6 +387,7 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
     // Build the API response for the coding UI.
     response = {
         encounter_id: encounter_id,
+        requester_id: requester_id,
         suggestions: grouped_suggestions,
         context: context_entities,
         metadata: {
@@ -336,6 +409,7 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 ```json
 {
   "encounter_id": "ENC-2026-0847291",
+  "requester_id": "coder-mwilliams-03",
   "suggestions": [
     {
       "category_code": "E11",
@@ -427,6 +501,18 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 
 ---
 
+## Why This Isn't Production-Ready
+
+This architecture gets you working suggestions. It does not get you production-grade clinical tooling. The gaps:
+
+- **No human-in-the-loop enforcement.** Nothing in this architecture prevents a downstream system from auto-applying suggestions without coder review. Production needs an explicit "coder accepted" step before any code flows to a claim. Without that gate, you have auto-coding, not code suggestion, and the liability profile is completely different.
+- **No ICD-10 code version drift handling.** ICD-10-CM updates every October 1st. Codes get added, retired, and revised. This architecture has no mechanism to detect when Comprehend Medical suggests a code that's been retired in the current fiscal year, or when your coding rules table references deprecated codes. You need a version-aware validation layer.
+- **No A/B framework for threshold tuning.** The confidence thresholds (0.30 minimum, 0.50 medium, 0.80 high) are guesses. Production needs an experimentation framework: show different thresholds to different coder pools, measure acceptance rates, and converge on thresholds that maximize coder efficiency without flooding them with noise.
+- **No feedback loop closed.** The architecture stores coder decisions but does nothing with them. A production system feeds accepted/rejected decisions back into a model improvement pipeline (retraining a custom SageMaker model, refining coding rules, adjusting thresholds per code family).
+- **No batch failure recovery.** For the async S3-triggered batch path, there is no dead-letter queue (DLQ) for failed Lambda invocations. If a note fails processing (malformed text, API timeout after retries), it silently disappears. Production needs an SQS DLQ that captures failed events for reprocessing or manual review.
+
+---
+
 ## Variations and Extensions
 
 **Hierarchical code selection UI.** Instead of presenting a flat ranked list, build the coding interface around the ICD-10 tree. When the model suggests E11.4x (diabetes with neurological complications), show the coder the entire E11.4 sub-tree with the model's confidence at each level. The coder can accept the category with one click and refine the specificity with a second click. This matches how experienced coders think: they identify the category first, then drill into specifics.
@@ -448,17 +534,17 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 - [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html)
 
 **AWS Sample Repos:**
-- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates integrating Comprehend Medical with FHIR resources, relevant for EHR integration patterns
-- [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare claims processing with Comprehend Medical, includes ICD-10 inference patterns and CloudFormation templates
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates integrating Comprehend Medical with FHIR resources, relevant for EHR integration patterns (archived, but code and CloudFormation templates remain accessible)
+- [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare claims processing with Comprehend Medical, includes ICD-10 inference patterns and CloudFormation templates (archived, but code remains accessible)
 
 **AWS Solutions and Blogs:**
-- [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical/): Deep dive on entity extraction and ICD-10 inference from clinical text
-- [Building NLP-Powered Clinical Decision Support with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-nlp-powered-clinical-decision-support/): Architecture patterns for real-time clinical NLP at scale
+- [Map Clinical Notes to the OMOP Common Data Model and Healthcare Ontologies Using Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/map-clinical-notes-to-the-omop-common-data-model-and-healthcare-ontologies-using-amazon-comprehend-medical/): Architecture patterns for mapping clinical text to standardized ontologies, including ICD-10 inference
+- [Clinical Text Mining Using the Amazon Comprehend Medical SNOMED CT API](https://aws.amazon.com/blogs/machine-learning/clinical-text-mining-using-the-amazon-comprehend-medical-new-snomed-ct-api): Deep dive on clinical entity extraction and medical ontology mapping at scale
 
 **External References:**
 - [CMS ICD-10-CM Official Guidelines](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official coding guidelines and annual code updates
 - [ICD10Data.com](https://www.icd10data.com/): ICD-10-CM code lookup and hierarchy browser
-- [MIMIC-III Clinical Database](https://physionet.org/content/mimiciii/): De-identified clinical notes for model development and testing (requires credentialing)
+- [MIMIC-IV Clinical Database](https://physionet.org/content/mimiciv/): De-identified clinical notes and structured EHR data for model development and testing (requires PhysioNet credentialing). Current version is 3.1.
 
 ---
 

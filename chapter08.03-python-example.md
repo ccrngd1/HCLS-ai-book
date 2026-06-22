@@ -20,7 +20,7 @@ Your environment needs credentials configured (via environment variables, an ins
 - `dynamodb:GetItem`
 - `dynamodb:Query`
 
-No BAA-covered data in development. Use synthetic clinical notes only. The MIMIC-III dataset on PhysioNet provides de-identified clinical text if you need realistic content for testing.
+No BAA-covered data in development. Use synthetic clinical notes only. The MIMIC-IV dataset on PhysioNet provides de-identified clinical text if you need realistic content for testing.
 
 ---
 
@@ -178,39 +178,47 @@ def get_icd10_suggestions(clinical_text: str) -> list:
     return an entity for "chest pain" but it will have the NEGATION trait, which
     we filter on in Step 3.
 
+    Includes retry with exponential backoff for transient failures.
+    On persistent failure, returns an empty list so the coder can still work
+    without suggestions rather than receiving an HTTP 500.
+
     Args:
         clinical_text: Preprocessed note text (output of preprocess_note).
 
     Returns:
         List of entity dicts from the API response.
     """
-    response = comprehend_medical.infer_icd10_cm(Text=clinical_text)
+    import time
+    from botocore.exceptions import ClientError
 
-    # Response structure:
-    # {
-    #   "Entities": [
-    #     {
-    #       "Id": 0,
-    #       "Text": "Type 2 diabetes",
-    #       "Category": "MEDICAL_CONDITION",
-    #       "Type": "DX_NAME",
-    #       "Score": 0.95,
-    #       "BeginOffset": 142,
-    #       "EndOffset": 158,
-    #       "Traits": [{"Name": "DIAGNOSIS", "Score": 0.93}],
-    #       "ICD10CMConcepts": [
-    #         {"Code": "E11.9", "Description": "Type 2 diabetes mellitus without complications", "Score": 0.82},
-    #         {"Code": "E11.65", "Description": "Type 2 diabetes mellitus with hyperglycemia", "Score": 0.71},
-    #         ...
-    #       ]
-    #     },
-    #     ...
-    #   ]
-    # }
+    max_retries = 2
+    retry_delays = [1, 2]  # seconds
 
-    entities = response.get("Entities", [])
-    logger.info("InferICD10CM returned %d entities", len(entities))
-    return entities
+    for attempt in range(max_retries + 1):
+        try:
+            response = comprehend_medical.infer_icd10_cm(Text=clinical_text)
+            entities = response.get("Entities", [])
+            logger.info("InferICD10CM returned %d entities", len(entities))
+            return entities
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code in ("ThrottlingException", "InternalServerException"):
+                if attempt < max_retries:
+                    logger.warning(
+                        "InferICD10CM %s on attempt %d, retrying in %ds",
+                        error_code, attempt + 1, retry_delays[attempt],
+                    )
+                    time.sleep(retry_delays[attempt])
+                    continue
+                else:
+                    logger.error("InferICD10CM unavailable after %d retries", max_retries)
+                    return []
+            else:
+                # Non-retryable error (InvalidRequestException, etc.)
+                logger.error("InferICD10CM non-retryable error: %s", error_code)
+                return []
+
+    return []  # Should not reach here, but satisfy linters
 ```
 
 ---
@@ -382,7 +390,7 @@ def apply_coding_rules(suggestions: list) -> list:
 *Maps to the pseudocode's `store_and_respond(encounter_id, suggestions, original_note_length)`. The final step persists suggestions for audit trail and feedback collection, then returns the ranked list to the caller. Every suggestion includes its source text so the coder can see exactly what triggered it. DynamoDB requires Decimal for numbers (not float), which is why we wrap scores here.*
 
 ```python
-def store_and_respond(encounter_id: str, suggestions: list, note_char_count: int) -> dict:
+def store_and_respond(encounter_id: str, requester_id: str, suggestions: list, note_char_count: int) -> dict:
     """
     Persist suggestion results to DynamoDB and build the API response.
 
@@ -393,6 +401,8 @@ def store_and_respond(encounter_id: str, suggestions: list, note_char_count: int
 
     Args:
         encounter_id: Unique identifier for the clinical encounter.
+        requester_id: Identity of the coder who triggered this request
+                      (HIPAA minimum necessary: track who accessed what).
         suggestions: Final ranked suggestion list from apply_coding_rules.
         note_char_count: Character count of the original (pre-processed) note.
 
@@ -403,6 +413,7 @@ def store_and_respond(encounter_id: str, suggestions: list, note_char_count: int
 
     response_payload = {
         "encounter_id": encounter_id,
+        "requester_id": requester_id,
         "timestamp": timestamp,
         "note_char_count": note_char_count,
         "suggestion_count": len(suggestions),
@@ -415,6 +426,7 @@ def store_and_respond(encounter_id: str, suggestions: list, note_char_count: int
 
     dynamo_item = {
         "encounter_id": encounter_id,
+        "requester_id": requester_id,
         "timestamp": timestamp,
         "note_char_count": note_char_count,
         "suggestion_count": len(suggestions),
@@ -442,7 +454,7 @@ def store_and_respond(encounter_id: str, suggestions: list, note_char_count: int
 This assembles all steps into a single callable function. In a Lambda deployment, this is your handler's core logic. The Lambda receives the encounter ID and note text from API Gateway, runs the pipeline, and returns the suggestion JSON.
 
 ```python
-def suggest_icd10_codes(encounter_id: str, clinical_note: str) -> dict:
+def suggest_icd10_codes(encounter_id: str, requester_id: str, clinical_note: str) -> dict:
     """
     End-to-end ICD-10 code suggestion pipeline.
 
@@ -452,6 +464,7 @@ def suggest_icd10_codes(encounter_id: str, clinical_note: str) -> dict:
 
     Args:
         encounter_id: Unique encounter identifier (from the EHR system).
+        requester_id: Identity of the requesting coder (from request headers).
         clinical_note: Raw clinical note text.
 
     Returns:
@@ -475,7 +488,7 @@ def suggest_icd10_codes(encounter_id: str, clinical_note: str) -> dict:
     print(f"       {len(refined)} suggestions after rules")
 
     print(f"[5/5] Storing results...")
-    result = store_and_respond(encounter_id, refined, len(clinical_note))
+    result = store_and_respond(encounter_id, requester_id, refined, len(clinical_note))
     print(f"       Done. {result['suggestion_count']} suggestions returned.")
 
     return result
@@ -530,6 +543,7 @@ Patient to return in 3 months. Sooner if symptoms worsen.
 
     result = suggest_icd10_codes(
         encounter_id="ENC-DEMO-20260315",
+        requester_id="coder-jsmith-01",
         clinical_note=SAMPLE_NOTE,
     )
 
@@ -548,6 +562,7 @@ Running the example above against Comprehend Medical produces output like this (
 ```json
 {
   "encounter_id": "ENC-DEMO-20260315",
+  "requester_id": "coder-jsmith-01",
   "timestamp": "2026-03-15T14:22:08.441Z",
   "note_char_count": 1642,
   "suggestion_count": 7,
@@ -638,7 +653,7 @@ This example works: point it at a clinical note and it returns ranked ICD-10 sug
 
 **Cost at scale.** Comprehend Medical InferICD10CM costs approximately $0.01 per 100 characters. A 2,500-character note costs about $0.025. At 10,000 encounters per day, that's $250/day in API costs alone. If cost is a concern, consider batching suggestions (run once when the note is signed rather than on every edit), caching results for unchanged notes, or training a custom model on SageMaker that you host at a fixed monthly cost regardless of volume.
 
-**Testing without real PHI.** Never use real patient notes in development or test environments. Synthetic notes (like the example above) cover the common patterns. For systematic testing, generate a corpus of synthetic notes covering different specialties, documentation styles, and code distributions. The MIMIC-III dataset provides de-identified text for research purposes (requires PhysioNet credentialing). Your test suite should include notes with heavy negation, sparse documentation, and rare conditions to exercise edge cases.
+**Testing without real PHI.** Never use real patient notes in development or test environments. Synthetic notes (like the example above) cover the common patterns. For systematic testing, generate a corpus of synthetic notes covering different specialties, documentation styles, and code distributions. The MIMIC-IV dataset provides de-identified text for research purposes (requires PhysioNet credentialing). Your test suite should include notes with heavy negation, sparse documentation, and rare conditions to exercise edge cases.
 
 ---
 
