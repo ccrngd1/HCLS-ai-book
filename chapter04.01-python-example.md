@@ -549,7 +549,12 @@ def dispatch(patient: dict, appointment: dict, channel: str,
             logger.warning("Voice channel selected but not implemented in example")
         elif channel == "portal_push":
             # Push delivery is via your mobile app's push infrastructure
-            # (SNS mobile push, Firebase, APNs). Omitted in this example.
+            # (SNS Mobile Push to APNs/FCM). IMPORTANT: APNs and FCM are
+            # NOT typically BAA-covered. Do NOT send PHI in the push
+            # payload. Send a content-free notification ("You have a new
+            # reminder") and have the app fetch details from your
+            # BAA-covered backend via an authenticated API call.
+            # See the architecture companion for the full pattern.
             logger.warning("Push channel selected but not implemented in example")
         else:
             raise ValueError(f"Unknown channel: {channel}")

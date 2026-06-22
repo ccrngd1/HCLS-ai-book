@@ -1,6 +1,6 @@
 # Recipe 4.1: Appointment Reminder Channel Optimization ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01–0.04 per reminder (channel-dependent)
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01-0.04 per reminder (channel-dependent)
 
 ---
 
