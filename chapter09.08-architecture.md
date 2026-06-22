@@ -351,6 +351,18 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 
 ---
 
+## Why This Isn't Production-Ready
+
+**Stain normalization across labs.** Every histology lab has slightly different staining protocols, reagent batches, and scanner color profiles. A model trained on slides from one lab will underperform on slides from another without stain normalization. Production systems need a robust normalization pipeline (Macenko, Reinhard, or learned approaches) calibrated per source lab, plus ongoing monitoring for drift as labs change reagents or scanners.
+
+**Model monitoring and drift detection.** Pathology AI models degrade silently. New scanner firmware, a change in tissue processing protocol, or a shift in case mix can all reduce accuracy without any obvious failure signal. Production deployments need continuous monitoring: track prediction confidence distributions, flag batches where confidence drops below baseline, and compare model predictions against pathologist final diagnoses on a sampled subset. When drift is detected, the system needs an alerting pathway and a retraining trigger.
+
+**Regulatory submission requirements.** For any indication where the model's output influences clinical decisions, FDA clearance (510(k) or De Novo) is required in the US. This means locked model weights, validated software lifecycle documentation, clinical validation studies on independent cohorts, and demonstrated performance across demographics and scanner types. Model updates after clearance may require new submissions depending on the magnitude of change. This recipe covers the technical architecture, not the 12-24 month regulatory journey.
+
+**LIS integration and clinical workflow.** Pathologists work inside laboratory information systems, not standalone web apps. Production deployment means integrating with the LIS case worklist, rendering results inside the existing viewer (not a separate tool), writing structured findings back into the case, and respecting the pathologist's sign-out workflow. This integration layer is institution-specific and often involves HL7/FHIR messaging, proprietary viewer APIs, and careful UX testing with pathologists to avoid disrupting their diagnostic flow.
+
+---
+
 ## Variations and Extensions
 
 **Tumor grading and subtyping.** Beyond binary cancer detection, train classifiers for specific grading systems (Gleason for prostate, Nottingham for breast, WHO grades for brain tumors). This requires grade-annotated training data and careful calibration against pathologist consensus.
