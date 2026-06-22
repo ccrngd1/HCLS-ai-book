@@ -10,13 +10,13 @@
 
 **Amazon Personalize for the bandit model.** Personalize supports contextual bandit use cases natively through its "USER_PERSONALIZATION" recipe with exploration. It handles the exploration/exploitation tradeoff, model training, and real-time inference. You feed it interactions (message sends and engagement outcomes), and it learns per-user timing preferences. The key advantage: you don't need to implement LinUCB or Thompson Sampling yourself. Personalize handles the algorithm selection and hyperparameter tuning.
 
-**Amazon SQS for the message queue.** Messages awaiting timing decisions sit in SQS with visibility timeouts aligned to their delivery windows. SQS handles the durability, ordering, and retry semantics. Dead letter queues catch messages that fail to schedule.
+**Amazon SQS for the message queue.** Messages awaiting timing decisions sit in SQS with visibility timeouts aligned to their delivery windows. SQS handles the durability, ordering, and retry semantics. Configure a dead letter queue (DLQ) on the main queue with a `maxReceiveCount` of 3. Messages that fail timing decision processing after 3 attempts land in the DLQ for manual investigation rather than cycling indefinitely. Set the visibility timeout to at least 60 seconds (enough time for the Lambda to fetch patient context, call Personalize, and confirm schedule creation before the message becomes visible again).
 
 **Amazon DynamoDB for the patient context store.** Per-patient feature vectors need sub-millisecond reads at decision time. DynamoDB's key-value access pattern is ideal: look up patient ID, get their feature vector, pass it to the model. TTL on engagement history entries keeps the table from growing unbounded.
 
 **AWS Lambda for orchestration.** The timing decision is a stateless function: read message from queue, fetch patient context, call Personalize for a recommendation, schedule the delivery. Lambda's event-driven model fits perfectly. A scheduled Lambda also handles the "check for messages whose delivery window has arrived" pattern. Lambda security groups should restrict outbound traffic to VPC endpoints only (no internet egress). All AWS service calls in this architecture can be routed through VPC endpoints, eliminating the need for internet access entirely.
 
-**Amazon EventBridge Scheduler for timed delivery.** Once the model selects a send time, EventBridge Scheduler fires at that exact time to trigger the actual delivery. One-time schedules (not recurring) for each message. This replaces the need for a custom scheduler or cron-based polling.
+**Amazon EventBridge Scheduler for timed delivery.** Once the model selects a send time, EventBridge Scheduler fires at that exact time to trigger the actual delivery. One-time schedules (not recurring) for each message. This replaces the need for a custom scheduler or cron-based polling. Important failure mode: EventBridge Scheduler silently drops schedules created with a time in the past. If processing latency pushes the selected slot behind the current clock, the schedule is created but never fires. The timing decision Lambda must validate that the selected slot is at least 2 minutes in the future; if not, send immediately rather than risk a silent drop.
 
 **Amazon Pinpoint for multi-channel delivery.** Pinpoint handles the actual send across SMS, push notification, and email. It also provides delivery and engagement tracking (opens, clicks) that feed back into the reward signal. Note: Pinpoint engagement event delivery to Kinesis is a service-side integration. Pinpoint writes to the Kinesis stream using an IAM role you configure, from the AWS service network. This does not traverse your VPC.
 
@@ -56,6 +56,18 @@ flowchart TD
 | **CloudTrail** | Enabled for all API calls. Pinpoint message events logged separately. |
 | **Sample Data** | You need at least 1,000 interactions per message type before the model learns anything useful. Synthetic data works fine for development. |
 | **Cost Estimate** | Personalize: ~$0.05/1000 recommendations + training costs. SQS, Lambda, DynamoDB: negligible at typical notification volumes. Pinpoint: per-message fees (SMS ~$0.01, push free, email ~$0.0001). |
+
+### PHI Considerations for Behavioral Profiling
+
+Behavioral engagement profiles (when a patient opens messages, how often they interact, what times correlate with action) derived from health communications may constitute PHI under HIPAA. Even if the underlying data looks innocuous (timestamps and open/close events), the fact that it's linked to a patient and derived from health-related communications brings it within scope. Address this explicitly:
+
+**1. Scope DynamoDB read access.** The patient context table contains engagement behavioral profiles. Restrict `dynamodb:GetItem` and `dynamodb:Query` on this table to the timing engine Lambda execution role only. Use IAM resource conditions (`aws:SourceArn` or `aws:PrincipalOrgID`) to prevent other services or roles from reading patient engagement patterns. No analyst, dashboard, or reporting system should have direct read access to raw engagement profiles without a separate, audited path.
+
+**2. Define explicit TTL on engagement history.** Set a DynamoDB TTL of 90-180 days on individual engagement event items. The timing model needs recent patterns, not a patient's complete notification history from three years ago. Retaining engagement data indefinitely increases breach impact surface and complicates right-of-access responses. The TTL should be a configuration parameter, not hardcoded, so compliance teams can adjust it as policy evolves.
+
+**3. Include in Notice of Privacy Practices.** If your facility's Notice of Privacy Practices doesn't already cover "analysis of communication engagement patterns to optimize health outreach timing," it needs to. Patients should know that the system tracks when they open and act on health messages, and that this data is used to personalize future communication timing. This isn't optional. It's a HIPAA transparency requirement under 45 CFR 164.520.
+
+**4. Implement a patient profile deletion endpoint.** Under HIPAA's right-of-access provisions (and potentially state privacy laws like CCPA/CPRA for California patients), patients can request access to or deletion of their data. Build an explicit API endpoint or operational runbook that: (a) deletes all engagement history items for a patient from DynamoDB, (b) removes the patient's interaction records from the Personalize dataset (which requires a dataset reimport excluding that patient), and (c) resets the patient to population-default timing. This is easier to build on day one than to retrofit after a patient request arrives.
 
 ### Ingredients
 
@@ -175,23 +187,44 @@ FUNCTION select_send_time(patient_context, message):
     RETURN selected_slot
 ```
 
-**Step 4: Schedule delivery.** Once the optimal time is selected, create a one-time scheduled event that will fire at exactly that time and trigger the message delivery. The schedule includes all the information needed to send the message without re-querying the timing engine. If the scheduled time is "now" (the model thinks the current moment is optimal), deliver immediately rather than creating a schedule with zero delay.
+**Step 4: Schedule delivery.** Once the optimal time is selected, create a one-time scheduled event that will fire at exactly that time and trigger the message delivery. The schedule includes all the information needed to send the message without re-querying the timing engine. Critical detail: validate that the selected time is actually in the future (with a 2-minute buffer) before creating the schedule. EventBridge Scheduler silently drops schedules with past times. Also critical: do not delete the SQS message until the schedule is confirmed created. If you delete the message first and schedule creation fails, the message is gone forever.
 
 ```pseudocode
-FUNCTION schedule_delivery(message, selected_slot):
-    // If the selected time is within the next 5 minutes, just send now.
-    // No point creating a schedule for something that fires immediately.
-    IF selected_slot <= (now + 5 minutes):
+FUNCTION schedule_delivery(message, selected_slot, sqs_receipt_handle):
+    // IMPORTANT: Validate the selected slot is in the future with margin.
+    // EventBridge Scheduler silently ignores schedules set in the past.
+    // A 2-minute buffer accounts for processing latency and clock skew.
+    IF selected_slot <= (now + 2 minutes):
+        // The slot is too close or already past. Send immediately
+        // rather than risk a silent schedule drop.
         send_message(message)
+        delete_sqs_message(sqs_receipt_handle)
         RETURN
 
+    // Extend SQS visibility timeout to prevent the message from becoming
+    // visible again while we're creating the schedule. This is our lock.
+    extend_visibility_timeout(sqs_receipt_handle, 60 seconds)
+
     // Create a one-time schedule that fires at the selected time.
-    create_schedule with:
-        schedule_time  = selected_slot
-        payload        = message                 // everything needed to send
-        target         = delivery_lambda_arn     // which function to invoke
-        name           = "msg-{message.id}"      // unique, for idempotency
-        retry_policy   = retry 3 times with backoff
+    TRY:
+        schedule_result = create_schedule with:
+            schedule_time  = selected_slot
+            payload        = message                 // everything needed to send
+            target         = delivery_lambda_arn     // which function to invoke
+            name           = "msg-{message.id}"      // unique, for idempotency
+            retry_policy   = retry 3 times with backoff
+    CATCH schedule_creation_error:
+        // Schedule creation failed. Do NOT delete the SQS message.
+        // It will become visible again after the visibility timeout expires,
+        // and the next processing attempt will retry. After maxReceiveCount
+        // failures, it moves to the DLQ.
+        log_error("Schedule creation failed for message", message.id, error)
+        RETURN
+
+    // Only delete the SQS message AFTER schedule creation succeeds.
+    // This guarantees no message is lost: either it's scheduled for future
+    // delivery, or it remains in the queue for retry.
+    delete_sqs_message(sqs_receipt_handle)
 
     // Record the scheduling decision for later analysis and reward attribution.
     log_decision(

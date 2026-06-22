@@ -105,6 +105,32 @@ The offline training process:
 
 The key challenge with offline learning is coverage. If you've never sent messages at 10pm, you have zero data about 10pm engagement. The offline model can't learn about time slots it's never observed. This is why you need some online exploration after deployment, even if the initial policy is trained offline.
 
+### Offline Policy Evaluation (OPE): Knowing Before You Deploy
+
+Before you push a new timing policy to production, you want to answer one question: "Will this new policy actually perform better than what we're doing now?" Offline policy evaluation (OPE) lets you estimate a new policy's performance using only historical data, without sending a single message under the new strategy.
+
+**Why this matters for notification timing:** Your historical policy is almost certainly deterministic (or close to it). You always sent refill reminders at 9am. That means your logged data covers a narrow slice of the action space. OPE must account for this limited coverage honestly, or you'll get dangerously overconfident estimates.
+
+**Doubly-robust estimation** is the standard approach for deterministic (or near-deterministic) historical policies. It combines two estimators:
+
+1. A direct model estimate: train a reward predictor on historical data, then use it to estimate what the new policy would achieve.
+2. An inverse propensity score (IPS) correction: re-weight observed outcomes by how likely the new policy would have taken the same action the historical policy took.
+
+The "doubly-robust" property means the estimate is consistent if either the reward model or the propensity model is correctly specified. You don't need both to be perfect, just one. In practice, this gives you much more reliable estimates than either approach alone.
+
+**Coverage limitations are the hard constraint.** If your historical policy never sent messages at 7pm, you have zero data about 7pm outcomes. No amount of statistical cleverness can fill that gap. OPE can only evaluate the new policy on the portions of the action space where historical data exists. If the new policy heavily favors time slots with no historical coverage, your OPE estimate will have wide confidence intervals (or be undefined entirely). This is why the offline training phase should include at least some exploration (even 5-10% random sends) to build coverage across time slots.
+
+**Confidence intervals tell you what you don't know.** A point estimate ("the new policy will achieve 18% open rate") is useless without uncertainty bounds. Compute bootstrap confidence intervals on the doubly-robust estimate. If the 95% confidence interval for the new policy overlaps with the current policy's performance, you don't have enough evidence that the new policy is actually better. Don't deploy on hope.
+
+**Deployment gates tie OPE to your release process.** Set a concrete rule: only deploy a new timing policy if the OPE estimate exceeds the current policy's measured performance by a statistically significant margin (e.g., the lower bound of the 95% CI is above the current policy's mean). This prevents you from shipping models that look good on average but could easily be worse. In practice:
+
+- Compute the doubly-robust estimate with 1,000 bootstrap samples.
+- Calculate the 95% confidence interval.
+- Compare the lower bound of the CI against the current policy's trailing 30-day engagement rate.
+- Only deploy if lower_bound_new > mean_current. Otherwise, collect more data or increase exploration to improve coverage.
+
+This gate should be automated in your retraining pipeline. Every time Personalize produces a new model version or your custom bandit retrains, run OPE against the last 30 days of logged interactions. If the gate passes, promote to canary. If not, keep the current policy and flag for review.
+
 ### Safety Constraints for Healthcare Notifications
 
 Even though notification timing is low-stakes compared to clinical RL, there are real constraints:
