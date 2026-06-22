@@ -161,6 +161,7 @@ CORE_LAB_KEYS = list(LAB_LOINC.keys())
 # Trajectory features look at recent history; baseline features look at a
 # longer window. The exact windows are clinical-governance decisions and
 # vary by population.
+LEAKAGE_BUFFER_MINUTES = 30        # observations must precede as_of by this margin
 TRAJECTORY_WINDOW_HOURS = 24       # vitals trajectory features
 LAB_TRAJECTORY_WINDOW_HOURS = 48   # lab trajectory features
 BASELINE_WINDOW_HOURS = 72         # patient-specific baseline window
@@ -1556,16 +1557,21 @@ def send_pager_notification(alert):
     SNS topic subscribers are the rapid response team's pagers, the
     on-call hospitalist, and the charge nurse. Each subscriber has its
     own delivery protocol (SMS, email-to-pager-gateway, vendor API).
+
+    The pager channel carries ONLY the alert_id, tier, and unit. No
+    patient_id, no vital values, no narrative. PHI does not transit
+    lock-screen-visible channels or the logs they generate. The clinician
+    fetches the full alert by alert_id through the authenticated
+    dashboard or EHR banner.
     """
+    # Minimal payload: alert_id, tier, unit. No PHI.
     summary = (
-        f"[{alert['tier'].upper()}] Deterioration alert for patient "
-        f"{alert['patient_id']} (encounter {alert['encounter_id']}). "
-        f"Score: {alert['score']:.2f}, delta: {alert['score_delta']:+.2f}. "
-        f"See chart banner for details."
+        f"[{alert['tier'].upper()}] Deterioration alert on {alert.get('unit_type', 'unknown unit')}. "
+        f"Alert ID: {alert['alert_id']}. Open dashboard for details."
     )
     sns.publish(
         TopicArn=RAPID_RESPONSE_TOPIC_ARN,
-        Subject=f"[{alert['tier'].upper()}] Deterioration: {alert['patient_id']}",
+        Subject=f"[{alert['tier'].upper()}] Deterioration: {alert['alert_id']}",
         Message=summary,
     )
 
@@ -1704,12 +1710,33 @@ def on_clinical_outcome(patient_id, encounter_id, outcome_event):
     """Record a downstream clinical outcome and link it to recent alerts.
 
     outcome_event keys:
+      event_id:    unique event identifier from the source system
       type:        icu_transfer | code_blue | unexpected_death |
                    sepsis_bundle_initiated | rapid_response_activated |
                    uneventful_discharge
       occurred_at: ISO8601 UTC
       details:     dict
     """
+    # Idempotency guard. EventBridge delivers at-least-once; redelivered
+    # outcome events must not double-link outcomes or double-write S3 label
+    # rows, which would bias the retraining distribution toward redelivered
+    # cases on a rare positive class.
+    processed_table = dynamodb.Table("processed-outcome-events")
+    outcome_event_key = f"{outcome_event.get('event_id', '')}:{outcome_event['type']}"
+    try:
+        processed_table.put_item(
+            Item={
+                "event_key": outcome_event_key,
+                "processed_at": datetime.now(timezone.utc).isoformat(),
+            },
+            ConditionExpression="attribute_not_exists(event_key)",
+        )
+    except processed_table.meta.client.exceptions.ConditionalCheckFailedException:
+        logger.info("duplicate outcome event, skipping", extra={
+            "event_key": outcome_event_key,
+        })
+        return None
+
     table = dynamodb.Table(ALERT_STATE_TABLE)
     occurred_at = outcome_event["occurred_at"]
     occurred_dt = datetime.fromisoformat(occurred_at.replace("Z", "+00:00"))
