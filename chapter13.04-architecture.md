@@ -504,6 +504,22 @@ Sample interaction check response:
 
 ---
 
+## Why This Isn't Production-Ready
+
+**Alert fatigue tuning requires clinical governance.** The significance scoring thresholds in the pseudocode are starting points, not production values. Every hospital's Pharmacy and Therapeutics (P&T) committee will want different sensitivity levels for different clinical contexts (ICU vs. outpatient vs. oncology). You need a governance workflow where pharmacists can adjust thresholds per clinical setting, review suppressed alerts, and audit override rates. Without this, you'll either drown clinicians in low-value alerts or miss genuinely dangerous interactions.
+
+**Source data reconciliation is ongoing work.** DrugBank, RxNorm, DailyMed, and MED-RT don't always agree on interaction severity or mechanism. When two sources contradict each other (one says "major" and another says "moderate"), you need a reconciliation policy. The pseudocode takes the highest severity, but a production system needs pharmacist review of discrepancies, version tracking of source updates, and an audit trail showing which source contributed each edge in the graph.
+
+**EHR integration requires HL7 FHIR or CDS Hooks.** The pseudocode shows a standalone API, but real clinical decision support fires inside the prescribing workflow. That means implementing CDS Hooks (specifically the `order-select` hook) so the interaction check triggers when a clinician adds a medication to the order. Response time budgets are tight (under 500ms round-trip), and you need to handle the EHR's specific card rendering format. Each EHR vendor (Epic, Cerner/Oracle Health, MEDITECH) has slightly different CDS Hooks implementations.
+
+**Graph versioning and rollback.** When a weekly source update introduces bad data (it happens), you need to roll back to the previous graph version within minutes, not hours. Neptune doesn't have built-in point-in-time graph snapshots at the edge level. You'll need to implement your own versioning scheme (effective dates on every edge, a "current version" pointer, and a promotion workflow that validates new data before swapping it into the live query path).
+
+**Multi-drug interaction combinatorics.** The pairwise approach in the pseudocode checks each drug pair independently. But some dangerous interactions only emerge with three or more drugs (Drug A inhibits the enzyme that metabolizes Drug B, and Drug C competes for the same protein binding site as the now-elevated Drug B). Detecting these requires multi-hop traversals that grow combinatorially. A patient on 15 medications generates 105 pairs but over 450 triples. You need query timeout guards and a strategy for which higher-order combinations to check.
+
+**Audit logging for clinical liability.** Every interaction alert (fired or suppressed) needs to be logged with the exact graph state, scoring parameters, and patient medication list at the moment of the check. If a patient experiences an adverse drug event, the legal and quality teams will want to know exactly what the system said, when, and whether the clinician saw and overrode the alert. This audit trail has retention requirements (typically 7-10 years) and must be tamper-evident.
+
+---
+
 ## Variations and Extensions
 
 ### Variation 1: Pharmacogenomic-Aware Interaction Checking
