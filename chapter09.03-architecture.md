@@ -329,6 +329,24 @@ Sample output from a successful wound measurement:
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Getting this into a wound care clinic requires closing several gaps that are intentionally outside the scope of a cookbook recipe:
+
+**Model monitoring and drift detection.** Segmentation models degrade over time as device cameras change, lighting conditions shift seasonally, and wound care product manufacturers update their dressing colors (which confuse tissue classifiers). You need automated monitoring on confidence score distributions, Dice score against periodic clinician annotations, and alerting when performance drops below your threshold. SageMaker Model Monitor can track prediction distributions, but you still need a ground-truth feedback loop.
+
+**Retraining pipeline.** When the model drifts (and it will), you need a pipeline that collects corrected annotations from clinicians, retrains on the expanded dataset, validates against a held-out test set, and promotes the new model version through staging to production. SageMaker Pipelines handles the orchestration, but you need the annotation workflow, data versioning (with S3 versioning or a purpose-built registry), and approval gates.
+
+**Multi-region failover.** If your SageMaker endpoint goes down in us-east-1, clinicians cannot measure wounds. For organizations with geographically distributed wound care teams, deploy endpoints in multiple regions behind Route 53 health checks. DynamoDB Global Tables handle the measurement data replication. S3 Cross-Region Replication handles the images.
+
+**Marker-free measurement.** The reference marker requirement is a friction point. Clinicians forget them, lose them, or place them incorrectly. A production system needs a fallback strategy: either estimate scale from known anatomical landmarks (a fingertip is roughly 1 cm wide), or degrade gracefully to relative measurements (percentage change without absolute cm²) when no marker is detected.
+
+**Audit trail for clinical defensibility.** Every measurement that enters a medical record needs a clear provenance chain: which model version produced it, what confidence score it received, whether a clinician reviewed and approved it, and what the raw image looked like. Store model version IDs with every measurement record. This matters for malpractice defense and for CMS audit responses.
+
+**Concurrent access and conflict resolution.** Two clinicians measuring the same wound simultaneously (shift change, wound care team rounding) can produce conflicting records. Your DynamoDB write strategy needs conditional expressions to detect and handle this, either last-writer-wins with alerting or optimistic locking with a retry prompt.
+
+---
+
 ## Variations and Extensions
 
 ### Variation 1: Tissue Classification Overlay
