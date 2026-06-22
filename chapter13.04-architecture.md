@@ -578,6 +578,4 @@ Integrate your institution's formulary to provide alternative drug suggestions w
 
 ---
 
----
-
 *← [Main Recipe 13.4](chapter13.04-drug-drug-interaction-knowledge-base) · [Python Example](chapter13.04-python-example) · [Chapter Preface](chapter13-preface)*
