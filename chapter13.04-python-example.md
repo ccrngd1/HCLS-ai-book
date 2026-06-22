@@ -25,10 +25,10 @@ Before we get to the steps, here's the configuration that drives the pipeline. T
 ```python
 import boto3
 import json
-import hashlib
 import logging
 import requests
 import redis
+from datetime import date
 from itertools import combinations
 
 # Configure logging. In production, use structured JSON logging
@@ -287,6 +287,9 @@ def ingest_rxnorm_relationships(bucket: str, key: str) -> int:
         # Map RxNorm relationship names to our graph edge types.
         edge_type = EDGE_TYPES.get(rela.lower(), rela.upper())
 
+        # Note: openCypher doesn't support parameterized relationship types.
+        # This is safe because edge_type comes from our controlled EDGE_TYPES dict,
+        # never from user input. Never interpolate user-supplied values into queries.
         query = f"""
         MATCH (a:Drug {{rxcui: $rxcui1}})
         MATCH (b:Drug {{rxcui: $rxcui2}})
@@ -475,6 +478,9 @@ def _load_protein_relationship(rxcui: str, protein_elem, protein_type: str, ns: 
     )
 
     # Create the relationship edge between drug and protein.
+    # Note: openCypher doesn't support parameterized relationship types.
+    # This is safe because edge_type and protein_type come from controlled
+    # dictionaries (action_to_edge, caller logic), never from user input.
     edge_query = f"""
     MATCH (d:Drug {{rxcui: $rxcui}})
     MATCH (p:{protein_type} {{protein_id: $protein_id}})
@@ -581,10 +587,12 @@ def extract_fda_label_interactions(bucket: str, key: str) -> int:
 
         # Create a direct INTERACTS_WITH edge between the two drugs.
         # FDA label = Established evidence level.
+        # We store edges directionally (lower RxCUI -> higher RxCUI) but query
+        # them bidirectionally. This avoids duplicate edges on re-runs.
         query = """
         MATCH (a:Drug {rxcui: $rxcui_a})
         MATCH (b:Drug {rxcui: $rxcui_b})
-        MERGE (a)-[r:INTERACTS_WITH]-(b)
+        MERGE (a)-[r:INTERACTS_WITH]->(b)
         SET r.source = 'FDA_SPL',
             r.evidence_level = 'Established',
             r.label_text = $context,

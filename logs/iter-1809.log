@@ -1,0 +1,935 @@
+# parallel_worker header: concurrency_limit=4 batch_id=batch-1782111827601-000037-93f5498c0dec59bd iteration=1809 task_id=ch13-r08-findings persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1574 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-todo.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m29926 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me read the Python example file:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m41079 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me look at the existing content around the lines mentioned in the TODO file. Let me check around L58, L60, L380, and L449:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m55[0m to [38;5;141m68[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1181 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m370[0m to [38;5;141m400[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1061 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m430[0m to [38;5;141m460[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2625 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me also check the RECIPE-GUIDE for the "Why This Isn't Production-Ready" section requirement:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/RECIPE-GUIDE.md[0m for pattern: [38;5;141mwhy this isn[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'Why This Isn' in /tmp/ralph-worktrees/iter-1809/RECIPE-GUIDE.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. Now I have all the context I need. Let me understand what needs to be done:[0m[0m
+[0m[0m
+1. [1mA-4 (L58):[22m Update Neptune sizing to db.r5.xlarge (32GB) with a read replica for query isolation. Update cost estimate to ~$1,400/month for primary + replica.[0m[0m
+2. [1mA-5 (L60):[22m Add a fallback strategy for Neptune unavailability - return cached results with "stale: true" flag and "status: service_degraded" for cache misses. Mention Neptune multi-AZ.[0m[0m
+3. [1mA-1 (L380):[22m Add a Step 7 pseudocode block for cache invalidation during terminology updates.[0m[0m
+4. [1mL449:[22m Add a "Why This Isn't Production-Ready" section between Expected Results and Variations.[0m[0m
+[0m[0m
+Let me also check around the architecture companion for where exactly the fallback strategy should go. The finding says L60 which is the area right after the Cost Estimate row. It probably belongs in the "Why These Services" section near the Neptune or ElastiCache discussion:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m9[0m to [38;5;141m20[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2632 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a clear picture. Let me make all the edits. I'll start with the changes to [38;5;10mchapter13.08-architecture.md[0m:[0m[0m
+[0m[0m
+[1mFix 1 (A-4):[22m Update the cost estimate to recommend db.r5.xlarge with read replica.[0m[0m
+I'll modify the following file: [38;5;141mchapter13.08-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 56    [0m:[38;5;9m[49m | **Cost Estimate** | Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200-2,000/month for a basic deployment. |
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m | **Cost Estimate** | Neptune db.r5.xlarge (32 GB RAM, minimum for full UMLS deployment): ~$1,400/month for primary plus one read replica. Route API queries to the read replica; route ingestion writes to the primary. This isolates query latency from bulk load I/O. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,900-2,500/month for a basic deployment. |
+[0m[K
+Updating: [38;5;141mchapter13.08-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0m[1mFix 2 (A-5):[22m Add Neptune multi-AZ and fallback strategy. I'll add this to the Neptune paragraph in "Why These Services":[0m[0m
+I'll modify the following file: [38;5;141mchapter13.08-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 11    [0m:[38;5;9m[49m **Amazon Neptune for the knowledge graph store.** Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be.
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m **Amazon Neptune for the knowledge graph store.** Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be. Deploy Neptune with multi-AZ enabled as the primary availability mechanism; this gives you automatic failover if the primary instance becomes unhealthy. For unavailability scenarios beyond what multi-AZ covers (regional issues, prolonged Neptune throttling), implement a fallback strategy in the Lambda layer: if Neptune is unreachable, return cached results with a `"stale": true` flag so consumers know the data may be outdated. For cache misses during Neptune outages, return a `"status": "service_degraded"` response rather than failing the request entirely. This lets downstream systems decide whether to proceed with degraded data or queue the request for retry.
+[0m[K
+Updating: [38;5;141mchapter13.08-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0m[1mFix 3 (A-1):[22m Add Step 7 pseudocode block for cache invalidation during terminology updates. I need to insert it after the Step 6 pseudocode block and before the Python callout:[0m[0m
+I'll modify the following file: [38;5;141mchapter13.08-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  368, 368[0m:[39m[49m     RETURN {
+[0m[49m[39m  369, 369[0m:[39m[49m         source:    active_version,
+[0m[49m[39m  370, 370[0m:[39m[49m         mappings:  mappings,
+[0m[49m[39m  371, 371[0m:[39m[49m         as_of:     as_of_date,
+[0m[49m[39m  372, 372[0m:[39m[49m         note:      "Mappings reflect terminology state as of the specified date"
+[0m[49m[39m  373, 373[0m:[39m[49m     }
+[0m[49m[38;5;10m+      374[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+      375[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      376[0m:[38;5;10m[49m **Step 7: Cache invalidation during terminology updates.** When you load a new terminology version into Neptune, your Redis cache holds stale mappings. The naive approach (flush everything) causes a thundering herd of cache misses against Neptune. The smart approach computes what changed and selectively invalidates only the affected keys. For large annual updates (like the yearly ICD-10-CM release that changes thousands of codes), selective invalidation can still be massive, so you need a threshold above which you flush the entire cache and optionally run a cache warming step for the most frequently queried concepts.
+[0m[49m[38;5;10m+      377[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      378[0m:[38;5;10m[49m ```pseudocode
+[0m[49m[38;5;10m+      379[0m:[38;5;10m[49m FUNCTION invalidate_cache_after_load(terminology_name, old_version, new_version):
+[0m[49m[38;5;10m+      380[0m:[38;5;10m[49m     // Compute the delta: which concept codes changed between versions.
+[0m[49m[38;5;10m+      381[0m:[38;5;10m[49m     // "Changed" means added, retired, or had relationships modified.
+[0m[49m[38;5;10m+      382[0m:[38;5;10m[49m     // The terminology release notes typically include a changes file
+[0m[49m[38;5;10m+      383[0m:[38;5;10m[49m     // (e.g., ICD-10-CM provides an addendum with new/revised/deleted codes).
+[0m[49m[38;5;10m+      384[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+      385[0m:[38;5;10m[49m     changed_codes = compute_terminology_delta(terminology_name, old_version, new_version)
+[0m[49m[38;5;10m+      386[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+      387[0m:[38;5;10m[49m     // Define a threshold for switching between selective and full invalidation.
+[0m[49m[38;5;10m+      388[0m:[38;5;10m[49m     // If more than 10% of cached concepts changed, it's cheaper to flush everything
+[0m[49m[38;5;10m+      389[0m:[38;5;10m[49m     // than to issue thousands of individual DELETE commands.
+[0m[49m[38;5;10m+      390[0m:[38;5;10m[49m     SELECTIVE_THRESHOLD = 5000
+[0m[49m[38;5;10m+      391[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+      392[0m:[38;5;10m[49m     IF length(changed_codes) > SELECTIVE_THRESHOLD:
+[0m[49m[38;5;10m+      393[0m:[38;5;10m[49m         // Large delta (e.g., annual ICD-10 update). Flush the entire cache.
+[0m[49m[38;5;10m+      394[0m:[38;5;10m[49m         redis.flushdb()
+[0m[49m[38;5;10m+      395[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+      396[0m:[38;5;10m[49m         // Optionally warm the cache for the top-N most queried concepts.
+[0m[49m[38;5;10m+      397[0m:[38;5;10m[49m         // Pull top queries from CloudWatch Logs Insights or a separate counter.
+[0m[49m[38;5;10m+      398[0m:[38;5;10m[49m         top_concepts = get_top_queried_concepts(limit=1000)
+[0m[49m[38;5;10m+      399[0m:[38;5;10m[49m         FOR each concept in top_concepts:
+[0m[49m[38;5;10m+      400[0m:[38;5;10m[49m             normalize_concept(concept.code, concept.terminology)
+[0m[49m[38;5;10m+      401[0m:[38;5;10m[49m             // Each call populates the cache as a side effect.
+[0m[49m[38;5;10m+      402[0m:[38;5;10m[49m     ELSE:
+[0m[49m[38;5;10m+      403[0m:[38;5;10m[49m         // Small delta (e.g., monthly RxNorm update with a few hundred changes).
+[0m[49m[38;5;10m+      404[0m:[38;5;10m[49m         // Selectively delete cache keys for changed concepts.
+[0m[49m[38;5;10m+      405[0m:[38;5;10m[49m         FOR each code in changed_codes:
+[0m[49m[38;5;10m+      406[0m:[38;5;10m[49m             // Delete all cache keys that reference this code.
+[0m[49m[38;5;10m+      407[0m:[38;5;10m[49m             // Cache keys follow the pattern: norm:{terminology}:{code}:{targets}
+[0m[49m[38;5;10m+      408[0m:[38;5;10m[49m             // Use a SCAN + match pattern rather than KEYS (KEYS blocks Redis).
+[0m[49m[38;5;10m+      409[0m:[38;5;10m[49m             pattern = "norm:" + terminology_name + ":" + code + ":*"
+[0m[49m[38;5;10m+      410[0m:[38;5;10m[49m             matching_keys = redis.scan_match(pattern)
+[0m[49m[38;5;10m+      411[0m:[38;5;10m[49m             IF matching_keys is not empty:
+[0m[49m[38;5;10m+      412[0m:[38;5;10m[49m                 redis.delete(matching_keys)
+[0m[49m[38;5;10m+      413[0m:[38;5;10m[49m             
+[0m[49m[38;5;10m+      414[0m:[38;5;10m[49m             // Also invalidate any value set expansions that might include this code.
+[0m[49m[38;5;10m+      415[0m:[38;5;10m[49m             // This is harder: you'd need to track which expansions contain which codes.
+[0m[49m[38;5;10m+      416[0m:[38;5;10m[49m             // A practical shortcut: set a shorter TTL on value set expansion cache entries
+[0m[49m[38;5;10m+      417[0m:[38;5;10m[49m             // so they naturally refresh within hours of a load.
+[0m[49m[38;5;10m+      418[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+      419[0m:[38;5;10m[49m     log("Cache invalidation complete. Strategy: " + 
+[0m[49m[38;5;10m+      420[0m:[38;5;10m[49m         (IF length(changed_codes) > SELECTIVE_THRESHOLD THEN "full_flush" ELSE "selective") +
+[0m[49m[38;5;10m+      421[0m:[38;5;10m[49m         ", changed_codes: " + length(changed_codes))
+[0m[49m[39m  374, 422[0m:[39m[49m ```
+[0m[K
+Updating: [38;5;141mchapter13.08-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0m[1mFix 4 (L449):[22m Add a "Why This Isn't Production-Ready" section between Expected Results and Variations:[0m[0m
+I'll modify the following file: [38;5;141mchapter13.08-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  487, 487[0m:[39m[49m - Composite concepts that require multiple codes in the target terminology. The API returns individual mappings; the consumer must assemble them.
+[0m[49m[39m  488, 488[0m:[39m[49m 
+[0m[49m[39m  489, 489[0m:[39m[49m ---
+[0m[49m[39m  490, 490[0m:[39m[49m 
+[0m[49m[38;5;10m+      491[0m:[38;5;10m[49m ## Why This Isn't Production-Ready
+[0m[49m[38;5;10m+      492[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      493[0m:[38;5;10m[49m This pseudocode demonstrates the normalization pattern, but a production deployment needs to close several gaps:
+[0m[49m[38;5;10m+      494[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      495[0m:[38;5;10m[49m **No authentication or authorization on the API.** The walkthrough shows API Gateway with IAM auth mentioned in the "Why These Services" section but not enforced in the pseudocode. Production requires SigV4 request signing, scoped IAM policies per consuming service, and request throttling configured per caller.
+[0m[49m[38;5;10m+      496[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      497[0m:[38;5;10m[49m **No graceful degradation under Neptune failure.** The pseudocode returns errors if Neptune is unreachable. Production needs the fallback strategy described above: serve stale cached results with a degradation flag, and return structured error responses for cache misses during outages.
+[0m[49m[38;5;10m+      498[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      499[0m:[38;5;10m[49m **No cache invalidation logic in the ingestion pipeline.** Step 7 describes cache invalidation, but it's not wired into the Step Functions orchestration. Production must invoke cache invalidation as a mandatory step after a successful bulk load, with rollback logic if invalidation fails partway through.
+[0m[49m[38;5;10m+      500[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      501[0m:[38;5;10m[49m **No audit trail for normalization decisions.** When your system maps ICD-10 E11 to SNOMED 44054006, downstream clinical decisions depend on that mapping being correct. Production logs every normalization result (code, mapping chosen, confidence, timestamp) to an immutable audit store for retrospective analysis and compliance reviews.
+[0m[49m[38;5;10m+      502[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      503[0m:[38;5;10m[49m **Single-region deployment.** The architecture assumes one Neptune cluster in one region. For organizations with multi-region requirements (disaster recovery, data residency), you need Neptune global databases or a replication strategy for the terminology data.
+[0m[49m[38;5;10m+      504[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      505[0m:[38;5;10m[49m **No terminology version pinning per consumer.** Different consuming systems may need different terminology versions simultaneously. A claims system processing last month's data needs last month's ICD-10 codes. Production requires version-aware routing so each consumer gets mappings from the correct terminology vintage.
+[0m[49m[38;5;10m+      506[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      507[0m:[38;5;10m[49m **Missing input validation.** The pseudocode trusts input codes. Production validates format patterns (ICD-10 codes match `[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?`, SNOMED codes are numeric, LOINC codes match `[0-9]+-[0-9]`). Malformed inputs should fail fast with clear error messages.
+[0m[49m[38;5;10m+      508[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      509[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      510[0m:[38;5;10m[49m 
+[0m[49m[39m  491, 511[0m:[39m[49m ## Variations and Extensions
+[0m[K
+Updating: [38;5;141mchapter13.08-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow I need to ensure the Python companion is consistent with the architecture changes. The A-5 finding (fallback strategy) should be reflected in the Python normalization function. Let me update the [38;5;10mnormalize_concept[0m function in the Python example to show the fallback behavior:[0m[0m
+I'll modify the following file: [38;5;141mchapter13.08-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  600, 600[0m:[39m[49m     # Check cache first.
+[0m[49m[39m  601, 601[0m:[39m[49m     cached = redis_client.get(cache_key)
+[0m[49m[39m  602, 602[0m:[39m[49m     if cached:
+[0m[49m[39m  603, 603[0m:[39m[49m         logger.info("Cache hit for %s:%s", terminology, code)
+[0m[49m[39m  604, 604[0m:[39m[49m         return json.loads(cached)
+[0m[49m[39m  605, 605[0m:[39m[49m 
+[0m[49m[39m  606, 606[0m:[39m[49m     # Cache miss. Query Neptune via openCypher.
+[0m[49m[39m  607, 607[0m:[39m[49m     logger.info("Cache miss for %s:%s, querying Neptune", terminology, code)
+[0m[49m[38;5;9m- 608     [0m:[38;5;9m[49m     result = query_neptune_for_mappings(code, terminology, target_terminologies)
+[0m[49m[38;5;10m+      608[0m:[38;5;10m[49m     try:
+[0m[49m[38;5;10m+      609[0m:[38;5;10m[49m         result = query_neptune_for_mappings(code, terminology, target_terminologies)
+[0m[49m[38;5;10m+      610[0m:[38;5;10m[49m     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+[0m[49m[38;5;10m+      611[0m:[38;5;10m[49m         # Neptune unreachable. Check if we have a stale cached version
+[0m[49m[38;5;10m+      612[0m:[38;5;10m[49m         # (previous TTL may have expired but we keep a backup key with longer TTL).
+[0m[49m[38;5;10m+      613[0m:[38;5;10m[49m         stale_key = f"norm_stale:{terminology}:{code}:{targets_key}"
+[0m[49m[38;5;10m+      614[0m:[38;5;10m[49m         stale = redis_client.get(stale_key)
+[0m[49m[38;5;10m+      615[0m:[38;5;10m[49m         if stale:
+[0m[49m[38;5;10m+      616[0m:[38;5;10m[49m             logger.warning("Neptune unavailable, returning stale cache for %s:%s", terminology, code)
+[0m[49m[38;5;10m+      617[0m:[38;5;10m[49m             stale_result = json.loads(stale)
+[0m[49m[38;5;10m+      618[0m:[38;5;10m[49m             stale_result["stale"] = True
+[0m[49m[38;5;10m+      619[0m:[38;5;10m[49m             return stale_result
+[0m[49m[38;5;10m+      620[0m:[38;5;10m[49m         # No stale data available either. Return degraded status.
+[0m[49m[38;5;10m+      621[0m:[38;5;10m[49m         logger.error("Neptune unavailable and no stale cache for %s:%s: %s", terminology, code, e)
+[0m[49m[38;5;10m+      622[0m:[38;5;10m[49m         return {
+[0m[49m[38;5;10m+      623[0m:[38;5;10m[49m             "status": "service_degraded",
+[0m[49m[38;5;10m+      624[0m:[38;5;10m[49m             "code": code,
+[0m[49m[38;5;10m+      625[0m:[38;5;10m[49m             "terminology": terminology,
+[0m[49m[38;5;10m+      626[0m:[38;5;10m[49m             "message": "Normalization service temporarily unavailable",
+[0m[49m[38;5;10m+      627[0m:[38;5;10m[49m         }
+[0m[49m[39m  609, 628[0m:[39m[49m 
+[0m[49m[39m  610, 629[0m:[39m[49m     # Cache the result for future lookups.
+[0m[49m[39m  611, 630[0m:[39m[49m     if result["status"] == "found":
+[0m[49m[38;5;9m- 612     [0m:[38;5;9m[49m         redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(result))
+[0m[49m[38;5;10m+      631[0m:[38;5;10m[49m         redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(result))
+[0m[49m[38;5;10m+      632[0m:[38;5;10m[49m         # Also store a longer-lived stale copy for fallback during outages.
+[0m[49m[38;5;10m+      633[0m:[38;5;10m[49m         stale_key = f"norm_stale:{terminology}:{code}:{targets_key}"
+[0m[49m[38;5;10m+      634[0m:[38;5;10m[49m         redis_client.setex(stale_key, CACHE_TTL_SECONDS * 7, json.dumps(result))
+[0m[K
+Updating: [38;5;141mchapter13.08-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me also add a cache invalidation function to the Python example to be consistent with the new Step 7 in the architecture companion:[0m[0m
+I'll modify the following file: [38;5;141mchapter13.08-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  891, 891[0m:[39m[49m ## Putting It All Together
+[0m[49m[39m  892, 892[0m:[39m[49m 
+[0m[49m[39m  893, 893[0m:[39m[49m Here's the full pipeline assembled into callable functions. The ingestion pipeline runs when new terminology releases arrive. The normalization service runs continuously, serving queries from consuming systems.
+[0m[49m[39m  894, 894[0m:[39m[49m 
+[0m[49m[39m  895, 895[0m:[39m[49m ```python
+[0m[49m[38;5;10m+      896[0m:[38;5;10m[49m def invalidate_cache_after_load(
+[0m[49m[38;5;10m+      897[0m:[38;5;10m[49m     terminology: str,
+[0m[49m[38;5;10m+      898[0m:[38;5;10m[49m     changed_codes: list[str],
+[0m[49m[38;5;10m+      899[0m:[38;5;10m[49m     selective_threshold: int = 5000,
+[0m[49m[38;5;10m+      900[0m:[38;5;10m[49m ) -> dict:
+[0m[49m[38;5;10m+      901[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+      902[0m:[38;5;10m[49m     Invalidate Redis cache entries affected by a terminology update.
+[0m[49m[38;5;10m+      903[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      904[0m:[38;5;10m[49m     After loading a new terminology version into Neptune, stale mappings
+[0m[49m[38;5;10m+      905[0m:[38;5;10m[49m     live in the cache. This function computes whether to selectively
+[0m[49m[38;5;10m+      906[0m:[38;5;10m[49m     invalidate affected keys or flush the entire cache based on the size
+[0m[49m[38;5;10m+      907[0m:[38;5;10m[49m     of the change delta.
+[0m[49m[38;5;10m+      908[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      909[0m:[38;5;10m[49m     Args:
+[0m[49m[38;5;10m+      910[0m:[38;5;10m[49m         terminology: Which terminology was updated (e.g., "ICD10CM")
+[0m[49m[38;5;10m+      911[0m:[38;5;10m[49m         changed_codes: List of codes that were added, retired, or modified
+[0m[49m[38;5;10m+      912[0m:[38;5;10m[49m         selective_threshold: If more codes changed than this, flush everything
+[0m[49m[38;5;10m+      913[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      914[0m:[38;5;10m[49m     Returns:
+[0m[49m[38;5;10m+      915[0m:[38;5;10m[49m         Summary of invalidation actions taken.
+[0m[49m[38;5;10m+      916[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+      917[0m:[38;5;10m[49m     if len(changed_codes) > selective_threshold:
+[0m[49m[38;5;10m+      918[0m:[38;5;10m[49m         # Large delta (annual update). Flush and optionally warm.
+[0m[49m[38;5;10m+      919[0m:[38;5;10m[49m         redis_client.flushdb()
+[0m[49m[38;5;10m+      920[0m:[38;5;10m[49m         logger.info("Full cache flush: %d codes changed (threshold: %d)",
+[0m[49m[38;5;10m+      921[0m:[38;5;10m[49m                     len(changed_codes), selective_threshold)
+[0m[49m[38;5;10m+      922[0m:[38;5;10m[49m         return {"strategy": "full_flush", "codes_affected": len(changed_codes)}
+[0m[49m[38;5;10m+      923[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      924[0m:[38;5;10m[49m     # Small delta. Selectively delete matching keys.
+[0m[49m[38;5;10m+      925[0m:[38;5;10m[49m     deleted_count = 0
+[0m[49m[38;5;10m+      926[0m:[38;5;10m[49m     for code in changed_codes:
+[0m[49m[38;5;10m+      927[0m:[38;5;10m[49m         # SCAN for matching keys (never use KEYS in production, it blocks Redis).
+[0m[49m[38;5;10m+      928[0m:[38;5;10m[49m         pattern = f"norm:{terminology}:{code}:*"
+[0m[49m[38;5;10m+      929[0m:[38;5;10m[49m         cursor = 0
+[0m[49m[38;5;10m+      930[0m:[38;5;10m[49m         while True:
+[0m[49m[38;5;10m+      931[0m:[38;5;10m[49m             cursor, keys = redis_client.scan(cursor=cursor, match=pattern, count=100)
+[0m[49m[38;5;10m+      932[0m:[38;5;10m[49m             if keys:
+[0m[49m[38;5;10m+      933[0m:[38;5;10m[49m                 redis_client.delete(*keys)
+[0m[49m[38;5;10m+      934[0m:[38;5;10m[49m                 deleted_count += len(keys)
+[0m[49m[38;5;10m+      935[0m:[38;5;10m[49m             if cursor == 0:
+[0m[49m[38;5;10m+      936[0m:[38;5;10m[49m                 break
+[0m[49m[38;5;10m+      937[0m:[38;5;10m[49m         # Also clear stale fallback keys.
+[0m[49m[38;5;10m+      938[0m:[38;5;10m[49m         stale_pattern = f"norm_stale:{terminology}:{code}:*"
+[0m[49m[38;5;10m+      939[0m:[38;5;10m[49m         cursor = 0
+[0m[49m[38;5;10m+      940[0m:[38;5;10m[49m         while True:
+[0m[49m[38;5;10m+      941[0m:[38;5;10m[49m             cursor, keys = redis_client.scan(cursor=cursor, match=stale_pattern, count=100)
+[0m[49m[38;5;10m+      942[0m:[38;5;10m[49m             if keys:
+[0m[49m[38;5;10m+      943[0m:[38;5;10m[49m                 redis_client.delete(*keys)
+[0m[49m[38;5;10m+      944[0m:[38;5;10m[49m                 deleted_count += len(keys)
+[0m[49m[38;5;10m+      945[0m:[38;5;10m[49m             if cursor == 0:
+[0m[49m[38;5;10m+      946[0m:[38;5;10m[49m                 break
+[0m[49m[38;5;10m+      947[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      948[0m:[38;5;10m[49m     logger.info("Selective cache invalidation: deleted %d keys for %d changed codes",
+[0m[49m[38;5;10m+      949[0m:[38;5;10m[49m                 deleted_count, len(changed_codes))
+[0m[49m[38;5;10m+      950[0m:[38;5;10m[49m     return {"strategy": "selective", "codes_affected": len(changed_codes),
+[0m[49m[38;5;10m+      951[0m:[38;5;10m[49m             "keys_deleted": deleted_count}
+[0m[49m[38;5;10m+      952[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      953[0m:[38;5;10m[49m 
+[0m[49m[39m  896, 954[0m:[39m[49m def run_terminology_ingestion(
+[0m[K
+Updating: [38;5;141mchapter13.08-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me also update the "Gap Between This and Production" section in the Python example to reflect the changes (the fallback strategy and cache invalidation are now implemented, so I should update the references):[0m[0m
+I'll modify the following file: [38;5;141mchapter13.08-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 1067      [0m:[38;5;9m[49m **Error handling and resilience.** Every external call (Neptune, Redis, S3) can fail. Production code wraps each in try/except with specific handling for connection timeouts, throttling, and transient errors. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Your normalization service needs graceful degradation: if the cache is down, fall through to Neptune directly (slower but functional).
+[0m[49m[38;5;10m+       1067[0m:[38;5;10m[49m **Error handling and resilience.** Every external call (Neptune, Redis, S3) can fail. The `normalize_concept` function above demonstrates basic Neptune fallback (returning stale cached data or a degraded status), but production code needs the same pattern for every integration point. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Extend the graceful degradation pattern to value set expansion and batch normalization as well.
+[0m[K
+Updating: [38;5;141mchapter13.08-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+I'll modify the following file: [38;5;141mchapter13.08-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 1083      [0m:[38;5;9m[49m **Cache invalidation.** When you load a new terminology version, which cache entries are stale? The naive approach (flush everything) causes a thundering herd on Neptune. The smart approach computes the delta (which concepts changed between versions) and selectively invalidates only affected cache keys. This requires tracking which CUIs were modified in the new release.
+[0m[49m[38;5;10m+       1083[0m:[38;5;10m[49m **Cache invalidation.** The `invalidate_cache_after_load` function above demonstrates the basic strategy (selective vs. full flush based on delta size). Production needs additional work: tracking which value set expansions contain which concepts for precise invalidation, wiring the invalidation into your Step Functions orchestrator as a mandatory post-load step, and adding monitoring to alert when invalidation takes longer than expected.
+[0m[K
+Updating: [38;5;141mchapter13.08-python-example.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me verify there are no em dashes or en dashes in the edited content:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141m–[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '–' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141m–[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '–' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood, no em dashes or en dashes. Let me verify the structure is correct by checking the architecture file around the new sections:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m9[0m to [38;5;141m12[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1406 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me verify the Step 7 pseudocode was placed correctly:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141mstep 7[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 2 matches for pattern 'Step 7' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me also verify the "Why This Isn't Production-Ready" section is properly placed:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141mwhy this isn[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'Why This Isn' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. Let me check that it sits between Expected Results and Variations:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m485[0m to [38;5;141m530[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4730 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mAll four findings are resolved. Now let me clear the TODO file since all items are addressed:[0m[0m
+I'll create the following file: [38;5;141mchapter13.08-todo.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m   1, 1[0m:[39m[49m # Open TODOs: Recipe 13.8: Medical Concept Normalization and Mapping
+[0m[49m[39m   2, 2[0m:[39m[49m 
+[0m[49m[38;5;9m-  3   [0m:[38;5;9m[49m > Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+[0m[49m[38;5;9m-  4   [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m-  5   [0m:[38;5;9m[49m ## architecture — `chapter13.08-architecture.md`
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m > All findings resolved 2026-06-22.
+[0m[49m[39m   6, 4[0m:[39m[49m 
+[0m[49m[38;5;9m-  7   [0m:[38;5;9m[49m - **L58** — TODO (TechWriter): Expert review A-4 (MEDIUM). Recommend db.r5.xlarge (32GB) as minimum for full UMLS deployment, plus a read replica for query isolation during bulk loads. Route API queries to the read replica; route ingestion writes to the primary. Update cost estimate to ~$1,400/month for primary + replica.
+[0m[49m[38;5;9m-  8   [0m:[38;5;9m[49m - **L60** — TODO (TechWriter): Expert review A-5 (MEDIUM). Add a fallback strategy for Neptune unavailability: if Neptune is unreachable, return cached results with a "stale: true" flag and "status: service_degraded" for cache misses. Mention Neptune multi-AZ deployment as the primary availability mechanism.
+[0m[49m[38;5;9m-  9   [0m:[38;5;9m[49m - **L380** — TODO (TechWriter): Expert review A-1 (HIGH). Add a Step 7 pseudocode block for cache invalidation during terminology updates. After Neptune bulk load completes, compute the set of changed concept codes from the terminology delta and selectively delete corresponding Redis cache keys. For large deltas (annual ICD-10 update), flush the entire cache or implement a cache warming step for top-N queried concepts.
+[0m[49m[38;5;9m- 10   [0m:[38;5;9m[49m - **L449** — TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close.
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m No open items.
+[0m[K
+Replacing: [38;5;141mchapter13.08-todo.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me do a final check to make sure there are no [38;5;10m<!-- TODO -->[0m comments in either source file:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141mtodo[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mtodo[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mClean. Let me also verify code blocks have language tags by checking for bare triple backticks:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141m^```$[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '^```$' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mAll code blocks have language tags. Let me do one final read of the new Step 7 pseudocode to make sure it's coherent:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m376[0m to [38;5;141m420[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3048 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mEverything looks good. Here's a summary of what was resolved:[0m[0m
+[0m[0m
+[1mAll 4 findings resolved:[22m[0m[0m
+[0m[0m
+1. [1mA-4 (Cost Estimate / Neptune sizing):[22m Updated the Prerequisites cost estimate to recommend [38;5;10mdb.r5.xlarge[0m (32 GB RAM) as minimum for full UMLS, plus a read replica for query isolation during bulk loads. Explained that API queries route to the read replica while ingestion writes go to the primary. Updated cost to ~$1,400/month for the Neptune tier (primary + replica), with total estimate now ~$1,900-2,500/month.[0m[0m
+[0m[0m
+2. [1mA-5 (Neptune fallback strategy):[22m Added fallback behavior to the Neptune paragraph in "Why These Services": multi-AZ as primary availability mechanism, returning cached results with [38;5;10m"stale": true[0m when Neptune is unreachable, and returning [38;5;10m"status": "service_degraded"[0m for cache misses. Also updated the Python example's [38;5;10mnormalize_concept()[0m function to implement this pattern with a stale-cache fallback key.[0m[0m
+[0m[0m
+3. [1mA-1 (Cache invalidation pseudocode):[22m Added a full Step 7 pseudocode block for cache invalidation during terminology updates. Covers computing the terminology delta, selective invalidation for small updates, full flush with cache warming for large updates (annual ICD-10 release), and using SCAN instead of KEYS. Also added a corresponding [38;5;10minvalidate_cache_after_load()[0m Python function in the companion.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 18.90 • Time: 3m 13s
+
+[0m[1G[0m[0m[?25h4. [1mL449 (Why This Isn't Production-Ready):[22m Added the required section between Expected Results and Variations, covering: no API auth enforcement in pseudocode, no graceful degradation wired in, cache invalidation not wired into Step Functions, no audit trail, single-region deployment, no version pinning per consumer, and missing input validation.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m121 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the source files for consistency and verify no issues remain.[0m[0m
+Searching for files: [38;5;141m**/chapter13*08*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1809[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m10 files[0m under /tmp/ralph-worktrees/iter-1809
+[38;5;244m - Completed in 0.31s[0m
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m36183 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m44670 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me check the review files for the original findings and the todo file to understand what was resolved:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/reviews/chapter13.08-expert-review.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/reviews/chapter13.08-code-review.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m7787 bytes[0m from /tmp/ralph-worktrees/iter-1809/reviews/chapter13.08-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m6273 bytes[0m from /tmp/ralph-worktrees/iter-1809/reviews/chapter13.08-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check for em dashes in the recipe source files:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1809[0m ([38;5;141mchapter13.08*[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m462 matches[0m in [38;5;244m5 files[0m under /tmp/ralph-worktrees/iter-1809 (result is truncated)
+[38;5;244m - Completed in 0.506s[0m
+
+[38;5;141m> [0mThe em dashes in the results are only in the HTML [38;5;10mdocs/[0m directory (auto-generated, not source files) and in the [38;5;10mreviews/[0m directory (review meta-files, not recipe source). Let me specifically check the actual recipe source files:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1809[0m ([38;5;141mchapter13.08-{medical,architecture,python}*[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m456 matches[0m in [38;5;244m3 files[0m under /tmp/ralph-worktrees/iter-1809 (result is truncated)
+[38;5;244m - Completed in 0.238s[0m
+
+[38;5;141m> [0mGood -- em dashes only appear in the HTML docs (auto-generated) and the reviews files. Let me explicitly check the markdown source files:[0m[0m
+I will run the following command: [38;5;141mgrep -c '—' /tmp/ralph-worktrees/iter-1809/chapter13.08-medical-concept-normalization-mapping.md /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md 2>/dev/null[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check for em dashes in the three recipe source markdown files
+
+/tmp/ralph-worktrees/iter-1809/chapter13.08-medical-concept-normalization-mapping.md:0
+/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md:0
+/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md:0
+[38;5;244m - Completed in 0.26s[0m
+
+[38;5;141m> [0mNo em dashes in the recipe source files. Now let me verify the key findings from the reviews are addressed. Let me check the architecture companion for the critical findings (S-1 PHI boundary, S-2 resource scoping, S-3 API auth, A-1 cache invalidation):[0m[0m
+Batch fs_read operation with [38;5;141m4[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141mphi boundary[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141msigv4[0m
+↱ Operation 3: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141mscoped to[0m
+↱ Operation 4: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m for pattern: [38;5;141minvalidat[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'PHI boundary' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+
+[38;5;10m ✓ [0mFound 2 matches for pattern 'SigV4' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+
+[38;5;10m ✓ [0mFound 1 matches for pattern 'scoped to' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+
+[38;5;10m ✓ [0mFound 6 matches for pattern 'invalidat' in /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 4 operations processed, 4 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me check the Python example for the code review findings (F1: double serialization comment, F2: batch ordering warning, F3: dedup ordering, F4: version comment):[0m[0m
+Batch fs_read operation with [38;5;141m4[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mneptune expects[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mwarning[0m
+↱ Operation 3: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mterm type filter first[0m
+↱ Operation 4: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mpseudocode includes version[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'Neptune expects' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 2 matches for pattern 'WARNING' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'Term type filter first' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'pseudocode includes version' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 4 operations processed, 4 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me check for the specific fixes more carefully:[0m[0m
+Batch fs_read operation with [38;5;141m4[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mdouble-serial[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mjson.*string.*within[0m
+↱ Operation 3: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mnot in the same order[0m
+↱ Operation 4: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mnot in.*same order[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'double-serial' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'JSON.*string.*within' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'NOT in the same order' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'not in.*same order' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 4 operations processed, 4 successful, 0 failed
+[38;5;244m - Completed in 0.2s[0m
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mjson.dumps.params[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mall_results.*cache_hits[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'json.dumps.params' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'all_results.*cache_hits' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mjson.dumps[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m for pattern: [38;5;141mcache_hits[0m
+[38;5;10m ✓ [0mFound 6 matches for pattern 'json.dumps' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mFound 4 matches for pattern 'cache_hits' in /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me read the specific sections around those code review findings more closely:[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, from line [38;5;141m685[0m to [38;5;141m695[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, from line [38;5;141m877[0m to [38;5;141m890[0m
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, from line [38;5;141m310[0m to [38;5;141m340[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m348 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m360 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1241 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, from line [38;5;141m250[0m to [38;5;141m270[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m587 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the [38;5;10mparse_umls_concepts[0m function to see if the dedup logic was fixed (Finding 3):[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, from line [38;5;141m160[0m to [38;5;141m195[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1199 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the [38;5;10mgenerate_node_id[0m function for Finding 4:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, from line [38;5;141m276[0m to [38;5;141m295[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m783 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a clear picture. Let me check the Neptune fallback logic in the architecture companion for finding A-1:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md[0m, from line [38;5;141m7[0m to [38;5;141m12[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1433 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me also verify the Python example has the graceful degradation that's consistent with the architecture:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md[0m, from line [38;5;141m600[0m to [38;5;141m630[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1438 bytes[0m from /tmp/ralph-worktrees/iter-1809/chapter13.08-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. The architecture companion says "return cached results with a [38;5;10m"stale": true[0m flag" and "return a [38;5;10m"status": "service_degraded"[0m response" -- and the Python example implements exactly this pattern. They're consistent.[0m[0m
+[0m[0m
+Now let me check whether the code review findings (1-4, all marked WARNING or NOTE, not blocking) were addressed. The code review verdict was "PASS" meaning these were suggestions, not mandatory fixes. Let me verify the todo file interpretation:[0m[0m
+[0m[0m
+Looking at the findings:[0m[0m
+1. [1mCode Review Finding 1[22m (WARNING): Neptune [38;5;10mjson.dumps(params)[0m double-serialization unexplained - the code at line 690 still lacks the explanatory comment[0m[0m
+2. [1mCode Review Finding 2[22m (WARNING): batch ordering comment - the comment at line 882 says "(This simplified version just appends; production would maintain order.)" which is present but not the more prominent "WARNING" version[0m[0m
+3. [1mCode Review Finding 3[22m (WARNING): dedup logic ordering - the code still has dedup check before term_type filter (lines 180-190)[0m[0m
+4. [1mCode Review Finding 4[22m (NOTE): version omission in [38;5;10mgenerate_node_id[0m - no comment explaining the simplification[0m[0m
+[0m[0m
+The todo file says "All findings resolved 2026-06-22. No open items." But I need to verify whether these code review findings were actually part of the todo file originally. Let me check git history or the edit-status:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1809/reviews/chapter13.08-edit-status.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2891 bytes[0m from /tmp/ralph-worktrees/iter-1809/reviews/chapter13.08-edit-status.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I can see the full picture. The edit status shows:[0m[0m
+- Findings A-1, A-4, A-5 were "deferred with TODO markers" for the TechWriter to address[0m[0m
+- Code review findings 1-4 were listed as "Not Applicable to Main Recipe" but they apply to the Python companion[0m[0m
+[0m[0m
+Let me check if the code review findings were indeed in the original todo file. Let me look at git log:[0m[0m
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git log --oneline -10 -- chapter13.08-todo.md 2>/dev/null[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check git history for the todo file
+
+3cd4ee74 Fix finding-resolution validator churn + reconcile state after overnight crash
+af435b8d Extract 2,115 inline TODO findings into per-recipe -todo.md files
+[38;5;244m - Completed in 9.724s[0m
+
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git show af435b8d:chapter13.08-todo.md 2>/dev/null | head -80[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check original todo file content
+
+# Open TODOs — Recipe 13.8: Medical Concept Normalization and Mapping
+
+> Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+
+## architecture — `chapter13.08-architecture.md`
+
+- **L58** — TODO (TechWriter): Expert review A-4 (MEDIUM). Recommend db.r5.xlarge (32GB) as minimum for full UMLS deployment, plus a read replica for query isolation during bulk loads. Route API queries to the read replica; route ingestion writes to the primary. Update cost estimate to ~$1,400/month for primary + replica.
+- **L60** — TODO (TechWriter): Expert review A-5 (MEDIUM). Add a fallback strategy for Neptune unavailability: if Neptune is unreachable, return cached results with a "stale: true" flag and "status: service_degraded" for cache misses. Mention Neptune multi-AZ deployment as the primary availability mechanism.
+- **L380** — TODO (TechWriter): Expert review A-1 (HIGH). Add a Step 7 pseudocode block for cache invalidation during terminology updates. After Neptune bulk load completes, compute the set of changed concept codes from the terminology delta and selectively delete corresponding Redis cache keys. For large deltas (annual ICD-10 update), flush the entire cache or implement a cache warming step for top-N queried concepts.
+- **L449** — TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close.
+[38;5;244m - Completed in 0.725s[0m
+
+[38;5;141m> [0mNow let me see the state after the fix was applied:[0m[0m
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git show 3cd4ee74:chapter13.08-todo.md 2>/dev/null[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check the current (final) todo file content
+
+# Open TODOs: Recipe 13.8: Medical Concept Normalization and Mapping
+
+> Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+
+## architecture — `chapter13.08-architecture.md`
+
+- **L58** — TODO (TechWriter): Expert review A-4 (MEDIUM). Recommend db.r5.xlarge (32GB) as minimum for full UMLS deployment, plus a read replica for query isolation during bulk loads. Route API queries to the read replica; route ingestion writes to the primary. Update cost estimate to ~$1,400/month for primary + replica.
+- **L60** — TODO (TechWriter): Expert review A-5 (MEDIUM). Add a fallback strategy for Neptune unavailability: if Neptune is unreachable, return cached results with a "stale: true" flag and "status: service_degraded" for cache misses. Mention Neptune multi-AZ deployment as the primary availability mechanism.
+- **L380** — TODO (TechWriter): Expert review A-1 (HIGH). Add a Step 7 pseudocode block for cache invalidation during terminology updates. After Neptune bulk load completes, compute the set of changed concept codes from the terminology delta and selectively delete corresponding Redis cache keys. For large deltas (annual ICD-10 update), flush the entire cache or implement a cache warming step for top-N queried concepts.
+- **L449** — TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close.
+[38;5;244m - Completed in 0.406s[0m
+
+[38;5;141m> [0mInteresting! So that commit [38;5;10m3cd4ee74[0m has the same content as the original -- let me check the current HEAD state:[0m[0m
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git log --oneline -5[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check recent git history
+
+3db4a279 ralph: iter=1805 task=ch13-r05-findings persona=TechWriter outcome=pass batch=batch-1782111444965-000036-1ca6a995419e79a3
+6901c7ae ralph: iter=1804 task=ch13-r04-findings persona=TechWriter outcome=fail batch=batch-1782111444965-000036-1ca6a995419e79a3
+0ae02381 ralph: iter=1803 task=ch13-r03-findings persona=TechWriter outcome=pass batch=batch-1782111444965-000036-1ca6a995419e79a3
+662f5a49 ralph: iter=1802 task=ch13-r02-findings persona=TechWriter outcome=pass batch=batch-1782111444965-000036-1ca6a995419e79a3
+af2d6423 ralph: iter=1801 task=ch13-r01-findings persona=TechWriter outcome=pass batch=batch-1782110926592-000035-587d46c4ced73442
+[38;5;244m - Completed in 0.497s[0m
+
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git log --all --oneline -- chapter13.08-todo.md | head -5[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check all commits touching todo file
+
+3cd4ee74 Fix finding-resolution validator churn + reconcile state after overnight crash
+af435b8d Extract 2,115 inline TODO findings into per-recipe -todo.md files
+[38;5;244m - Completed in 2.782s[0m
+
+[38;5;141m> [0mSo the current worktree at HEAD (iter-1809) has the todo file showing "All findings resolved 2026-06-22. No open items." but the git history shows the original 4 items. This means the working tree has uncommitted changes. Let me verify:[0m[0m
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git diff --stat 2>/dev/null | head -20[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check uncommitted changes
+
+ chapter13.08-architecture.md   | 72 ++++++++++++++++++++++++++++++++++-
+ chapter13.08-python-example.md | 86 ++++++++++++++++++++++++++++++++++++++++--
+ chapter13.08-todo.md           |  9 +----
+ 3 files changed, 155 insertions(+), 12 deletions(-)
+[38;5;244m - Completed in 0.228s[0m
+
+[38;5;141m> [0mGood. So there are uncommitted changes resolving the findings. Let me verify the changes to the Python example address the code review findings:[0m[0m
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git diff chapter13.08-python-example.md 2>/dev/null[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check Python example changes
+
+diff --git a/chapter13.08-python-example.md b/chapter13.08-python-example.md
+index 7a386373..2208f955 100644
+--- a/chapter13.08-python-example.md
++++ b/chapter13.08-python-example.md
+@@ -605,11 +605,33 @@ def normalize_concept(
+ 
+     # Cache miss. Query Neptune via openCypher.
+     logger.info("Cache miss for %s:%s, querying Neptune", terminology, code)
+-    result = query_neptune_for_mappings(code, terminology, target_terminologies)
++    try:
++        result = query_neptune_for_mappings(code, terminology, target_terminologies)
++    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
++        # Neptune unreachable. Check if we have a stale cached version
++        # (previous TTL may have expired but we keep a backup key with longer TTL).
++        stale_key = f"norm_stale:{terminology}:{code}:{targets_key}"
++        stale = redis_client.get(stale_key)
++        if stale:
++            logger.warning("Neptune unavailable, returning stale cache for %s:%s", terminology, code)
++            stale_result = json.loads(stale)
++            stale_result["stale"] = True
++            return stale_result
++        # No stale data available either. Return degraded status.
++        logger.error("Neptune unavailable and no stale cache for %s:%s: %s", terminology, code, e)
++        return {
++            "status": "service_degraded",
++            "code": code,
++            "terminology": terminology,
++            "message": "Normalization service temporarily unavailable",
++        }
+ 
+     # Cache the result for future lookups.
+     if result["status"] == "found":
+         redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(result))
++        # Also store a longer-lived stale copy for fallback during outages.
++        stale_key = f"norm_stale:{terminology}:{code}:{targets_key}"
++        redis_client.setex(stale_key, CACHE_TTL_SECONDS * 7, json.dumps(result))
+ 
+     return result
+ 
+@@ -871,6 +893,64 @@ def batch_normalize(
+ Here's the full pipeline assembled into callable functions. The ingestion pipeline runs when new terminology releases arrive. The normalization service runs continuously, serving queries from consuming systems.
+ 
+ ```python
++def invalidate_cache_after_load(
++    terminology: str,
++    changed_codes: list[str],
++    selective_threshold: int = 5000,
++) -> dict:
++    """
++    Invalidate Redis cache entries affected by a terminology update.
++
++    After loading a new terminology version into Neptune, stale mappings
++    live in the cache. This function computes whether to selectively
++    invalidate affected keys or flush the entire cache based on the size
++    of the change delta.
++
++    Args:
++        terminology: Which terminology was updated (e.g., "ICD10CM")
++        changed_codes: List of codes that were added, retired, or modified
++        selective_threshold: If more codes changed than this, flush everything
++
++    Returns:
++        Summary of invalidation actions taken.
++    """
++    if len(changed_codes) > selective_threshold:
++        # Large delta (annual update). Flush and optionally warm.
++        redis_client.flushdb()
++        logger.info("Full cache flush: %d codes changed (threshold: %d)",
++                    len(changed_codes), selective_threshold)
++        return {"strategy": "full_flush", "codes_affected": len(changed_codes)}
++
++    # Small delta. Selectively delete matching keys.
++    deleted_count = 0
++    for code in changed_codes:
++        # SCAN for matching keys (never use KEYS in production, it blocks Redis).
++        pattern = f"norm:{terminology}:{code}:*"
++        cursor = 0
++        while True:
++            cursor, keys = redis_client.scan(cursor=cursor, match=pattern, count=100)
++            if keys:
++                redis_client.delete(*keys)
++                deleted_count += len(keys)
++            if cursor == 0:
++                break
++        # Also clear stale fallback keys.
++        stale_pattern = f"norm_stale:{terminology}:{code}:*"
++        cursor = 0
++        while True:
++            cursor, keys = redis_client.scan(cursor=cursor, match=stale_pattern, count=100)
++            if keys:
++                redis_client.delete(*keys)
++                deleted_count += len(keys)
++            if cursor == 0:
++                break
++
++    logger.info("Selective cache invalidation: deleted %d keys for %d changed codes",
++                deleted_count, len(changed_codes))
++    return {"strategy": "selective", "codes_affected": len(changed_codes),
++            "keys_deleted": deleted_count}
++
++
+ def run_terminology_ingestion(
+     mrconso_path: str,
+     mrrel_path: str,
+@@ -984,7 +1064,7 @@ if __name__ == "__main__":
+ 
+ This example demonstrates the core patterns. It parses UMLS files, builds graph load files, queries Neptune, and caches results. But there's a significant distance between this sketch and something you'd deploy to support clinical systems. Here's where that gap lives:
+ 
+-**Error handling and resilience.** Every external call (Neptune, Redis, S3) can fail. Production code wraps each in try/except with specific handling for connection timeouts, throttling, and transient errors. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Your normalization service needs graceful degradation: if the cache is down, fall through to Neptune directly (slower but functional).
++**Error handling and resilience.** Every external call (Neptune, Redis, S3) can fail. The `normalize_concept` function above demonstrates basic Neptune fallback (returning stale cached data or a degraded status), but production code needs the same pattern for every integration point. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Extend the graceful degradation pattern to value set expansion and batch normalization as well.
+ 
+ **Retries and backoff.** The boto3 retry config handles S3 and basic AWS calls, but Neptune HTTP queries and Redis operations need their own retry logic. Exponential backoff with jitter prevents thundering herd problems when a service recovers from an outage.
+ 
+@@ -1000,7 +1080,7 @@ This example demonstrates the core patterns. It parses UMLS files, builds graph
+ 
+ **Version management.** This example loads a single version. Production maintains multiple versions simultaneously (the current ICD-10 release and the previous one, because claims filed before October use the old codes). You need version-aware queries and a strategy for retiring old versions without breaking historical lookups.
+ 
+-**Cache invalidation.** When you load a new terminology version, which cache entries are stale? The naive approach (flush everything) causes a thundering herd on Neptune. The smart approach computes the delta (which concepts changed between versions) and selectively invalidates only affected cache keys. This requires tracking which CUIs were modified in the new release.
++**Cache invalidation.** The `invalidate_cache_after_load` function above demonstrates the basic strategy (selective vs. full flush based on delta size). Production needs additional work: tracking which value set expansions contain which concepts for precise invalidation, wiring the invalidation into your Step Functions orchestrator as a mandatory post-load step, and adding monitoring to alert when invalidation takes longer than expected.
+ 
+ **Bulk query optimization.** The `batch_normalize` function processes misses one at a time. Production uses Neptune's ability to handle multiple patterns in a single query (via UNWIND in openCypher) to batch cache misses into fewer round trips. For a batch of 1,000 codes, you want 1-2 Neptune queries, not 1,000.
+ 
+[38;5;244m - Completed in 0.240s[0m
+
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1809 && git diff chapter13.08-architecture.md 2>/dev/null[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check architecture companion changes
+
+diff --git a/chapter13.08-architecture.md b/chapter13.08-architecture.md
+index d3878b4f..2324a9ce 100644
+--- a/chapter13.08-architecture.md
++++ b/chapter13.08-architecture.md
+@@ -8,7 +8,7 @@
+ 
+ ### Why These Services
+ 
+-**Amazon Neptune for the knowledge graph store.** Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be.
++**Amazon Neptune for the knowledge graph store.** Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be. Deploy Neptune with multi-AZ enabled as the primary availability mechanism; this gives you automatic failover if the primary instance becomes unhealthy. For unavailability scenarios beyond what multi-AZ covers (regional issues, prolonged Neptune throttling), implement a fallback strategy in the Lambda layer: if Neptune is unreachable, return cached results with a `"stale": true` flag so consumers know the data may be outdated. For cache misses during Neptune outages, return a `"status": "service_degraded"` response rather than failing the request entirely. This lets downstream systems decide whether to proceed with degraded data or queue the request for retry.
+ 
+ **AWS Glue for terminology ingestion.** Terminology files come in various formats (RRF for UMLS/RxNorm, RF2 for SNOMED, CSV for ICD-10, custom formats for LOINC). Glue ETL jobs handle the parsing and transformation, writing Neptune bulk loader CSV files to S3. The Neptune bulk loader then reads directly from S3 using its own IAM role (Neptune fetches the files, not Glue). This means Neptune's VPC needs an S3 Gateway endpoint, and Neptune's IAM role needs `s3:GetObject` on the processed files bucket. The jobs run on each terminology release, which means monthly at most. Glue's serverless Spark environment handles the large file sizes (UMLS is multiple gigabytes) without requiring persistent infrastructure.
+ 
+@@ -53,7 +53,7 @@ flowchart TD
+ | **CloudTrail** | Enabled for all API calls. Neptune audit logging enabled for query-level audit trail. |
+ | **Terminology Licenses** | UMLS license (free, requires registration with NLM). SNOMED CT (free in US via NLM). CPT (paid AMA license). ICD-10 (free from CMS). LOINC (free, requires registration). RxNorm (free via NLM). |
+ | **Sample Data** | UMLS Metathesaurus subset. NLM provides sample files for development. Never load full UMLS into a dev environment without understanding the size (multiple GB). |
+-| **Cost Estimate** | Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200-2,000/month for a basic deployment. |
++| **Cost Estimate** | Neptune db.r5.xlarge (32 GB RAM, minimum for full UMLS deployment): ~$1,400/month for primary plus one read replica. Route API queries to the read replica; route ingestion writes to the primary. This isolates query latency from bulk load I/O. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,900-2,500/month for a basic deployment. |
+ 
+ ### Ingredients
+ 
+@@ -373,6 +373,54 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
+     }
+ ```
+ 
++**Step 7: Cache invalidation during terminology updates.** When you load a new terminology version into Neptune, your Redis cache holds stale mappings. The naive approach (flush everything) causes a thundering herd of cache misses against Neptune. The smart approach computes what changed and selectively invalidates only the affected keys. For large annual updates (like the yearly ICD-10-CM release that changes thousands of codes), selective invalidation can still be massive, so you need a threshold above which you flush the entire cache and optionally run a cache warming step for the most frequently queried concepts.
++
++```pseudocode
++FUNCTION invalidate_cache_after_load(terminology_name, old_version, new_version):
++    // Compute the delta: which concept codes changed between versions.
++    // "Changed" means added, retired, or had relationships modified.
++    // The terminology release notes typically include a changes file
++    // (e.g., ICD-10-CM provides an addendum with new/revised/deleted codes).
++    
++    changed_codes = compute_terminology_delta(terminology_name, old_version, new_version)
++    
++    // Define a threshold for switching between selective and full invalidation.
++    // If more than 10% of cached concepts changed, it's cheaper to flush everything
++    // than to issue thousands of individual DELETE commands.
++    SELECTIVE_THRESHOLD = 5000
++    
++    IF length(changed_codes) > SELECTIVE_THRESHOLD:
++        // Large delta (e.g., annual ICD-10 update). Flush the entire cache.
++        redis.flushdb()
++        
++        // Optionally warm the cache for the top-N most queried concepts.
++        // Pull top queries from CloudWatch Logs Insights or a separate counter.
++        top_concepts = get_top_queried_concepts(limit=1000)
++        FOR each concept in top_concepts:
++            normalize_concept(concept.code, concept.terminology)
++            // Each call populates the cache as a side effect.
++    ELSE:
++        // Small delta (e.g., monthly RxNorm update with a few hundred changes).
++        // Selectively delete cache keys for changed concepts.
++        FOR each code in changed_codes:
++            // Delete all cache keys that reference this code.
++            // Cache keys follow the pattern: norm:{terminology}:{code}:{targets}
++            // Use a SCAN + match pattern rather than KEYS (KEYS blocks Redis).
++            pattern = "norm:" + terminology_name + ":" + code + ":*"
++            matching_keys = redis.scan_match(pattern)
++            IF matching_keys is not empty:
++                redis.delete(matching_keys)
++            
++            // Also invalidate any value set expansions that might include this code.
++            // This is harder: you'd need to track which expansions contain which codes.
++            // A practical shortcut: set a shorter TTL on value set expansion cache entries
++            // so they naturally refresh within hours of a load.
++    
++    log("Cache invalidation complete. Strategy: " + 
++        (IF length(changed_codes) > SELECTIVE_THRESHOLD THEN "full_flush" ELSE "selective") +
++        ", changed_codes: " + length(changed_codes))
++```
++
+ > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune graph client, check out the [Python Example](chapter13.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+ 
+ ### Expected Results
+@@ -440,6 +488,26 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
+ 
+ ---
+ 
++## Why This Isn't Production-Ready
++
++This pseudocode demonstrates the normalization pattern, but a production deployment needs to close several gaps:
++
++**No authentication or authorization on the API.** The walkthrough shows API Gateway with IAM auth mentioned in the "Why These Services" section but not enforced in the pseudocode. Production requires SigV4 request signing, scoped IAM policies per consuming service, and request throttling configured per caller.
++
++**No graceful degradation under Neptune failure.** The pseudocode returns errors if Neptune is unreachable. Production needs the fallback strategy described above: serve stale cached results with a degradation flag, and return structured error responses for cache misses during outages.
++
++**No cache invalidation logic in the ingestion pipeline.** Step 7 describes cache invalidation, but it's not wired into the Step Functions orchestration. Production must invoke cache invalidation as a mandatory step after a successful bulk load, with rollback logic if invalidation fails partway through.
++
++**No audit trail for normalization decisions.** When your system maps ICD-10 E11 to SNOMED 44054006, downstream clinical decisions depend on that mapping being correct. Production logs every normalization result (code, mapping chosen, confidence, timestamp) to an immutable audit store for retrospective analysis and compliance reviews.
++
++**Single-region deployment.** The architecture assumes one Neptune cluster in one region. For organizations with multi-region requirements (disaster recovery, data residency), you need Neptune global databases or a replication strategy for the terminology data.
++
++**No terminology version pinning per consumer.** Different consuming systems may need different terminology versions simultaneously. A claims system processing last month's data needs last month's ICD-10 codes. Production requires version-aware routing so each consumer gets mappings from the correct terminology vintage.
++
++**Missing input validation.** The pseudocode trusts input codes. Production validates format patterns (ICD-10 codes match `[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?`, SNOMED codes are numeric, LOINC codes match `[0-9]+-[0-9]`). Malformed inputs should fail fast with clear error messages.
++
++---
++
+ ## Variations and Extensions
+ 
+ **Real-time NLP normalization.** Integrate the normalization API with an NLP pipeline (see Chapter 8) that extracts clinical concepts from free text. The NLP system identifies "type 2 DM" in a clinical note, the normalization service maps it to the canonical SNOMED concept, and downstream systems get structured, coded data from unstructured text. This is the bridge between NLP extraction and computable clinical data.
+[38;5;244m - Completed in 0.432s[0m
+
+[38;5;141m> [0mNow I have a comprehensive view. Let me assess:[0m[0m
+[0m[0m
+[1mOriginal todo items (4 findings):[22m[0m[0m
+1. [1mA-4[22m (MEDIUM): Neptune sizing to db.r5.xlarge + read replica + cost update → ✅ Fixed in architecture (cost estimate updated)[0m[0m
+2. [1mA-5[22m (MEDIUM): Fallback strategy for Neptune unavailability → ✅ Fixed in architecture (Neptune paragraph expanded with multi-AZ + degradation)[0m[0m
+3. [1mA-1[22m (HIGH): Step 7 cache invalidation pseudocode → ✅ Added in architecture[0m[0m
+4. [1mL449[22m: "Why This Isn't Production-Ready" section → ✅ Added in architecture[0m[0m
+[0m[0m
+[1mArchitecture/Python consistency:[22m[0m[0m
+- Architecture describes fallback with [38;5;10m"stale": true[0m and [38;5;10m"service_degraded"[0m → Python implements exactly this ✅[0m[0m
+- Architecture has Step 7 cache invalidation pseudocode → Python has matching [38;5;10minvalidate_cache_after_load[0m function ✅[0m[0m
+- Architecture mentions SigV4, private API → consistent with Python's use of [38;5;10mget_neptune_auth()[0m (SigV4) ✅[0m[0m
+[0m[0m
+[1mCode review findings (from Python companion):[22m[0m[0m
+These were listed as WARNING/NOTE severity in a review that gave an overall "PASS" verdict. They were NOT listed in the original todo file. They were listed in the edit-status as "Not Applicable to Main Recipe" -- meaning they apply to the Python companion but were never extracted as todo items. The task spec says "Every open finding listed in chapter13.08-todo.md has been either (a) resolved... or (b) explicitly deferred." Since these code review findings were never in the todo file, they're outside the pass condition scope.[0m[0m
+[0m[0m
+[1mNo em dashes[22m in source files ✅[0m[0m
+[1mNo clinical or security regressions[22m ✅ (added security patterns, not removed them)[0m[0m
+[1mResolved items removed from todo[22m ✅ (todo shows "No open items")[0m[0m
+[1mArchitecture and Python consistent[22m ✅[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 17.84 • Time: 2m 34s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "All 4 original todo items (A-1 cache invalidation step, A-4 Neptune sizing, A-5 fallback strategy, production-ready section) are resolved in the architecture companion with technically sound, HIPAA-compliant fixes. The Python example adds matching implementations (Neptune fallback with stale/degraded responses, cache invalidation function) maintaining mutual consistency. No em dashes in source files. No clinical or security regressions. Todo file correctly cleared. Code review findings (WARNING/NOTE severity from a PASS verdict) were never in the todo file and are outside scope."}
