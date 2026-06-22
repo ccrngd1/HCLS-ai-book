@@ -1999,7 +1999,7 @@ Trigger 1: court-ordered legal name change
            (Catherine Marie Wilson -> Catherine Marie Hernandez)
 ----------------------------------------------------------------------
   detection.classification:  DIRECT
-  detection_score:           0.943
+  detection_score:           0.916
   resolution:                AUTO_RESOLVE_HIGH
   sensitivity_class:         GENERAL
   permitted_display_contexts: ['treatment', 'operations']
@@ -2010,7 +2010,7 @@ Trigger 2: front-desk self-assertion (no document)
            (Maria Garcia -> Maria Garcia-Lopez)
 ----------------------------------------------------------------------
   detection.classification:  DIRECT
-  detection_score:           0.808
+  detection_score:           0.788
   resolution:                REVIEW_PENDING_DIRECT
   pending_id:                pending-XXXXXXXXXX
   requires:                  ['human_review', 'supporting_document']
@@ -2020,7 +2020,7 @@ Trigger 3: payer eligibility refresh (indirect detection)
            (Margaret Chen -> Margaret Chen-Patel)
 ----------------------------------------------------------------------
   detection.classification:  INDIRECT
-  detection_score:           0.879
+  detection_score:           0.829
   resolution:                REVIEW_PENDING_INDIRECT
   pending_id:                pending-XXXXXXXXXX
 
@@ -2029,7 +2029,7 @@ Trigger 4: court-ordered change with masked-display preference
            (existing identity-internal-07331)
 ----------------------------------------------------------------------
   detection.classification:  DIRECT
-  detection_score:           0.951
+  detection_score:           0.909
   resolution:                AUTO_RESOLVE_HIGH
   sensitivity_class:         GENDER_AFFIRMING
   permitted_display_contexts: ['treatment_with_clinical_relevance']
@@ -2052,7 +2052,7 @@ Phase 2: invalidation triggers
 Several patterns to notice:
 
 - **Trigger 1 is the textbook auto-resolve case.** A court-order document is the strongest source. The patient's DOB, address, phone, and SSN-last-4 all match the existing identity exactly; the prior name is asserted explicitly; the surname change is a clean maiden-to-married replacement; the asserted change date is consistent with the identity's history. The detection score lands above the DIRECT_NAME_CHANGE_HIGH threshold, the resolver auto-resolves, the envelope defaults to GENERAL because no patient preferences were captured for this identity, and the propagation step fans out to all nine standard consumers (local MPI, cross-reference, cross-facility matcher, claims-clinical, chart-rendering, release-of-information, patient-portal, quality, HealthLake).
-- **Trigger 2 demonstrates the pending-review path.** A front-desk self-assertion with a plausible hyphenation pattern (Garcia -> Garcia-Lopez) and good demographic match. The detection score is solid (~0.81 after the MEDIUM-WEAK source-strength multiplier), but it falls below the DIRECT_NAME_CHANGE_HIGH threshold and the source is not STRONG, so the resolver routes to REVIEW_PENDING_DIRECT. The pending item lands in the review queue with a `requires: ['human_review', 'supporting_document']` flag; production surfaces it to the medical-records review staff. Trigger 5 in the invalidation phase upgrades this case with a marriage certificate.
+- **Trigger 2 demonstrates the pending-review path.** A front-desk self-assertion with a plausible hyphenation pattern (Garcia -> Garcia-Lopez) and good demographic match. The detection score is solid (~0.79 after the MEDIUM-WEAK source-strength multiplier), but it falls below the DIRECT_NAME_CHANGE_HIGH threshold and the source is not STRONG, so the resolver routes to REVIEW_PENDING_DIRECT. The pending item lands in the review queue with a `requires: ['human_review', 'supporting_document']` flag; production surfaces it to the medical-records review staff. Trigger 5 in the invalidation phase upgrades this case with a marriage certificate.
 - **Trigger 3 is the indirect-detection path.** A payer eligibility refresh carries a new name (Chen-Patel) without any explicit prior-name assertion; the demographic match against the existing identity (Margaret Chen) is strong. The detection score is high enough to clear the INDIRECT_NAME_CHANGE_MED threshold but not the INDIRECT_NAME_CHANGE_HIGH threshold (which is tighter than the direct equivalent), so the resolver routes to REVIEW_PENDING_INDIRECT. Production handles indirect cases more conservatively because there was no explicit assertion that a name change occurred; the cost of an auto-acceptance error is higher.
 - **Trigger 4 is the sensitivity-classified case.** Court-order direct change for an identity with masked-display patient preferences set, and an explicit GENDER_AFFIRMING class on the trigger. The detection auto-resolves (high source strength + strong demographics + plausible name pair); the envelope honors the patient's masked preference by restricting display contexts to `treatment_with_clinical_relevance`, restricting release scopes to `patient_access_api` only (preserving the information-blocking obligation under the 21st Century Cures Act), and elevating the audit posture to log every disclosure and every query plus delivering a monthly summary to the patient's portal. The propagation fans out to a smaller, more-tightly-controlled set of consumers and includes the per-patient-summary scheduler that the GENERAL path skipped.
 - **The five invalidation triggers cover the operational lifecycle.** A correction overrides a previously-resolved event with a corrected payload (in the demo, recording an accent on the family name that the original assertion missed). A reversal turns a previously-prior name back into the current name. An identity merge folds two identities together. A sensitivity update changes the access-control envelope for an existing event without modifying the event itself (the patient escalated her preference from `masked` to `archive_only`). A document upgrade promotes a previously-self-asserted change with a marriage-certificate scan, which moves the resolution from REVIEW_PENDING to AUTO_RESOLVE-equivalent. Each emits the aggregate `identity_name_change_invalidated` event so downstream consumers refresh their derived state.
