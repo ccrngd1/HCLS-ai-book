@@ -34,7 +34,7 @@
 
 **AWS HealthLake plus AWS HealthLake Bulk Data, plus optional integration via AWS Lake Formation for data-sharing across organizations under TEFCA participation.** Cross-organizational data flows operate within the legal framework specified by the regulatory team.
 
-**Amazon EventBridge for the coordination-event bus.** Events including patient_enrolled, caregiver_designated, integration_connected, encounter_ingested, referral_ordered, referral_scheduled, referral_completed, transition_initiated, transition_completed, medication_filled, medication_discontinued, lab_result_posted, seam_flag_raised, seam_flag_resolved, care_team_alert_generated, escalation_routed, coordination_decision_recorded.
+**Amazon EventBridge for the coordination-event bus.** Events including patient_enrolled, caregiver_designated, integration_connected, encounter_ingested, referral_ordered, referral_scheduled, referral_completed, transition_initiated, transition_completed, medication_filled, medication_discontinued, lab_result_posted, seam_flag_raised, seam_flag_resolved, care_team_alert_generated, escalation_routed, coordination_decision_recorded. EventBridge delivers at-least-once; downstream consumers maintain a DynamoDB-backed deduplication store with TTL (keyed by per-event-type idempotency keys: e.g., `(referral_id, "ordered")` for referral_ordered, `(transition_id, "initiated")` for transition_initiated, `(seam_id, "raised")` for seam_flag_raised) to ensure exactly-once processing semantics at the consumer level.
 
 **AWS Step Functions for transition-of-care orchestration workflows.** Each transition (hospital-to-home, hospital-to-SNF, ED-to-primary-care follow-up, surgery-to-home, etc.) runs as a Step Functions workflow with states for the protocol-defined steps (medication reconciliation, follow-up-appointment scheduling, home-health or DME orders, patient education, red-flag warning instructions, completion verification). The state machines are version-controlled and audited.
 
@@ -497,6 +497,8 @@ ON enroll_patient(patient_id, enrollment_program_id,
     })
 
     // Step 1F: persist enrollment artifacts.
+    // The enrollment record references all active asset
+    // versions at enrollment time for reproducibility.
     persist_enrollment({
         patient_id: patient_id,
         consent_record: consent_record,
@@ -507,7 +509,38 @@ ON enroll_patient(patient_id, enrollment_program_id,
         state_of_residence: state_of_residence,
         enrollment_timestamp: now(),
         consent_versions: snapshot_consent_versions(),
-        enrolling_user: signing_user
+        enrolling_user: signing_user,
+        active_asset_versions: {
+            coordination_protocol_corpus:
+                ACTIVE_PROTOCOL_CORPUS_VERSION,
+            patient_education_library:
+                ACTIVE_EDUCATION_LIBRARY_VERSION,
+            seam_detection_rules:
+                ACTIVE_SEAM_RULES_VERSION,
+            referral_lifecycle_state_machine:
+                ACTIVE_REFERRAL_SM_VERSION,
+            transition_of_care_state_machines:
+                ACTIVE_TRANSITION_SM_VERSIONS,
+            medication_reconciliation_rules:
+                ACTIVE_MED_RECON_RULES_VERSION,
+            fda_strategy_artifact:
+                ACTIVE_FDA_STRATEGY_VERSION,
+            consent_language:
+                ACTIVE_CONSENT_LANGUAGE_VERSION,
+            caregiver_proxy_access_policy:
+                ACTIVE_PROXY_POLICY_VERSION,
+            cross_org_consent_policy:
+                ACTIVE_CROSS_ORG_CONSENT_VERSION,
+            provenance_policy:
+                ACTIVE_PROVENANCE_POLICY_VERSION
+        }
+    })
+    // Archive full enrollment content to S3.
+    archive_to_s3({
+        prefix: "enrollment_archive",
+        patient_id: patient_id,
+        content: enrollment_full_record,
+        encryption_key: KMS_ENROLLMENT_KEY
     })
 
     // Step 1G: emit enrollment event for downstream systems.
@@ -582,6 +615,15 @@ ON ingest_event(source_type, raw_message, ingestion_metadata):
         sensitivity_category: sensitivity.category,
         adapter_version: adapter.version
     })
+    // Archive full ingestion metadata to the separately-
+    // keyed provenance archive (restricted access-control).
+    archive_to_s3({
+        prefix: "provenance_archive",
+        patient_id: parsed.patient_id,
+        provenance_id: provenance_id,
+        content: ingestion_metadata,
+        encryption_key: KMS_PROVENANCE_KEY
+    })
 
     // Step 2F: normalize to the coordination-state schema.
     // For FHIR-native sources, the data lands in HealthLake
@@ -609,6 +651,16 @@ ON ingest_event(source_type, raw_message, ingestion_metadata):
         normalized_event: normalized,
         provenance_id: provenance_id,
         reconciliation_details: reconciliation
+    })
+    // Archive full normalized_event to the coordination-
+    // state archive; the working store carries structural
+    // references only.
+    archive_to_s3({
+        prefix: "coordination_state_archive",
+        patient_id: parsed.patient_id,
+        provenance_id: provenance_id,
+        content: normalized,
+        encryption_key: KMS_COORDINATION_STATE_KEY
     })
 
     // Step 2I: emit care-event triggers for downstream
@@ -660,6 +712,8 @@ ON care_event_or_periodic_tick(patient_id, event):
                     rule_id: rule.id,
                     rule_version: rule.version,
                     rule_owner: rule.owner,
+                    effective_date: rule.effective_date,
+                    version_history: rule.version_history,
                     finding: finding,
                     confidence: finding.confidence,
                     suggested_resolver:
@@ -935,7 +989,18 @@ ON agent_invocation(prompt_context, tools, guardrails, kbs):
             result_summary: summarize(result),
             timestamp: now(),
             speaker_role: prompt_context.speaker_role,
-            tool_version: tool_call.tool_version
+            tool_version: tool_call.tool_version,
+            tool_schema_version:
+                tools.schema_version(tool_call.name)
+        })
+        // Archive full tool-call content to per-conversation
+        // tool-call archive; the ledger carries structural
+        // records only.
+        archive_to_s3({
+            prefix: "tool_call_archive",
+            session_id: prompt_context.session_id,
+            content: {tool_call, result},
+            encryption_key: KMS_TOOL_CALL_KEY
         })
 
         // Collect citations for grounded assertions.
@@ -1070,15 +1135,21 @@ ON output_safety(composed_response, tool_results, citations,
             conservative_check.violation)
 
     // Step 6E: persist the coordination-decision-record.
+    // The journal carries the structural record; full
+    // content (response, tool_calls, citations) is
+    // archived to the decision-record-content-archive.
+    decision_id = generate_decision_id()
     persist_coordination_decision_record({
+        decision_id: decision_id,
         session_id: prompt_context.session_id,
         patient_id:
             prompt_context.coordination_context.patient_id,
         speaker_role: prompt_context.speaker_role,
-        utterance: prompt_context.utterance,
-        composed_response: composed_response,
-        tool_calls: tool_results,
-        citations: citations,
+        archive_references: {
+            response_archive: archive_ref,
+            tool_calls_archive: tool_calls_ref,
+            citations_archive: citations_ref
+        },
         faithfulness_score: faithfulness.score,
         scope_check: scope_check,
         guardrail_check: guardrail_check,
@@ -1088,10 +1159,43 @@ ON output_safety(composed_response, tool_results, citations,
         timestamp: now(),
         model_version: ACTIVE_MODEL_VERSION,
         prompt_version: ACTIVE_PROMPT_VERSION,
-        protocol_corpus_version:
-            ACTIVE_PROTOCOL_CORPUS_VERSION,
-        coordination_state_version:
-            ACTIVE_COORDINATION_STATE_VERSION
+        active_asset_versions: {
+            coordination_protocol_corpus:
+                ACTIVE_PROTOCOL_CORPUS_VERSION,
+            patient_education_library:
+                ACTIVE_EDUCATION_LIBRARY_VERSION,
+            seam_detection_rules:
+                ACTIVE_SEAM_RULES_VERSION,
+            referral_lifecycle_state_machine:
+                ACTIVE_REFERRAL_SM_VERSION,
+            transition_of_care_state_machines:
+                ACTIVE_TRANSITION_SM_VERSIONS,
+            medication_reconciliation_rules:
+                ACTIVE_MED_RECON_RULES_VERSION,
+            fda_strategy_artifact:
+                ACTIVE_FDA_STRATEGY_VERSION,
+            consent_language:
+                ACTIVE_CONSENT_LANGUAGE_VERSION,
+            caregiver_proxy_access_policy:
+                ACTIVE_PROXY_POLICY_VERSION,
+            cross_org_consent_policy:
+                ACTIVE_CROSS_ORG_CONSENT_VERSION,
+            provenance_policy:
+                ACTIVE_PROVENANCE_POLICY_VERSION,
+            guardrails_policy:
+                ACTIVE_GUARDRAILS_VERSION
+        }
+    })
+    // Archive full response content separately.
+    archive_to_s3({
+        prefix: "decision_record_content_archive",
+        decision_id: decision_id,
+        content: {
+            composed_response: composed_response,
+            tool_calls: tool_results,
+            citations: citations
+        },
+        encryption_key: KMS_DECISION_RECORD_KEY
     })
 
     return composed_response
@@ -1769,6 +1873,36 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Build-vs-buy rigor.** Several mature commercial vendors offer care-coordination platforms with FHIR integration, claims-feed processing, transition-of-care workflows, and (in some cases) hybrid-coordination workforces. Most major institutions run a hybrid that builds a thin orchestration layer in-house and partners with vendors for the cross-organizational integration substrate.
 
 **Operational ownership across multiple teams.** The assistant sits at the intersection of clinical leadership across primary care, hospital medicine, specialty practice, pharmacy, home health, and care management; the care-management workforce; compliance; regulatory; IT; the call center; patient experience; the malpractice carrier; the institutional regulatory team; and the participating payer's analytics and quality teams.
+
+**Per-cohort monitoring promoted to architectural primitive (not just reporting).** Single-axis cohorts: language, channel, condition mix, age cohort, sex, social-determinant flag, caregiver presence, integration coverage. Two-axis cohorts: language-by-channel, condition-by-integration-coverage. Three-axis cohorts: language-by-condition-by-integration-coverage. Per-cohort threshold metrics: referral closure rate (target 60-85%), transition-of-care completion rate (target 70-90%), medication-reconciliation accuracy, seam-detection precision (target 80-95%) and recall (target 70-90%) per rule, citation-coverage rate (target 95%+), engagement-attrition rate (measured at 30/90/180 days), caregiver-burden trajectory (with attribution caveats: observational only), 30-day-readmission-rate change (with attribution caveats: observational only), equity-disparity flags by sex/race/age/language/social-determinant/integration-coverage with statistical-significance flags. Per-cohort minimum sample size with cross-organizational-coverage-disparity minimization. Launch-gate: institution-wide average is informational only; each cohort meets threshold individually. When a cohort fails its threshold, a cohort-disabled-feature workflow triggers with named ownership across clinical leadership, operations, data science, compliance, and equity officer.
+
+**Multi-asset clinical-policy-as-code governance operations.** The governance surface covers: `coordination_protocol_assets`, `patient_education_library_assets`, `seam_detection_rule_assets`, `referral_lifecycle_state_machine_assets`, `transition_of_care_state_machine_assets`, `medication_reconciliation_rule_assets`, `fda_strategy_artifact_assets`, `consent_language_assets`, `caregiver_proxy_access_policy_assets`, `cross_organizational_consent_policy_assets`, `provenance_policy_assets`. Each asset class has semantic versioning, sandbox testing against held-out cases, staged rollout with per-asset canary, rollback-on-regression, and annual review cadence with re-sign-off. Canonical owners: clinical leadership across primary care, hospital medicine, specialty practice, pharmacy, home health, care management; operations; compliance; regulatory team; legal counsel; malpractice insurer; pharmacy informatics; language-services; patient-experience leadership; equity officer. Step 1F persists all active asset versions at enrollment. Step 6E stamps every active asset version on each coordination-decision-record. Step 3B includes rule_owner, effective_date, and version_history on each seam-flag event.
+
+**Archive-reference discipline across working stores.** The working DynamoDB stores (coordination-state, provenance journal, tool-call ledger, decision-record journal, seam-flag store, referral-lifecycle, transition-of-care, conversation-metadata) carry structural records on the hot path. Full content routes to separately-keyed S3 archives: enrollment_archive, coordination_state_archive, provenance_archive (separately keyed with restricted access-control), tool_call_archive, decision_record_content_archive, seam_flag_archive, referral_lifecycle_archive, transition_of_care_archive, conversation_transcript_archive. Production-gap disciplines include: per-record-class retention reconciliation (longest of HIPAA six-year, state-specific medical-record retention per state of patient residence often 7-10+ years for adults, pediatric records until age of majority plus state adult retention, 42 CFR Part 2 retention, FDA SaMD post-market obligations, Information Blocking rule audit-trail obligations, per-channel TCPA/10DLC and voice-recording retention), per-record-class access-control surface, patient-right-of-access-and-deletion workflow with state-specific variations, 42 CFR Part 2 redisclosure-prohibition discipline for cross-organizational sharing, state-specific sensitive-record discipline, cross-organizational consent revocation and data-purge workflow, and conversation-log-as-clinical-record reconciliation (whether the coordination conversation constitutes a medical record under state law).
+
+**Disaster-recovery topology with per-stage failover policy.** Bedrock LLM outage: degraded-mode response using safe templates plus direct care-team routing via Connect. Bedrock Knowledge Bases outage: safe-template fallback without protocol retrieval. Bedrock Agents outage: route to template-driven responses for common coordination tasks. Bedrock Guardrails outage: stricter scope enforcement (deny all ambiguous responses). OpenSearch Serverless outage: degrade retrieval to DynamoDB-only coordination state. DynamoDB outage: read from S3 archive with stale-data disclosure. S3 outage: serve from DynamoDB working store only. HealthLake outage: conservative-no-context fallback with transparent disclosure. Step Functions outage: manual care-team workflow with audit trail preserved. MWAA outage: queued batch ingestion (events persist in EventBridge dead-letter queue). Connect outage: direct institutional crisis-line routing via backup phone tree. Pinpoint outage: queued proactive engagement (messages persist for retry). Per-source ingestion outage: in-coverage-gap marking on the patient's coordination state with confidence calibration disclosed to the assistant. Failover-detection thresholds, failover-back triggers, quarterly testing cadence, cross-region failover for Bedrock and the institutional integrations (EHRs, HIE, payer claims, pharmacies, home-health, care-team-workflow). Crisis-pathway integrity (911, 988, mandatory-reporting) preserved across all degraded states.
+
+**Tool-surface contract management as architectural primitive.** Per-tool versioned schemas with semantic versioning across the thirteen-tool surface (coordination_state_retrieve, referral_lifecycle_retrieve, encounter_retrieve, medication_list_reconcile, open_followups_retrieve, seam_flags_retrieve, protocol_retrieve, patient_education_content_retrieve, care_team_alert_propose, patient_action_propose, follow_up_schedule, escalation_propose, provenance_retrieve). Per-tool deprecation policy. Per-tool backward-compatibility discipline. Per-tool change-management process owned jointly by engineering, clinical leadership, and compliance. Per-tool audit-stamp extended in Step 5B persist_tool_call_ledger to include per-tool schema version for all thirteen tools. Per-tool canary deployment with traffic-shift before full rollout.
+
+**Deployment pattern with versioned assets.** Versioned system prompt, intent-classification prompt, per-handler response prompts, persona configuration, redaction taxonomy, per-language consent-disclosure assets, Bedrock Guardrails policy version, knowledge-base corpus snapshots (coordination protocols, patient education, conversation history), all in version control with commit-SHA-tied builds. Bedrock inference profile for prompt-and-model versioning with rollback-on-regression. Held-out evaluation set covering representative coordination cases per condition, per-language, per-special-population, per-integration-coverage profile, per-transition-of-care destination, per-referral-specialty, per-medication-reconciliation scenario, per-seam-detection scenario, per-companion-pattern adversarial test, per-scope-violation adversarial test. Per-cohort canary deployment with traffic-shift: new version rolls to a subset of patients per cohort, monitors per-cohort metrics for regression, and rolls back automatically on threshold breach.
+
+**Prompt-injection mitigation as architectural primitive.** Delimited-input framing for the agent and per-handler tool-call LLMs: `<patient_utterance>`, `<verified_patient_context>`, `<conversation_history>`, `<coordination_state>`, `<retrieved_protocol>`, `<retrieved_education>`, `<ingested_clinical_data>`, `<provenance_metadata>`, `<tool_results>`. Tool-Lambda enforcement: every tool-Lambda validates patient_id arguments against the verified session (defense-in-depth beyond Step 5B). Proxy-scope-denied audit logging as security event. Per-language jailbreak-test corpus including coordination-specific injection cases: manipulate continuous-emergency-screening to suppress crisis detection, manipulate scope discipline to elicit clinical recommendations, manipulate medication_list_reconcile to plant fabricated entries, manipulate seam_flags_retrieve to suppress high-priority seams, manipulate proxy-scope to reach restricted records, injection content embedded in HL7/FHIR free-text fields from ingested clinical data.
+
+**Per-claim-class faithfulness verification taxonomy.** Coordination-state assertions must cite coordination-state-to-provenance. Protocol instructions must cite protocol-to-protocol-id-and-version-and-effective-date. Patient-education content must cite library-id-and-version. Referral-state assertions must cite referral-id-and-lifecycle-state. Transition-of-care assertions must cite transition-id-and-execution-id. Medication-list assertions must cite synthesized-list-version-and-source-records. Seam-flag references must cite seam-flag-id-and-rule-version. Verification pipeline: structured-output schema validation (the response must conform to a citation-bearing schema), LLM-judge faithfulness scoring as secondary check (independent verifier model, distinct from the orchestration model, protected from prompt injection via separate invocation context), rule-based contradiction detection (assertions that contradict retrieved tool results), regenerate-attempt budget (maximum 2 regeneration attempts before safe-fallback template), faithfulness-failure-rate as launch-gate metric per the per-cohort monitoring discipline.
+
+**Retention floor specification.** The longest of: HIPAA six-year minimum, state-specific medical-record retention rules per state of patient residence (often 7-10+ years for adults; pediatric records often retained until age of majority plus state adult retention period, producing 25+ year retention windows), state-specific mental-health-record retention rules where applicable, state-specific HIV-record and genetic-test-result retention rules where applicable, 42 CFR Part 2 retention obligations for substance-use treatment information where applicable, FDA SaMD post-market obligations where applicable, Information Blocking rule audit-trail obligations, per-channel retention obligations (TCPA/10DLC for SMS, voice-channel recording retention rules per state), per-record-class retention reconciliation across all archive classes, and institutional regulatory floor as determined by legal counsel and the malpractice insurer.
+
+**Lambda invocation authentication pattern.** Each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, Bedrock Agents action-group ARN, EventBridge rule ARN, Step Functions state-machine ARN, MWAA execution ARN, or Connect contact-flow ARN as appropriate. Defense-in-depth event-payload validation at the start of each tool-Lambda (verify the event structure matches the expected schema for the declared invoker). Tool-Lambda patient_id-cross-check audit logging promoted to architectural primitive with explicit security-event audit (log as security event, not just operational event, when patient_id mismatch or proxy-scope-denied occurs). Per-endpoint WAF rate-limit policy calibrated to expected peak throughput with automated alerting on anomalous patterns.
+
+**Per-channel authentication and encryption.** Per-channel data-in-transit posture (TLS 1.2+ for all channels). Per-channel session-token TTL (shorter for SMS where session identity is weaker). Per-channel access-control scope (voice channel may have narrower scope than app channel given authentication differences). Per-channel BAA scope: institution app vendor BAA must explicitly cover embedded chat surface; caregiver-app under separate BAA scope with the caregiver-app vendor; SMS under Pinpoint or Connect BAA; voice under Connect BAA. Per-channel TCPA/10DLC compliance for SMS (opt-in, opt-out, frequency caps). Per-channel voice-recording retention compliance per state. Audit-record propagation of per-channel authentication context (every coordination-decision-record carries the channel and authentication method). High-acuity-event integrity across channels with same audit and routing fidelity (a crisis detected via SMS routes identically to a crisis detected via app). Recipe-distinct caregiver-app channel discipline (the caregiver's channel is architecturally separate from the patient's, with separate authentication and proxy-scope enforcement).
+
+**Multi-language asset-development pattern.** Validated coordination-protocol translations as recipe-distinct safety-critical primitive: no ad-hoc machine translation; native-speaker review by clinical leadership for protocol chunks that carry clinical implications. Validated patient-education translations across condition-specific content libraries with cultural-context calibration (help-seeking patterns, family structure, transportation/work/housing context). Validated regulatory-disclaimer translations. Validated caregiver-as-first-class-participant identity-model translations. Per-language tone and persona calibration. Per-language cultural-context calibration (e.g., family-inclusive communication patterns for cultures where medical decisions are family decisions). Per-language asset-versioning per the deployment-pattern discipline. Per-language launch-gate per the per-cohort monitoring discipline.
+
+**Accessibility conformance as cross-cutting design point.** WCAG 2.1 AA conformance with named ownership at accessibility program manager. Per-channel accessibility considerations: SMS-friendly rendering for low-literacy patients (shorter sentences, simpler vocabulary, avoid abbreviations), voice-channel availability for patients without smartphones or with disabilities affecting written communication, cognitive-load adaptations for patients with cognitive impairment (relevant to David's mild cognitive impairment in the opening case: shorter turns, explicit confirmations, repetition of key information, caregiver-copy on important messages), screen-reader compatibility for the web-chat widget, caregiver-specific accessibility considerations (the caregiver may have their own accessibility needs). High-acuity-event integrity preserved across accessibility configurations. Accessibility launch-gate criteria as part of the per-cohort monitoring discipline.
+
+**Care-management workforce capacity sizing as architectural primitive.** Peak-hour and overnight capacity sizing per patient population. Per-state-licensure coverage (the escalation queue must route to a care manager licensed in the patient's state). Per-language coverage (the escalation queue must route to a care manager who speaks the patient's language or has interpreter access). Queue-length-aware fallback (when the queue exceeds capacity, degrade to scheduled callback rather than holding the patient in a silent queue). Time-to-care-manager SLA per priority: high under 4 business hours; medium under 1 business day; low under 3 business days. Workforce-capacity-as-launch-gate metric: the assistant cannot deploy to a population without demonstrated escalation-capacity to serve that population. Named operational ownership at care-management workforce manager, operations, and clinical leadership. Hybrid AI-plus-human-care-management framing: the assistant handles routine coordination touches at scale; the human care managers handle the cases requiring clinical judgment, complex interpersonal dynamics, and sensitive conversations. This is the dominant production pattern.
+
+**Outcome-correlation pipeline as architectural subsystem.** Data-integration with subsequent encounter records (institutional EHR plus claims for cross-institution utilization), readmission records, ED-utilization records, duplicate-service detection, total-cost-of-care, clinical-outcome trajectories (HEDIS gap closure, condition-specific outcomes), patient-experience trajectories. Multi-window correlation: 30-day, 90-day, 6-month, 12-month, 24-month, 36-month. Per-protocol outcome calculation with statistical-significance thresholds. Per-cohort outcome calculation per the per-cohort monitoring discipline. Protocol-revision feedback loop: when outcomes suggest a protocol is underperforming, the finding routes to clinical leadership for review and potential revision. Clinical-quality-review cadence: quarterly. Operational ownership jointly held by clinical leadership, data-science team, operations, compliance, and the participating payer's analytics and quality teams. Explicit attribution-caveat discipline: outcomes are observational, not causal; matched-cohort or quasi-experimental analysis where feasible; no causal claims without randomized evidence.
 
 ---
 
