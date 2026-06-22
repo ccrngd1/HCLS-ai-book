@@ -54,12 +54,11 @@ import logging
 import re
 import unicodedata
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
 import boto3
-from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 
 # Structured logging. In production, ship JSON-formatted records
@@ -336,7 +335,6 @@ LOW_CONFIDENCE        = "low"
 # --- Resolution status values ---
 RES_RECEIVED          = "received"
 RES_NO_MATCH          = "no_match"
-RES_LOW_CONF_NO_MATCH = "low_confidence_no_match"
 RES_QUEUED_FOR_REVIEW = "queued_for_review"
 RES_HIDDEN_DUPLICATE  = "hidden_duplicate_candidate"
 RES_DATE_CONFLICT     = "date_of_death_conflict_flagged"
@@ -912,7 +910,16 @@ def _normalize_to_common_schema(
         "family_name":  source_specific_record.get("family_name"),
         "dob":          source_specific_record.get("dob"),
         "sex":          source_specific_record.get("sex"),
-        "address_line": source_specific_record.get("address_line"),
+        # Accept either the VRDR-approximate address_line_1
+        # (the canonical normalized field name per the recipe
+        # text's sample payload) or the legacy address_line.
+        # Production ingestion connectors normalize the wire
+        # format at the per-source-normalizer layer; the demo
+        # collapses the per-source-normalizer step into this
+        # function, so it accepts both.
+        "address_line": (
+            source_specific_record.get("address_line_1")
+            or source_specific_record.get("address_line")),
         "city":         source_specific_record.get("city"),
         "state":        source_specific_record.get("state"),
         "zip_code":     source_specific_record.get("zip_code"),
@@ -1045,9 +1052,11 @@ def match_death_event_against_mpi(event_id: str) -> None:
         reconcile_multi_source_death_events(
             event_id, dominant["candidate_record_id"])
 
-    elif dominant["match_confidence_tier"] == MEDIUM_CONFIDENCE:
-        # Verification-queue path: route to the human-review
-        # queue.
+    else:
+        # Medium-confidence: route to the human-review queue.
+        # The matcher only adds candidates with score >=
+        # candidate_acceptance_threshold to the scored list,
+        # so every dominant candidate is HIGH or MEDIUM here.
         _DEATH_EVENT_LOG[event_id]["resolution_status"] = (
             RES_QUEUED_FOR_REVIEW)
         _VERIFICATION_QUEUE.append({
@@ -1068,17 +1077,6 @@ def match_death_event_against_mpi(event_id: str) -> None:
         _emit_metric("DeathEventQueuedForReview", 1.0,
                       dimensions={"SourceId": source_id,
                                     "Reason": "MediumConfidenceMatch"})
-
-    else:
-        # Low-confidence: park the event in the no-match
-        # archive with the candidate set for audit.
-        _DEATH_EVENT_LOG[event_id]["resolution_status"] = (
-            RES_LOW_CONF_NO_MATCH)
-        _audit_log({
-            "event_type": "DEATH_EVENT_LOW_CONFIDENCE_NO_MATCH",
-            "event_id":   event_id,
-            "source_id":  source_id,
-        })
 
 def _compute_per_feature_similarities(query: dict,
                                           mpi_record: dict) -> dict:
@@ -1141,11 +1139,18 @@ def handle_hidden_duplicate_revelation(
     """
     Coordinate with recipe 5.1's duplicate-resolution pipeline.
     The death event has revealed a duplicate chain in the MPI;
-    we merge the chain into a consolidated record before
-    applying the death status. Production fires an
-    EventBridge event to recipe 5.1's resolver and waits for
-    the consolidation acknowledgment; the demo synthesizes the
-    consolidation inline.
+    we signal recipe 5.1 to merge the chain into a consolidated
+    record before applying the death status.
+
+    Note: the demo records a merge action on the cross-recipe-5.1
+    mock but does not actually consolidate the duplicate's
+    appointments, prescriptions, or billing episodes into the
+    survivor. Production delegates the consolidation to recipe
+    5.1's merge pipeline, which mutates the MPI atomically with
+    the death-status application. The demo's cascade therefore
+    acts only on the survivor's pre-merge data; a production
+    deployment would see the cascade act on the consolidated
+    post-merge data.
     """
     # The demo picks the first record as the consolidated
     # target and signals recipe 5.1 to merge the others into
@@ -1557,6 +1562,8 @@ def propagate_to_downstream_systems(
          cascade_care_management_panel_removal),
         ("analytics-platform",
          cascade_analytics_platform_handler),
+        ("cross-recipe-5.1",
+         lambda *args: cascade_cross_recipe_signal("5.1", *args)),
         ("cross-recipe-5.5",
          lambda *args: cascade_cross_recipe_signal("5.5", *args)),
         ("cross-recipe-5.7",
@@ -1857,9 +1864,7 @@ def _summarize_cascade_completeness(event_id: str) -> dict:
     the event. Production tracks expected consumers from the
     cascade-consumer registry; the demo uses CASCADE_REGISTRY
     as the expected set."""
-    expected_consumers = set(CASCADE_CONSUMER_CONFIG.keys()) - {
-        "cross-recipe-5.1"  # handled in hidden-duplicate flow
-    }
+    expected_consumers = set(CASCADE_CONSUMER_CONFIG.keys())
     completed = {
         ack["cascade_consumer"]
         for ack in _CASCADE_ACK_STORE
@@ -2100,6 +2105,18 @@ def run_demo():
     print()
 
     # --- Flow 1: multi-source-corroborated death ---
+    # Reset MPI to exclude the duplicate-chain candidate
+    # (exercised separately in Flow 2) so Flow 1 cleanly
+    # demonstrates the corroboration pattern without also
+    # triggering hidden-duplicate-revelation.
+    local_mpi = MockLocalMPI([
+        r for r in SYNTHETIC_LOCAL_MPI_RECORDS
+        if r["local_record_id"] != "amc-richmond-mrn-7782441"
+    ])
+    _DEATH_EVENT_LOG.clear()
+    _VERIFICATION_QUEUE.clear()
+    _CASCADE_ACK_STORE.clear()
+
     print("-" * 72)
     print("Flow 1: state vital-records death event arrives, then LADMF")
     print("        arrives later for the same patient (corroboration)")
@@ -2487,6 +2504,8 @@ What the demo intentionally skips, and what you would add for a real deployment:
 **TransactWriteItems for atomic cross-table writes.** The demo's MPI update, death-event-log status update, and cascade-emission are sequenced. Production wraps them in `TransactWriteItems` so the per-event state is atomic across the tables; partial-failure scenarios cannot leave the MPI updated without the death-event-log reflecting the resolution.
 
 **Real Aurora PostgreSQL local MPI integration.** The demo's `MockLocalMPI` is an in-memory dict. Production has Aurora PostgreSQL (or the institution's existing MPI vendor's product) with indexes on the demographic-feature blocking keys, full-text search, sensitivity-flag enforcement, and recipe 5.1's identity-merge state. The deceased-patient-resolution pipeline consults the MPI under read-only access for matching; mutations to the death-status fields flow through a scoped write path in the mpi-update-handler Lambda.
+
+**Real recipe-5.1 merge pipeline integration.** The demo's `handle_hidden_duplicate_revelation` records a merge action on the cross-recipe-5.1 mock but does not actually consolidate the duplicate's appointments, prescriptions, or billing episodes into the survivor. Production delegates the consolidation to recipe 5.1's merge pipeline, which mutates the MPI atomically with the death-status application. The demo's cascade therefore acts only on the survivor's pre-merge data; a production deployment would see the cascade act on the consolidated post-merge data (the survivor inherits the duplicate's appointments, prescriptions, and billing episodes before the cascade cancels or reviews them).
 
 **Real Step Functions orchestration.** The demo's six steps run synchronously in-process. Production orchestrates the per-event flow through Step Functions with per-step retries, per-step error routing to DLQs, parallel execution where the per-event work permits (the cascade fan-out is parallelized), and explicit synchronization at the cross-recipe-coordination steps. Step Functions provides the audit-and-monitoring substrate for the per-event flow; CloudWatch alarms on stuck workflows surface DLQ depth issues.
 
