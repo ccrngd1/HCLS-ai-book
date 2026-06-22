@@ -16,7 +16,7 @@
 
 **Amazon Timestream for the trajectory history store.** Patient-reported weights, blood pressures, glucoses, and symptom scores are time-series data. Timestream's purpose-built storage and query model fit naturally. Magnetic-tier retention covers the multi-week baseline window cost-effectively. 
 
-**AWS HealthLake for the longitudinal patient record.** When the program needs FHIR-formatted patient records integrated with the wider health-system data, HealthLake provides storage, query, and integration. For programs with established FHIR infrastructure, HealthLake is a strong fit.
+**AWS HealthLake for the longitudinal patient record.** When the program needs FHIR-formatted patient records integrated with the wider health-system data, HealthLake provides storage, query, and integration. For programs with established FHIR infrastructure, HealthLake is a strong fit. Access control uses SMART-on-FHIR scope discipline (scoped to patient resources relevant to the post-discharge cohort, not broad patient-level read). Data encrypted with customer-managed KMS keys. VPC endpoint for private access. Bulk export flows to S3 (also KMS-encrypted) for analytics and retraining workloads.
 
 **Amazon SageMaker for model training, hosting, and feature management.** The composite scoring model trains as a SageMaker Training Job against retrospective data in S3, deploys to a SageMaker endpoint for daily scoring (batch transform is appropriate for daily cadence; real-time endpoint is appropriate for high-frequency rescoring on new data). SageMaker Feature Store keeps offline (training) and online (scoring) feature vectors consistent. SageMaker Clarify produces fairness reports across subgroups and per-prediction SHAP values.
 
@@ -24,7 +24,7 @@
 
 **Amazon Bedrock for explanation narratives and outreach script suggestions.** SHAP values surface the technical drivers; Bedrock-hosted LLMs convert them and the patient context into care-manager-facing narratives ("This patient's weight has trended up 2.4 lbs over the last 3 days. They responded to symptom check-ins through Friday but not Saturday or Sunday. Their last care management contact was Wednesday. Suggested outreach: confirm weight trend, ask about diuretic adherence, ask about diet over the weekend, consider same-day clinic add-on.") Always with human review; the LLM is producing decision support, not decisions. 
 
-**Amazon Comprehend Medical for free-text feature extraction.** Care management notes contain substantial signal in free text. Comprehend Medical extracts conditions, symptoms, medications, and concerns. Optional but useful when the care management interaction feed is text-rich.
+**Amazon Comprehend Medical for free-text feature extraction.** Care management notes contain substantial signal in free text. Comprehend Medical extracts conditions, symptoms, medications, and concerns. Minimum-necessary excerpt: pass only the relevant note segment, not the full patient record. Persist derived feature flags only (e.g., "mentions_dyspnea: true", "medication_concern: adherence"); do not store the full Comprehend Medical entity payload alongside the feature flags in the feature store. CloudTrail data events enabled on DetectEntitiesV2 calls for audit trail. Synchronous invocation per note; batch only for retrospective reprocessing. Optional but useful when the care management interaction feed is text-rich.
 
 **AWS Step Functions for orchestration.** The daily scoring run, the worklist generation, and the periodic retraining are multi-step workflows. Step Functions handles orchestration with retry and error handling.
 
@@ -42,9 +42,11 @@
 
 **AWS HealthOmics or generic S3 for genomic data (rarely relevant).** Most readmission programs do not use genomic data. Mentioned only for completeness; usually skip.
 
-**AWS End User Messaging or a third-party SMS/IVR vendor for patient outreach.** The outreach itself (SMS check-ins, IVR calls) is often delivered through specialist healthcare communication vendors (CipherHealth, GetWellNetwork, Memora Health, Cipher). For SMS-only, AWS End User Messaging (formerly Pinpoint SMS and Voice) works. The integration boundary matters: keep PHI in HIPAA-eligible services; the patient-facing channel needs a BAA.
+**AWS End User Messaging or a third-party SMS/IVR vendor for patient outreach.** The outreach itself (SMS check-ins, IVR calls) is often delivered through specialist healthcare communication vendors (CipherHealth, GetWellNetwork, Memora Health, Cipher). For SMS-only, AWS End User Messaging (formerly Pinpoint SMS and Voice) works. The integration boundary matters: keep PHI in HIPAA-eligible services; the patient-facing channel needs a BAA. TCPA compliance requires: pre-approved message templates by content category (PHI-bearing vs. de-identified), patient-consent capture as a structured event in the patient-state record at enrollment, immediate opt-out revocation handling, and audit trail in worklist-audit and intervention-audit indexes for TCPA defense. Template categories: appointment reminders (de-identified), symptom check-ins (PHI-bearing, requires express consent), and escalation notifications (de-identified, care-team-directed).
 
 **Amazon CloudWatch and AWS X-Ray.** Operational monitoring of the pipeline, scoring latency, end-to-end traces. Latency budgets matter less than Recipe 3.7 (the cadence is daily, not per-event), but data freshness matters: a worklist computed at 7 a.m. should reflect data through end-of-day yesterday plus any overnight events.
+
+**HIE and claims feed network paths.** Per-source security varies: MLLPS (HL7 v2 over TLS) for traditional hospital interfaces, FHIR R4 with mutual TLS or SMART-on-FHIR for modern HIE connections, C-CDA over Direct Trust for summary-of-care exchange, EDI 837 over SFTP for claims, and near-real-time claims APIs (CMS ACO REACH, commercial payer APIs) over OAuth 2.0. For hospital-side HIE gateways that cannot traverse the public internet, Direct Connect provides the private network bridge. Each source requires a per-source trading-partner agreement and per-source audit trail (which feed delivered what data, when, with what latency).
 
 **AWS CloudTrail.** Audit logging on every PHI-bearing store and every API call against the scoring service. Every score, every worklist generation, every intervention is logged.
 
@@ -142,9 +144,12 @@ flowchart TB
 | **IAM Permissions** | Least-privilege per role. Device ingest Lambdas validate webhooks and write to the event stream. Feature engine reads from DynamoDB and Timestream, writes to Feature Store. Scoring orchestrator invokes the SageMaker endpoint, publishes to EventBridge. Worklist builder reads scores and writes worklist state. Care manager roles read worklist state and write intervention records only. Model team roles can train and deploy but cannot read PHI directly without explicit elevation. No `*` permissions; every action scoped to specific resources. |
 | **BAA** | Signed AWS BAA. All services configured per BAA requirements. RPM vendors and PRO vendors must have their own BAAs with the hospital. See the [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). |
 | **Encryption** | Customer-managed KMS keys on every PHI-bearing store: Kinesis, DynamoDB, Timestream, S3, OpenSearch, SageMaker (volumes, Feature Store, model artifacts). TLS 1.2 or higher in transit. Webhook endpoints validate vendor signatures and reject unsigned traffic. |
-| **VPC** | Production deployment in a VPC with VPC endpoints for S3, DynamoDB, KMS, SageMaker runtime, Bedrock, Comprehend Medical, EventBridge, and Step Functions. Lambdas that touch PHI run in the VPC. RPM vendor and PRO vendor integrations typically traverse the public internet (TLS-protected); some hospital networks require Direct Connect or PrivateLink-style routing for these integrations. |
+| **VPC** | Production deployment in a VPC with VPC endpoints for: S3, DynamoDB, KMS, SageMaker (api, runtime, featurestore-runtime), Bedrock (bedrock-runtime), Comprehend Medical (comprehendmedical), EventBridge (events bus and Scheduler separately), CloudWatch (monitoring PutMetricData separately from CloudWatch Logs), Step Functions, SNS, Athena, Glue, AppSync, Timestream (write and query), HealthLake, Secrets Manager. Lambdas that touch PHI run in the VPC. VPC Flow Logs explicitly enabled (network-level audit complements API-level CloudTrail audit; supports both clinical-safety-review documentation and RPM CPT code billing-defense documentation). RPM vendor and PRO vendor integrations typically traverse the public internet (TLS-protected); some hospital networks require Direct Connect or PrivateLink-style routing for these integrations. |
 | **CloudTrail and Data Events** | Enabled with data events on every PHI-bearing store and on the worklist and audit indexes. Every score, every worklist generation, every intervention capture, every outcome event is logged. Log retention per organizational policy and applicable regulations. |
+| **Dead-Letter Queues** | SQS DLQ with `OnFailure` destination on every Lambda (device-ingest, ehr-event-ingest, cm-event-ingest, enrollment-handler, event-normalizer, feature-engine, worklist-builder, intervention-capture, outcome-capture, event-driven-rescore). CloudWatch alarms on DLQ depth: threshold of 1 message for device-ingest, event-normalizer, and outcome-capture (single-event sensitivity; a single dropped measurement or outcome can affect clinical safety). Threshold of 5 for other Lambdas. Messages older than the post-discharge prediction window (30 days) that remain unprocessed escalate to care-management-governance-committee review. Replay capability via redrive policy for all DLQs. |
 | **Care Management Governance** | A care management governance committee (typically including transitions-of-care leadership, hospitalists, primary care leadership, pharmacy, social work, nursing leadership, patient experience, and quality leadership) must be established before deployment. The committee owns the program design, intervention protocols, escalation pathways, equity considerations, and decommissioning criteria. |
+| **Subgroup Data Governance** | The demographic-and-attribute store (age, sex, race/ethnicity, language, insurance, ADI/SVI, dual-eligibility, SDOH attributes from PRAPARE/AHC HRSN/Z-codes) requires restricted read access distinct from the clinical-PHI access path; SDOH attributes may be governed differently under state law. CloudTrail data events enabled on all subgroup-data queries. QuickSight dashboards for fairness monitoring consume an aggregated subgroup-metrics table (alert rate by subgroup, calibration ECE by subgroup, intervention rate by subgroup, change in 30-day readmission rate per subgroup attributable to the program), not the raw demographic-joined worklist archive. IAM policies scope the fairness-analytics role to aggregated tables only; no role can join raw demographics to individual worklist rows outside the governance-approved subgroup-audit pipeline. |
+| **Per-Consumer IAM Scoping** | Shared DynamoDB tables (patient-state, scoring-history, worklist-state, intervention-history) and OpenSearch indexes (worklist-audit, intervention-audit) require per-consumer IAM scoping. Pharmacist role reads worklist rows where suggested intervention includes medication-related items only. Provider escalation role reads rows where tier equals tier_1 and escalation_to_provider is non-null only. Care-manager UI role reads rows for the care-team-assigned patient set only. Enforce through DynamoDB fine-grained access control (leading-key conditions) and OpenSearch document-level security. |
 | **Regulatory Posture** | Most post-discharge anomaly detection systems are clinical workflow tools rather than FDA-regulated medical devices, but the determination depends on the level of autonomy and the clinical scenario. Systems that produce recommendations for human review with transparent reasoning typically qualify for the 21st Century Cures Act CDS exemption. Higher-autonomy or closed-loop systems may not. Regulatory affairs should opine before deployment. |
 | **Local Validation Required** | Vendor or external models must be validated on local population before clinical deployment. Subgroup-stratified validation is essential. Validation should compare against the existing standard of care (typically the existing transitions-of-care program). Evaluation metrics should include not just discrimination and calibration, but operational metrics: patients flagged per care manager per day, intervention rate, intervention success rate, and (where measurable) the change in 30-day readmission rate per cohort attributable to the program. |
 | **Sample Data** | [MIMIC-IV](https://physionet.org/content/mimiciv/) has post-discharge readmission labels but limited post-discharge data (the dataset is primarily inpatient). [eICU Collaborative Research Database](https://physionet.org/content/eicu-crd/) is similar. [Synthea](https://github.com/synthetichealth/synthea) generates synthetic patient data with discharge-and-readmission events. RPM vendor sandboxes (BodyTrace, A&D Medical, Withings) provide test data feeds. Never use real PHI in development. |
@@ -219,6 +224,17 @@ FUNCTION on_discharge_event(discharge_event):
     cohorts = determine_cohorts(discharge_event)
     // cohorts: ["heart_failure", "diabetes", "post_op_cardiac"], etc.
 
+    // Evaluation track: stratified random assignment at enrollment.
+    // "program" track patients get the full monitoring and worklist.
+    // "usual_care" track patients are scored and stored for outcome
+    // comparison but not surfaced on the worklist. This supports
+    // target-trial-emulation for causal evaluation of program effectiveness.
+    evaluation_track = assign_evaluation_track(
+        patient_id  = discharge_event.patient_id,
+        cohorts     = cohorts,
+        allocation  = CURRENT_EVALUATION_ALLOCATION    // e.g., 0.85 program, 0.15 usual_care
+    )
+
     // Initial monitoring tier from discharge-time score.
     initial_tier = tier_from_discharge_score(
         score        = discharge_risk_score,
@@ -237,6 +253,7 @@ FUNCTION on_discharge_event(discharge_event):
         discharge_risk_score:     discharge_risk_score,
         discharge_features:       discharge_features,
         current_tier:             initial_tier,
+        evaluation_track:         evaluation_track,
         is_active:                true,
         last_contact_at:          null,
         last_score_at:            null,
@@ -261,6 +278,12 @@ FUNCTION on_discharge_event(discharge_event):
 ```pseudocode
 FUNCTION on_rpm_webhook(webhook_request):
     // Validate the vendor's signature. Reject anything that doesn't validate.
+    // Per-vendor protocol: HMAC-SHA256 (BodyTrace, A&D Medical), mutual TLS
+    // (some enterprise integrations), OAuth 2.0 bearer tokens (Withings),
+    // JWT validation (vendor-specific). Rotation cadence per vendor contract.
+    // Replay protection via timestamp validation (reject events > 5 min stale).
+    // API Gateway resource policy IP-allowlists where the vendor publishes
+    // a source-IP range.
     IF NOT verify_vendor_signature(webhook_request):
         return 401
 
@@ -452,9 +475,12 @@ FUNCTION score_patient(patient_id, encounter_id, trigger):
         features[f"{modality}_deviation_score"] = per_modality_scores[modality].deviation_score
         features[f"{modality}_baseline_age_days"] = per_modality_scores[modality].baseline_age_days
 
-    // Composite scoring with the gradient-boosted model.
+    // Composite scoring: dispatch to the per-cohort endpoint, calibrator,
+    // and threshold set. Multi-cohort patients route to their primary cohort
+    // endpoint; secondary cohort scores are computed in parallel and the
+    // highest-tier result wins.
     composite_output = SageMaker.Runtime.InvokeEndpoint(
-        endpoint_name = "post-discharge-anomaly-model",
+        endpoint_name = endpoint_for_cohort(state.cohorts),
         body          = serialize(features)
     )
     // composite_output: { score, model_version, feature_importance_top_k }
@@ -466,7 +492,8 @@ FUNCTION score_patient(patient_id, encounter_id, trigger):
         subgroup     = subgroup_for_calibration(features)
     )
 
-    // Tier assignment. Tiers map to operational outreach intensity:
+    // Tier assignment using per-cohort threshold sets. Tiers map to
+    // operational outreach intensity:
     //   tier_1: same-day outreach by transitions nurse / pharmacist
     //   tier_2: outreach within 24h by care manager
     //   tier_3: routine touchpoint per program protocol
@@ -474,6 +501,7 @@ FUNCTION score_patient(patient_id, encounter_id, trigger):
     tier = tier_from_score_and_cohort(
         score:    calibrated,
         cohorts:  state.cohorts,
+        thresholds: THRESHOLDS_FOR(state.cohorts),
         capacity: current_program_capacity_for(state.cohorts),
         suppression_check: check_suppression(state)
     )
@@ -490,7 +518,9 @@ FUNCTION score_patient(patient_id, encounter_id, trigger):
         tier:                     tier,
         days_post_discharge:      days_between(state.discharge_at, NOW()),
         feature_snapshot_id:      persist_feature_snapshot(features),
-        model_version:            composite_output.model_version
+        model_version:            composite_output.model_version,
+        calibration_version:      CALIBRATION_FOR(state.cohorts).version,
+        cohort_thresholds_version: THRESHOLDS_FOR(state.cohorts).version
     }
 
     DynamoDB.PutItem(table = "scoring-history", item = score_record)
@@ -650,7 +680,13 @@ FUNCTION build_explanation(score_record, features, state):
     }
 
     // Narrative explanation. Constrained: cite features, suggest outreach focus,
-    // never prescribe treatment.
+    // never prescribe treatment. Minimum-necessary prompt construction: include
+    // only the feature values, modality scores, and intervention history
+    // needed for the narrative; do not pass the full patient state record.
+    // Output filtering rejects clinical-recommendation hallucinations and
+    // constrains to outreach-suggestion language. Full prompt-and-response
+    // audit trail tied to the worklist row ID. See Chapter 2 patterns for
+    // LLM-in-the-BAA-boundary discipline.
     prompt = build_outreach_explanation_prompt(
         cohort:                  state.cohorts,
         days_post_discharge:     score_record.days_post_discharge,
@@ -675,7 +711,7 @@ FUNCTION build_explanation(score_record, features, state):
     }
 ```
 
-**Step 7: Build and publish the worklist.** The worklist builder ranks patients by composite tier, applies suppression and de-duplication, and routes the result to the care management UI back end.
+**Step 7: Build and publish the worklist.** The worklist builder ranks patients by composite tier, applies cold-start routing, engagement-decay routing, suppression and de-duplication, evaluation-track filtering, and routes a PHI-minimized event to subscribers. Each subscriber fetches the full row through an authenticated, role-scoped path.
 
 ```pseudocode
 FUNCTION build_worklist(date):
@@ -694,6 +730,13 @@ FUNCTION build_worklist(date):
     FOR each score in latest_per_patient:
         state = DynamoDB.GetItem(table = "patient-state", key = score.patient_key)
 
+        // Evaluation-track filtering: only patients in the "program" track
+        // appear on the active worklist. "Usual care" track patients are
+        // scored and stored for outcome comparison but not surfaced.
+        IF state.evaluation_track == "usual_care":
+            log_usual_care_score(state, score)
+            continue
+
         // Suppression: patients in active high-touch intervention; patients
         // who graduated; patients we've contacted in the last suppression window.
         IF check_suppression(state, score).suppressed:
@@ -702,12 +745,36 @@ FUNCTION build_worklist(date):
 
         explanation = build_explanation(score, fetch_features(score.feature_snapshot_id), state)
 
+        // Cold-start routing: patients in the first 72 hours post-discharge
+        // with elevated discharge-time risk get promoted to at least tier_2
+        // regardless of composite score (insufficient trajectory data to rely
+        // on the composite model alone).
+        effective_tier = score.tier
+        cold_start = false
+        IF state.days_post_discharge <= 3 AND state.discharge_risk_score >= COLD_START_RISK_THRESHOLD:
+            effective_tier = max_tier(score.tier, "tier_2")
+            cold_start = true
+
+        // Engagement-decay routing: patients showing engagement decay signals
+        // get promoted to at least tier_2 regardless of composite score.
+        // These patients need direct outreach because the model cannot
+        // characterize their clinical state from absent data.
+        engagement_decay = false
+        IF detect_engagement_decay(state):
+            effective_tier = max_tier(effective_tier, "tier_2")
+            engagement_decay = true
+
         row = {
+            worklist_id:             generate_worklist_id(date),
+            row_id:                  generate_row_id(),
             patient_id:              score.patient_id,
             encounter_id:            score.encounter_id,
             cohort:                   state.cohorts,
-            tier:                     score.tier,
+            tier:                     effective_tier,
             composite_score:          score.composite_calibrated,
+            cold_start:               cold_start,
+            engagement_decay:         engagement_decay,
+            engagement_decay_reason:  classify_engagement_decay(state) IF engagement_decay else null,
             top_drivers:              explanation.structured.top_risk_drivers,
             narrative:                explanation.narrative,
             suggested_outreach:       explanation.suggested_outreach,
@@ -715,7 +782,13 @@ FUNCTION build_worklist(date):
             last_contact_at:          state.last_contact_at,
             last_data_at:             state.last_data_at,
             assigned_care_team:       state.assigned_care_team,
-            scoring_record_id:        score.score_id
+            audit_trail: {
+                feature_snapshot_id:        score.feature_snapshot_id,
+                scoring_record_id:          score.score_id,
+                model_version:              score.model_version,
+                calibration_version:        score.calibration_version,
+                cohort_thresholds_version:  score.cohort_thresholds_version
+            }
         }
         rows.append(row)
 
@@ -726,26 +799,59 @@ FUNCTION build_worklist(date):
     // highest-touch teams; lower-tier rows go to broader outreach.
     capped_rows = apply_capacity_caps(sorted_rows, current_capacity())
 
-    // Persist worklist for the day.
-    worklist = {
+    // Persist worklist rows (full detail) to DynamoDB and OpenSearch.
+    worklist_meta = {
         worklist_id:            generate_worklist_id(date),
         date:                    date,
         generated_at:            NOW(),
-        rows:                    capped_rows,
         total_active_patients:   length(latest_per_patient),
         total_surfaced:           length(capped_rows)
     }
-    DynamoDB.PutItem(table = "worklist-state", item = worklist)
-    OpenSearch.Index("worklist-index", worklist)
+    FOR each row in capped_rows:
+        DynamoDB.PutItem(table = "worklist-state", item = row)
+        OpenSearch.Index("worklist-audit", row)
 
-    EventBridge.PutEvent(
-        bus         = "post-discharge-events",
-        source      = "worklist-builder",
-        detail_type = "WorklistGenerated",
-        detail      = { worklist_id: worklist.worklist_id, date: date, total_surfaced: worklist.total_surfaced }
-    )
+    // Publish PHI-minimized event per row to EventBridge.
+    // Subscribers fetch full row from worklist-state or worklist-audit
+    // through an authenticated path with per-consumer IAM scoping.
+    FOR each row in capped_rows:
+        EventBridge.PutEvent(
+            bus         = "post-discharge-events",
+            source      = "worklist-builder",
+            detail_type = "WorklistRowGenerated",
+            detail      = {
+                worklist_id:        row.worklist_id,
+                row_id:             row.row_id,
+                patient_id:         row.patient_id,
+                tier:               row.tier,
+                assigned_care_team: row.assigned_care_team
+            }
+        )
 
-    return worklist
+    return worklist_meta
+
+// Engagement-decay detection: surfaces patients whose data flow has
+// stopped in patterns that warrant direct outreach.
+FUNCTION detect_engagement_decay(state):
+    // No data in first 72 hours (should have at least one measurement by now).
+    IF state.days_post_discharge >= 3 AND state.last_data_at is null:
+        return true
+    // Previously engaged, now silent for threshold period.
+    IF state.last_data_at AND days_between(state.last_data_at, NOW()) >= ENGAGEMENT_SILENCE_THRESHOLD:
+        return true
+    // Stopped PRO check-ins after initially responding.
+    IF state.pro_response_history AND recent_response_rate(state, days=3) == 0 AND historical_response_rate(state) > 0.5:
+        return true
+    return false
+
+FUNCTION classify_engagement_decay(state):
+    IF state.days_post_discharge <= 3 AND state.last_data_at is null:
+        return "no_data_in_first_72_hours"
+    IF state.last_pro_at AND days_between(state.last_pro_at, NOW()) >= ENGAGEMENT_SILENCE_THRESHOLD:
+        return "stopped_pro_check_ins"
+    IF state.last_measurement_at AND days_between(state.last_measurement_at, NOW()) >= ENGAGEMENT_SILENCE_THRESHOLD:
+        return "stopped_rpm_uploads"
+    return "previously_engaged_now_silent"
 
 FUNCTION check_suppression(state, score):
     // Patients in observation status / readmitted: pause monitoring, the
@@ -768,12 +874,52 @@ FUNCTION check_suppression(state, score):
         return { suppressed: true, reason: state.program_hold_reason }
 
     return { suppressed: false }
+
+// Daily scheduled job: walk the program-hold registry for expired holds
+// and care-transition trigger via ADT events.
+FUNCTION daily_suppression_expiry_sweep():
+    // Finds patients with program holds that have passed their expiry date.
+    expired_holds = DynamoDB.Query(
+        table = "patient-state",
+        index = "program-hold-expiry-index",
+        key_condition = "has_active_program_hold = :true AND program_hold_expires_at <= :now"
+    )
+    FOR each patient in expired_holds:
+        patient.has_active_program_hold = false
+        patient.program_hold_expired_at = NOW()
+        DynamoDB.PutItem(table = "patient-state", item = patient)
+        // Trigger immediate rescore so they appear on tomorrow's worklist.
+        EventBridge.PutEvent(
+            bus = "post-discharge-scoring",
+            source = "suppression-expiry",
+            detail_type = "RescoreRequest",
+            detail = { patient_id: patient.patient_id, encounter_id: patient.encounter_id, reason: "hold_expired" }
+        )
+
+// ADT-event-driven hold review: when a patient transitions care setting
+// (e.g., discharge from SNF back to home), review and potentially lift
+// their program hold.
+FUNCTION on_adt_care_transition(adt_event):
+    state = DynamoDB.GetItem(table = "patient-state", key = { patient_id: adt_event.patient_id })
+    IF state AND state.has_active_program_hold AND state.program_hold_reason == "patient_in_snf":
+        IF adt_event.event_type == "discharge" AND adt_event.discharge_to == "home":
+            state.has_active_program_hold = false
+            state.program_hold_expired_at = NOW()
+            DynamoDB.PutItem(table = "patient-state", item = state)
 ```
 
 **Step 8: Capture interventions and outcomes.** Care managers act on the worklist; their actions are recorded. Subsequent outcomes (readmission, ED visit, mortality) are linked back to the alerts and interventions for label assembly.
 
 ```pseudocode
 FUNCTION on_care_manager_action(action_event):
+    // Idempotency: derive a deterministic event key and conditional-write
+    // to a processed-events table before downstream operations. If the
+    // conditional write fails (event already processed), return early.
+    idempotency_key = action_event.action_event_id
+    IF NOT conditional_put_idempotency(table = "processed-intervention-events", key = idempotency_key):
+        log_duplicate_event(action_event)
+        return
+
     state = DynamoDB.GetItem(
         table = "patient-state",
         key   = { patient_id: action_event.patient_id, encounter_id: action_event.encounter_id }
@@ -809,6 +955,14 @@ FUNCTION on_outcome_event(outcome_event):
     // outcome_event: { type: readmission | ed_visit | death | program_graduation,
     //                  patient_id, encounter_id, occurred_at, details }
 
+    // Idempotency: derive a deterministic event key from outcome_event.event_id
+    // + outcome_event.type; conditional-write to processed-outcome-events
+    // before downstream operations.
+    idempotency_key = f"{outcome_event.event_id}:{outcome_event.type}"
+    IF NOT conditional_put_idempotency(table = "processed-outcome-events", key = idempotency_key):
+        log_duplicate_event(outcome_event)
+        return
+
     // Link to recent alerts and interventions for label assembly.
     state = DynamoDB.GetItem(
         table = "patient-state",
@@ -837,6 +991,7 @@ FUNCTION on_outcome_event(outcome_event):
         outcome_type:               outcome_event.type,
         occurred_at:                outcome_event.occurred_at,
         days_post_discharge:        days_between(state.discharge_at, outcome_event.occurred_at),
+        evaluation_track:           state.evaluation_track,
         recent_score_ids:           [s.score_id for s in recent_scores],
         recent_intervention_ids:    [i.intervention_id for i in recent_interventions],
         feature_snapshots:          [s.feature_snapshot_id for s in recent_scores],
@@ -863,16 +1018,22 @@ FUNCTION on_outcome_event(outcome_event):
 
 ### Expected Results
 
+*Note: Sample timestamps (e.g., 2026-05-14) and identifiers (WL-, SCORE-, INT-, FEAT- prefixed) below are illustrative. Production output uses real ISO-8601 timestamps from the worklist-builder invocation time and UUID-style IDs from the scoring service.*
+
 **Sample worklist row (high-tier, day 4 post-discharge, heart failure cohort):**
 
 ```json
 {
   "worklist_id": "WL-2026-05-14",
+  "row_id": "ROW-2026-05-14-003892",
   "patient_id": "PT-7724983",
   "encounter_id": "ENC-2026-04472",
   "cohort": ["heart_failure"],
   "tier": "tier_1",
   "composite_score": 0.78,
+  "cold_start": false,
+  "engagement_decay": false,
+  "engagement_decay_reason": null,
   "days_post_discharge": 4,
   "top_drivers": [
     {
@@ -906,7 +1067,7 @@ FUNCTION on_outcome_event(outcome_event):
       "clinical_meaning": "Discharge-time readmission risk score was elevated (62nd percentile in cohort)"
     }
   ],
-  "narrative": "Patient is 4 days post-discharge from a heart failure exacerbation. Weight has trended up about 1 lb per day over the last 3 days (198 to 204; cumulative 6 lbs above the discharge dry weight). Symptom check-in response rate has dropped from a baseline near 85% to about 58%, suggesting the patient may be feeling worse or less engaged. No care management contact has occurred since the day of discharge. Suggested outreach: confirm the weight trend, ask about dyspnea on exertion and orthopnea, ask about diuretic adherence and any recent changes (skipped doses, side effects), ask about diet over the weekend, and consider a same-day add-on with the cardiology transitions clinic or a diuretic adjustment per standing orders.",
+  "narrative": "Patient is 4 days post-discharge from a heart failure exacerbation. Weight has trended up about 1 lb per day over the last 3 days (198 to 204; cumulative 6 lbs above the discharge dry weight). Symptom check-in response rate has dropped from a baseline near 85% to about 58%, suggesting the patient may be feeling worse or less engaged. No care management contact has occurred since the day of discharge. Suggested outreach: confirm the weight trend, ask about dyspnea on exertion and orthopnea, ask about diuretic adherence and any recent changes (skipped doses, side effects), ask about diet over the weekend, and consider connecting with the cardiology transitions clinic for same-day clinical assessment per local heart-failure protocol.",
   "suggested_outreach": {
     "primary_focus": "weight_trend_with_engagement_drop",
     "key_questions": [

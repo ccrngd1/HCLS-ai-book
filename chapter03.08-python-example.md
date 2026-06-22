@@ -286,6 +286,27 @@ def tier_from_discharge_score(score, cohorts, program_caps=None):
         return "tier_3"
     return "below_threshold"
 
+
+def _assign_evaluation_track(patient_id, cohorts):
+    """Stratified random assignment for causal evaluation.
+
+    Production configures the allocation ratio per cohort (typically
+    85% program / 15% usual_care during ramp, or 100% program once
+    effectiveness is established). Uses a deterministic hash of
+    patient_id for reproducibility.
+    """
+    # Default: all patients get the program track. Set
+    # EVALUATION_USUAL_CARE_FRACTION > 0 during ramp.
+    import hashlib
+    fraction = float(os.environ.get("EVALUATION_USUAL_CARE_FRACTION", "0.0"))
+    if fraction <= 0:
+        return "program"
+    hash_val = int(hashlib.sha256(patient_id.encode()).hexdigest(), 16)
+    if (hash_val % 10000) / 10000.0 < fraction:
+        return "usual_care"
+    return "program"
+
+
 def on_discharge_event(discharge_event):
     """Enroll a patient into the post-discharge monitoring program.
 
@@ -306,6 +327,11 @@ def on_discharge_event(discharge_event):
     discharge_dt        = datetime.fromisoformat(discharge_time.replace("Z", "+00:00"))
     program_end_dt      = discharge_dt + timedelta(days=PROGRAM_WINDOW_DAYS)
 
+    # Evaluation track: stratified random assignment for causal evaluation.
+    # "program" patients get full monitoring and worklist surfacing.
+    # "usual_care" patients are scored for outcome comparison only.
+    evaluation_track = _assign_evaluation_track(patient_id, cohorts)
+
     state = {
         "patient_id":             patient_id,
         "encounter_id":           encounter_id,
@@ -317,6 +343,7 @@ def on_discharge_event(discharge_event):
         "discharge_risk_score":   discharge_risk,
         "discharge_features":     discharge_features,
         "current_tier":           initial_tier,
+        "evaluation_track":       evaluation_track,
         "last_contact_at":        None,
         "last_data_at":           None,
         "last_score_at":          None,
@@ -1645,13 +1672,53 @@ def apply_capacity_caps(sorted_rows, capacity):
     """Trim the worklist to the top N rows the team can realistically work."""
     return sorted_rows[: capacity.get("max_rows", 25)]
 
+
+def _detect_engagement_decay(state):
+    """Detect engagement-decay patterns that warrant direct outreach.
+
+    Returns True when data flow has stopped in patterns indicating the
+    patient may be deteriorating silently or needs proactive contact.
+    """
+    now = datetime.now(timezone.utc)
+
+    # Compute days post-discharge from the discharge timestamp.
+    discharge_at = state.get("discharge_at")
+    if discharge_at:
+        discharge_dt = datetime.fromisoformat(discharge_at.replace("Z", "+00:00"))
+        days_post = (now - discharge_dt).days
+    else:
+        days_post = 0
+
+    last_data_at = state.get("last_data_at")
+
+    # No data in first 72 hours (should have at least one measurement by now).
+    if days_post >= 3 and last_data_at is None:
+        return True
+
+    # Previously engaged, now silent for threshold period.
+    if last_data_at:
+        last_dt = datetime.fromisoformat(last_data_at.replace("Z", "+00:00"))
+        silence_days = (now - last_dt).total_seconds() / 86400
+        if silence_days >= ENGAGEMENT_SILENCE_THRESHOLD_DAYS:
+            return True
+
+    return False
+
+
+# Threshold for cold-start promotion (discharge-time risk score).
+COLD_START_RISK_THRESHOLD = 0.55
+# Days of silence before engagement-decay routing activates.
+ENGAGEMENT_SILENCE_THRESHOLD_DAYS = 3
+
+
 def build_worklist(date_iso, score_records, model, feature_order):
     """Build the daily worklist from a batch of scoring records.
 
     Production runs this as a Step Functions task after the scoring sweep
     completes. It pulls the latest score per patient from the scoring
-    history, attaches explanations, applies suppression and de-duplication,
-    sorts by tier, applies capacity caps, and publishes the worklist.
+    history, attaches explanations, applies evaluation-track filtering,
+    cold-start routing, engagement-decay routing, suppression, sorts by
+    tier, applies capacity caps, and publishes PHI-minimized events.
     """
     rows = []
     for score in score_records:
@@ -1666,6 +1733,14 @@ def build_worklist(date_iso, score_records, model, feature_order):
                  "encounter_id": score["encounter_id"]}
         ).get("Item", {}))
 
+        # Evaluation-track filtering: usual_care patients are scored for
+        # outcome comparison but not surfaced on the worklist.
+        if state.get("evaluation_track") == "usual_care":
+            logger.info("usual_care track, not surfaced", extra={
+                "patient_id": score["patient_id"],
+            })
+            continue
+
         suppression = check_suppression(state, score)
         if suppression["suppressed"]:
             logger.info("worklist row suppressed", extra={
@@ -1678,12 +1753,37 @@ def build_worklist(date_iso, score_records, model, feature_order):
 
         explanation = build_explanation(score, model, feature_order)
 
+        # Cold-start routing: first 72 hours with elevated discharge risk
+        # gets promoted to at least tier_2.
+        effective_tier = score["tier"]
+        cold_start = False
+        days_post = score.get("days_post_discharge", 99)
+        discharge_risk = float(state.get("discharge_risk_score", 0))
+        if days_post <= 3 and discharge_risk >= COLD_START_RISK_THRESHOLD:
+            # Promote to at least tier_2 (higher priority = lower rank number).
+            tier_rank_map = {"tier_1": 0, "tier_2": 1, "tier_3": 2}
+            if tier_rank_map.get(effective_tier, 99) > tier_rank_map["tier_2"]:
+                effective_tier = "tier_2"
+            cold_start = True
+
+        # Engagement-decay routing: patients whose data flow stopped
+        # get promoted to at least tier_2.
+        engagement_decay = _detect_engagement_decay(state)
+        if engagement_decay:
+            tier_rank_map = {"tier_1": 0, "tier_2": 1, "tier_3": 2}
+            if tier_rank_map.get(effective_tier, 99) > tier_rank_map["tier_2"]:
+                effective_tier = "tier_2"
+
         rows.append({
+            "worklist_id":            f"WL-{date_iso[:10]}-{uuid.uuid4().hex[:6]}",
+            "row_id":                 f"ROW-{uuid.uuid4().hex[:12]}",
             "patient_id":             score["patient_id"],
             "encounter_id":           score["encounter_id"],
             "cohorts":                state.get("cohorts", []),
-            "tier":                   score["tier"],
+            "tier":                   effective_tier,
             "composite_score":        float(score["composite_calibrated"]),
+            "cold_start":             cold_start,
+            "engagement_decay":       engagement_decay,
             "days_post_discharge":    score["days_post_discharge"],
             "top_drivers":            explanation["structured"]["top_risk_drivers"],
             "narrative":              explanation["narrative"],
@@ -1691,7 +1791,14 @@ def build_worklist(date_iso, score_records, model, feature_order):
             "engagement_status":      explanation["structured"]["engagement_status"],
             "last_contact_at":        state.get("last_contact_at"),
             "last_data_at":           state.get("last_data_at"),
-            "scoring_record_id":      score["score_id"],
+            "assigned_care_team":     state.get("assigned_care_team"),
+            "audit_trail": {
+                "feature_snapshot_id":       score.get("feature_snapshot_id"),
+                "scoring_record_id":         score["score_id"],
+                "model_version":             score.get("model_version"),
+                "calibration_version":       score.get("calibration_version"),
+                "cohort_thresholds_version": score.get("cohort_thresholds_version"),
+            },
         })
 
     # Sort by tier (tier_1 first), then by composite score descending
@@ -1718,18 +1825,29 @@ def build_worklist(date_iso, score_records, model, feature_order):
     }
 
     table = dynamodb.Table(WORKLIST_STATE_TABLE)
-    table.put_item(Item=_decimalize(worklist))
+    # Persist each row individually; subscribers fetch full detail from here.
+    for row in capped_rows:
+        table.put_item(Item=_decimalize(row))
 
-    eventbridge.put_events(Entries=[{
-        "Source":      "post-discharge.worklist-builder",
-        "DetailType":  "WorklistGenerated",
-        "Detail":      json.dumps({
-            "worklist_id":      worklist["worklist_id"],
-            "date":             worklist["date"],
-            "total_surfaced":   worklist["total_surfaced"],
-        }, default=str),
-        "EventBusName": POST_DISCHARGE_EVENTS_BUS,
-    }])
+    # Publish PHI-minimized per-row events. Subscribers fetch the full row
+    # from worklist-state through an authenticated, role-scoped path.
+    entries = []
+    for row in capped_rows:
+        entries.append({
+            "Source":      "post-discharge.worklist-builder",
+            "DetailType":  "WorklistRowGenerated",
+            "Detail":      json.dumps({
+                "worklist_id":      row["worklist_id"],
+                "row_id":           row["row_id"],
+                "patient_id":       row["patient_id"],
+                "tier":             row["tier"],
+                "assigned_care_team": row.get("assigned_care_team"),
+            }, default=str),
+            "EventBusName": POST_DISCHARGE_EVENTS_BUS,
+        })
+    # EventBridge supports up to 10 entries per PutEvents call; batch.
+    for i in range(0, len(entries), 10):
+        eventbridge.put_events(Entries=entries[i:i + 10])
 
     _emit_metric("WorklistsGenerated", 1)
     _emit_metric("WorklistRowsSurfaced", worklist["total_surfaced"])
