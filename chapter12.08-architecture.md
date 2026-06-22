@@ -20,7 +20,7 @@ The AWS implementation centers on three platform choices that shape everything e
 
 **AWS Step Functions for orchestration.** The training and inference pipelines have multiple steps with explicit retry and partial-failure semantics: refresh cohort, harmonize, train (or refresh) the disease-specific model, run per-patient inference, compute counterfactuals, write results to the serving store. Step Functions makes this orchestrable, auditable, and resumable.
 
-**AWS Lambda for counterfactual scenario evaluation.** Once the trajectory model is hosted on a SageMaker endpoint, Lambda fronts the counterfactual API: clinician requests "what does this patient's trajectory look like if we start tolvaptan in three months," the Lambda composes the request (current trajectory, treatment-effect prior, time horizon), calls the SageMaker endpoint, post-processes the result, and returns a payload to the clinical surface.
+**AWS Lambda for counterfactual scenario evaluation.** Once the trajectory model is hosted on a SageMaker endpoint, Lambda fronts the counterfactual API: clinician requests "what does this patient's trajectory look like if we start tolvaptan in three months," the Lambda composes the request (current trajectory, treatment-effect prior, time horizon), calls the SageMaker endpoint, post-processes the result, and returns a payload to the clinical surface. The counterfactual composer is functionally equivalent to ordering a clinical analytic test: it consumes patient PHI, runs a SaMD-adjacent computation, and returns a clinical-decision-supporting output. The privileged-action posture requires authentication (Cognito or institutional IdP via API Gateway), authorization (the requesting clinician must have a clinical relationship to the patient, validated against the EHR's relationship-of-care store), audit logging (every counterfactual request and response stored with patient_id, clinician_id, scenario_spec, model_version, and timestamp), and rate limiting (per-clinician, per-patient, per-day caps to prevent scenario-mining patterns that could indicate inappropriate data access or model probing).
 
 **Amazon DynamoDB for low-latency clinical surfaces.** Per-patient forecasts and time-to-endpoint hazards get written to DynamoDB keyed by patient and disease cohort. The EHR integration, the population-health dashboard, and the patient-facing portal all read from DynamoDB at single-digit-millisecond latency.
 
@@ -29,6 +29,8 @@ The AWS implementation centers on three platform choices that shape everything e
 **AWS KMS for customer-managed encryption.** Disease cohort data is PHI of the highest sensitivity (rare-disease cohorts can be re-identifiable even with standard de-identification, and progression data tied to specific phenotypes is genetically suggestive). Customer-managed CMKs per data class are non-negotiable.
 
 **Amazon CloudWatch for monitoring and alarming.** Pipeline health, training-job convergence diagnostics, inference latency, calibration metrics on backtested forecasts, and drift in cohort distributions all get logged. Calibration drift is the single most important operational metric: a trajectory system whose 90% credible intervals stop containing 90% of out-of-sample observations has a calibration problem that must be detected and remediated.
+
+**Multi-disease parallelism.** The architecture as drawn shows one pipeline for one disease cohort. At institutional scale (five to fifteen disease cohorts is typical for a large academic medical center), each disease has its own cohort-definition config, its own training Step Functions state machine, its own model-artifact prefix (with per-disease KMS CMKs), its own DynamoDB partition prefix, and its own EventBridge schedule. The Step Functions and SageMaker layers are reused across diseases: one trajectory-pipeline state machine template, parameterized by disease; one set of training-and-inference container images that read disease-specific configs at runtime. Per-disease isolation is implemented at the IAM role level (one role per disease-pipeline, scoped to the disease's CMKs and S3 prefixes) and at the audit-log level (every record carries the disease name as a top-level attribute). Expect five-to-fifteen Step Functions executions in parallel on a typical schedule, with per-disease independent failure recovery so a training convergence problem in one cohort does not block inference for others.
 
 ### Architecture Diagram
 
@@ -63,11 +65,12 @@ flowchart LR
 | **IAM Permissions** | `healthlake:SearchWithGet`, `healthlake:ReadResource`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `sagemaker:CreateTransformJob`, `lambda:InvokeFunction`, `dynamodb:BatchWriteItem`, `dynamodb:Query`, `states:StartExecution`, `kms:Decrypt`, `kms:Encrypt`. Each pipeline component runs under a least-privilege role scoped to its data class. |
 | **BAA** | AWS BAA signed. Trajectory data is PHI in the strongest sense: longitudinal disease-specific records tied to genetic phenotypes are inherently re-identifiable. Every storage and compute service touching this pipeline must be on the [HIPAA eligible services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/) list. |
 | **Encryption** | S3: SSE-KMS with customer-managed CMKs per data class (cohort datasets, model artifacts, forecasts, priors). HealthLake: KMS-encrypted datastore. DynamoDB: encryption at rest with customer-managed CMK. SageMaker training and inference: KMS-encrypted EBS volumes and KMS-encrypted output. CloudWatch log groups: explicit KMS encryption. TLS 1.2 minimum in transit. |
-| **VPC** | Production: SageMaker training, inference, and processing in private subnets with VPC endpoints for S3, HealthLake, DynamoDB, KMS, Step Functions, CloudWatch Logs, and SageMaker API/Runtime. Required posture for HIPAA workloads with PHI of this sensitivity. |
-
+| **VPC** | Production: SageMaker training, inference, and processing in private subnets with VPC endpoints for S3 (gateway), HealthLake (interface), DynamoDB (gateway), KMS (interface), Step Functions (interface), CloudWatch Logs (interface), CloudWatch Monitoring (interface), SageMaker API/Runtime (interface), EventBridge (interface), Lambda (interface), Glue (interface), and Secrets Manager (interface, required for external API credentials such as EHR integration credentials and clinical-trial-literature feed credentials). No NAT egress for PHI-touching workloads; restrictive egress on Lambda VPCs and SageMaker endpoint subnets. Required posture for HIPAA workloads with PHI of this sensitivity. |
+| **Availability** | Multi-AZ deployment for SageMaker real-time endpoints, DynamoDB (multi-AZ by default), and Lambda compute fronting clinician-facing surfaces. Trajectory inference pipeline: RTO of 4 hours, RPO of 24 hours (surfaced trajectories are recomputed nightly; one-day staleness during a regional incident is clinically tolerable since the underlying disease progression operates on a multi-month-to-multi-year horizon). Cohort-and-training pipeline: RTO of 24 hours, RPO of 7 days (training cadence is monthly; a week of staleness is acceptable during recovery). |
+| **Time** | Amazon Time Sync Service for all AWS-hosted compute. Observation timestamps stored in UTC in the durable archive (HealthLake and S3). Clinical surfaces display institution-local time when shown to a clinician at the bedside. Time-zone handling is explicit in the harmonization layer to prevent off-by-one-day errors in time-since-diagnosis calculations. |
 | **CloudTrail** | Enabled for all data-plane services, with CloudTrail data events on every PHI-bearing S3 bucket and the DynamoDB serving table. The audit trail of who accessed which patient's trajectory is non-negotiable, especially for rare-disease cohorts. CloudTrail logs land in a dedicated S3 bucket with Object Lock in compliance mode. |
 | **Sample Data** | Synthetic FHIR data from [Synthea](https://github.com/synthetichealth/synthea) supplemented with disease-specific synthetic generators (Synthea's CKD module produces longitudinal eGFR trajectories suitable for development). [MIMIC-IV](https://physionet.org/content/mimiciv/) provides de-identified inpatient labs through PhysioNet credentialing; useful for validation but limited for chronic outpatient trajectories. Disease-specific registry data are gold standard for validation but require formal data-use agreements. Never use real PHI in dev. |
-| **Cost Estimate** | HealthLake: ~$200-$800/month depending on cohort size and data volume. SageMaker training (Bayesian hierarchical model, monthly retrain): ~$200-$600/month. SageMaker inference endpoint: ~$100-$400/month. Glue ETL (weekly cohort refresh): ~$50-$150/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$100/month combined. KMS, CloudWatch, audit: ~$50/month. Total: ~$800-$3,500/month per disease-cohort workload depending on cohort size, data density, and model complexity. |
+| **Cost Estimate** | HealthLake: ~$200-$800/month depending on cohort size and data volume. SageMaker training (Bayesian hierarchical model, monthly retrain): ~$200-$600/month. SageMaker inference endpoint: ~$100-$400/month. Glue ETL (weekly cohort refresh): ~$50-$150/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$100/month combined. KMS, CloudWatch, audit: ~$50/month. Total: ~$800-$3,500/month per disease-cohort workload depending on cohort size, data density, and model complexity. Multi-disease scaling note: costs do not multiply linearly. HealthLake storage and Glue ETL scale roughly linearly with cohort size; SageMaker training scales sub-linearly when on-demand training jobs reuse one container image across multiple disease-specific training runs; SageMaker inference and the Lambda/DynamoDB serving layer scale roughly linearly with active-patient count. Five cohorts at the smaller end is closer to ~$2,500/month total than five times $800; five cohorts at the larger end is closer to ~$14,000/month total than five times $3,500. Engage AWS Solutions Architecture for a worked sizing exercise before committing to a multi-disease rollout. |
 
 ### Ingredients
 
@@ -230,6 +233,11 @@ FUNCTION train_trajectory_model(disease_name, harmonized_cohort, model_config, p
     //   covariates:            ["age_at_time_zero", "sex", "baseline_egfr", "diabetes_status"]
     //   treatment_covariates:  ["acei_arb_active", "sglt2_active", "tolvaptan_active"]
     //   random_effects:        ["intercept", "slope"]
+    //   endpoint_definitions:  [
+    //       { name: "transplant_evaluation",    loinc: "48642-3", threshold: 20, direction: "below" },
+    //       { name: "vascular_access_planning", loinc: "48642-3", threshold: 17, direction: "below" },
+    //       { name: "rrt_consideration",        loinc: "48642-3", threshold: 15, direction: "below" }
+    //   ]
     //   prior_population_slope: -3.0                  // mL/min/1.73m^2/year, from CKD literature
     //   prior_population_slope_sd: 1.0
     //   prior_per_patient_slope_sd: 4.0               // patient heterogeneity
@@ -314,19 +322,24 @@ FUNCTION infer_patient_trajectory(patient_harmonized_data, trained_model, foreca
         treatment_assumption = "current_treatment_continued"
     )
 
-    // Compute the time-to-endpoint hazard if the model is a joint model
-    // or has an explicit endpoint definition.
+    // Compute time-to-endpoint hazards for each clinical endpoint defined
+    // in the model config. Real ADPKD trajectory modeling at this fidelity
+    // tracks multiple milestones: transplant evaluation, vascular access
+    // planning, and RRT consideration each have distinct thresholds and
+    // distinct clinical actions.
     IF trained_model.has_endpoint_component:
-        time_to_endpoint = compute_time_to_endpoint(
-            model     = trained_model,
-            patient   = patient_harmonized_data,
-            endpoint  = trained_model.endpoint_definition,
-            time_grid = forecast_time_grid
-        )
-        // time_to_endpoint contains: P(endpoint by month T) curves with credible intervals,
-        // median time to endpoint, P10 and P90 time to endpoint.
+        time_to_endpoints = {}
+        FOR endpoint IN trained_model.endpoint_definitions:
+            time_to_endpoints[endpoint.name] = compute_time_to_endpoint(
+                model     = trained_model,
+                patient   = patient_harmonized_data,
+                endpoint  = endpoint,
+                time_grid = forecast_time_grid
+            )
+            // Each entry contains: P(endpoint by month T) curves with credible
+            // intervals, median time to endpoint, P10 and P90 time to endpoint.
     ELSE:
-        time_to_endpoint = null
+        time_to_endpoints = null
 
     inference_result = {
         patient_id:         patient_harmonized_data.patient_id,
@@ -334,7 +347,7 @@ FUNCTION infer_patient_trajectory(patient_harmonized_data, trained_model, foreca
         model_version:      trained_model.model_version,
         fitted_trajectory:  fitted_trajectory,
         forecast:           forecast,
-        time_to_endpoint:   time_to_endpoint,
+        time_to_endpoints:  time_to_endpoints,
         inferred_at_ts:     now()
     }
 
@@ -367,11 +380,23 @@ FUNCTION evaluate_counterfactual_scenarios(
     counterfactual_results = []
     FOR scenario IN scenarios:
         // Apply the treatment change to the patient's projected treatment timeline.
-        modified_treatment_timeline = apply_treatment_change(
+        // IMPORTANT: apply_treatment_change must reconcile pre-existing exposure.
+        // If the patient is already on the requested drug class, the function
+        // returns the base timeline unchanged with a "already_on_class" flag
+        // rather than appending a duplicate entry. Without this reconciliation,
+        // duplicate entries compound multiplicatively in the treatment-effect
+        // modifier: (1 - 0.30) * (1 - 0.30) = 0.49 instead of the correct 0.70,
+        // producing a 25% over-attribution of treatment benefit. Production
+        // implementations must check for pre-existing class exposure before
+        // any append and surface the no-op to the clinical interface.
+        modified_treatment_timeline, change_applied = apply_treatment_change(
             base_timeline = patient_harmonized_data.treatments,
             change        = scenario.change,
             anchor_time   = patient_harmonized_data.last_observation_months
         )
+        // change_applied is false when the patient is already on the requested
+        // drug class; the scenario result carries a flag so the clinical surface
+        // can explain "patient is already on this therapy."
 
         // Predict under the modified scenario. The model uses the trial-literature-derived
         // effect-size posterior for the relevant drug or drug-class change. Uncertainty
@@ -383,22 +408,24 @@ FUNCTION evaluate_counterfactual_scenarios(
             treatment_timeline = modified_treatment_timeline
         )
 
-        // Time-to-endpoint under the scenario.
+        // Time-to-endpoint under the scenario, for each defined endpoint.
         IF trained_model.has_endpoint_component:
-            scenario_time_to_endpoint = compute_time_to_endpoint(
-                model              = trained_model,
-                patient            = patient_harmonized_data,
-                treatment_timeline = modified_treatment_timeline,
-                endpoint           = trained_model.endpoint_definition,
-                time_grid          = forecast_time_grid
-            )
+            scenario_time_to_endpoints = {}
+            FOR endpoint IN trained_model.endpoint_definitions:
+                scenario_time_to_endpoints[endpoint.name] = compute_time_to_endpoint(
+                    model              = trained_model,
+                    patient            = patient_harmonized_data,
+                    treatment_timeline = modified_treatment_timeline,
+                    endpoint           = endpoint,
+                    time_grid          = forecast_time_grid
+                )
         ELSE:
-            scenario_time_to_endpoint = null
+            scenario_time_to_endpoints = null
 
         counterfactual_results.append({
             scenario_name:       scenario.name,
             forecast:            scenario_forecast,
-            time_to_endpoint:    scenario_time_to_endpoint,
+            time_to_endpoints:   scenario_time_to_endpoints,
             assumption_disclosure: build_assumption_disclosure(scenario, trained_model)
         })
 
@@ -444,10 +471,22 @@ FUNCTION evaluate_counterfactual_scenarios(
         "p50": 36.4,
         "p90": 48.2
       },
-      "time_to_egfr_under_15": {
-        "p10_months": 84,
-        "p50_months": 126,
-        "p90_months": 192
+      "time_to_endpoints": {
+        "transplant_evaluation": {
+          "p10_months": 60,
+          "p50_months": 96,
+          "p90_months": 156
+        },
+        "vascular_access_planning": {
+          "p10_months": 72,
+          "p50_months": 114,
+          "p90_months": 180
+        },
+        "rrt_consideration": {
+          "p10_months": 84,
+          "p50_months": 126,
+          "p90_months": 192
+        }
       }
     },
     {
@@ -457,15 +496,27 @@ FUNCTION evaluate_counterfactual_scenarios(
         "p50": 40.9,
         "p90": 52.4
       },
-      "time_to_egfr_under_15": {
-        "p10_months": 102,
-        "p50_months": 156,
-        "p90_months": 228
+      "time_to_endpoints": {
+        "transplant_evaluation": {
+          "p10_months": 78,
+          "p50_months": 120,
+          "p90_months": 192
+        },
+        "vascular_access_planning": {
+          "p10_months": 90,
+          "p50_months": 144,
+          "p90_months": 216
+        },
+        "rrt_consideration": {
+          "p10_months": 102,
+          "p50_months": 156,
+          "p90_months": 228
+        }
       },
       "assumption_disclosure": "Effect size prior derived from TEMPO 3:4 trial (NCT00428948) and REPRISE trial (NCT02160145). 30% relative reduction in eGFR slope, 95% credible interval (0.18, 0.42). Assumes treatment continuation through forecast horizon."
     }
   ],
-  "explanation_text": "Without intervention, this patient's eGFR is projected to fall below the 15 mL/min/1.73m^2 renal-replacement-therapy threshold between 7 and 16 years from now (median 10.5 years). Starting tolvaptan now would shift that median to approximately 13 years, with a 1.5-year improvement at the lower (P10) bound. Forecasts assume current treatment continued or the specified change, no acute events, and continued cohort-comparable disease behavior.",
+  "explanation_text": "Without intervention, this patient's eGFR is projected to cross the transplant-evaluation threshold (eGFR < 20) between 5 and 13 years from now (median 8 years), the vascular-access-planning threshold (eGFR ~15-20) between 6 and 15 years (median 9.5 years), and the renal-replacement-therapy consideration threshold (eGFR < 15) between 7 and 16 years (median 10.5 years). Starting tolvaptan now would shift the RRT median to approximately 13 years, with proportional improvements at each earlier milestone. Forecasts assume current treatment continued or the specified change, no acute events, and continued cohort-comparable disease behavior.",
   "uncertainty_disclosure": "Forecasts are statistical projections from a population model anchored to disease-specific clinical literature. Individual outcomes vary substantially. The model is informational; clinical decisions require integrated judgment.",
   "generated_at_ts": "2026-04-09T14:22:00Z"
 }
@@ -497,7 +548,11 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 **Calibration drift detection.** A trajectory system whose 90% credible intervals stop containing 90% of out-of-sample observations has lost calibration. Production systems run a continuous calibration-monitoring job that backtests recent forecasts against subsequently observed outcomes and alarms when coverage drops below a configured threshold. Without this, the system can be wrong for months before anyone notices, and clinician trust takes years to rebuild.
 
+**Loss-to-follow-up monitoring.** In chronic-disease cohorts, patients who progress fast are more likely to leave follow-up (transfer to specialty care, hospitalize, decease) and patients who feel well are more likely to stop coming in. Both directions of dropout produce informative censoring that biases the population-level prior estimation. Production systems run a continuous loss-to-follow-up monitor that compares the trajectory distribution of patients who left the cohort recently to the trajectory distribution of patients who remain; persistent divergence is the operational signal of informative censoring and triggers a model-and-prior review. Without this, the cohort's apparent disease behavior drifts away from the true disease behavior in subtle, slow ways that are extremely difficult to detect once they have accumulated.
+
 **Multi-modal data integration.** Trajectory models gain meaningfully from integrating imaging-derived measurements (kidney volume on MRI for ADPKD, brain volumetrics for neurodegenerative diseases, tumor volumes for oncology), genetic markers (PKD1 versus PKD2 mutation, APOE genotype, tumor mutational burden), and structured assessments (UPDRS, MMSE, EDSS). The pipeline as drawn handles structured EHR data well; integrating imaging and genetics requires additional ingestion paths, additional harmonization (DICOM-derived measurements via Recipe 9.x; genomic data through specialized stores), and additional joins in the cohort harmonization step. Production systems for diseases where these modalities matter must have these integrations or they leave the most informative signals on the floor.
+
+Multi-modal integration brings additional regulatory layers. Genetic data is covered by the Genetic Information Nondiscrimination Act (GINA) at the federal level and by stricter state laws in California, Florida, and several others. Institutional consent for genetic testing typically scopes data use narrowly (clinical care versus research versus prognostic modeling), and the trajectory pipeline must respect those scopes: a patient who consented to genetic testing for clinical-care purposes may not have consented to its use in a population-derived prognostic model. Imaging-derived measurements are HIPAA PHI plus the structural-imaging re-identifiability concern that complicates de-identification (facial structure in head MRIs, body habitus in abdominal imaging). The BAA and consent-and-authorization framing differs meaningfully between structured EHR data, genetic data, and imaging data. Engage the privacy office, genetic-counseling team, and imaging-informatics team before engineering work begins on any multi-modal extension.
 
 **Patient-facing communication.** Surfacing a trajectory and its uncertainty to a patient is a fundamentally different problem than surfacing it to a clinician. The clinician understands that "P50 time to renal replacement therapy = 126 months, P10 = 84 months" means something specific. The patient needs the same information rendered as "we believe there is roughly a 50% chance you will need dialysis sometime in the next ten to fifteen years, and a 10% chance you will need it in the next seven years; treatments may shift these timelines." The translation is hard, the failure modes are unfamiliar to engineers, and the regulatory framing is more sensitive (patient-facing prognostic outputs are scrutinized more carefully than clinician-facing ones). Production systems either have a dedicated patient-communication layer designed by a clinical communication specialist or they explicitly restrict the surfaces to clinicians.
 

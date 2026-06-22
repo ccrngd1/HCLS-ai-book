@@ -1397,18 +1397,38 @@ This is the architecturally distinctive step. The clinician asks "what does this
 def _apply_treatment_change(base_timeline, change, anchor_months):
     """Apply a treatment change spec to a base timeline.
 
-    Returns a new timeline. Supported changes:
+    Returns (new_timeline, change_applied). Supported changes:
       - {"add": {"drug_class": "tolvaptan", "start_offset_months": 0}}
       - {"stop": {"drug_class": "acei_arb"}}
       - None (no change; "current treatment continued")
+
+    IMPORTANT: If the patient is already on the requested drug class
+    (an active entry with no end date or an end date in the future),
+    the "add" is a no-op and change_applied returns False. Without
+    this reconciliation, duplicate entries compound multiplicatively
+    in _treatment_modifier: (1 - 0.30) * (1 - 0.30) = 0.49 instead
+    of the correct 0.70, producing a 25% over-attribution of
+    treatment benefit.
     """
     new_timeline = [dict(t) for t in base_timeline]
     if change is None:
-        return new_timeline
+        return new_timeline, True
     if "add" in change:
         spec = change["add"]
+        drug_class = spec["drug_class"]
+        # Check pre-existing exposure: if the patient is already on
+        # this drug class (active entry with no end or end in future),
+        # return unchanged timeline with change_applied=False.
+        already_active = any(
+            t["drug_class"] == drug_class
+            and (t["end_months_from_zero"] is None
+                 or t["end_months_from_zero"] > anchor_months)
+            for t in new_timeline
+        )
+        if already_active:
+            return new_timeline, False
         new_timeline.append({
-            "drug_class":             spec["drug_class"],
+            "drug_class":             drug_class,
             "start_months_from_zero": (anchor_months
                                        + spec.get("start_offset_months", 0)),
             "end_months_from_zero":   None,
@@ -1419,7 +1439,7 @@ def _apply_treatment_change(base_timeline, change, anchor_months):
             if tx["drug_class"] == target and tx["end_months_from_zero"] is None:
                 tx["end_months_from_zero"] = anchor_months
     new_timeline.sort(key=lambda t: t["start_months_from_zero"])
-    return new_timeline
+    return new_timeline, True
 
 def _compose_assumption_disclosure(scenario, model):
     """Plain-language disclosure of what the forecast assumes."""
@@ -1503,7 +1523,7 @@ def evaluate_counterfactual_scenarios(patient, baseline_inference, model,
     counterfactual_results = []
 
     for scenario in scenarios:
-        modified_timeline = _apply_treatment_change(
+        modified_timeline, change_applied = _apply_treatment_change(
             patient["treatments"], scenario.get("change"), anchor)
 
         # Forward forecast under the modified timeline.
