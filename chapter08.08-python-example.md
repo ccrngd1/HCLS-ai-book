@@ -21,6 +21,8 @@ Your environment needs credentials configured (via environment variables, an ins
 - `s3:PutObject`
 - `dynamodb:PutItem`
 - `dynamodb:Query`
+- `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:GetQueueAttributes` (for the Lambda trigger)
+- `sqs:SendMessage` (for routing to the review queue)
 
 ---
 
@@ -59,8 +61,12 @@ ASSERTION_CLASSES = [
     "historical", "family", "hypothetical"
 ]
 
-# Confidence threshold: entities classified below this go to human review.
-CONFIDENCE_THRESHOLD = 0.85
+# Confidence thresholds: two-tier system for routing entities.
+#   - Below EXCLUDE_THRESHOLD: entity excluded from downstream until reviewed.
+#   - Between EXCLUDE and INCLUDE: included with low_confidence flag, queued for review.
+#   - Above INCLUDE_THRESHOLD: included without qualification.
+EXCLUDE_THRESHOLD = 0.70
+INCLUDE_THRESHOLD = 0.85
 
 # Context window: characters before and after the entity to extract.
 # ~2-3 sentences of surrounding text. Enough for negation cues without noise.
@@ -75,6 +81,12 @@ SAGEMAKER_ENDPOINT_NAME = "clinical-assertion-classifier"
 
 # DynamoDB table for annotated entities.
 ANNOTATED_ENTITIES_TABLE = "assertion-annotated-entities"
+
+# Separate restricted-access audit table for context snippets (PHI).
+AUDIT_TABLE = "assertion-audit"
+
+# Records retention: 7 years in seconds (default; adjust per institutional policy).
+RETENTION_SECONDS = 7 * 365 * 24 * 60 * 60
 
 # ---------- Rule-Based Assertion Patterns ----------
 
@@ -517,7 +529,7 @@ def classify_assertions(entity_contexts: list[dict]) -> list[dict]:
         # Pass 1: Try rules.
         rule_result = apply_assertion_rules(ctx)
 
-        if rule_result and rule_result["confidence"] >= CONFIDENCE_THRESHOLD:
+        if rule_result and rule_result["confidence"] >= INCLUDE_THRESHOLD:
             # Propagate section_header into the entity dict so conflict
             # resolution (Step 4) can use it for priority scoring.
             entity_with_section = {**ctx["entity"], "section_header": ctx["section_header"]}
@@ -651,8 +663,11 @@ def store_annotated_entities(
     Each entity record includes:
       - Patient/note linkage for provenance
       - The assertion classification and confidence
-      - A needs_review flag for low-confidence classifications
-      - A context snippet for human review
+      - Two-tier routing flags:
+        * excluded_pending_review: confidence < EXCLUDE_THRESHOLD (not sent downstream)
+        * low_confidence: between thresholds (included with flag, queued for review)
+      - A TTL epoch for automatic records retention expiration
+      - Context snippet stored in a SEPARATE restricted-access audit table
 
     Also writes a note-level summary showing assertion distribution.
 
@@ -666,23 +681,33 @@ def store_annotated_entities(
         Summary dict with counts by assertion class.
     """
     table = dynamodb.Table(ANNOTATED_ENTITIES_TABLE)
+    audit_table = dynamodb.Table(AUDIT_TABLE)
 
     # Count assertions by class for the summary.
     assertion_counts = {cls: 0 for cls in ASSERTION_CLASSES}
     review_count = 0
+    excluded_count = 0
+
+    # TTL: current time + institutional retention period.
+    ttl_epoch = int(datetime.datetime.now(timezone.utc).timestamp()) + RETENTION_SECONDS
 
     for idx, result in enumerate(resolved_entities):
-        needs_review = result["confidence"] < CONFIDENCE_THRESHOLD
+        needs_review = result["confidence"] < INCLUDE_THRESHOLD
+        excluded = result["confidence"] < EXCLUDE_THRESHOLD
         if needs_review:
             review_count += 1
+        if excluded:
+            excluded_count += 1
 
         assertion = result["assertion"]
         if assertion in assertion_counts:
             assertion_counts[assertion] += 1
 
+        entity_key = f"{note_id}#{idx:04d}"
+
         record = {
             "patient_id": patient_id,
-            "note_id_entity_idx": f"{note_id}#{idx:04d}",
+            "note_id_entity_idx": entity_key,
             "note_id": note_id,
             "note_date": note_date,
             "entity_text": result["entity"]["text"],
@@ -691,10 +716,21 @@ def store_annotated_entities(
             "confidence": Decimal(str(round(result["confidence"], 3))),
             "method": result["method"],
             "needs_review": needs_review,
+            "low_confidence": needs_review and not excluded,
+            "excluded_pending_review": excluded,
             "processed_at": datetime.datetime.now(timezone.utc).isoformat(),
+            "ttl_epoch": ttl_epoch,
         }
 
         table.put_item(Item=record)
+
+        # Context snippet in separate restricted-access audit table.
+        # Only the review workflow and audit processes have access to this table.
+        audit_table.put_item(Item={
+            "note_id_entity_idx": entity_key,
+            "context_snippet": result.get("entity", {}).get("context_text", ""),
+            "ttl_epoch": ttl_epoch,
+        })
 
     summary = {
         "note_id": note_id,
@@ -703,11 +739,12 @@ def store_annotated_entities(
         "total_entities": len(resolved_entities),
         "assertion_counts": assertion_counts,
         "needs_review_count": review_count,
+        "excluded_count": excluded_count,
     }
 
     logger.info(
-        "Stored %d annotated entities (%d for review)",
-        len(resolved_entities), review_count
+        "Stored %d annotated entities (%d for review, %d excluded)",
+        len(resolved_entities), review_count, excluded_count
     )
     return summary
 ```
@@ -837,7 +874,7 @@ ASSESSMENT AND PLAN:
 
 ## Lambda Handler Version
 
-In production, this pipeline is triggered when a clinical note is finalized in the EHR. The event arrives via an integration layer (HL7 FHIR notification, Kinesis stream, or direct S3 upload).
+In production, this pipeline is triggered when a clinical note is finalized in the EHR. The event arrives via SQS (which sits between the EHR event source and Lambda for retry resilience and dead-letter queue handling). The SQS message contains either the note text inline or an S3 reference.
 
 ```python
 import os
@@ -846,7 +883,12 @@ def lambda_handler(event: dict, context) -> dict:
     """
     Lambda handler for real-time assertion classification.
 
-    Triggered by a note finalization event containing:
+    Triggered by SQS messages containing note finalization events.
+    The SQS queue provides automatic retries (maxReceiveCount=3) and
+    routes persistently failing notes to a dead-letter queue (DLQ).
+    A CloudWatch alarm on DLQ depth > 0 alerts when notes are stuck.
+
+    Each SQS record contains:
       - note_text or an S3 reference to the note
       - patient_id
       - note_id
@@ -854,42 +896,49 @@ def lambda_handler(event: dict, context) -> dict:
 
     Returns the assertion summary for monitoring and downstream routing.
     """
-    # Extract note metadata from the event.
-    # Adapt this to your integration layer's event format.
-    record = event.get("detail", event)
+    # SQS event contains one or more records (batch size configured on the trigger).
+    results = []
 
-    note_text = record.get("note_text")
-    patient_id = record["patient_id"]
-    note_id = record["note_id"]
-    note_date = record["note_date"]
+    for sqs_record in event.get("Records", [event]):
+        # Parse the message body (JSON-encoded note event).
+        if "body" in sqs_record:
+            record = json.loads(sqs_record["body"])
+        else:
+            record = sqs_record.get("detail", sqs_record)
 
-    # If note_text not inline, fetch from S3.
-    if not note_text and "s3_bucket" in record:
-        # S3 client created here rather than module scope because this path
-        # is only used when notes arrive via S3 reference rather than inline.
-        s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
-        obj = s3.get_object(
-            Bucket=record["s3_bucket"],
-            Key=record["s3_key"],
-        )
-        note_text = obj["Body"].read().decode("utf-8")
+        note_text = record.get("note_text")
+        patient_id = record["patient_id"]
+        note_id = record["note_id"]
+        note_date = record["note_date"]
 
-    if not note_text:
-        logger.error("No note text available for note %s", note_id)
-        return {"error": "no_note_text", "note_id": note_id}
+        # If note_text not inline, fetch from S3.
+        if not note_text and "s3_bucket" in record:
+            s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+            obj = s3.get_object(
+                Bucket=record["s3_bucket"],
+                Key=record["s3_key"],
+            )
+            note_text = obj["Body"].read().decode("utf-8")
 
-    summary = classify_note_assertions(note_text, patient_id, note_id, note_date)
+        if not note_text:
+            logger.error("No note text available for note %s", note_id)
+            results.append({"error": "no_note_text", "note_id": note_id})
+            continue
 
-    # Route notes with entities needing review to a review queue.
-    if summary.get("needs_review_count", 0) > 0:
-        logger.info("Note %s has %d entities for review", note_id, summary["needs_review_count"])
-        # In production: send to SQS review queue
-        # sqs_client.send_message(
-        #     QueueUrl=os.environ["REVIEW_QUEUE_URL"],
-        #     MessageBody=json.dumps({"note_id": note_id, "patient_id": patient_id}),
-        # )
+        summary = classify_note_assertions(note_text, patient_id, note_id, note_date)
 
-    return summary
+        # Route notes with entities needing review to the review SQS queue.
+        if summary.get("needs_review_count", 0) > 0:
+            logger.info("Note %s has %d entities for review", note_id, summary["needs_review_count"])
+            # In production: send to SQS review queue (RBAC-protected).
+            # sqs_client.send_message(
+            #     QueueUrl=os.environ["REVIEW_QUEUE_URL"],
+            #     MessageBody=json.dumps({"note_id": note_id, "patient_id": patient_id}),
+            # )
+
+        results.append(summary)
+
+    return results[0] if len(results) == 1 else results
 ```
 
 ---
@@ -912,9 +961,9 @@ This example works: run it against a clinical note (with a deployed SageMaker en
 
 **Model monitoring and drift detection.** Clinical documentation patterns change over time: new EHR templates, new providers, new specialty clinics. A model trained on 2025 notes may underperform on 2027 notes. Set up CloudWatch metrics on model confidence distributions. A shift in the distribution (more low-confidence predictions) is an early signal of model drift requiring retraining.
 
-**Error handling and dead letter queues.** If Comprehend Medical times out or the SageMaker endpoint is temporarily unavailable, the Lambda needs to retry with backoff. Configure DLQ for messages that fail repeatedly. A note that fails assertion classification silently is a note whose entities won't appear in downstream quality measures or CDS queries.
+**Error handling and dead letter queues.** The SQS queue between the EHR event source and Lambda provides automatic retries (maxReceiveCount = 3 with exponential backoff). Notes that fail all retries land in a dead-letter queue. Set a CloudWatch alarm on DLQ depth > 0. At a 2% transient failure rate across 200 notes/hour, the DLQ catches roughly 4 notes/hour that would otherwise be silently lost. Without this, failed notes never get assertion-classified, which means their entities won't appear in downstream quality measures or CDS queries.
 
-**DynamoDB partition design.** The example uses `patient_id` as the partition key and `note_id_entity_idx` as the sort key. This works for patient-centric queries ("show me all present conditions for patient X"). If you also need entity-centric queries ("find all patients with family history of breast cancer"), you need a Global Secondary Index on `assertion_status + entity_text` or a separate query-optimized table. Design your access patterns before deploying.
+**DynamoDB partition design.** The example uses `patient_id` as the partition key and `note_id_entity_idx` as the sort key. This works for patient-centric queries ("show me all present conditions for patient X"). If you also need entity-centric queries ("find all patients with family history of breast cancer"), you need a Global Secondary Index on `assertion_status + entity_text` or a separate query-optimized table. Design your access patterns before deploying. The `ttl_epoch` attribute enables automatic record expiration aligned with your institution's records retention policy. The separate audit table (for context snippets containing PHI) should have its own restrictive IAM policy scoped to the review workflow role only.
 
 **Testing with synthetic vs. real data.** The synthetic note in `__main__` exercises the happy path. Production testing requires a fixture library covering edge cases: notes with no section headers, notes with conflicting assertions, extremely long notes, notes with heavy abbreviation use, specialty-specific documentation (surgical notes vs. psychiatry notes vs. radiology reports). The i2b2 2010 assertion corpus (requires a data use agreement) provides annotated test data for benchmarking.
 

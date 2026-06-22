@@ -14,41 +14,51 @@
 
 **Amazon S3 for note storage and training data.** Clinical notes land in S3 (encrypted, access-logged) before processing. Annotated training datasets for the assertion model also live in S3. The lifecycle: raw notes arrive, entities are extracted, assertion labels are applied, and annotated outputs are written back.
 
-**AWS Lambda for pipeline orchestration.** For real-time assertion classification (triggered when a note is finalized), Lambda coordinates the pipeline: fetch the note, call Comprehend Medical for entity extraction, invoke the SageMaker endpoint for assertion classification, write results to the output store.
+**Amazon SQS for ingestion resilience.** An SQS queue sits between the EHR event source and the processing Lambda. Without it, a transient Comprehend Medical timeout or SageMaker cold-start failure silently drops the note. At a 2% transient failure rate and 200 notes/hour, that's roughly 2,900 notes/month lost with no retry. The queue gives you automatic retries (configure maxReceiveCount = 3 with exponential backoff) and a dead-letter queue (DLQ) for notes that fail repeatedly. Set a CloudWatch alarm on DLQ depth > 0 so you know immediately when notes are stuck.
+
+**AWS Lambda for pipeline orchestration.** For real-time assertion classification (triggered by messages arriving in SQS), Lambda coordinates the pipeline: fetch the note, call Comprehend Medical for entity extraction, invoke the SageMaker endpoint for assertion classification, write results to the output store.
 
 **Amazon DynamoDB for annotated entity storage.** Assertion-classified entities need to be queryable by patient, by entity type, by assertion status, and by date. DynamoDB's flexible schema handles the varying number of entities per note, and its point-lookup speed supports real-time clinical decision support queries.
+
+Store the main entity records in the primary table, keyed by patient_id and note_id_entity_idx. The `context_snippet` field (which contains raw clinical text, i.e., PHI) lives in a separate restricted-access audit table with tighter IAM policies and its own encryption key. This separation means downstream query consumers never accidentally access raw clinical context; only the human review workflow and audit processes get access to the audit table. Both tables use a `ttl_epoch` attribute aligned with your institution's records retention policy (typically 7-10 years for adult records, longer for minors). DynamoDB TTL automatically expires records after the retention period without requiring a scheduled cleanup job.
 
 ### Architecture Diagram
 
 ```mermaid
 flowchart TD
-    A[Clinical Note\nFinalized in EHR] -->|Event| B[Lambda\nPipeline Orchestrator]
+    A[Clinical Note\nFinalized in EHR] -->|Event| Q[SQS Queue\nwith DLQ]
+    Q -->|Trigger| B[Lambda\nPipeline Orchestrator]
     B -->|DetectEntitiesV2| C[Amazon\nComprehend Medical]
     C -->|Entities + Traits| B
     B -->|Entity + Context| D[SageMaker Endpoint\nAssertion Classifier]
     D -->|Assertion Labels| B
     B -->|Store Results| E[DynamoDB\nAnnotated Entities]
+    B -->|Context Snippets| E2[DynamoDB\nAudit Table]
     E -->|Query| F[Downstream:\nCDS, Quality, Research]
 
     G[S3\nTraining Data] -->|Train| H[SageMaker Training Job]
     H -->|Deploy| D
 
+    Q2[DLQ] -.-> CW[CloudWatch Alarm\nDLQ Depth > 0]
+    Q -.->|Failed after 3 retries| Q2
+
     style C fill:#ff9,stroke:#333
     style D fill:#f9f,stroke:#333
     style E fill:#9ff,stroke:#333
+    style Q fill:#fcf,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Comprehend Medical, Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB |
-| **IAM Permissions** | `comprehend:DetectEntitiesV2`, `sagemaker:InvokeEndpoint` (scoped to `arn:aws:sagemaker:{region}:{account}:endpoint/assertion-classifier-*`), `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query` |
+| **AWS Services** | Amazon Comprehend Medical, Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SQS |
+| **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `sagemaker:InvokeEndpoint` (scoped to `arn:aws:sagemaker:{region}:{account}:endpoint/assertion-classifier-*`), `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:GetQueueAttributes` |
 | **BAA** | AWS BAA signed (clinical notes are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker endpoint: turn on inter-container encryption (prevents data leaking between inference containers on shared hardware); all API calls over TLS |
 | **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints for S3, Comprehend Medical, DynamoDB, and CloudWatch Logs. SageMaker endpoint: deploy with VPC configuration (PrivateLink) so inference traffic stays within the private network. Deploy across at least 2 AZs for production resilience. |
 | **CloudTrail** | Enabled: log all Comprehend Medical and SageMaker API calls for audit |
-| **Data Lifecycle** | DynamoDB TTL configured per institutional records retention policy (typically 7-10 years for adult records, longer for minors). S3 lifecycle policy for archived notes. |
+| **Data Lifecycle** | DynamoDB TTL on `ttl_epoch` attribute aligned with institutional records retention policy (typically 7-10 years for adult records, longer for minors). Both the main entity table and the restricted audit table use TTL. S3 lifecycle policy for archived notes. |
 | **Sample Data** | i2b2 2010 assertion corpus (requires a Data Use Agreement, which takes 2-4 weeks to get approved), MIMIC-III notes (requires PhysioNet credentials), or internally annotated clinical notes. Never use real PHI in dev without appropriate safeguards. |
 | **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters. SageMaker real-time endpoint (ml.m5.xlarge): ~$0.23/hour. At 50 notes/hour, roughly $0.005/note for inference. Total: ~$0.02/note. |
 
@@ -59,10 +69,11 @@ flowchart TD
 | **Amazon Comprehend Medical** | Entity extraction with basic trait detection (negation) |
 | **Amazon SageMaker** | Hosts custom assertion classification model (fine-tuned transformer) |
 | **Amazon S3** | Stores clinical notes, training data, and model artifacts |
+| **Amazon SQS** | Ingestion queue with DLQ for retry resilience |
 | **AWS Lambda** | Orchestrates the extraction-classification pipeline |
-| **Amazon DynamoDB** | Stores assertion-annotated entities for downstream query |
+| **Amazon DynamoDB** | Stores assertion-annotated entities for downstream query; separate audit table for context snippets |
 | **AWS KMS** | Manages encryption keys for all data stores |
-| **Amazon CloudWatch** | Logs, metrics, and alarms for pipeline health |
+| **Amazon CloudWatch** | Logs, metrics, and alarms for pipeline health (including DLQ depth alarm) |
 
 ### Code
 
@@ -155,8 +166,18 @@ FUNCTION extract_context_windows(note_text, entities):
 ASSERTION_CLASSES = ["present", "absent", "possible", "conditional",
                      "historical", "family", "hypothetical"]
 
-// Confidence threshold: below this, flag for human review
-CONFIDENCE_THRESHOLD = 0.85
+// Two-tier confidence thresholds:
+//   - Below EXCLUDE_THRESHOLD (0.70): entity is excluded from downstream systems
+//     entirely until a human reviewer confirms the assertion. These are too
+//     unreliable to act on. At 200 entities/day hitting this tier, expect
+//     roughly 1.5 hours of reviewer time (20-30 seconds per entity).
+//   - Between EXCLUDE_THRESHOLD and INCLUDE_THRESHOLD (0.70-0.85): entity is
+//     included in downstream with a "low_confidence" flag AND queued for review.
+//     Downstream consumers decide whether to use flagged entities.
+//   - Above INCLUDE_THRESHOLD (0.85): entity is included without qualification.
+
+EXCLUDE_THRESHOLD = 0.70    // Below this: exclude until reviewed
+INCLUDE_THRESHOLD = 0.85    // Above this: include without caveats
 
 FUNCTION classify_assertions(entity_contexts):
     // Two-pass approach: rules first (fast, cheap), then ML model for the rest.
@@ -169,7 +190,7 @@ FUNCTION classify_assertions(entity_contexts):
         // Fast, deterministic, handles the obvious cases.
         rule_result = apply_assertion_rules(ctx)
 
-        IF rule_result is not null AND rule_result.confidence >= CONFIDENCE_THRESHOLD:
+        IF rule_result is not null AND rule_result.confidence >= INCLUDE_THRESHOLD:
             // Rules handled it confidently. No need to invoke the model.
             append to results: {
                 entity: ctx.entity,
@@ -235,20 +256,29 @@ FUNCTION apply_assertion_rules(ctx):
     RETURN null
 ```
 
-**Step 4: Post-process and resolve conflicts.** When the same clinical concept appears multiple times in a note with different assertion statuses, we need to determine the "current truth." This step consolidates multiple mentions into a single assertion per unique concept. The precedence logic uses a default heuristic: the most recent, most specific mention in the note wins. A concept that is "historical" in Past Medical History but "present" in today's Assessment is currently present. A concept that is "possible" in the initial impression but "absent" in the final assessment (after workup) is absent.
+**Step 4: Post-process and resolve conflicts.** When the same clinical concept appears multiple times in a note with different assertion statuses, we need a strategy for how to present this to downstream systems. This step consolidates multiple mentions and applies a default resolution heuristic. But here's the important caveat: the "right" assertion depends on the clinical question being asked. A concept that is "historical" in Past Medical History but "present" in today's Assessment is currently present (for clinical decision support). But for a billing query about when the condition was first documented, both assertions matter independently. For this reason, we always retain all mentions in the output and let downstream consumers override the default resolution strategy via a `conflict_resolution_strategy` parameter. The default heuristic (section priority) is a reasonable starting point, not the final word.
 
 ```pseudocode
-FUNCTION resolve_assertion_conflicts(classified_entities):
-    // Group mentions of the same clinical concept and resolve to a single assertion.
+FUNCTION resolve_assertion_conflicts(classified_entities, conflict_resolution_strategy = "section_priority"):
+    // Group mentions of the same clinical concept and determine a default assertion.
     // This handles the common case where "diabetes" appears in PMH (historical)
-    // AND in Assessment (present). The most clinically relevant assertion wins.
+    // AND in Assessment (present).
     //
-    // NOTE: This section-priority approach is a default heuristic, not ground truth.
+    // IMPORTANT: This section-priority approach is a default heuristic, not ground truth.
     // It handles the common case (Assessment reflects current clinical state) but
     // fails on copy-forward notes, multi-day notes, and situations where both
-    // assertions are valid for different clinical questions. Production systems
-    // should retain all mentions and let downstream consumers choose their
-    // resolution strategy.
+    // assertions are valid for different clinical questions. All mentions are always
+    // retained in the output. The "resolved_assertion" field reflects the default
+    // heuristic; downstream consumers can apply their own resolution logic using
+    // the all_mentions array.
+    //
+    // Supported strategies:
+    //   "section_priority" (default): highest section wins, tie-break by position
+    //   "most_recent": last mention in the note wins regardless of section
+    //   "retain_all": no resolution; return all mentions as independent entries
+
+    IF conflict_resolution_strategy == "retain_all":
+        RETURN classified_entities  // no resolution, all mentions kept
 
     // Precedence order (later in note + more specific = higher priority):
     // Assessment/Plan > HPI > Review of Systems > Past Medical History > Family History
@@ -270,17 +300,23 @@ FUNCTION resolve_assertion_conflicts(classified_entities):
             // Only one mention. No conflict to resolve.
             append to resolved: mentions[0]
         ELSE:
-            // Multiple mentions. Use section priority as a default heuristic.
-            // (Break ties by position in note: later = higher priority.)
-            best = select mention with highest section priority
-            // Keep all mentions for audit, but mark the resolved assertion
+            // Multiple mentions. Apply the selected resolution strategy.
+            IF conflict_resolution_strategy == "most_recent":
+                best = select mention with highest begin_offset
+            ELSE:
+                // Default: section_priority with position tie-break.
+                best = select mention with highest section priority
+                       (break ties by position in note: later = higher priority)
+
+            // Always keep all mentions for audit and downstream re-resolution.
             append to resolved: {
                 entity: best.entity,
                 assertion: best.assertion,
                 confidence: best.confidence,
                 method: best.method,
                 all_mentions: mentions,   // full audit trail
-                conflict_resolved: true
+                conflict_resolved: true,
+                resolution_strategy: conflict_resolution_strategy
             }
 
     RETURN resolved
@@ -292,8 +328,15 @@ FUNCTION resolve_assertion_conflicts(classified_entities):
 FUNCTION store_annotated_entities(patient_id, note_id, note_date, resolved_entities):
     // Write each assertion-annotated entity to the database.
     // Index by patient + assertion status for fast downstream queries.
+    // Two-tier confidence routing:
+    //   confidence >= INCLUDE_THRESHOLD: included, no flag
+    //   EXCLUDE_THRESHOLD <= confidence < INCLUDE_THRESHOLD: included with low_confidence flag, queued for review
+    //   confidence < EXCLUDE_THRESHOLD: excluded from downstream until reviewed
 
     FOR each result in resolved_entities:
+        needs_review = (result.confidence < INCLUDE_THRESHOLD)
+        excluded = (result.confidence < EXCLUDE_THRESHOLD)
+
         write record to database table "assertion-annotated-entities":
             patient_id       = patient_id
             note_id          = note_id
@@ -303,9 +346,18 @@ FUNCTION store_annotated_entities(patient_id, note_id, note_date, resolved_entit
             assertion_status = result.assertion           // present, absent, possible, etc.
             confidence       = result.confidence
             method           = result.method             // rule_based or ml_model
-            needs_review     = (result.confidence < CONFIDENCE_THRESHOLD)
-            context_snippet  = result.entity.context_text[relevant portion]
+            needs_review     = needs_review
+            low_confidence   = (needs_review AND NOT excluded)
+            excluded_pending_review = excluded
             processed_at     = current UTC timestamp (ISO 8601)
+            ttl_epoch        = current UTC timestamp + institutional retention period (seconds)
+
+        // Context snippet goes to a separate restricted-access audit table.
+        // Only the human review workflow and audit processes can access this table.
+        write record to database table "assertion-audit":
+            note_id_entity_idx = composite key
+            context_snippet    = result.entity.context_text[relevant portion]
+            ttl_epoch          = same as above
 
     // Also write a summary record for the note showing assertion distribution
     write summary to database table "note-assertion-summary":
@@ -319,7 +371,10 @@ FUNCTION store_annotated_entities(patient_id, note_id, note_date, resolved_entit
         historical_count = count where assertion == "historical"
         family_count     = count where assertion == "family"
         review_needed    = count where needs_review == true
+        excluded_count   = count where excluded_pending_review == true
 ```
+
+**Human review queue design.** Entities routed to review (confidence below INCLUDE_THRESHOLD) land in an SQS queue consumed by the review application. This queue requires role-based access control: only credentialed clinical reviewers should see the entity text and context snippets (which contain PHI). Implement IAM policies scoped to a `clinical-reviewers` role. Log every reviewer action (confirm, reclassify, dismiss) to CloudTrail for audit. The audit log must capture who reviewed what, when, and what action they took. This is both a HIPAA minimum-necessary requirement and a model improvement data source: confirmed/reclassified entities become training data for the next model iteration.
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you want working boto3 code that implements these steps, check out the [Python Example](chapter08.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
@@ -442,6 +497,10 @@ Input text: "Patient is a 62-year-old male with history of MI (2019). Currently 
 - [Building NLP Pipelines with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-pipeline-using-amazon-comprehend-medical/): End-to-end clinical NLP pipeline architecture
 
 **Academic References (for assertion methodology):**
+- Uzuner O, South BR, Shen S, DuVall SL. 2010 i2b2/VA challenge on concepts, assertions, and relations in clinical text. J Am Med Inform Assoc. 2011;18(5):552-556.
+- Chapman WW, Bridewell W, Hanbury P, Cooper GF, Buchanan BG. A simple algorithm for identifying negated findings and diseases in discharge summaries. J Biomed Inform. 2001;34(5):301-310.
+- Harkema H, Dowling JN, Thornblade T, Chapman WW. ConText: an algorithm for determining negation, experiencer, and temporal status from clinical reports. J Biomed Inform. 2009;42(5):839-851.
+- The i2b2 2010 assertion dataset is now available through the [n2c2 NLP Clinical Challenges portal](https://portal.dbmi.hms.harvard.edu/projects/n2c2-nlp/) (requires a Data Use Agreement).
 
 ---
 
