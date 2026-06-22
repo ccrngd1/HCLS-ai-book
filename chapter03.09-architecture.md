@@ -16,7 +16,7 @@
 
 **Amazon Neptune for the relationship graph.** The graph of workforce members, patients, encounters, departments, and devices fits Neptune's property-graph model naturally. Gremlin queries support the relationship-based detection logic ("does this user have a documented care relationship with this patient through any encounter, care team, on-call, or order signature path"). Neptune is HIPAA-eligible. 
 
-**Amazon Timestream for time-series behavioral baselines.** Per-user time-series of access counts, session durations, and resource-type distributions are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-week baseline window cost-effectively. 
+**Amazon Timestream for time-series behavioral baselines.** Per-user time-series of access counts, session durations, and resource-type distributions are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-week baseline window cost-effectively. Timestream is HIPAA-eligible and covered under the AWS BAA. 
 
 **Amazon OpenSearch Service for case management, hunt, and SIEM-style analytics.** Privacy-office case data and the searchable archive of all access events live in OpenSearch. OpenSearch supports the kind of ad-hoc query the privacy office needs ("show me every chart access by this user in the last 90 days," "show me every access on this patient's record in the last week, sorted by user role"). Many SIEM products either run on OpenSearch under the hood or integrate with it cleanly.
 
