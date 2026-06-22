@@ -1,13 +1,3 @@
 # Open TODOs: Recipe 13.9: Literature-Derived Knowledge Graph
 
-> Auto-extracted 2026-06-18 from inline source comments (7 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
-
-## architecture — `chapter13.09-architecture.md`
-
-- **L21** — TODO (TechWriter): Expert review A-1 (HIGH). Add dead-letter queue (DLQ) for failed Step Functions executions. When any step fails after retries, send article ID and failure metadata to an SQS DLQ. Add CloudWatch alarm on DLQ depth and a reprocessing Lambda for replay. Add failure path to the Mermaid diagram. Without this, failed articles silently disappear from the pipeline.
-- **L86** — TODO (TechWriter): Expert review S-1 (HIGH). Add a PHI screening step between document parsing and NER. Case reports and clinical trial results may contain individually identifiable health information in source sentences. Flag case reports using MeSH publication type metadata. For flagged documents, either skip provenance sentence storage or redact potential identifiers from stored sentences before they enter Neptune/OpenSearch.
-- **L213** — TODO (TechWriter): Expert review A-2 (HIGH). Add a validation_status field to edges with values: "machine_extracted" (default), "human_validated", "human_rejected". Add query-time guidance: clinical applications should filter on validation_status = "human_validated" OR evidence_score >= 0.85 AND support_count >= 3. The 0.70 confidence threshold yields 18-30% false positives per the benchmarks, which is dangerous for downstream clinical use without this guardrail.
-- **L534** — TODO (TechWriter): Expert review A-3 (HIGH). Add retraction monitoring component to the architecture. A scheduled Lambda should check PubMed for newly retracted articles (using "Retracted Publication" publication type filter). When detected: flag affected edges with status "RETRACTED_SOURCE"; if the retracted paper was the sole source (support_count = 1), change edge status to "RETRACTED"; if other papers also support the edge, recalculate evidence_score excluding the retracted source. This is a patient safety concern: retracted findings (e.g., Wakefield MMR-autism) can persist and influence clinical queries. Add as a pipeline step or parallel monitoring process with pseudocode.
-- **L536** — TODO (TechWriter): Add a "Why This Isn't Production-Ready" section between Expected Results and Variations per RECIPE-GUIDE structure. Content should cover the gaps a production deployment must close.
-- **L565** — TODO: Verify these repos still exist and are current
-- **L571** — TODO: Verify blog URLs are current and accessible
+All findings resolved.

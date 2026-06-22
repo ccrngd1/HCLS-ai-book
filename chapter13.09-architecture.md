@@ -29,7 +29,8 @@ flowchart TD
     C -->|New Article Event| D[Step Functions: Extraction Pipeline]
     
     D --> E[Lambda: Parse & Segment]
-    E --> F[Comprehend Medical: NER]
+    E --> PHI[Lambda: PHI Screening]
+    PHI --> F[Comprehend Medical: NER]
     F --> G[SageMaker Endpoint: Relation Extraction]
     G --> H[Lambda: Normalization & Grading]
     H --> I[Lambda: Conflict Detection]
@@ -38,6 +39,13 @@ flowchart TD
     I -->|Index Updates| K[Amazon OpenSearch: Full-Text Search]
     I -->|Conflicts| L[SQS: Human Review Queue]
     
+    D -->|Step Failure after Retries| DLQ[SQS: Dead Letter Queue]
+    DLQ -->|Replay| REPLAY[Lambda: DLQ Reprocessor]
+    DLQ -->|Alarm on Depth| CW[CloudWatch Alarm]
+    
+    RET[EventBridge: Daily Schedule] --> RETLAMBDA[Lambda: Retraction Monitor]
+    RETLAMBDA -->|Flag/Update Edges| J
+
     J --> M[API Gateway + Lambda: Query API]
     K --> M
     M --> N[Clinical Applications]
@@ -45,14 +53,15 @@ flowchart TD
     style J fill:#9ff,stroke:#333
     style C fill:#f9f,stroke:#333
     style G fill:#ff9,stroke:#333
+    style DLQ fill:#f99,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Comprehend Medical, Amazon SageMaker, Amazon Neptune, Amazon S3, AWS Lambda, AWS Step Functions, Amazon OpenSearch Service, Amazon SQS, API Gateway |
-| **IAM Permissions** | Ingestion Lambdas: `comprehend:DetectEntitiesV2`, `sagemaker:InvokeEndpoint`, `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, `sqs:SendMessage`. Query API Lambda: `neptune-db:ReadDataViaQuery`, `opensearch:ESHttpGet`, `opensearch:ESHttpPost`. Separate admin role for Neptune backup/restore. |
+| **AWS Services** | Amazon Comprehend Medical, Amazon SageMaker, Amazon Neptune, Amazon S3, AWS Lambda, AWS Step Functions, Amazon OpenSearch Service, Amazon SQS, Amazon EventBridge, API Gateway, Amazon CloudWatch |
+| **IAM Permissions** | Ingestion Lambdas: `comprehend:DetectEntitiesV2`, `sagemaker:InvokeEndpoint`, `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, `sqs:SendMessage`. Query API Lambda: `neptune-db:ReadDataViaQuery`, `opensearch:ESHttpGet`, `opensearch:ESHttpPost`. DLQ Reprocessor Lambda: `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `states:StartExecution`. Retraction Monitor Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`. Separate admin role for Neptune backup/restore. |
 | **BAA** | Required. Published literature, particularly case reports and clinical trial results, may contain individually identifiable health information in source sentences stored as provenance. Ensure BAA coverage for Neptune, OpenSearch, and S3. |
 | **Encryption** | S3: SSE-KMS; Neptune: encryption at rest (must be enabled at cluster creation); OpenSearch: encryption at rest and node-to-node encryption; SQS: SSE-KMS; all transit over TLS |
 | **VPC** | Neptune requires VPC deployment. Place all Lambda functions, SageMaker endpoints, and OpenSearch in the same VPC with appropriate security groups. VPC endpoints for S3 and CloudWatch Logs. NAT Gateway required for Lambda to reach Comprehend Medical (no VPC interface endpoint available). SageMaker endpoints can be deployed within the VPC via PrivateLink. |
@@ -71,8 +80,9 @@ flowchart TD
 | **AWS Step Functions** | Orchestrates the multi-step extraction pipeline |
 | **AWS Lambda** | Stateless compute for parsing, normalization, grading, and API serving |
 | **Amazon OpenSearch Service** | Full-text search across graph nodes, edges, and source text |
-| **Amazon SQS** | Queues conflicting or low-confidence extractions for human review |
-| **Amazon EventBridge** | Schedules periodic literature fetches from PubMed |
+| **Amazon SQS** | Queues conflicting extractions for human review; dead letter queue for failed pipeline executions |
+| **Amazon EventBridge** | Schedules periodic literature fetches and daily retraction monitoring |
+| **Amazon CloudWatch** | Alarms on DLQ depth, pipeline error rates, and processing latency |
 | **AWS KMS** | Encryption key management for all data stores |
 
 ### Code
@@ -155,6 +165,56 @@ FUNCTION parse_and_segment(document_s3_key):
     store sentences to S3 at "parsed/{pmid}/sentences.json"
     
     RETURN sentences
+```
+
+**Step 2b: PHI screening.** Case reports and clinical trial results may embed individually identifiable health information in source sentences, even though published literature is generally considered public. Before storing provenance sentences in Neptune or OpenSearch (where they'll persist and be queryable), screen for PHI risk. Articles tagged with the MeSH publication type "Case Reports" get flagged. For flagged documents, run Comprehend Medical's DetectPHI API against each sentence. Sentences containing detected PHI either get redacted (PHI spans replaced with `[REDACTED]`) or excluded from provenance storage entirely. The extracted relationships themselves (drug-treats-disease) are fine; it's the verbatim source sentences that carry the risk.
+
+```pseudocode
+FUNCTION screen_for_phi(sentences, article_metadata):
+    // Determine if this article is high-risk for containing PHI.
+    // Case reports describe individual patients in detail.
+    // Clinical trial results sometimes include individual-level data.
+    pub_types = article_metadata.pub_types
+    is_case_report = "Case Reports" IN pub_types
+    is_clinical_trial = "Clinical Trial" IN pub_types OR "Randomized Controlled Trial" IN pub_types
+
+    IF NOT is_case_report AND NOT is_clinical_trial:
+        // Low PHI risk. Pass through without modification.
+        RETURN sentences
+
+    // High-risk article: screen each sentence for PHI
+    screened_sentences = empty list
+
+    FOR each sentence in sentences:
+        phi_response = call ComprehendMedical.DetectPHI with:
+            text = sentence.text
+
+        phi_entities = phi_response.Entities
+        // Filter to high-confidence PHI detections
+        phi_entities = [e for e in phi_entities WHERE e.Score >= 0.80]
+
+        IF phi_entities is empty:
+            // No PHI detected. Keep sentence as-is.
+            append sentence to screened_sentences
+        ELSE:
+            // Redact PHI spans from the sentence text before storing as provenance.
+            // The sentence will still be used for NER/RE processing (in-memory only),
+            // but the stored provenance version has PHI removed.
+            redacted_text = sentence.text
+            // Process spans in reverse order to preserve character offsets
+            FOR each phi_entity in REVERSE(sorted by BeginOffset):
+                redacted_text = (
+                    redacted_text[:phi_entity.BeginOffset]
+                    + "[REDACTED]"
+                    + redacted_text[phi_entity.EndOffset:]
+                )
+
+            sentence.provenance_text = redacted_text  // stored version
+            sentence.text = sentence.text              // processing version (in-memory only)
+            sentence.phi_redacted = TRUE
+            append sentence to screened_sentences
+
+    RETURN screened_sentences
 ```
 
 **Step 3: Named entity recognition.** Each sentence is passed through biomedical NER to identify mentions of drugs, diseases, genes, proteins, anatomical structures, and other biomedical entities. Comprehend Medical handles the core entity types well. For specialized entity types (gene variants, molecular pathways, epigenetic modifications), you may need a supplementary custom model. The output is a list of entity mentions with their types, positions in the text, and confidence scores. Entities below a confidence threshold are discarded to prevent noise from propagating downstream.
@@ -452,6 +512,13 @@ FUNCTION insert_into_graph(scored_triples):
                 first_seen     = current timestamp
                 last_updated   = current timestamp
                 status         = "ACTIVE"
+                validation_status = "machine_extracted"  // default for all new edges
+                // Progression: "machine_extracted" -> "human_validated" or "human_rejected"
+                // Clinical query guidance: downstream applications should filter on
+                // validation_status = "human_validated" OR
+                // (evidence_score >= 0.85 AND support_count >= 3)
+                // The 0.70 RE confidence threshold yields 18-30% false positives,
+                // which is dangerous for clinical use without this guardrail.
 
         // Also index in OpenSearch for full-text search
         index in OpenSearch: {
@@ -467,13 +534,99 @@ FUNCTION insert_into_graph(scored_triples):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter13.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
+**Step 8: Dead letter queue and failure handling.** When any step in the extraction pipeline fails after Step Functions' built-in retries (typically 3 attempts with exponential backoff), the execution must not silently disappear. A failed execution sends the article ID, the failed step name, and the error details to an SQS dead letter queue. A CloudWatch alarm fires when DLQ depth exceeds a threshold (e.g., 10 messages in 5 minutes), paging the on-call engineer. A separate reprocessor Lambda can be triggered manually or on a schedule to replay failed articles once the underlying issue is resolved. Without this, articles that fail due to transient issues (Comprehend Medical throttling, Neptune connection timeouts) are permanently lost from the graph.
+
+```pseudocode
+// Step Functions state machine definition includes a Catch block on each step:
+// On failure after retries, transition to the SendToDLQ state.
+
+STATE send_to_dlq:
+    INPUT = {article_id, failed_step, error_message, execution_arn, attempt_count}
+
+    send to SQS DLQ: {
+        article_id:     INPUT.article_id,
+        failed_step:    INPUT.failed_step,
+        error_message:  INPUT.error_message,
+        execution_arn:  INPUT.execution_arn,
+        timestamp:      current timestamp,
+        s3_document_key: lookup S3 key for article_id
+    }
+
+// CloudWatch Alarm: ApproximateNumberOfMessagesVisible > 10 for 5 minutes
+// Action: SNS notification to on-call team
+
+// Reprocessor Lambda (triggered manually or on schedule):
+FUNCTION reprocess_dlq_messages():
+    WHILE messages available in DLQ:
+        message = receive from DLQ (max 10 per batch)
+        
+        // Restart the pipeline from the beginning for this article.
+        // The document is already in S3, so no re-fetch needed.
+        start Step Functions execution with:
+            input = {document_s3_key: message.s3_document_key, is_replay: TRUE}
+        
+        delete message from DLQ
+```
+
+**Step 9: Retraction monitoring.** Published papers get retracted. When a paper that contributed to your knowledge graph is retracted, the relationships it supports may be invalid. A scheduled Lambda (daily is sufficient) queries PubMed for newly retracted articles using the "Retracted Publication" publication type filter. When a retraction is detected: the Lambda queries Neptune for all edges citing the retracted PMID. If the retracted paper was the sole source for an edge (support_count = 1), that edge's status changes to "RETRACTED". If other papers also support the edge, the evidence_score is recalculated excluding the retracted source and the retracted provenance entry is flagged. This is a patient safety concern: retracted findings (e.g., the Wakefield MMR-autism paper) can persist in knowledge graphs and influence clinical queries if not actively monitored.
+
+```pseudocode
+FUNCTION check_retractions():
+    // Query PubMed for recently retracted publications (last 7 days)
+    retracted_pmids = call PubMed E-utilities esearch with:
+        database = "pubmed"
+        query    = "Retracted Publication[pt] AND last 7 days[CRDT]"
+        retmax   = 500
+
+    FOR each pmid in retracted_pmids:
+        // Find all edges in Neptune that cite this PMID as provenance
+        affected_edges = query Neptune:
+            MATCH edges WHERE provenance contains pmid = {pmid}
+
+        IF affected_edges is empty:
+            CONTINUE  // retracted paper wasn't in our graph
+
+        log "Retraction detected: PMID {pmid} affects {count} edges"
+
+        FOR each edge in affected_edges:
+            // Remove the retracted provenance entry
+            updated_provenance = edge.provenance EXCLUDING entries with pmid = {pmid}
+            new_support_count = edge.support_count - 1
+
+            IF new_support_count == 0:
+                // Retracted paper was the only source. Mark edge as retracted.
+                update edge in Neptune:
+                    status = "RETRACTED"
+                    retraction_date = current timestamp
+                    retraction_pmid = pmid
+            ELSE:
+                // Other papers still support this relationship.
+                // Recalculate evidence score without the retracted source.
+                new_evidence_score = recalculate_score(updated_provenance)
+                update edge in Neptune:
+                    provenance = updated_provenance
+                    support_count = new_support_count
+                    evidence_score = new_evidence_score
+                    last_updated = current timestamp
+                    // Add a flag noting a source was retracted
+                    has_retracted_source = TRUE
+
+        // Send notification for high-impact retractions
+        IF any affected edge has support_count == 0 OR evidence_score was > 0.85:
+            send alert to review queue: {
+                retracted_pmid: pmid,
+                affected_edges: count,
+                edges_fully_retracted: count where new support = 0
+            }
+```
+
 ### Expected Results
 
 **Sample output: querying the graph for metformin relationships:**
 
 ```json
 {
-  "query": "MATCH (d:Drug {label: 'metformin'})-[r]->(target) RETURN d, r, target LIMIT 5",
+  "query": "MATCH (d:Drug {label: 'metformin'})-[r]->(target) WHERE r.validation_status = 'human_validated' OR (r.evidence_score >= 0.85 AND r.support_count >= 3) RETURN d, r, target LIMIT 5",
   "results": [
     {
       "subject": {"id": "RxNorm:6809", "label": "metformin", "type": "Drug"},
@@ -481,6 +634,7 @@ FUNCTION insert_into_graph(scored_triples):
       "object": {"id": "SNOMED:44054006", "label": "type 2 diabetes mellitus", "type": "Disease"},
       "evidence_score": 0.97,
       "support_count": 847,
+      "validation_status": "human_validated",
       "is_negated": false,
       "top_provenance": {"pmid": "35291234", "journal": "Lancet", "study_type": "meta-analysis"}
     },
@@ -490,6 +644,7 @@ FUNCTION insert_into_graph(scored_triples):
       "object": {"id": "SNOMED:3723001", "label": "lactic acidosis", "type": "Condition"},
       "evidence_score": 0.72,
       "support_count": 134,
+      "validation_status": "machine_extracted",
       "is_negated": false,
       "top_provenance": {"pmid": "34567890", "journal": "BMJ", "study_type": "cohort"}
     },
@@ -499,6 +654,7 @@ FUNCTION insert_into_graph(scored_triples):
       "object": {"id": "HGNC:8583", "label": "OCT1 (SLC22A1)", "type": "Gene"},
       "evidence_score": 0.89,
       "support_count": 56,
+      "validation_status": "human_validated",
       "is_negated": false,
       "top_provenance": {"pmid": "33445566", "journal": "Clin Pharmacol Ther", "study_type": "rct"}
     }
@@ -525,6 +681,24 @@ FUNCTION insert_into_graph(scored_triples):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Running this against PubMed at scale requires addressing several gaps that are intentionally outside the scope of a cookbook recipe:
+
+**Custom relation extraction model training.** The pseudocode calls a SageMaker endpoint for relation extraction, but training that model is a significant ML engineering effort. You'd fine-tune PubMedBERT on BioRED (or ChemProt for drug-protein interactions), curate a biomedical-specific held-out evaluation set, and iterate until precision exceeds 75%. Expect 4-8 weeks of focused ML work before the model is reliable enough to populate a knowledge graph.
+
+**Entity normalization service at scale.** The simplified lookup pattern shown here covers a handful of entities. The real UMLS Metathesaurus contains over 4 million concepts and 15 million concept names. You'd build a dedicated normalization microservice backed by an Elasticsearch index of UMLS terms, with fuzzy matching, abbreviation expansion, and embedding-based similarity for novel terms. The UMLS license is free but requires registration and annual renewal.
+
+**Human validation workflow.** The `validation_status` field on edges creates a requirement: someone needs to validate edges before clinical applications consume them. You need a review UI where domain experts see the source sentences, the extracted relationship, confidence scores, and supporting evidence, then mark edges as validated or rejected. Without this workflow, the validation field is just metadata that never gets populated.
+
+**Graph versioning and reproducibility.** Clinical research applications may need to know what the graph looked like at a specific point in time (e.g., "what knowledge was available when this clinical decision was made?"). This requires either graph snapshots (Neptune snapshots are point-in-time but coarse) or a temporal property model where each edge carries valid_from/valid_to timestamps.
+
+**Multi-language support.** Most biomedical NER and RE models are English-only. A global literature graph needs to handle German, French, Chinese, and Japanese publications. This requires either translation (lossy for medical terminology) or language-specific NER models.
+
+**Evaluation and regression testing.** You need a gold-standard evaluation set of manually annotated articles where you know the correct triples. Run this after every model update or pipeline change to catch regressions. Without it, you won't know when precision degrades until clinicians report bad results.
+
+---
+
 ## Variations and Extensions
 
 **RAG-enhanced literature search.** Use the knowledge graph as a retrieval layer for a Retrieval-Augmented Generation system. When a clinician asks "what are the known interactions between drug X and gene Y?", retrieve relevant graph edges and their source sentences, then use an LLM to synthesize a natural language answer with citations. This combines the structured precision of the graph with the natural language fluency of generative AI.
@@ -548,11 +722,11 @@ FUNCTION insert_into_graph(scored_triples):
 
 **AWS Sample Repos:**
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): Neptune graph database examples including data loading, querying, and visualization patterns
-- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP extraction with Comprehend Medical integrated into FHIR workflows
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP extraction with Comprehend Medical integrated into FHIR workflows (archived, but patterns remain instructive)
 
 **AWS Solutions and Blogs:**
-- [Drug Discovery with Amazon Neptune](https://aws.amazon.com/blogs/database/building-a-biomedical-knowledge-graph-with-amazon-neptune/): Architecture for biomedical knowledge graphs on Neptune
-- [NLP for Healthcare on AWS](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-system-on-aws/): End-to-end medical NLP pipeline architecture
+- [Building a Biological Knowledge Graph at Pendulum Using Amazon Neptune](https://aws.amazon.com/blogs/database/building-a-biological-knowledge-graph-at-pendulum-using-amazon-neptune/): Architecture for biomedical knowledge graphs on Neptune
+- [Build a Cognitive Search and a Health Knowledge Graph Using AWS AI Services](https://aws.amazon.com/blogs/machine-learning/build-a-cognitive-search-and-a-health-knowledge-graph-using-amazon-healthlake-amazon-kendra-and-amazon-neptune/): Healthcare NLP and knowledge graph combining Comprehend Medical, Neptune, and Kendra
 
 **External Resources:**
 - [PubMed E-utilities API Documentation](https://www.ncbi.nlm.nih.gov/books/NBK25501/): Programmatic access to PubMed article data

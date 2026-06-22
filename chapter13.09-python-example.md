@@ -952,6 +952,7 @@ def create_edge(client, triple: dict):
         ".property('first_seen', now)"
         ".property('last_updated', now)"
         ".property('status', 'ACTIVE')"
+        ".property('validation_status', 'machine_extracted')"
     )
 
     client.submit(
@@ -1195,7 +1196,7 @@ This example demonstrates the shape of the pipeline. Run it against PubMed and i
 
 **Full-text processing.** We only process abstracts here. Full-text articles from PubMed Central yield 5-10x more relationships per article, but they also require section parsing, figure/table handling, and reference resolution. The XML structure of PMC articles is well-defined but complex.
 
-**Error handling and retries.** Every external call (PubMed API, Comprehend Medical, SageMaker, Neptune) can fail. Production code wraps each in try/except with exponential backoff, dead-letter queues for persistent failures, and alerting when error rates spike. A single failed article shouldn't crash the batch.
+**Error handling and retries.** Every external call (PubMed API, Comprehend Medical, SageMaker, Neptune) can fail. Production code wraps each in try/except with exponential backoff, dead-letter queues for persistent failures, and alerting when error rates spike. A single failed article shouldn't crash the batch. The architecture companion describes the DLQ pattern in detail: when a Step Functions execution fails after retries, the article ID and failure metadata land in an SQS dead letter queue with a CloudWatch alarm on queue depth and a reprocessor Lambda for replay.
 
 **Rate limiting.** PubMed's API allows 3 requests/second without a key, 10/second with one. Comprehend Medical has per-account throttling limits. SageMaker endpoints have invocation limits based on instance type. Your pipeline needs to respect all of these, ideally with a token bucket or semaphore pattern.
 
@@ -1211,7 +1212,11 @@ This example demonstrates the shape of the pipeline. Run it against PubMed and i
 
 **Testing.** You need: unit tests for each pipeline step with mocked AWS responses, integration tests against a small Neptune cluster with known test data, and a gold-standard evaluation set of manually annotated articles where you know the correct triples. Run the evaluation set after every model update to catch regressions.
 
-**Security and compliance.** Published literature is generally not PHI, but clinical trial results may reference cohort-level patient data. Ensure your VPC configuration, encryption settings, and access controls meet your organization's data governance requirements. Neptune audit logging should be enabled for all queries.
+**Security and compliance.** Published literature is generally not PHI, but clinical trial results may reference cohort-level patient data. Ensure your VPC configuration, encryption settings, and access controls meet your organization's data governance requirements. Neptune audit logging should be enabled for all queries. The architecture companion adds a PHI screening step for case reports and clinical trial articles: sentences with detected PHI get redacted before being stored as provenance in Neptune or OpenSearch.
+
+**Retraction monitoring.** Papers get retracted. When a retracted paper contributed to your knowledge graph, the relationships it supports may be invalid. The architecture companion describes a retraction monitoring Lambda that checks PubMed daily for newly retracted articles, flags affected edges, and recalculates evidence scores excluding retracted sources. Without this, retracted findings persist in your graph and can influence clinical queries.
+
+**Edge validation workflow.** Every edge in the graph carries a `validation_status` field (machine_extracted, human_validated, human_rejected). Clinical applications should filter on `validation_status = "human_validated"` or require `evidence_score >= 0.85 AND support_count >= 3`. Building the human review UI and workflow to populate this field is a separate engineering effort not shown here.
 
 ---
 
