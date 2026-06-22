@@ -334,20 +334,48 @@ A voice-to-text EHR navigation system splits cleanly into seven logical stages: 
 │    - Use sparingly; in patient-facing settings, consider  │
 │      visual-only feedback to avoid privacy exposure       │
 │                                                           │
-│   [Audit log entry]                                       │
+│   [Audit log entry (references-not-content pattern)]      │
 │    - Clinician identity, device identity, timestamp       │
-│    - Original transcript, parsed intent, slot values      │
-│    - Resolved context (patient ID, encounter ID)          │
-│    - Execution result and EHR state change                │
+│    - References to archived content:                      │
+│      transcript_archive_ref, slot_values_archive_ref,     │
+│      ehr_api_calls_archive_ref                            │
+│    - Structural metadata only in the audit table:         │
+│      transcript_length_chars, transcript_hash,            │
+│      slot_keys_present, slot_values_hash,                 │
+│      ehr_api_calls_count                                  │
+│    - Non-content identifiers: clinician ID, patient ID,   │
+│      command ID, intent name, timestamp                   │
+│    - Full content lives in the secure archive (S3 with    │
+│      KMS) under audio-bucket governance                   │
 │    - Confidence scores from each pipeline stage           │
 │                                                           │
 │   [Telemetry to observability layer]                      │
 │    - Latency per stage, success/failure rates,            │
 │      disambiguation events, confirmation events           │
+│                                                           │
+│   [Equity-monitoring telemetry (subgroup-stratified)]     │
+│    - Cohort dimensions: per-clinician identifier (the     │
+│      load-bearing axis), per-clinician language-           │
+│      background (where opt-in declared at onboarding),    │
+│      accent-group (where inferable from ASR diagnostic    │
+│      data), specialty, experience-level, deployment-site  │
+│    - Per-cohort metrics: ASR average word confidence,     │
+│      command success rate, disambiguation rate,           │
+│      confirmation rate, retry rate, adoption rate,        │
+│      abandonment rate                                     │
+│    - Per-cohort sample-size minimums: reliable >=200,     │
+│      noisy 50-199 (flag with wide confidence interval),   │
+│      insufficient <50 (aggregate to "all_other")          │
+│    - Disparity-alert thresholds surfaced to the equity-   │
+│      monitoring committee's monthly review queue          │
+│    - Named ownership: cross-functional equity-monitoring  │
+│      committee with rotating clinician seat, quarterly    │
+│      written summary, explicit escalation path on         │
+│      sustained disparities                                │
 │           │                                               │
 │           ▼                                               │
 │   [Output: visible action, durable audit, telemetry       │
-│    feeding continuous improvement]                        │
+│    feeding continuous improvement and equity monitoring]   │
 │                                                           │
 └───────────────────────────────────────────────────────────┘
 ```
@@ -367,6 +395,10 @@ A few cross-cutting design points the architecture has to bake in.
 **Continuous adaptation is the long game.** Production traffic surfaces commands the original taxonomy missed, phrasings the classifier handles poorly, and slot patterns the extractor mangles. The pipeline must capture this telemetry (transcripts, classifications, user corrections, abandoned commands) and feed it into the improvement workflow. A voice-navigation system that ships and never improves is one that decays as the EHR and clinical practice evolve around it.
 
 **Failure must degrade gracefully.** When ASR is slow, when the classifier is uncertain, when the EHR API is unreachable, the system must fail in a way that the clinician understands and can recover from quickly. A failed command should never leave the EHR in a partial state. A timeout should clearly indicate "system unavailable" rather than silent inaction. The clinician must always be able to fall back to keyboard-and-mouse without restarting anything.
+
+**The check-then-act gap must be bounded.** Between context re-fetch (resolving the current patient from the EHR) and command execution (calling the EHR API to navigate), time passes. On shared rolling carts, another clinician can switch the EHR's active patient between resolution and execution. The architecturally correct mitigation is either (a) snapshot preconditions on the EHR API where supported (an If-Match-style check that rejects the command if the EHR's state has drifted since the snapshot), or (b) immediate re-fetch before each EHR API call with abort-on-context-change semantics, surfacing a "context changed; please re-confirm patient" prompt. The voice system never operates on a resolved context that may have drifted between resolution and execution.
+
+**Audit records carry references, not content.** The command audit table records who issued what command against which patient with what outcome by capturing references (transcript_archive_ref, slot_values_archive_ref, ehr_api_calls_archive_ref) plus structural metadata (lengths, hashes, slot_keys_present) plus non-content identifiers (clinician ID, patient ID, command ID, timestamp). The full transcript content, the full slot values, and the full EHR API call detail live in a secure archive (S3 with KMS, lifecycle aligned with the audio-bucket governance). This prevents the audit table from becoming a parallel PHI store with different access boundaries and different retention semantics from the audio archive. The resolved_patient_id remains in the audit table because it is the structurally necessary key for HIPAA-grade access auditing.
 
 ---
 

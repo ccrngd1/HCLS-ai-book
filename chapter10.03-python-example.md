@@ -1612,9 +1612,30 @@ def audit_and_telemetry(enriched_command, confirmation_result,
 
     # Step 7B: durable audit record. The HIPAA-grade record of
     # who issued what command, against which patient, with what
-    # outcome.
+    # outcome. Uses the references-not-content pattern: the audit
+    # table carries references to archived content (transcript,
+    # slot values, EHR API calls) plus structural metadata (lengths,
+    # hashes, slot_keys_present) plus non-content identifiers.
+    # Full content lives in the secure archive (S3 with KMS) under
+    # the same governance as the audio recordings.
     command_id = "cmd-" + uuid.uuid4().hex[:16]
     now = _now_iso()
+    transcript_text = enriched_command.get("transcript", "")
+    transcript_hash = enriched_command.get("transcript_hash")
+    slots_data = enriched_command.get("slots", {})
+    ehr_calls = execution_log.get("ehr_api_calls", [])
+
+    # In production, archive content to S3 first, then write
+    # references to DynamoDB. The demo records the pattern
+    # structurally without actual S3 writes.
+    archive_prefix = f"sess-{session_id[:8]}/cmd-{command_id}"
+    transcript_archive_ref = (
+        f"s3://voice-nav-archive/{archive_prefix}/transcript.json")
+    slot_values_archive_ref = (
+        f"s3://voice-nav-archive/{archive_prefix}/slot_values.json")
+    ehr_api_calls_archive_ref = (
+        f"s3://voice-nav-archive/{archive_prefix}/ehr_api_calls.json")
+
     audit_record = _to_decimal({
         "command_id":             command_id,
         "clinician_id":           session_context["clinician_id"],
@@ -1624,21 +1645,27 @@ def audit_and_telemetry(enriched_command, confirmation_result,
             session_context.get("launch_id"),
         "timestamp":              now,
         "activation_at":          activation_at,
-        "transcript":             enriched_command.get("transcript"),
-        "transcript_hash":
-            enriched_command.get("transcript_hash"),
+        # References to archived content
+        "transcript_archive_ref": transcript_archive_ref,
+        "transcript_length_chars": len(transcript_text),
+        "transcript_hash":        transcript_hash,
         "transcript_avg_confidence":
             enriched_command.get("avg_confidence"),
         "transcript_min_confidence":
             enriched_command.get("min_confidence"),
+        # Structural metadata
         "intent":                 enriched_command.get("intent"),
         "intent_confidence":
             enriched_command.get("intent_confidence"),
-        "slots":                  enriched_command.get("slots"),
+        "slot_keys_present":      list(slots_data.keys()),
+        "slot_values_archive_ref": slot_values_archive_ref,
+        "slot_values_hash":       _hash_transcript(
+            json.dumps(slots_data, sort_keys=True)),
         "read_write_classification":
             enriched_command.get("read_write"),
         "classifier_used":
             enriched_command.get("classifier_used"),
+        # Non-content identifiers
         "resolved_patient_id":
             enriched_command.get("resolved_patient_id"),
         "ehr_snapshot_id":
@@ -1652,7 +1679,9 @@ def audit_and_telemetry(enriched_command, confirmation_result,
         "execution_status":       execution_log.get("status"),
         "execution_started_at":   execution_log.get("started_at"),
         "execution_completed_at": execution_log.get("completed_at"),
-        "ehr_api_calls":          execution_log.get("ehr_api_calls", []),
+        "ehr_api_calls_count":    len(ehr_calls),
+        "ehr_api_calls_archive_ref": ehr_api_calls_archive_ref,
+        # Version stamps for audit reconstruction
         "bot_version":            BOT_VERSION,
         "intent_taxonomy_version": INTENT_TAXONOMY_VERSION,
         "threshold_config_version": THRESHOLD_CONFIG_VERSION,
