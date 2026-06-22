@@ -373,6 +373,24 @@ FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
 
 ---
 
+## Why This Isn't Production-Ready
+
+**FDA Software as a Medical Device (SaMD) validation.** Any system that classifies physiological waveforms and generates clinical alerts is almost certainly a medical device under FDA regulation. The pseudocode above builds an analysis pipeline, but it does not address the FDA's Quality Management System (QMS) requirements: design controls (IEC 62304 software lifecycle), risk management (ISO 14971), clinical validation studies, and pre-market submission (510(k) or De Novo). You cannot deploy this to patients without regulatory clearance. Plan 6-18 months for the regulatory path alone, depending on your intended use classification and whether you have predicate devices to reference.
+
+**Clinical workflow integration.** The pipeline generates alerts, but alerts are useless if they don't reach the right person in the right context at the right time. Production systems need integration with the clinical alarm management system (IEC 60601-1-8 compliant), escalation paths when primary responders don't acknowledge, integration with the EHR for documentation, and alarm fatigue mitigation strategies. The SNS-to-pager path in this recipe is a placeholder for what is actually a complex clinical informatics problem.
+
+**Model drift monitoring and retraining.** Waveform characteristics shift over time as patient populations change, monitoring equipment is upgraded, and electrode types vary. A model trained on MIMIC-III data (collected 2001-2012 on specific hardware) will drift when deployed on modern monitors. Production deployments need continuous performance monitoring: track classification distributions, confidence score trends, and (when clinician feedback is available) false positive/negative rates. Set up automated alerts when distribution shifts exceed thresholds, and maintain a retraining pipeline that can incorporate new labeled data without disrupting the live system.
+
+**Multi-patient scaling and resource contention.** The pseudocode handles one patient's waveform at a time. A 30-bed ICU generates continuous waveforms from all beds simultaneously. At scale, you need to manage SageMaker endpoint auto-scaling (GPU endpoints take 5-10 minutes to scale out), Kinesis shard splitting when throughput exceeds capacity, and Timestream write throttling during admission surges. Capacity planning must account for worst-case scenarios: mass casualty events, rapid census changes, and equipment reconnections after network outages that create write bursts.
+
+**Alert suppression correctness.** The post-processing logic suppresses alerts for "known conditions," but the definition of "known" is clinically nuanced. A patient with chronic atrial fibrillation should not get repeated AFib alerts, but should get an alert if their ventricular rate suddenly accelerates to dangerous levels within that AFib. The suppression rules in Step 4 are simplistic. Production systems need clinician-configurable suppression profiles, per-patient alert customization, and a mechanism for care teams to adjust thresholds as clinical status changes.
+
+**Network and device connectivity resilience.** Bedside monitors lose connectivity. Electrodes fall off. Devices reboot. The pipeline must handle gaps gracefully: detect when a waveform stream goes silent (versus the patient actually flatlined), distinguish device disconnection from clinical events, and resume analysis cleanly when connectivity returns. The current architecture has no explicit handling for stream interruption versus clinical deterioration.
+
+**Audit trail and explainability.** Clinical decisions informed by algorithm outputs require audit trails. For each alert (or suppressed alert), you need to store the raw input data, preprocessing decisions, model version, classification output, and the post-processing logic path that led to the final disposition. This supports both clinical review ("why did the system alert at 3 AM?") and regulatory audit (FDA post-market surveillance). The Timestream storage captures results but does not preserve the full decision chain.
+
+---
+
 ## Variations and Extensions
 
 **Multi-modal fusion.** Combine waveform analysis across modalities: ECG rhythm classification plus arterial BP waveform analysis plus respiratory pattern detection. Fused models that consider multiple physiological signals simultaneously can detect complex deterioration patterns (like early sepsis) that no single waveform reveals alone. The architecture adds a fusion layer that takes embeddings from each modality-specific model and produces a combined risk score.
