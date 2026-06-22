@@ -397,6 +397,9 @@ def is_within_negation(sentence_text: str, note_text: str, negation_spans: list)
         True if the sentence overlaps a negated span, False otherwise.
     """
     # Find where this sentence appears in the original note.
+    # NOTE: find() returns the first occurrence only. For notes with repeated
+    # sentences (common in templated documentation), track character offsets
+    # during segmentation instead.
     pos = note_text.find(sentence_text)
     if pos == -1:
         return False
@@ -415,7 +418,7 @@ def is_within_negation(sentence_text: str, note_text: str, negation_spans: list)
 def classify_sdoh_sentences(
     segmented_sentences: list[dict],
     negation_spans: list,
-    note_text: str,
+    note_text: str,  # Added vs pseudocode: needed for position-based negation lookup.
 ) -> list[dict]:
     """
     Classify each sentence for SDOH domain and assertion status.
