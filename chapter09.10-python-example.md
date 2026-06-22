@@ -12,13 +12,15 @@ You'll need the AWS SDK for Python and several scientific computing libraries:
 pip install boto3 numpy scipy SimpleITK nibabel
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs (scoped to only the resources each component accesses):
 
-- `medical-imaging:GetImageSet`, `medical-imaging:GetImageFrame`, `medical-imaging:CreateImageSet` (AWS HealthImaging)
-- `s3:GetObject`, `s3:PutObject` (processing bucket)
-- `sagemaker:InvokeEndpoint` (registration model)
-- `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:GetItem` (metadata table)
+- `medical-imaging:GetImageSet`, `medical-imaging:GetImageFrame` (AWS HealthImaging, read-only for preprocessing)
+- `s3:GetObject`, `s3:PutObject` (processing bucket only)
+- `sagemaker:InvokeEndpoint` (registration model endpoint only)
+- `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:GetItem` (metadata table only)
 - `states:StartExecution` (Step Functions, if using orchestration)
+
+In production, never apply all of these as a single shared role. See the architecture companion for per-component scoping.
 
 ---
 
@@ -60,6 +62,7 @@ healthimaging_client = boto3.client("medical-imaging", config=BOTO3_RETRY_CONFIG
 PROCESSING_BUCKET = "my-imaging-fusion-processing"
 
 # DynamoDB table for fusion job metadata and quality tracking.
+# Table schema: partition key = "job_id" (String), no sort key.
 METADATA_TABLE = "imaging-fusion-metadata"
 
 # SageMaker endpoint hosting the registration model (VoxelMorph or similar).
@@ -174,13 +177,25 @@ def ingest_and_validate(study_notifications: list[dict]) -> list[dict]:
         moving_studies = [s for s in studies if s["modality"] != "CT"]
 
         # Validate frame counts. Incomplete series produce garbage registration.
+        # Filter out studies with too few frames rather than continuing blindly.
+        valid_moving_studies = []
         for study in [fixed_study] + moving_studies:
             if study["frame_count"] < 10:
                 logger.warning(
                     "Study %s has only %d frames, likely incomplete. Skipping.",
                     study["image_set_id"], study["frame_count"]
                 )
-                continue
+                if study == fixed_study:
+                    # If the fixed study itself is incomplete, skip this patient entirely.
+                    break
+            elif study != fixed_study:
+                valid_moving_studies.append(study)
+        else:
+            # Only runs if the loop completes without break (fixed study was valid).
+            moving_studies = valid_moving_studies
+
+        if not moving_studies:
+            continue
 
         # Create a fusion job for each CT + moving modality pair.
         for moving_study in moving_studies:
@@ -234,6 +249,9 @@ def create_synthetic_volume(modality: str, shape: tuple = (128, 128, 64)) -> tup
         Tuple of (volume as numpy array, affine matrix as 4x4 numpy array)
     """
     np.random.seed(42)  # Reproducible synthetic data
+    # Fixed seed + same tumor location across modalities = guaranteed registration
+    # success for demo purposes. Real cross-modal data is much harder because
+    # tumor appearance and extent genuinely differ between modalities.
 
     if modality == "CT":
         # CT values are in Hounsfield units. Air = -1000, water = 0, bone = 1000+.
@@ -576,6 +594,13 @@ def compute_deformable_registration_via_sagemaker(
     logger.info("  Computing deformable registration via SageMaker endpoint...")
     logger.info("  (Simulating model inference for demonstration)")
 
+    # Both fixed and moving must have the same shape at this point
+    # (ensured by the min_shape crop in preprocessing above).
+    assert fixed.shape == moving.shape, (
+        f"Shape mismatch: fixed {fixed.shape} vs moving {moving.shape}. "
+        "Both volumes must be cropped to the same dimensions before registration."
+    )
+
     # Simulate a smooth, physically plausible deformation field.
     # In reality, the model would output learned displacements.
     from scipy.ndimage import gaussian_filter
@@ -684,6 +709,8 @@ def validate_registration_quality(
     passed = True
 
     # --- Check 1: Mutual Information ---
+    # MI computation repeated here for self-contained readability.
+    # In production, extract to a shared utility function.
     # Compute MI between fixed and registered moving.
     hist_2d, _, _ = np.histogram2d(
         fixed[::2, ::2, ::2].ravel(),

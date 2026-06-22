@@ -10,7 +10,7 @@
 
 **Amazon SageMaker for ML model hosting and batch inference.** The registration and fusion models (deep learning-based deformable registration, multi-modal segmentation networks) need GPU compute. SageMaker provides managed GPU instances for both training and inference. For batch processing (nightly fusion runs on new studies), SageMaker Processing Jobs or Batch Transform handle the compute without persistent infrastructure. For near-real-time clinical use, SageMaker endpoints with GPU-backed instances provide consistent latency.
 
-**AWS Step Functions for pipeline orchestration.** The fusion pipeline is a multi-step workflow with conditional logic: registration might succeed or fail, the fusion approach depends on which modalities are available, and quality checks gate progression. Step Functions models this as a state machine with error handling, retries, and parallel execution branches (e.g., preprocessing multiple modalities simultaneously).
+**AWS Step Functions for pipeline orchestration.** The fusion pipeline is a multi-step workflow with conditional logic: registration might succeed or fail, the fusion approach depends on which modalities are available, and quality checks gate progression. Step Functions models this as a state machine with error handling, retries, and parallel execution branches (e.g., preprocessing multiple modalities simultaneously). Configure error handling per step: preprocessing failures retry 2x with exponential backoff then fail the job; registration failures retry 1x (GPU operations are expensive to retry blindly) then route to a manual review queue; QA failures route to physicist review with all intermediate outputs retained in S3; export failures retry 3x then alert operations with the validated registration available for manual export. Use Step Functions `ResultPath` to preserve intermediate outputs in the execution state for debugging partial failures.
 
 **AWS Lambda for lightweight coordination tasks.** DICOM parsing, metadata extraction, study completeness checks, notification dispatch, and result packaging are short-lived tasks that fit Lambda's execution model. Lambda handles the glue between pipeline stages while SageMaker handles the heavy compute.
 
@@ -43,19 +43,21 @@ flowchart TD
     style M fill:#9ff,stroke:#333
 ```
 
+**Network path from PACS to cloud.** The connection between institutional PACS and AWS carries multi-gigabyte imaging studies (a CT + MRI + PET set for one patient can be 3-8 GB) containing PHI. Options for this path: (1) AWS Direct Connect provides dedicated bandwidth and private connectivity, preferred for production radiation oncology workflows requiring predictable latency; (2) Site-to-Site VPN provides an encrypted tunnel over existing internet, acceptable if bandwidth is sufficient and consistent; (3) DICOMweb over TLS encrypts data in transit over the public internet but may not satisfy institutional requirements for private network paths. For departments requiring fusion results within 30 minutes of scan completion, ensure the network path can sustain 50-100 Mbps dedicated to imaging transfer. Shared internet connections during peak clinical hours may introduce unacceptable delays.
+
 ## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon S3, AWS Lambda, AWS Step Functions, Amazon SageMaker, Amazon DynamoDB, Amazon SNS, Amazon CloudWatch |
-| **IAM Permissions** | `s3:GetObject`, `s3:PutObject`, `sagemaker:CreateProcessingJob`, `sagemaker:InvokeEndpoint`, `states:StartExecution`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish` |
+| **IAM Permissions** | Per-component roles (never a single shared role): **Step Functions:** `states:StartExecution`, `ecs:RunTask`, `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:GetItem`. **Lambda (preprocessing):** `medical-imaging:GetImageSet`, `medical-imaging:GetImageFrame`, `s3:GetObject`/`PutObject` on processing bucket. **SageMaker Endpoint:** `s3:GetObject` on `processing-bucket/*/preprocessed*`, `s3:PutObject` on `processing-bucket/*/registered*`. **Lambda (post-processing):** `s3:GetObject` on processing bucket, `medical-imaging:StartDICOMImportJob`, `dynamodb:UpdateItem`, `sns:Publish`. **All:** `logs:CreateLogGroup`, `logs:PutLogEvents`. |
 | **BAA** | AWS BAA signed (required: DICOM images are PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: volume encryption with KMS; all transit over TLS |
-| **VPC** | Production: SageMaker and Lambda in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime. PACS connectivity via Direct Connect or VPN to VPC. |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: volume encryption with KMS; all transit over TLS. If using multi-instance SageMaker endpoints for throughput scaling, enable `EnableInterContainerTrafficEncryption` to ensure PHI is encrypted when distributed across instances. |
+| **VPC** | Production: SageMaker and Lambda in VPC with VPC endpoints for S3 (Gateway), DynamoDB (Gateway), SageMaker Runtime (Interface), HealthImaging (Interface), CloudWatch Logs (Interface), and CloudWatch Monitoring (Interface). SageMaker endpoint security group: allow inbound TCP 443 from Lambda/ECS task security group only; deny all other inbound; no outbound internet access required (model artifacts loaded at deploy time from S3 via VPC endpoint). PACS connectivity via Direct Connect or Site-to-Site VPN to VPC. |
 | **CloudTrail** | Enabled: log all S3, SageMaker, and Step Functions API calls for HIPAA audit trail |
 | **GPU Instances** | SageMaker: ml.g5.xlarge or ml.g5.2xlarge for registration and fusion inference. Training: ml.g5.12xlarge or ml.p4d.24xlarge for multi-modal model training |
-| **Sample Data** | BraTS (Brain Tumor Segmentation) challenge data for brain multi-modal MRI. TCIA (The Cancer Imaging Archive) for PET-CT datasets. Never use real patient imaging in dev. |
-| **Cost Estimate** | Per study: ~$0.50 storage + $1.00-5.00 SageMaker GPU compute (registration + fusion) + $0.10 Lambda/Step Functions. Varies heavily with image resolution and model complexity. |
+| **Sample Data** | BraTS (Brain Tumor Segmentation) challenge data for brain multi-modal MRI. TCIA (The Cancer Imaging Archive) for PET-CT datasets. Never use real patient imaging in dev. For development with institutional data: coordinate de-identification across all studies in a fusion set using consistent pseudonym mapping. Standard DICOM de-identification must strip UIDs, dates, and all demographic tags while preserving spatial metadata (ImagePositionPatient, ImageOrientationPatient, PixelSpacing) that registration depends on. Use TCIA public datasets when possible (already de-identified with consistent pseudonyms across modalities). Verify that geometry tags survive the de-identification process before running registration. |
+| **Cost Estimate** | Per study: ~$0.50 storage + $1.00-5.00 SageMaker GPU compute (registration + fusion) + $0.10 Lambda/Step Functions. Varies heavily with image resolution and model complexity. Additional costs: S3 intermediate storage (~1GB/study; implement lifecycle policy to transition to Glacier or delete after QA acceptance); HealthImaging storage for input and output studies (see HealthImaging pricing); data transfer from on-premises if not using Direct Connect. For a department processing 50 studies/day: compute ~$125-400/day; storage accumulation requires lifecycle management. |
 
 ## Ingredients
 
@@ -199,6 +201,8 @@ FUNCTION register_to_reference(moving_volume, reference_volume, anatomy_type):
         passed_qc: quality_metrics meet threshold criteria
     }
 ```
+
+Quality thresholds (mutual information, target registration error, Jacobian folding fraction) are clinical parameters, not software configurations. Changes to these values alter the safety boundary of the system. In production, store thresholds in a versioned configuration with a change audit trail. Any threshold modification should require medical physics sign-off and documented validation on a test cohort before deployment. Treat threshold changes with the same governance as model updates.
 
 **Step 4: Multi-modal fusion and analysis.** With all modalities registered to the same coordinate frame, combine their information for the target clinical task. The fusion approach depends on what you're trying to accomplish. For automated segmentation (e.g., delineating tumor extent), the state-of-the-art is a deep learning model that takes all modalities as input channels and outputs a voxel-wise segmentation map. For treatment planning support, the fusion might propagate structure contours from one modality to another. For radiomics (quantitative feature extraction), the fusion extracts features from each modality independently but in the same spatial regions. Each approach produces different outputs, but they all depend on accurate registration from Step 3.
 
@@ -352,7 +356,11 @@ FUNCTION package_and_deliver(analysis_results, original_study_metadata):
 | Cost per study (abdomen, deformable) | ~$5.00-8.00 |
 | Throughput | ~30-50 studies/day per ml.g5.2xlarge |
 
+Pipeline times assume a warm SageMaker endpoint. Cold-start (first request after scale-up) adds 3-5 minutes for model loading. For predictable latency in clinical use, configure minimum instance count = 1 to avoid scale-to-zero.
+
 **Where it struggles:** Non-rigid abdominal anatomy with large respiratory or bowel motion between scans. Studies with significant time gaps where tumor growth invalidates the registration assumption. Rare modality combinations not well-represented in training data. Edge cases where automated registration converges to a local minimum (producing obviously wrong but algorithmically "stable" alignments).
+
+**Concurrent job handling.** If multiple patients have planning imaging completed within the same hour, Step Functions starts multiple executions and SageMaker endpoints become the bottleneck. With a single GPU instance processing one registration at a time (30-120 seconds for deformable), 5 concurrent requests will queue. For departments processing more than 10 fusion studies/hour, configure SageMaker auto-scaling with a target of InvocationsPerInstance < 2. Alternatively, use SageMaker Asynchronous Inference for long-running registration jobs, which provides built-in queuing with SNS notification on completion rather than blocking the Step Functions execution.
 
 ---
 
