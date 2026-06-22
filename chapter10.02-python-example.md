@@ -20,7 +20,7 @@ Your environment needs credentials configured (via environment variables, an ins
 
 - `s3:GetObject`, `s3:PutObject` on the audio bucket and the transcript bucket, scoped to the per-voicemail key prefixes
 - `transcribe:StartMedicalTranscriptionJob`, `transcribe:GetMedicalTranscriptionJob` for submitting and polling the async ASR jobs
-- `comprehendmedical:DetectEntitiesV2` for the medical-entity extraction call
+- `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `comprehendmedical:InferICD10CM`, `comprehendmedical:InferSNOMEDCT` for medical-entity extraction and ontology linking
 - `bedrock:InvokeModel` for the classifier, scoped to the specific foundation-model ARN and inference profile in use
 - `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` on the voicemail-records, triage-queue, and patient-index tables
 - `sns:Publish` on the emergent-voicemail SNS topic
@@ -1327,28 +1327,25 @@ def classify_voicemail(stage_input):
                        else "classifier")
 
     # Step 4E: medical entity extraction.
-    # TODO (TechWriter): Code review Finding 2 (WARNING) and
-    # Expert review S1 (HIGH). The fixture data and the list
-    # comprehensions below imply that detect_entities_v2
-    # returns RxNorm/ICD-10 concepts on each entity. It does
-    # not. Production pipelines call DetectEntitiesV2 to get
-    # entities, then InferRxNorm / InferICD10CM / InferSNOMEDCT
-    # in parallel and merge the ontology codes by text-offset.
-    # Either (a) extend the demo to call (and mock) the Infer-*
-    # APIs alongside DetectEntitiesV2 with a merge step, or
-    # (b) drop the rxnorm_codes/icd10_codes fields from this
-    # path and add a comment that ontology linking is a
-    # separate API surface (the medication_alignment cross-
-    # reference in enrich_voicemail already falls back to
-    # text-based matching).
+    # Entity extraction: in production, four parallel calls to
+    # Comprehend Medical (DetectEntitiesV2, InferRxNorm,
+    # InferICD10CM, InferSNOMEDCT) are merged by text offset.
+    # This demo uses a single mock that returns pre-merged
+    # entities with ontology codes already attached, simulating
+    # the merged output. The mock's fixture data represents
+    # what the production pipeline would produce after the
+    # merge step. See the architecture companion for the full
+    # multi-call pattern.
     entity_response = comprehend_mock.detect_entities_v2(
         text=transcript_text)
     raw_entities = entity_response.get("Entities", [])
 
-    # Filter to the categories the routing logic uses. In
-    # production Comprehend Medical returns a richer structure
-    # with attributes, traits, RxNorm/ICD-10/SNOMED concepts;
-    # the demo flattens a small subset.
+    # Filter to the categories the routing logic uses. The
+    # rxnorm_codes and icd10_codes fields below represent
+    # the output after merging InferRxNorm/InferICD10CM
+    # responses onto DetectEntitiesV2 entities by offset.
+    # The mock pre-populates these; in production you would
+    # call the four APIs in parallel and merge explicitly.
     medications = [
         {"text": e.get("Text"),
          "score": Decimal(str(e.get("Score", 0))),

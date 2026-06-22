@@ -10,7 +10,7 @@
 
 **Amazon Transcribe Medical for ASR.** Transcribe Medical is the medical-domain-tuned ASR service. It supports async batch transcription jobs, accepts the audio formats that voicemail systems typically produce, returns per-word timing and confidence, and handles medical vocabulary (drug names, conditions, anatomy) substantially better than the general-purpose Transcribe service. For voicemail in a healthcare context, Transcribe Medical is the right default. The general-purpose Transcribe is appropriate for the non-clinical voicemails (vendor calls, billing-only practices) where medical vocabulary is rare. 
 
-**Amazon Comprehend Medical for entity extraction.** Comprehend Medical extracts medical entities (medications, conditions, anatomy, procedures, tests, time expressions) from clinical text and maps them to ontologies (RxNorm, ICD-10-CM, SNOMED CT). For a voicemail pipeline, Comprehend Medical is the entity-extraction layer that turns "I am calling about my furosemide" into a structured medication entity that downstream routing can consume.
+**Amazon Comprehend Medical for entity extraction.** Comprehend Medical extracts medical entities (medications, conditions, anatomy, procedures, tests, time expressions) from clinical text. The base DetectEntitiesV2 call returns entity categories and traits; linking to ontologies (RxNorm, ICD-10-CM, SNOMED CT) requires separate InferRxNorm, InferICD10CM, and InferSNOMEDCT calls, which run in parallel with DetectEntitiesV2 and produce ontology-coded entities that are merged by text offset. For a voicemail pipeline, Comprehend Medical is the entity-extraction layer that turns "I am calling about my furosemide" into a structured medication entity with RxNorm code that downstream routing can consume.
 
 **Amazon Bedrock for intent and urgency classification.** Bedrock provides managed access to foundation models (Anthropic Claude family, Meta Llama, Mistral, Amazon Titan, and others) with HIPAA eligibility under the AWS BAA. For voicemail classification specifically, a foundation model with a well-designed prompt can classify intent and urgency, extract additional context the ontology-bound entity extractors miss, and produce a brief human-readable summary of the voicemail in a single inference call. For practices that have established custom-trained classifiers, SageMaker hosting is an alternative; for greenfield deployments, Bedrock-with-LLM is the more pragmatic starting point.
 
@@ -22,7 +22,7 @@
 
 **Amazon EventBridge for cross-system events.** When a triage record is created, when an emergent voicemail is escalated, when a staff member resolves a voicemail, EventBridge fans the event out to downstream consumers (analytics, operational dashboards, the staff-notification service, the EHR if the voicemail is being recorded as a clinical communication).
 
-**Amazon SNS and Amazon Pinpoint for active notifications.** When the urgency classifier flags an emergent voicemail, the notification path uses SNS for the basic mechanics (push to a topic, fan out to multiple subscribers including SMS, email, and push notifications) and optionally Pinpoint for richer mobile-app notifications and delivery tracking. The on-call clinician's pager or phone is a subscriber to the emergent topic.  
+**Amazon SNS and Amazon Pinpoint for active notifications.** When the urgency classifier flags an emergent voicemail, the notification path uses SNS for the basic mechanics (push to a topic, fan out to multiple subscribers including SMS, email, and push notifications) and optionally Pinpoint for richer mobile-app notifications and delivery tracking. The on-call clinician's pager or phone is a subscriber to the emergent topic. The emergent SNS topic's resource policy pins the publish principal to the router Lambda's execution role ARN and pins subscription endpoints to the configured on-call rotation system endpoints, so neither arbitrary publishers nor unauthorized subscribers can interact with the topic.
 
 **Amazon DynamoDB for the triage queue and voicemail records.** The triage queue is implemented as a DynamoDB table with composite keys (queue_name, priority_timestamp_compound_key) so the staff interface can query the next priority items efficiently. The voicemail records (audio reference, transcript reference, classifications, enrichment data, audit history) live in a separate DynamoDB table or in the same table with different sort keys.
 
@@ -186,13 +186,13 @@ flowchart LR
 |-------------|---------|
 | **AWS Services** | Amazon Transcribe Medical, Amazon Comprehend Medical, Amazon Bedrock (or Amazon SageMaker for self-hosted classification), Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon SNS, Amazon EventBridge, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon Kinesis Data Firehose, AWS Glue Data Catalog, Amazon Athena. Optionally: Amazon OpenSearch Service, Amazon QuickSight, Amazon Pinpoint, Amazon Chime SDK Voice Connector. |
 | **External Inputs** | Voicemail audio source: a hosted UCaaS platform (RingCentral, Zoom Phone, Teams Phone, etc.), an on-prem PBX with an export path, an EHR-embedded telephony system, or a carrier voicemail-to-email service. The integration mechanism varies by source: webhook with signed URL, S3 cross-account push, SFTP drop, IMAP-poll for voicemail-to-email, vendor API pull. The clinical-urgency-keyword lexicon, reviewed by clinical operations. The intent taxonomy and a labeled validation set (a few hundred voicemails labeled by clinical staff). The patient index keyed by phone number. |
-| **IAM Permissions** | Per-Lambda least-privilege roles. The voicemail-ingestor Lambda has scoped write access to the audio S3 bucket and write access to the voicemail-records DynamoDB table only. The pre-processor Lambda has scoped read access to the audio bucket. The Step Functions state machine has scoped invocation rights for each Lambda and the AWS service integrations it uses (Transcribe Medical's StartMedicalTranscriptionJob, Comprehend Medical's DetectEntitiesV2, Bedrock's InvokeModel for the specific foundation model and inference profile in use). The classifier Lambda has scoped Bedrock invocation rights pinned to the specific model and inference profile. The enricher Lambda has scoped read access to the patient-index DynamoDB table and to the EHR API credentials in Secrets Manager. The router Lambda has scoped publish rights on the emergent-voicemail SNS topic and `events:PutEvents` on the voicemail-events bus. Avoid wildcard actions and resources in production.  |
-| **BAA and Compliance** | AWS BAA signed. Transcribe Medical, Comprehend Medical, Bedrock (verify the specific models and regions covered), S3, Lambda, Step Functions, DynamoDB, SNS, EventBridge, KMS, Secrets Manager, CloudWatch Logs, CloudTrail, Kinesis Data Firehose, Athena are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference).   Voicemail-greeting recording-disclosure language reviewed and approved by general counsel for the jurisdictions you operate in ("This voicemail box is monitored by clinical staff. Please leave your name, callback number, and a brief message. Calls left here may be transcribed and recorded for clinical purposes."). The disclosure is jurisdiction-aware. Some U.S. states are one-party-consent, some are all-party-consent, and the disclosure plus continued participation is the standard pattern for satisfying both.   |
+| **IAM Permissions** | Per-Lambda least-privilege roles. The voicemail-ingestor Lambda has scoped write access to the audio S3 bucket and write access to the voicemail-records DynamoDB table only. The pre-processor Lambda has scoped read access to the audio bucket. The Step Functions state machine has scoped invocation rights for each Lambda and the AWS service integrations it uses (Transcribe Medical's StartMedicalTranscriptionJob, Comprehend Medical's DetectEntitiesV2 plus InferRxNorm, InferICD10CM, and InferSNOMEDCT, Bedrock's InvokeModel for the specific foundation model and inference profile in use). The classifier Lambda has scoped Bedrock invocation rights pinned to the specific model and inference profile. The enricher Lambda has scoped read access to the patient-index DynamoDB table and to the EHR API credentials in Secrets Manager. The router Lambda has scoped publish rights on the emergent-voicemail SNS topic and `events:PutEvents` on the voicemail-events bus. Each per-stage Lambda's resource-based policy pins the invoking principal to the production Step Functions state-machine ARN; as defense-in-depth, each Lambda handler validates `state_machine_arn` from the event payload and rejects invocations from unexpected sources. Production and development state machines invoke separate per-stage Lambdas (not shared). Avoid wildcard actions and resources in production.  |
+| **BAA and Compliance** | AWS BAA signed. Transcribe Medical, Comprehend Medical, Bedrock (verify the specific models and regions covered), S3, Lambda, Step Functions, DynamoDB, SNS, EventBridge, KMS, Secrets Manager, CloudWatch Logs, CloudTrail, Kinesis Data Firehose, Athena are HIPAA-eligible (verify the current list at build time against the [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)). The default foundation model for the classifier under BAA is the Anthropic Claude family, which has the longest-standing HIPAA-eligible-on-Bedrock track record; verify model-specific BAA coverage at build time as the eligible model list evolves.   Voicemail-greeting recording-disclosure language reviewed and approved by general counsel for the jurisdictions you operate in ("This voicemail box is monitored by clinical staff. Please leave your name, callback number, and a brief message. Calls left here may be transcribed and recorded for clinical purposes."). The disclosure is jurisdiction-aware: configure per-DNIS routing to a jurisdiction-specific disclosure greeting; perform per-ANI lookup to determine the caller's likely jurisdiction; default to all-party-consent-language as the conservative fallback for multi-state practices or when the caller's jurisdiction is unknown. Some U.S. states are one-party-consent, some are all-party-consent, and the disclosure plus continued participation is the standard pattern for satisfying both.   |
 | **Encryption** | Audio bucket: SSE-KMS with customer-managed keys, S3 bucket lifecycle to colder storage tiers (Glacier Instant Retrieval after 30 days, Glacier Deep Archive after 1 year), retention per institutional and state-specific medical-records-retention requirements. Transcript bucket: same. DynamoDB tables (voicemail-records, triage-queue, patient-index): customer-managed KMS at rest. Step Functions state data: KMS-encrypted. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all back-office API calls and all AWS API calls (default). |
 | **VPC** | Production: Lambdas that call back-office APIs (the EHR enricher in particular) run in VPC with subnets that have controlled egress to the back-office systems' network. VPC endpoints for S3, DynamoDB, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Step Functions, SNS, Comprehend Medical, Transcribe, and Bedrock so the Lambdas do not need NAT for AWS-internal calls. Endpoint policies pin access to the specific resources the pipeline uses.  |
-| **CloudTrail** | Enabled with data events on the audio S3 bucket, the transcript S3 bucket, the voicemail-records DynamoDB table, the triage-queue DynamoDB table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Step Functions execution history logged. Bedrock InvokeModel and Comprehend Medical DetectEntitiesV2 calls logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longest of: HIPAA's six-year minimum for the records-of-disclosure-and-routing-decisions, state-specific call-recording retention (typically 1-7 years), the audio-recording retention floor required by institutional or state-specific medical-records-retention rules (which may be longer than the audit-log floor), and the institutional regulatory floor.  |
+| **CloudTrail** | Enabled with data events on the audio S3 bucket, the transcript S3 bucket, the voicemail-records DynamoDB table, the triage-queue DynamoDB table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Step Functions execution history logged. Bedrock InvokeModel and Comprehend Medical DetectEntitiesV2/InferRxNorm/InferICD10CM/InferSNOMEDCT calls logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit-log retention sized to the longest of: HIPAA's six-year minimum for the records-of-disclosure-and-routing-decisions, state-specific call-recording retention (typically 1-7 years), and the institutional regulatory floor. Audio-recording retention is specified separately and may exceed the audit-log retention floor (the institutional retention policy is the canonical source; state-specific medical-records-retention rules may require 7-10+ years for audio that constitutes part of the medical record). The architecture specifies both the audit-log retention floor and the audio-recording retention floor as distinct configuration values.  |
 | **Sample Data** | Synthetic voicemail audio for development (text-to-speech generation against scripted transcripts produces audio with known ground truth). The Synthea synthetic patient population provides patient demographics for the patient-index table. Public-domain voicemail-style speech corpora (CMU's Speech Wikipedia, mock voicemail samples from open speech datasets) for end-to-end ASR validation. Never use real voicemail recordings or real transcripts in development. |
-| **Cost Estimate** | At a mid-sized practice scale (10,000 voicemails per month, average 45 seconds per voicemail): Transcribe Medical at typically $0.075 per minute of audio totals approximately $562 per month for ASR. Comprehend Medical at typically $0.01 per 100 characters of input totals approximately $50-100 per month at average transcript lengths. Bedrock model invocation cost varies dramatically by model choice; with a small or medium foundation model, classification cost is typically $50-200 per month at this volume. Lambda, Step Functions, DynamoDB, S3, CloudWatch, KMS, Secrets Manager total typically $100-400 per month combined at this scale. Total AWS infrastructure typically $800-1,500 per month at this scale, dominated by Transcribe Medical and Bedrock.  |
+| **Cost Estimate** | At a mid-sized practice scale (10,000 voicemails per month, average 45 seconds per voicemail): Transcribe Medical at typically $0.075 per minute of audio totals approximately $562 per month for ASR. Comprehend Medical requires up to four API calls per voicemail (DetectEntitiesV2 + InferRxNorm + InferICD10CM + InferSNOMEDCT), each priced at typically $0.01 per 100 characters of input, totaling approximately $200-400 per month at average transcript lengths. Bedrock model invocation cost varies dramatically by model choice; with a small or medium foundation model, classification cost is typically $50-200 per month at this volume. Lambda, Step Functions, DynamoDB, S3, CloudWatch, KMS, Secrets Manager total typically $100-400 per month combined at this scale. Total AWS infrastructure typically $900-1,700 per month at this scale, dominated by Transcribe Medical and Comprehend Medical.  |
 
 ### Ingredients
 
@@ -508,21 +508,38 @@ FUNCTION classify_voicemail(voicemail_id, transcript_text):
             urgency_taxonomy=URGENCY_TAXONOMY,
             few_shot_examples=FEW_SHOT_EXAMPLES))
 
-    entity_call = comprehend_medical.detect_entities_v2_async(
+    // Step 4B-entities: run all four Comprehend Medical
+    // calls in parallel. DetectEntitiesV2 returns categories
+    // and traits but NOT ontology codes. InferRxNorm,
+    // InferICD10CM, and InferSNOMEDCT each return ontology-
+    // linked entities for their respective code systems.
+    // We merge codes onto the base entities by text offset.
+    detect_entities_call = comprehend_medical.detect_entities_v2_async(
+        text=transcript_text)
+    infer_rxnorm_call = comprehend_medical.infer_rx_norm_async(
+        text=transcript_text)
+    infer_icd10_call = comprehend_medical.infer_icd10_cm_async(
+        text=transcript_text)
+    infer_snomed_call = comprehend_medical.infer_snomed_ct_async(
         text=transcript_text)
 
-    // TODO (TechWriter): Expert review S1 (HIGH). Comprehend
-    // Medical's DetectEntitiesV2 returns categories and traits
-    // but does not return ontology-linked codes on the entities.
-    // To populate RxNorm/ICD-10-CM/SNOMED CT codes that the
-    // routing logic depends on, the pipeline must call
-    // InferRxNorm, InferICD10CM, and InferSNOMEDCT in parallel
-    // alongside DetectEntitiesV2, then merge the ontology codes
-    // onto the structured entities by text-offset. Update this
-    // pseudocode to show the four parallel calls and the merge.
-
     classifier_result = await(classifier_call)
-    entity_result = await(entity_call)
+    detect_entities_result = await(detect_entities_call)
+    rxnorm_result = await(infer_rxnorm_call)
+    icd10_result = await(infer_icd10_call)
+    snomed_result = await(infer_snomed_call)
+
+    // Step 4B-merge: merge ontology codes from the Infer-*
+    // responses onto the base entities by matching on text
+    // offset (BeginOffset, EndOffset). Each Infer-* call
+    // returns entities with RxNormConcepts, ICD10CMConcepts,
+    // or SNOMEDCTConcepts arrays attached. We join these
+    // onto the DetectEntitiesV2 entities by offset overlap.
+    entity_result = merge_ontology_codes(
+        base_entities=detect_entities_result.entities,
+        rxnorm_entities=rxnorm_result.entities,
+        icd10_entities=icd10_result.entities,
+        snomed_entities=snomed_result.entities)
 
     // Step 4C: parse the classifier output. The prompt
     // requests a strict JSON response; we validate that
@@ -564,20 +581,21 @@ FUNCTION classify_voicemail(voicemail_id, transcript_text):
         rule_layer_urgency_floor, classifier_urgency)
 
     // Step 4E: extract entities of interest from
-    // Comprehend Medical's response. Filter to the
-    // categories the routing logic uses.
+    // the merged Comprehend Medical output. Filter to the
+    // categories the routing logic uses. Each entity now
+    // carries ontology codes from the Infer-* calls.
     medications = filter_entities(
-        entity_result.entities, category="MEDICATION")
+        entity_result, category="MEDICATION")
     conditions = filter_entities(
-        entity_result.entities,
+        entity_result,
         category="MEDICAL_CONDITION")
     anatomy = filter_entities(
-        entity_result.entities, category="ANATOMY")
+        entity_result, category="ANATOMY")
     tests = filter_entities(
-        entity_result.entities,
+        entity_result,
         category="TEST_TREATMENT_PROCEDURE")
     time_expressions = filter_entities(
-        entity_result.entities,
+        entity_result,
         category="TIME_EXPRESSION")
 
     // Step 4F: persist the structured triage classification.
@@ -595,16 +613,11 @@ FUNCTION classify_voicemail(voicemail_id, transcript_text):
             urgency_classifier_confidence:
                 classifier_urgency_confidence,
             summary: summary,
-            classified_at: current UTC timestamp
+            classified_at: current UTC timestamp,
+            classifier_prompt_version: CLASSIFIER_PROMPT_VERSION,
+            intent_taxonomy_version: INTENT_TAXONOMY_VERSION,
+            urgency_lexicon_version: urgency_lexicon.version
         },
-        // TODO (TechWriter): Expert review A5 (MEDIUM). Stamp
-        // classifier_prompt_version, intent_taxonomy_version,
-        // and urgency_lexicon_version on every classification
-        // record so a future audit can reconstruct which
-        // calibration was active at decision time. The blue-
-        // green deployment via Bedrock canary inference
-        // profiles depends on these stamps for regression
-        // attribution.
         entities: {
             medications: medications,
             conditions: conditions,
@@ -615,20 +628,21 @@ FUNCTION classify_voicemail(voicemail_id, transcript_text):
         pipeline_status: "classified")
 
     needs_human_review =
-        intent_confidence < INTENT_CONFIDENCE_THRESHOLD OR
+        intent_confidence < INTENT_CONFIDENCE_MATRIX[intent][action_class] OR
         classifier_urgency_confidence <
-            URGENCY_CONFIDENCE_THRESHOLD
+            URGENCY_CONFIDENCE_MATRIX[final_urgency][action_class]
 
-    // TODO (TechWriter): Expert review A2 (MEDIUM). The single
-    // global thresholds INTENT_CONFIDENCE_THRESHOLD and
-    // URGENCY_CONFIDENCE_THRESHOLD contradict the per-intent
-    // calibration discipline elevated in Production-Gaps.
-    // Replace the placeholders with a per-intent threshold
-    // matrix keyed by action class (auto-route-to-routine-queue
-    // ~0.70/0.65; auto-route-to-specialty-queue ~0.80;
-    // auto-escalate-to-clinician ~0.85 urgency + 0.75 intent;
-    // auto-resolve prohibited in MVP). Reference the matrix as
-    // a recurring operational calibration, not a one-time tune.
+    // The confidence thresholds are per-intent and per-action-
+    // class, not global. The matrix is keyed by
+    // (intent, action_class) for intent confidence and by
+    // (urgency, action_class) for urgency confidence:
+    //   auto-route-to-routine-queue:   intent >= 0.70, urgency >= 0.65
+    //   auto-route-to-specialty-queue: intent >= 0.80, urgency >= 0.75
+    //   auto-escalate-to-clinician:    intent >= 0.75, urgency >= 0.85
+    //   auto-resolve:                  prohibited in MVP
+    // The matrix is a recurring operational calibration artifact
+    // reviewed monthly against sampled-review disagreement rates,
+    // not a one-time tuning exercise.
 
     RETURN { continue_to_routing: true,
              needs_human_review: needs_human_review,
@@ -651,17 +665,42 @@ FUNCTION enrich_voicemail(voicemail_id, ani, intent, entities):
     // (new caller, unmatched, or wrong number).
     patient_matches = patient_index.query_by_phone(ani)
 
-    // TODO (TechWriter): Expert review A9 (MEDIUM). Zero-match
-    // and multiple-match clinical-symptom voicemails need
-    // explicit routing semantics. Specify: zero-match clinical
-    // intents route to a "verify caller identity" queue with
-    // higher staff-attention flag; multiple-match (household)
-    // surfaces all candidates and requires staff to verify
-    // patient by name; proxy-call detection extracts patient-
-    // name entities from the transcript ("calling on behalf
-    // of my mother") and attempts a secondary lookup, treating
-    // emergent symptoms as urgent for the patient rather than
-    // for the caller.
+    // Zero-match and multiple-match handling:
+    // - Zero-match with clinical-symptom intent: route to
+    //   a "verify caller identity" queue with higher staff-
+    //   attention flag; staff must verify the patient before
+    //   acting on clinical content.
+    // - Multiple-match (household line): surface all patient
+    //   candidates and require staff to verify which patient
+    //   by name before acting.
+    // - Proxy-call detection: extract patient-name entities
+    //   from the transcript ("calling on behalf of my mother,
+    //   Mrs. Davis") and attempt a secondary lookup by name.
+    //   If the voicemail reports emergent symptoms, treat the
+    //   urgency as applying to the named patient, not the
+    //   caller's record.
+    IF len(patient_matches) == 0 AND
+       intent IN CLINICAL_INTENT_SET:
+        enrichment.routing_flag = "verify_caller_identity"
+        enrichment.attention_level = "high"
+    ELSE IF len(patient_matches) > 1:
+        enrichment.routing_flag = "household_disambiguation"
+        enrichment.attention_level = "moderate"
+
+    // Proxy-call detection: look for "on behalf of" or
+    // third-person patient-name mentions in the transcript.
+    proxy_patient_name = extract_proxy_patient_name(
+        transcript_text=transcript_text)
+    IF proxy_patient_name IS NOT NULL:
+        secondary_matches = patient_index.query_by_name(
+            proxy_patient_name)
+        IF len(secondary_matches) == 1:
+            enrichment.proxy_call = true
+            enrichment.proxy_patient_id =
+                secondary_matches[0].patient_id
+        ELSE:
+            enrichment.proxy_call = true
+            enrichment.proxy_patient_unresolved = true
 
     enrichment = {
         ani_match_count: len(patient_matches),
@@ -781,30 +820,38 @@ FUNCTION route_voicemail(voicemail_id, intent, urgency, enrichment, needs_human_
     // Step 6D: emit cross-system event for downstream
     // consumers (analytics, dashboards, EHR
     // integration).
+    //
+    // Per-stage idempotency-key composition:
+    //   ingestor:           voicemail_id
+    //   pre-processor:      (voicemail_id, "preprocess")
+    //   ASR submitter:      (voicemail_id, "asr_submit")
+    //   ASR result:         (voicemail_id, "asr_complete", asr_job_name)
+    //   classifier:         (voicemail_id, "classify", classifier_prompt_version)
+    //   entity extractor:   (voicemail_id, "entities")
+    //   enricher:           (voicemail_id, "enrich")
+    //   router:             (voicemail_id, "route", routing_revision)
+    //   SNS emergent:       (voicemail_id, "emergent_notification", routing_revision)
+    //
+    // EventBridge event_id is derived from the stage's
+    // idempotency key tuple so downstream consumers can
+    // deduplicate via a consumer-side processed-set
+    // (DynamoDB conditional write on event_id).
+    routing_revision = voicemail.routing_revision OR 1
+    event_id = sha256(voicemail_id + ".route." +
+        str(routing_revision))
+
     EventBridge.PutEvents([{
         source: "voicemail.triage",
         detail_type: "voicemail_routed",
         detail: {
             voicemail_id: voicemail_id,
-            event_id: voicemail_id +
-                "." + str(turn_index_or_revision),
+            event_id: event_id,
             queue_targets: queue_targets,
             urgency: urgency,
             intent: intent,
             placed_at: current UTC timestamp
         }
     }])
-
-    // TODO (TechWriter): Expert review A4 (MEDIUM). The
-    // turn_index_or_revision variable here is a free name with
-    // no defined source. Specify the per-stage idempotency-key
-    // composition: voicemail_id (ingestor); (voicemail_id,
-    // stage_name) for downstream stages; (voicemail_id,
-    // "asr_complete", asr_job_name) for ASR result; (voicemail_id,
-    // "classify", classifier_prompt_version); (voicemail_id,
-    // "emergent_notification", routing_revision) for SNS publish.
-    // EventBridge event_id should be derived from these tuples
-    // so consumers can deduplicate.
 
     // Step 6E: emergent active notification. The SNS
     // topic has multiple subscribers: pager, on-call
@@ -932,31 +979,60 @@ ON staff_action(voicemail_id, staff_user_id, action, action_metadata):
     "medications": [
       {
         "text": "ibuprofen",
-        "rxnorm_codes": ["5640"],
-        "score": 0.97
+        "begin_offset": 142,
+        "end_offset": 151,
+        "category": "MEDICATION",
+        "type": "GENERIC_NAME",
+        "score": 0.97,
+        "rxnorm_concepts": [
+          {"code": "5640", "description": "ibuprofen", "score": 0.95}
+        ]
       },
       {
         "text": "opioid",
-        "rxnorm_codes": [],
-        "score": 0.85
+        "begin_offset": 87,
+        "end_offset": 93,
+        "category": "MEDICATION",
+        "type": "GENERIC_NAME",
+        "score": 0.85,
+        "rxnorm_concepts": []
       }
     ],
     "conditions": [
       {
         "text": "chest tightness",
-        "icd10_codes": ["R07.89"],
-        "score": 0.91
+        "begin_offset": 201,
+        "end_offset": 216,
+        "category": "MEDICAL_CONDITION",
+        "type": "DX_NAME",
+        "score": 0.91,
+        "icd10cm_concepts": [
+          {"code": "R07.89", "description": "Other chest pain", "score": 0.88}
+        ],
+        "snomed_concepts": [
+          {"code": "23924001", "description": "Tight chest", "score": 0.84}
+        ]
       },
       {
         "text": "shortness of breath",
-        "icd10_codes": ["R06.02"],
-        "score": 0.94
+        "begin_offset": 221,
+        "end_offset": 240,
+        "category": "MEDICAL_CONDITION",
+        "type": "DX_NAME",
+        "score": 0.94,
+        "icd10cm_concepts": [
+          {"code": "R06.02", "description": "Shortness of breath", "score": 0.92}
+        ],
+        "snomed_concepts": [
+          {"code": "267036007", "description": "Dyspnea", "score": 0.89}
+        ]
       }
     ],
     "anatomy": [
-      {"text": "chest", "score": 0.99},
-      {"text": "tooth", "score": 0.95}
-    ]
+      {"text": "chest", "begin_offset": 201, "end_offset": 206, "score": 0.99},
+      {"text": "tooth", "begin_offset": 112, "end_offset": 117, "score": 0.95}
+    ],
+    "ontology_source": "DetectEntitiesV2 + InferRxNorm + InferICD10CM + InferSNOMEDCT (merged by offset)"
   },
   "enrichment": {
     "ani_match_count": 1,
@@ -1023,21 +1099,27 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Urgency lexicon governance.** The clinical-urgency-keyword lexicon is a safety-critical artifact. It needs version control, change review by clinical operations (not by the engineering team unilaterally), scheduled refresh cadence (at least quarterly), and a documented escalation path when a missed urgent voicemail surfaces in retrospective audit. Treat it as a clinical safety document with the procedural rigor that implies, not as a configuration file maintained by whoever last edited the bot. Specifically include phrases for: chest pain and cardiac symptoms; respiratory distress; suicidality and self-harm; severe bleeding; stroke-suggestive symptoms; severe allergic reactions; medication overdose; specific high-risk medications mentioned with adverse-event keywords; severe infection symptoms in immunocompromised patient populations.
 
-**Sampled human review with disagreement capture.** A clinical reviewer should listen to a random sample of voicemails per week (a few percent of total volume is a reasonable starting point) and compare the human assessment to the pipeline's classification. The sample must be stratified by intent and urgency to ensure adequate coverage of each category, not purely random (which would oversample the routine intents and undersample the emergent ones). Disagreements feed the labeled dataset that drives ongoing classifier improvement.
+**Sampled human review with disagreement capture.** A clinical reviewer should listen to a random sample of voicemails per week (a few percent of total volume is a reasonable starting point) and compare the human assessment to the pipeline's classification. The sample must be stratified: per-intent (so rare intents are adequately covered), per-urgency (so emergent items are not undersampled relative to their low base rate), per-cohort (so the equity-monitoring dimensions from subgroup-stratified accuracy are represented), and per-confidence-band (so the lowest-confidence classifications get disproportionate reviewer attention). The disagreement-capture data structure records: machine_intent, machine_urgency, human_intent, human_urgency, staff_reason (free-text rationale for disagreement), transcript_reference, classifier_prompt_version, and review_timestamp. The active-learning feedback loop runs on a weekly cadence: disagreements are batched, reviewed for patterns, and fed back into prompt revisions and lexicon expansions. Reviewers must pass a conflict-of-interest screen (the reviewer should not be the same staff member who originally handled the voicemail in the triage queue) to avoid circular validation.
 
-**Idempotency and retry semantics.** A Step Functions execution that retries (because of a transient downstream failure), or an EventBridge event that delivers twice (at-least-once delivery is the contract), must not produce duplicate triage records, duplicate notifications, or duplicate audit log entries. Use the voicemail_id (plus a turn_index or revision number for actions that legitimately repeat) as the idempotency key throughout the pipeline. Configure DLQs on every Lambda; alarm on DLQ depth, with the emergent-voicemail Lambda's DLQ paged immediately rather than next-business-day.
+**Idempotency and retry semantics.** A Step Functions execution that retries (because of a transient downstream failure), or an EventBridge event that delivers twice (at-least-once delivery is the contract), must not produce duplicate triage records, duplicate notifications, or duplicate audit log entries. Per-stage idempotency-key composition: ingestor = voicemail_id; pre-processor = (voicemail_id, "preprocess"); ASR submitter = (voicemail_id, "asr_submit"); ASR result = (voicemail_id, "asr_complete", asr_job_name); classifier = (voicemail_id, "classify", classifier_prompt_version); entity extractor = (voicemail_id, "entities"); enricher = (voicemail_id, "enrich"); router = (voicemail_id, "route", routing_revision); SNS emergent = (voicemail_id, "emergent_notification", routing_revision). EventBridge event_id is derived from these tuples so downstream consumers can deduplicate via a consumer-side processed-set (DynamoDB conditional write on event_id).
+
+**Resilience topology.** Each Lambda in the pipeline has its own dedicated DLQ (not a shared pool). Maximum-receive-count per DLQ is 3 (typical) before messages land in the DLQ. DLQ-depth alarms fire at >=1 message (warning) and >=10 messages (higher severity). The router Lambda's DLQ pages immediately for emergent-classified voicemails rather than alerting next-business-day. A DLQ-redrive runbook specifies: validate the idempotency key before reprocessing; use the consumer-side processed-set to confirm whether the downstream action already completed; log the redrive event. The router Lambda has reserved concurrency (configured to at least 5 concurrent executions) so it cannot be starved by a high-volume non-urgent pipeline stage consuming all available concurrency in the account.
 
 **Active-notification policy and on-call rotation integration.** The emergent-voicemail SNS topic has subscribers; those subscribers are humans (or paging systems) on a rotation. The notification policy must integrate with the institution's existing on-call schedule. Who pages at 3am on a Tuesday? Who is the backup if the primary doesn't acknowledge within 5 minutes? What is the escalation path if neither the primary nor the backup acknowledges within 15 minutes? These are clinical operational policies that the architecture supports; they are not engineering decisions.
 
 **Staff interface design.** The triage UI is a substantial design effort that this recipe does not cover. The staff member needs: queue view with priority sorting and filter by role/intent; per-voicemail detail view with the audio player, transcript with entities highlighted, machine-classified intent and urgency, patient context summary, recent voicemail history; quick-action buttons for the common dispositions (called back, marked resolved, escalated to clinician, reclassified); reclassification capture for the disagreement dataset. The UI design and the reclassification workflow specifically are where the system either becomes a tool the staff uses with confidence or a tool they work around. Prototype with representative staff users before locking the design.
 
-**Multilingual support architecture.** The pipeline as described handles English. Adding Spanish (and other languages relevant to the practice's patient population) requires: language detection at the front of the pipeline; language-specific Transcribe Medical jobs; language-specific classifier prompts (the foundation model usually handles multilingual classification but the prompt and few-shot examples should be in the appropriate language); language-specific urgency lexicons (the Spanish urgency lexicon is not a translation of the English one; "me siento mal" carries different urgency weight than its English literal translation). Build the multi-language scaffolding even if you ship English-first; retrofitting is more expensive than designing for it.
+**Multilingual pipeline architecture.** The pipeline supports multiple languages as a first-class concern, not an afterthought. Per-language specifics: language-specific Transcribe Medical specialty selection (the specialty model may differ by language availability); language-specific classifier prompt routing (prompts and few-shot examples in the target language, with language-specific intent taxonomy variants where cultural context makes intent boundaries differ); language-specific urgency lexicons (clinically reviewed by bilingual clinical staff, not machine-translated from the English lexicon; "me siento muy mal del pecho" carries different urgency weight than its English literal translation); and mixed-language voicemail handling for callers who code-switch (detect dominant language, route to the dominant-language pipeline, but scan for secondary-language phrases that carry urgency signal). Build the multi-language scaffolding even if you ship English-first; retrofitting is more expensive than designing for it.
 
-**Disaster recovery and pipeline-unavailable handling.** If any pipeline stage is unavailable (Transcribe Medical regional outage, Bedrock service issue, DynamoDB partition exhaustion), the system should fall back to delivering the raw voicemail audio to the staff queue with a "automated triage unavailable, please review manually" flag. The voicemail box was reachable by humans before the pipeline existed; it must remain reachable by humans when the pipeline cannot run. Test the failover quarterly with synthetic outages. Failover-back triggers should be automated.
+**Disaster recovery topology.** Per-stage failover policy: ASR unavailable (Transcribe Medical regional outage or quota exhaustion) routes the audio directly to the staff queue without a transcript, with a "transcript unavailable" flag. Classifier unavailable routes the transcript to the staff queue without classification (the urgency-keyword rule layer, which runs locally in the Lambda with no external dependency, still fires). Entity extractor unavailable skips the entity-merge step and routes without structured entities. Enricher unavailable routes without patient context. Cross-region ASR failover: if the primary region's Transcribe Medical is unavailable, submit jobs to a secondary region (audio is already in S3; cross-region access is configured). Failover-detection automation monitors Transcribe Medical job-completion latency and error rates; failover-back triggers when the primary region's error rate drops below threshold for 10 consecutive minutes. Quarterly synthetic-outage tests validate each per-stage failover path. In degraded mode, the urgency-keyword rule layer still runs on whatever transcript is available (even a partial or low-confidence one), because the safety floor must operate even when the rest of the pipeline is impaired.
+
+**Voicemail-source ingestion egress topology.** Per-integration transport pattern: PrivateLink for vendor APIs that expose it (the preferred pattern for keeping traffic off the public internet); S3 cross-account push for AWS-resident voicemail sources (the source account pushes audio to the pipeline's ingestion bucket via cross-account IAM policy); SFTP-over-SSH-with-key-auth for legacy on-prem PBX systems that support SFTP export; IMAPS-with-strong-TLS-and-BAA-covered-carrier for voicemail-to-email services (poll the carrier's IMAP endpoint over TLS 1.2+, the carrier must be covered under the institution's BAA); HTTPS-with-strong-TLS for webhook-based integrations; NAT Gateway as the public-internet fallback for vendor APIs that do not expose PrivateLink. Each integration path terminates at the ingestor Lambda, which normalizes the metadata and persists the audio to the governed audio bucket regardless of the transport mechanism.
+
+**Equity-monitoring metric privacy.** Cohort-axis dimensions on operational metrics (the subgroup-stratified accuracy from the equity-monitoring discipline) use cohort-axis-hash labels rather than the underlying axis values. The hash is non-reversible by construction (SHA-256 of the cohort axis value salted with a per-environment secret), so the equity-monitoring analytics do not introduce minimum-necessary risk in metric dimensions. Analysts can compare cohort A's time-to-callback against cohort B's without knowing which cohort maps to which language or age group; only the equity-monitoring committee (with access to the hash-to-label mapping stored in Secrets Manager) can dereference the hashes to the underlying demographic values.
 
 **Continuous classifier improvement workflow.** Production transcripts surface intents the original taxonomy missed, voicemail patterns the classifier handles poorly, and urgency phrases the lexicon doesn't cover. The improvement workflow (review production transcripts and disagreement-capture data weekly, propose taxonomy and lexicon changes, test against a held-out evaluation set, deploy via versioned classifier prompts and lexicon versions, monitor for regressions) is a sustained engineering practice, not a launch task. Plan staffing accordingly.
 
-**Audit retention and access controls.** The audit log captures every action taken on every voicemail, including who listened, who called back, who reclassified. The retention policy must satisfy HIPAA, state-specific medical-records-retention rules, and the institution's own regulatory floor. Access to the audit log is on a need-to-know basis and is itself audited (CloudTrail on the audit log bucket).
+**Audit retention and access controls.** The audit log captures every action taken on every voicemail, including who listened, who called back, who reclassified. The retention policy must satisfy HIPAA, state-specific medical-records-retention rules, and the institution's own regulatory floor. The institutional retention policy is the canonical source for specific retention durations. Access to the audit log is on a need-to-know basis and is itself audited (CloudTrail on the audit log bucket).
 
 **Cost monitoring per-intent and per-urgency.** Different voicemails consume different amounts of pipeline cost (a 90-second emergent voicemail with full classification and entity extraction costs more than an 8-second pocket-dial that gets short-circuited by the pre-processor). The cost-attribution analytics let the operations team see which voicemail patterns are economically efficient to handle and which warrant further pipeline tuning. Build the dashboard.
 
