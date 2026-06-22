@@ -439,7 +439,13 @@ The pseudocode and architecture above demonstrate the pattern. A real deployment
 - [NCPDP SCRIPT Standard](https://www.ncpdp.org/Standards-Development/Standards-Information/SCRIPT-standard): The industry standard for electronic prescribing, useful context for understanding what structured prescription data looks like downstream
 - [Pharmacy Abbreviations Reference (USP)](https://www.usp.org): United States Pharmacopeia maintains authoritative references on pharmaceutical abbreviations and nomenclature
 
---- 
+## Estimated Implementation Time
+
+| Tier | Scope | Time |
+|------|-------|------|
+| Basic | Single-format label extraction with Textract FORMS, basic SIG abbreviation lookup table, Comprehend Medical entity extraction with RxNorm linking, Lambda orchestration, DynamoDB storage, no NDC validation or multi-format support | 2-4 weeks |
+| Production-ready | Multi-format label support (retail, mail-order, hospital), complete SIG normalization with dosing schedule parsing, NDC cross-validation against FDA database, confidence thresholds with pharmacist review queue, audit logging, error handling for partial extractions, API Gateway with authentication | 2-4 months |
+| With variations | Drug interaction checking via RxNav API, multi-language label support, refill tracking with temporal logic, integration with e-prescribing systems (NCPDP SCRIPT), real-time formulary coverage lookup | 2-3 months beyond production-ready |
 
 ---
 
