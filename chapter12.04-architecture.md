@@ -12,6 +12,8 @@ The AWS implementation is shaped by a single platform choice: Amazon HealthLake.
 
 **Amazon HealthLake for FHIR Observation storage.** Lab results are textbook FHIR Observation resources with LOINC codes, values, units, and reference ranges. [HealthLake](https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html) ingests HL7 v2 ORU messages and FHIR Observation resources, normalizes them into a queryable FHIR datastore, and exposes them through a FHIR API. It also handles the longitudinal patient timeline natively (each patient's entire result history is queryable as a FHIR bundle). For a lab trend pipeline, HealthLake is the right primary store because lab data is exactly the data shape it was built for.
 
+**EHR ingest path posture.** The on-premises EHR connects to the AWS VPC via Direct Connect or site-to-site VPN. The on-premises HL7 v2 listener writes to S3 through an S3 gateway endpoint, or to HealthLake's HL7 v2 ingest API through a VPC interface endpoint. For cloud-hosted EHRs, use AWS PrivateLink where the vendor offers it; otherwise HTTPS webhook with mutual TLS or signed-JWT auth and TLS 1.2 minimum, with the receiving Lambda or API Gateway deployed in the VPC. Public-internet-with-API-key alone is not appropriate for PHI-bearing inbound streams.
+
 **Amazon S3 for raw lab feeds and computed baselines.** Raw HL7 messages land in S3 first (so they are preserved even if HealthLake ingestion fails), and computed per-patient baselines, trend scores, and historical trend states land in S3 partitioned by patient and test. S3 is also the durable archive for trained models and clinical rule configurations.
 
 **AWS Glue for harmonization and aggregation.** Glue ETL jobs handle LOINC mapping, UCUM unit conversion, and the periodic per-patient baseline updates. The job runs on a schedule (nightly is typical for chronic-trend baselines) and writes its output back to S3 as the input for the trend detection step.
@@ -22,11 +24,15 @@ The AWS implementation is shaped by a single platform choice: Amazon HealthLake.
 
 **Amazon DynamoDB for clinician-facing surfaces.** The trends that pass the clinical relevance bar get written to DynamoDB keyed by patient and lab so the EHR-integrated CDS Hooks service or the inbox aggregator can fetch them with single-digit-millisecond latency. Trends are small records (a few hundred bytes), the access pattern is predictable, and DynamoDB is on the AWS HIPAA eligible services list.
 
-**AWS Step Functions for orchestration.** The nightly pipeline has multiple steps with retry semantics: harmonize the day's new results, recompute affected baselines, run trend detection, apply clinical rules, deliver surfaced trends. Step Functions orchestrates this with explicit error handling and is auditable for HIPAA workflows.
+**AWS Step Functions for orchestration.** The nightly pipeline has multiple steps with retry semantics: harmonize the day's new results, recompute affected baselines, run trend detection, apply clinical rules, deliver surfaced trends. Step Functions orchestrates this with explicit error handling and is auditable for HIPAA workflows. Each stage retries on `States.TaskFailed` up to 3 times with exponential backoff (initial interval 60s, multiplier 2.0, max 600s). On persistent failure, a `Catch` block routes the error context to a CloudWatch Logs group (PHI-scrubbed: only run_id, stage_name, error_type) and an SQS dead-letter queue for operator triage. On a missed nightly cycle, the final step writes a `stale` marker to DynamoDB so CDS Hooks consumers can render staleness ("trend data is from 48+ hours ago") rather than serving silently outdated surfaces. `BatchWriteItem` retries on `UnprocessedItems` are bounded to 5 attempts with a metric emitted on unprocessed count per batch. CloudWatch alarms fire when `pipeline_stage_failed > 0` in any 24-hour window (pages on-call) and when `consecutive_day_failures > 1` (escalates to the medical informatics director).
+
+**Amazon SQS for dead-letter queues.** Pipeline stages that fail persistently route their error context to an SQS DLQ. The DLQ is encrypted with the operational CMK (no PHI in the messages; they carry run_id, stage_name, and error codes only). A separate triage Lambda reads the DLQ daily and posts a summary to the engineering team's channel.
 
 **Amazon EventBridge for scheduling.** EventBridge Scheduler triggers the nightly chronic-trend pipeline. For more frequent pipelines (acute monitoring), EventBridge can trigger every few minutes off the lab result stream.
 
 **Amazon CloudWatch for monitoring and alarming.** Pipeline health, trend volume per lab, alert volume per clinician, and drift in baseline distributions all get logged to CloudWatch with alarms on anomalies. Alert volume per clinician is the most important operational metric because alert fatigue is the main failure mode.
+
+**Drift-detection and threshold-calibration pipeline.** A daily Lambda computes `surfaced_trends_per_clinician_per_day`, `surfaced_trends_per_lab_per_day`, and `suppressed_trends_per_lab_per_day` distributions and publishes them to CloudWatch. A weekly Lambda joins suppressed trends against subsequent surfaced trends and clinician feedback to produce per-LOINC threshold-calibration recommendations. Clinical-rule configurations live in a versioned DynamoDB-backed config table (not Lambda environment variables), so threshold adjustments deploy with a config-table write rather than a Lambda redeploy. CloudWatch alarms fire when `surfaced_trends_per_clinician_per_day` exceeds the configured ceiling (per the Honest Take's framing: anything above two per month is alarming; anything above eight per week should trigger an immediate threshold review).
 
 ### Architecture Diagram
 
@@ -36,6 +42,7 @@ flowchart LR
     B -->|Ingest| C[Amazon HealthLake<br/>FHIR Datastore]
     C -->|FHIR Query| D[Glue ETL<br/>Harmonization]
     D -->|LOINC+UCUM normalized| E[S3 Bucket<br/>harmonized/]
+    D -->|Unmapped tests| Q[SQS Queue<br/>quarantine]
     E -->|Glue ETL<br/>Baseline Job| F[S3 Bucket<br/>patient-baselines/]
     G[EventBridge Schedule<br/>nightly] -->|Trigger| H[Step Functions<br/>trend-pipeline]
     H -->|Invoke| I[SageMaker Endpoint<br/>per-lab trend detectors]
@@ -44,45 +51,52 @@ flowchart LR
     I -->|Trend scores| J[S3 Bucket<br/>trend-scores/]
     J -->|Lambda| K[Clinical Relevance<br/>Rule Engine]
     K -->|Surfaced trends| L[DynamoDB<br/>patient-trends]
-    L -->|Query| M[EHR CDS Hooks /<br/>Inbox / Dashboard]
+    K -->|Suppressed trends| S[S3 Bucket<br/>suppressed-trends/]
+    L -->|Query| M[API Gateway + Lambda<br/>CDS Hooks Responder]
+    M -->|CDS Hooks Cards| P[EHR CDS Client<br/>mTLS / signed-JWT]
+    L -->|Query| O[Inbox Aggregator /<br/>Population Dashboard]
+    H -->|Stage failures| DLQ[SQS DLQ<br/>PHI-scrubbed errors]
+    H -->|Missed cycle| STALE[DynamoDB stale marker]
     H -->|Errors / metrics| N[CloudWatch<br/>Alarms + SNS]
 
     style C fill:#ff9,stroke:#333
     style I fill:#9f9,stroke:#333
     style L fill:#9ff,stroke:#333
+    style DLQ fill:#f99,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon HealthLake, Amazon S3, AWS Glue, Amazon SageMaker, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon EventBridge, Amazon CloudWatch |
-| **IAM Permissions** | `healthlake:StartFHIRImportJob`, `healthlake:SearchWithGet`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `sagemaker:InvokeEndpoint`, `lambda:InvokeFunction`, `dynamodb:BatchWriteItem`, `dynamodb:Query`, `states:StartExecution`, `kms:Decrypt`, `kms:Encrypt` |
+| **AWS Services** | Amazon HealthLake, Amazon S3, AWS Glue, Amazon SageMaker, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon EventBridge, Amazon CloudWatch, Amazon SQS, AWS KMS, AWS CloudTrail |
+| **IAM Permissions** | Per-Lambda least-privilege execution roles scoped per data class. Each Lambda gets `kms:Decrypt` only for the CMK(s) covering data it reads, and `kms:GenerateDataKey` only for the CMK(s) covering data it writes. See the per-data-class CMK breakdown below. |
 | **BAA** | AWS BAA signed. Lab results are PHI in their entirety; every storage and compute service touching this pipeline must be on the [HIPAA eligible services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/) list. |
-| **Encryption** | S3: SSE-KMS with customer-managed CMKs; HealthLake: KMS-encrypted datastore at creation time; DynamoDB: encryption at rest enabled (default); SageMaker training and inference: encrypted EBS volumes and KMS-encrypted output; CloudWatch log groups: explicit KMS encryption. TLS 1.2 minimum in transit. |
-
-| **VPC** | Production: SageMaker training and inference in private subnets with VPC endpoints for S3, HealthLake, DynamoDB, KMS, and CloudWatch Logs. Required posture for HIPAA workloads with PHI. |
-
-| **CloudTrail** | Enabled for all data-plane services. Lab results are sensitive PHI; the audit trail of who accessed which patient's trend data is non-negotiable. |
-
+| **Encryption (per-data-class CMKs)** | Customer-managed KMS keys differentiated by data class for blast-radius containment: (1) **PHI-raw CMK** for raw lab feeds, harmonized data, patient baselines, and the HealthLake datastore; (2) **PHI-derived CMK** for trend scores and suppressed-trends buckets (PHI-by-association via patient_id); (3) **Operational CMK** for clinical-rule configurations, LOINC mapping tables, and the drift-detection config table (no PHI); (4) **Model CMK** for the model-artifacts bucket and SageMaker training output; (5) **Serving CMK** for the DynamoDB serving table (PHI); (6) **Logs CMK** for CloudWatch log groups. TLS 1.2 minimum in transit everywhere. |
+| **VPC** | Production: all compute in private subnets. Gateway endpoints (free) for S3 and DynamoDB. Interface endpoints (per-AZ cost) for HealthLake, SageMaker (API), SageMaker (Runtime), Step Functions, EventBridge, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, and Secrets Manager (where used for EHR-integration credentials). |
+| **CloudTrail** | CloudTrail data events enabled on every PHI-bearing S3 bucket (raw feeds, harmonized data, patient baselines, trend scores, suppressed trends), the DynamoDB serving table, all customer-managed KMS keys, and HealthLake (FHIR resource access logging). CloudTrail logs land in a dedicated S3 bucket with Object Lock in compliance mode and a lifecycle rule to S3 Glacier Deep Archive after 90 days. |
+| **Reference-data management** | LOINC, UCUM, Synthea, and MIMIC-IV reference-data downloads go through a controlled artifact-mirror: an internal S3 bucket populated by an audited download workflow rather than direct public-internet downloads from the development VPC. |
 | **Sample Data** | Synthetic FHIR Observation resources for development. The [Synthea](https://github.com/synthetichealth/synthea) project produces realistic synthetic patient records including longitudinal lab results with LOINC codes. The [MIMIC-IV](https://physionet.org/content/mimiciv/) database is a de-identified real-data option through PhysioNet credentialing. Never use real PHI in dev. |
-
-| **Cost Estimate** | HealthLake: ~$200-$600/month depending on data volume. SageMaker inference (small endpoint): ~$50/month. Glue ETL (nightly): ~$30/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$50/month combined. Total: ~$300-$1,500/month per panel-of-tests workload depending on patient population size and storage volume. |
+| **Cost Estimate** | The $300-$1,500/month range assumes a 10,000-50,000 patient cohort with 5-10 monitored LOINC codes (typical for a CKD-and-diabetes panel). A 100,000-patient deployment with 20-30 LOINC codes can reach $2,500-$5,000/month. Dominant cost drivers at scale are HealthLake storage and SageMaker inference. Breakdown: HealthLake ~$200-$600/month depending on data volume; SageMaker inference (small endpoint) ~$50/month; Glue ETL (nightly) ~$30/month; Lambda, DynamoDB, S3, Step Functions, EventBridge ~$50/month combined. VPC interface endpoints add ~$7-$15/month each per AZ. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
 | **Amazon HealthLake** | Stores FHIR Observation resources for all lab results; provides LOINC-aware FHIR API for longitudinal queries |
-| **Amazon S3** | Stores raw lab feeds, harmonized results, computed baselines, trend scores, model artifacts, and clinical rule configurations |
-| **AWS Glue** | Harmonization jobs (LOINC mapping, UCUM unit conversion); periodic per-patient baseline computation |
+| **Amazon S3** | Stores raw lab feeds, harmonized results, computed baselines, trend scores, suppressed-trend logs, model artifacts, clinical rule configurations, and the reference-data artifact mirror |
+| **AWS Glue** | Harmonization jobs (LOINC mapping, UCUM unit conversion); periodic per-patient baseline computation; daily harmonization-quality distribution checks |
 | **Amazon SageMaker** | Hosts per-lab trend detection endpoints (slope, change-point, state-space methods); offline training of population-level hierarchical models |
-| **AWS Lambda** | Clinical relevance rule engine; trend post-processing; CDS Hooks responder |
-| **Amazon DynamoDB** | Serves surfaced trends to EHR CDS Hooks, inbox aggregators, and population-health dashboards at low latency |
-| **AWS Step Functions** | Orchestrates the nightly pipeline (harmonize → baseline → detect → filter → deliver) with explicit retry and error handling |
-| **Amazon EventBridge** | Triggers the nightly chronic-trend pipeline and any acute-monitoring sub-pipelines on cron schedules |
-| **AWS KMS** | Manages customer-managed CMKs for S3, HealthLake, DynamoDB, and SageMaker encryption |
-| **Amazon CloudWatch** | Logs, metrics, alarms for pipeline failures, alert volume per clinician, and baseline drift |
+| **AWS Lambda** | Clinical relevance rule engine; trend post-processing; CDS Hooks responder; drift-detection daily/weekly computations; threshold-calibration pipeline |
+| **Amazon DynamoDB** | Serves surfaced trends to EHR CDS Hooks, inbox aggregators, and population-health dashboards at low latency; stores versioned clinical-rule configurations; stores stale markers on missed cycles |
+| **AWS Step Functions** | Orchestrates the nightly pipeline (harmonize, baseline, detect, filter, deliver) with per-stage retry (3x, exponential backoff), Catch-and-DLQ routing, and stale-marker writes |
+| **Amazon EventBridge** | Triggers the nightly chronic-trend pipeline and any acute-monitoring sub-pipelines on cron schedules; emits pipeline-completion events |
+| **Amazon SQS** | Dead-letter queues for persistent stage failures; quarantine queue for unmapped harmonization records |
+| **Amazon SNS** | Alarm routing to on-call; notifications to data-engineering team for harmonization failures |
+| **Amazon API Gateway** | Fronts the CDS Hooks responder Lambda with WAF, mutual TLS, and VPC integration |
+| **AWS KMS** | Manages per-data-class customer-managed CMKs for S3, HealthLake, DynamoDB, SageMaker, and CloudWatch Logs |
+| **AWS CloudTrail** | Data-event logging on all PHI-bearing resources with Object Lock compliance-mode retention |
+| **Amazon CloudWatch** | Logs, metrics, alarms for pipeline failures, alert volume per clinician, baseline drift, harmonization quality, and threshold-calibration recommendations |
 
 ### Code
 
@@ -124,7 +138,8 @@ FUNCTION harmonize_lab_result(raw_result):
         loinc_code:        canonical_loinc,
         value:             canonical_value,
         unit:              canonical_unit,
-        collection_ts:     raw_result.collection_ts,
+        collection_ts:     to_utc_instant(raw_result.collection_ts),  // UTC instant for all temporal ordering
+        source_local_ts:   raw_result.collection_ts,                  // preserve source-system local time for display
         source_system:     raw_result.source_system_id,
         source_lab:        raw_result.lab_id,
         source_method:     raw_result.method_or_analyzer,
@@ -132,6 +147,12 @@ FUNCTION harmonize_lab_result(raw_result):
         source_ref_high:   convert_units(raw_result.ref_high, raw_result.unit, canonical_unit, canonical_loinc),
         encounter_context: raw_result.encounter_class    // ambulatory, inpatient, emergency, etc.
     }
+    // Time-zone discipline: collection_ts is always a UTC instant.
+    // All temporal ordering, baseline-window computation, and trend-
+    // duration calculation use the UTC instant. The source_local_ts
+    // field preserves the lab's local time for display purposes only.
+    // This avoids ordering bugs in multi-site health systems where
+    // labs are collected across time zones.
 
     // Tag acute vs. chronic context. Inpatient and emergency results are
     // tagged acute and excluded from chronic-trend baselines. Ambulatory
@@ -148,14 +169,37 @@ FUNCTION harmonize_lab_result(raw_result):
 
 **Step 2: Maintain per-patient baselines.** For each (patient, LOINC code) pair, the pipeline keeps a rolling baseline computed only from chronic-context measurements over a configurable window (12 months is a strong default for most chronic labs). The baseline is updated whenever a new chronic-context value arrives. Acute-context values are intentionally excluded; including a patient's hospitalization labs in their outpatient creatinine baseline produces unstable comparisons.
 
+**Baseline-reset events** are a first-class architectural primitive. A maintained baseline-reset event feed sources medication starts, therapy transitions, major procedures, and new diagnoses from the EHR's medication, problem, and procedure feeds (ingested as FHIR MedicationRequest, Condition, and Procedure resources into HealthLake). When computing the baseline for a (patient, LOINC) pair, the system excludes values prior to the most recent applicable reset event for that pair, falling back to `insufficient_history` during the post-reset stabilization window (configurable per LOINC, typically 30-90 days). A scheduled change-point detection backstop (Bayesian online change-point or PELT, running weekly) emits candidate reset events when a statistically significant level shift is detected that no explicit clinical event explains. The DynamoDB baseline record carries a `baseline_reset_events` metadata array (event type, event date, source). A CloudWatch metric on `baseline_resets_per_patient_per_year` with anomaly alarms catches pathological churn in baseline definitions.
+
 ```text
 FUNCTION update_patient_baseline(patient_id, loinc_code, baseline_window_months = 12):
+    // Check for baseline-reset events that narrow the effective window.
+    reset_events = query_baseline_reset_events(patient_id, loinc_code)
+    effective_window_start = now() - baseline_window_months
+    IF reset_events is not empty:
+        most_recent_reset = max(reset_events, by = event_date)
+        stabilization_days = lookup_stabilization_window(loinc_code)
+        effective_window_start = most_recent_reset.event_date + stabilization_days
+        IF effective_window_start > now():
+            // Still in the post-reset stabilization window.
+            baseline = {
+                patient_id:    patient_id,
+                loinc_code:    loinc_code,
+                status:        "insufficient_history",
+                reason:        "post_reset_stabilization",
+                reset_event:   most_recent_reset,
+                updated_ts:    now()
+            }
+            write baseline to S3 patient-baselines/
+            RETURN baseline
     // Pull the chronic-context history for this (patient, lab) over the window.
+    // The window start is the later of (now - baseline_window_months) or
+    // (most_recent_reset_event_date + stabilization_days).
     history = query_harmonized_results(
         patient_id        = patient_id,
         loinc_code        = loinc_code,
         context_tag       = "chronic",
-        from_ts           = now() - baseline_window_months
+        from_ts           = effective_window_start
     )
 
     // Need a minimum number of values for the baseline to be trustworthy.
@@ -187,6 +231,7 @@ FUNCTION update_patient_baseline(patient_id, loinc_code, baseline_window_months 
         sample_count:         count(history),
         window_start_ts:      min(history.collection_ts),
         window_end_ts:        max(history.collection_ts),
+        baseline_reset_events: reset_events,    // audit trail of events that bounded the window
         updated_ts:           now()
     }
 
@@ -286,6 +331,13 @@ FUNCTION apply_clinical_relevance(trend):
             recent_values:        last 6 chronic-context values for this (patient, lab),
             lab_reference_range:  most_recent_lab_ref_range,
             explanation_text:     compose_clinician_explanation(trend, rules),
+            // The explanation_text field is the architectural primitive that satisfies the
+            // 21st Century Cures Act CDS-exemption transparency-and-explainability requirement.
+            // The clinician must be able to independently review the basis for the surfaced trend
+            // (slope, duration, recent values, baseline, lab's reference range), which the
+            // explanation_text and recent_values payload deliver. This construction is
+            // deterministic pseudocode rather than LLM-generated; an LLM-generated explanation
+            // that hallucinates the underlying numbers is a regulatory exposure.
             severity_band:        compute_severity_band(trend, rules),  // info / advisory / urgent
             generated_at_ts:      now(),
             model_version:        rules.version + ":" + trend.detector_used
@@ -296,6 +348,10 @@ FUNCTION apply_clinical_relevance(trend):
 ```
 
 **Step 5: Deliver surfaced trends to clinical consumers.** Surfaced trends get written to DynamoDB keyed by patient and lab so the EHR-integrated CDS Hooks service, the inbox aggregator, or any other consumer can fetch them at low latency. Suppressed trends are logged but not delivered. The historical record of suppressed trends is valuable for tuning the clinical rules over time.
+
+**Idempotency contract.** The `generated_at_ts` is computed once at the pipeline-start step and propagated through Step Functions state (not recomputed per Lambda invocation). Each (patient_id, loinc_code) pair has a `CURRENT#<loinc_code>` sort-key record pointing to the latest surfaced trend, written with a conditional expression: `attribute_not_exists(generated_at_ts) OR generated_at_ts < :new_generated_at_ts`. This guarantees that a rerun with the same or older timestamp is a no-op. The EventBridge trigger uses a `pipeline_run_id` derived from the schedule invocation ID, so at-least-once delivery produces idempotent runs. `BatchWriteItem` retry on `UnprocessedItems` is bounded to 5 retries with a metric emitted on unprocessed count. Backfill writes from baseline-reset reconciliation use a `revision` attribute and the same CURRENT conditional-write logic. Suppressed-trends S3 writes are keyed by `(date, patient_id, loinc_code, pipeline_run_id)` so reruns overwrite cleanly.
+
+**PHI posture at this boundary.** The surfaced-trend payload is PHI in the strongest sense: patient identifier plus dated lab values plus clinical interpretation. Every downstream consumer (CDS Hooks responder, inbox aggregator, population-health dashboard) inherits the PHI posture and must be either a HIPAA-eligible AWS service or a BAA-covered first-party application. The boundary at the DynamoDB serving table is not a PHI-to-non-PHI transition.
 
 ```text
 FUNCTION deliver_trends(relevance_results, table_name):
@@ -309,7 +365,16 @@ FUNCTION deliver_trends(relevance_results, table_name):
             partition_key = patient_id
             sort_key      = loinc_code + "#" + generated_at_ts
             attributes    = full payload object
-        retry unprocessed items with exponential backoff
+        retry unprocessed items with exponential backoff (max 5 attempts)
+        emit metric on unprocessed count if retries exhausted
+
+    // CURRENT pointer per (patient_id, loinc_code) for fast latest-trend lookup.
+    FOR each payload in surfaced:
+        conditional_write to DynamoDB table_name with:
+            partition_key = patient_id
+            sort_key      = "CURRENT#" + loinc_code
+            condition     = attribute_not_exists(generated_at_ts) OR generated_at_ts < :new_ts
+            attributes    = full payload object
 
     // Suppressed trends go to S3 for analysis and rule tuning.
     write suppressed to S3 suppressed-trends/ partitioned by date
@@ -359,7 +424,7 @@ FUNCTION deliver_trends(relevance_results, table_name):
 }
 ```
 
-**Performance benchmarks:**
+**Performance benchmarks (typical figures for production lab trend systems running on chronic-disease panels):**
 
 | Metric | Typical Value |
 |--------|---------------|
@@ -378,21 +443,21 @@ FUNCTION deliver_trends(relevance_results, table_name):
 
 The pseudocode and architecture above demonstrate the pattern. Deploying this to a real population requires addressing several gaps that are intentionally outside the scope of a cookbook recipe.
 
-**Medication and intervention awareness.** A patient whose creatinine is climbing because they were started on an ACE inhibitor for blood pressure control is on an expected trajectory, not a concerning one. A pipeline that does not know about the medication change will produce a high-quality false positive. Production systems integrate medication history and clinical interventions either as features in the trend model (treat the intervention as a known regime change point) or as a post-detection filter (suppress trends temporally adjacent to relevant interventions). This is the single most important refinement after the basic pipeline works.
+**Medication and intervention awareness (architectural primitive).** A patient whose creatinine is climbing because they were started on an ACE inhibitor for blood pressure control is on an expected trajectory, not a concerning one. Production systems implement this as a first-class architectural step: (1) a maintained feed from EHR medication and procedure systems, ingested via FHIR MedicationRequest and Procedure resources into HealthLake; (2) a per-LOINC configuration that maps LOINC codes to relevant medications and procedures (e.g., creatinine to ACE inhibitor, ARB, contrast agent; hemoglobin to ESA, iron supplementation, transfusion); (3) the trend-detection step optionally takes the medication-and-intervention context as a feature input (treating the intervention as a known regime change point); (4) the clinical-relevance step optionally suppresses or down-weights trends temporally adjacent to a relevant medication start or procedure; (5) the surfaced-trend payload includes the medication-and-intervention context that was considered, so the clinician sees the system is aware of (for example) the ACE inhibitor start three months ago. Per the recipe's own framing, this is the single most important production refinement after the basic pipeline works.
+
+**Panel-level aggregation (optional architectural step).** An optional Lambda between the per-LOINC clinical-relevance step and the clinical-consumers delivery consumes per-LOINC surfaced trends, groups them by clinically-defined panels (kidney function = creatinine + eGFR + BUN + electrolytes; liver function = AST + ALT + ALP + bilirubin), and applies panel-level rules (e.g., "kidney panel declining" as a single integrated surface rather than three separate lab surfaces). This step defaults off in the basic pipeline and can be enabled per panel as the deployment matures. It dramatically reduces alert volume while increasing clinical relevance.
+
+**CDS Hooks responder (architectural component).** For in-workflow CDS, the architecture includes an API Gateway + Lambda pair, both VPC-deployed and behind WAF, wired to the DynamoDB serving table. The Lambda implements the [CDS Hooks specification](https://cds-hooks.org/), queries DynamoDB by patient_id on the `patient-view` hook, formats the surfaced trends as CDS Hooks cards with appropriate severity-band styling, and returns them to the EHR. The EHR's CDS Hooks client connects to the API Gateway endpoint over a HIPAA-eligible mutual-TLS or signed-JWT channel.
+
+**Baseline reset events.** Some clinical events legitimately reset the patient's baseline: starting a new chronic medication, transitioning between therapy lines, a major surgery, a new diagnosis. The architecture in Step 2 above implements the explicit baseline-reset event feed, the post-reset stabilization window, and the change-point backstop. Without this, a patient's old baseline produces misleading "trends" that are really regime changes the system should have known about.
+
+**Harmonization quality assurance (architectural primitive).** (1) An unmapped-tests SQS queue and S3 quarantine bucket where harmonization failures land for manual review, with an SNS topic to the data-engineering team. (2) A daily Glue job that computes per-LOINC value-distribution statistics (mean, median, IQR, fraction outside the lab's reference range) and compares them against a rolling baseline. (3) CloudWatch alarms on per-LOINC distribution shift exceeding a configured threshold. (4) A backfill workflow that, when a harmonization fix is deployed, re-runs harmonization on affected historical records and triggers downstream baseline and trend recomputation with a `revision` attribute for audit trail.
 
 **Multi-lab joint reasoning.** Some trends matter much more in combination than in isolation. A rising creatinine plus a falling hemoglobin plus an unchanged platelet count is a different story than any one of those alone (it suggests CKD progression with anemia of chronic disease). A pipeline that surfaces each trend independently asks the clinician to integrate. A more sophisticated pipeline runs panel-level rules that look for combinations and surfaces the integrated finding. This is where Recipe 7.x (predictive analytics) starts to overlap.
 
 **Clinician feedback capture.** Every surfaced trend should have a feedback path: was this useful? Did you take action? If the clinician dismisses a particular type of alert ten times in a row, the rule layer should learn that the threshold is too sensitive for that LOINC code at that magnitude. Without feedback capture, the system stays calibrated to its launch-day rules forever and slowly accumulates a noise reputation.
 
-**EHR integration via CDS Hooks or FHIR Subscriptions.** The DynamoDB-backed surface is fine for an inbox aggregator or a population-health dashboard. For in-workflow CDS, you need a FHIR-native interface: [CDS Hooks](https://cds-hooks.org/) firing during chart open, or a FHIR Subscription that pushes relevant patient surfaces. The integration work is neither hard nor cheap and is highly EHR-vendor-specific.
-
 **Patient-pool segmentation.** A population health team responsible for diabetes management wants the diabetes-relevant trends surfaced. A nephrologist's panel wants kidney-function trends. A primary care doctor wants the integrated view across their assigned patients. Routing surfaced trends to the right consumer based on patient panel and trend type is its own engineering exercise that grows in importance as the system gets used.
-
-**Baseline reset events.** Some clinical events legitimately reset the patient's baseline: starting a new chronic medication, transitioning between therapy lines, a major surgery, a new diagnosis. Production systems either track these explicitly (event-driven baseline resets) or detect them via change-point analysis and reset the baseline at the detected change point. Without this, a patient's old baseline can produce misleading "trends" that are really just regime changes the system should have known about.
-
-**Lab harmonization quality assurance.** The harmonization layer (LOINC mapping, UCUM unit conversion, method/analyzer awareness) is the single biggest source of subtle bugs in the pipeline. Production systems run continuous quality checks on the harmonized data: distribution shifts in a LOINC code over time, sudden changes in unit distribution, new source codes appearing without a mapping. Catching a harmonization error in week three is two weeks of bad trends; catching it in month three is a much bigger cleanup.
-
-**Idempotency and rerun safety.** The nightly pipeline can fail and need to be rerun. Each step needs to be safe to repeat: harmonization is idempotent on (patient, source_code, collection_ts); baseline computation is deterministic given the input; trend detection is deterministic given the inputs; DynamoDB writes overwrite cleanly by primary key.
 
 **Regulatory framing.** Lab trend analysis that triggers actionable clinical decisions sits in a gray zone of FDA software-as-a-medical-device (SaMD) regulation. A pipeline that surfaces "your patient's creatinine is rising; consider nephrology referral" can be characterized as clinical decision support, which is largely exempt from FDA premarket review under the 21st Century Cures Act if it meets specific transparency and explainability requirements. A pipeline that says "diagnose CKD progression" is not exempt. Working with regulatory counsel on the framing of the surfaced output is non-negotiable for any deployment that goes beyond a research pilot.
 

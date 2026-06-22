@@ -87,7 +87,7 @@ At a conceptual level, the pipeline looks like this:
 
 **Clinical Relevance.** A configurable rule layer per LOINC code applies clinical thresholds: minimum slope magnitude, minimum trajectory duration, minimum deviation from baseline, direction (some labs are concerning when rising, some when falling, some both ways). Trends that pass the clinical relevance bar are surfaced; trends that do not are logged but suppressed.
 
-**Clinical Consumers.** Surfaced trends flow to consumers: the clinician's inbox, a population-health dashboard, a care coordinator's worklist, or a CDS Hooks endpoint that fires during chart open. Each surfaced trend includes the magnitude, the duration, the recent values, the patient's baseline, the lab's reference range, and a plain-language explanation.
+**Clinical Consumers.** Surfaced trends flow to consumers: the clinician's inbox, a population-health dashboard, a care coordinator's worklist, or a CDS Hooks endpoint that fires during chart open. Each surfaced trend includes the magnitude, the duration, the recent values, the patient's baseline, the lab's reference range, and a plain-language explanation. Note that the surfaced-trend payload is PHI in the strongest sense (patient identifier plus dated lab values plus clinical interpretation); every downstream consumer inherits the PHI posture and must be a HIPAA-eligible service or a BAA-covered first-party application.
 
 That is the whole concept. Stream, harmonize, baseline, detect, filter, deliver. The hard parts are in the harmonization (Layer 1) and the clinical relevance scoring (Layer 4), not in the trend math.
 
