@@ -107,7 +107,7 @@ CHASE_BRIEF_MODEL_ID         = "anthropic.claude-3-5-haiku-20241022-v1:0"
 # probabilities are per-pathway (a pharmacy nudge's signature is not
 # the same as a specialist referral's signature).
 URGENCY_MODEL_NAMES = {
-    "hedis-cdc-eye-exam":              "urgency-eye-exam-v3",
+    "hedis-eed":                       "urgency-eye-exam-v3",
     "hedis-cdc-foot-exam":             "urgency-foot-exam-v2",
     "uspstf-colorectal-screening":     "urgency-colorectal-v4",
     "cdc-pneumococcal-65plus":         "urgency-pneumococcal-v2",
@@ -254,9 +254,9 @@ A small measure registry used by the example. Production loads from the `measure
 # of this type.
 SAMPLE_MEASURE_REGISTRY = [
     {
-        "measure_id":            "hedis-cdc-eye-exam",
+        "measure_id":            "hedis-eed",
         "version":               "2026-v1",
-        "display_name":          "HEDIS CDC Eye Exam (Diabetic Retinal)",
+        "display_name":          "HEDIS Eye Exam for Patients with Diabetes (EED)",
         "denominator_logic": {
             "age_min":                  18,
             "age_max":                  75,
@@ -1293,7 +1293,7 @@ def _score_clinical_urgency(patient: dict, gap: dict, measure: dict) -> float:
 
     # Comorbidity load: a patient with multiple complications has
     # higher urgency on diabetes-related gaps.
-    if measure_id in {"hedis-cdc-eye-exam", "hedis-cdc-foot-exam"}:
+    if measure_id in {"hedis-eed", "hedis-cdc-foot-exam"}:
         a1c = lab_trends.get("a1c_recent")
         if a1c and a1c >= 8.0:
             urgency = min(1.0, urgency + 0.15)
@@ -2151,7 +2151,7 @@ def _dispatch_pcp_inbox(row: dict, patient: dict, measure: dict) -> dict:
 def _suggest_specialty_for_measure(measure: dict) -> str:
     """Mapping of measure to suggested specialty for referral."""
     return {
-        "hedis-cdc-eye-exam":           "ophthalmology_optometry",
+        "hedis-eed":                    "ophthalmology_optometry",
         "uspstf-colorectal-screening":  "gastroenterology",
     }.get(measure["measure_id"], "primary_care")
 

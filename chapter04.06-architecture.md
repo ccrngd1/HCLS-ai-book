@@ -301,7 +301,29 @@ FUNCTION evaluate_measures(patients, run_date):
         //                 suggested_evidence_to_check,
         //                 confidence, supporting_chart_excerpts }, ... ]
         validate_candidate_gaps(candidates, patient_id, observed_data = chart_context)
-            // 
+            // Four-layer validation:
+            // (1) Schema and taxonomy: each candidate must have all
+            //     required fields (candidate_gap_label, rationale,
+            //     suggested_evidence_to_check) and gap_label must be
+            //     in the known gap taxonomy or flagged as novel.
+            // (2) Rationale length and structure: rationale must be
+            //     50-500 words, written in clinical language, with at
+            //     least one cited data point.
+            // (3) Evidence grounding: every clinical data point cited
+            //     in the rationale must appear in observed_data with
+            //     values that match within tolerance (e.g., "A1c 7.8"
+            //     in rationale matches observed A1c within +/- 0.2).
+            //     The LLM cannot invent lab values or diagnoses.
+            // (4) Prohibited content: rationale must not contain PHI
+            //     absent from the source context (no hallucinated
+            //     identifiers, addresses, SSNs), must not name
+            //     prescribers by name (only by role), and must not
+            //     include treatment recommendations (only gap
+            //     identification).
+            // Failure handling: any candidate that fails validation
+            // is dropped from the review queue. Failures are logged
+            // with (patient_id, candidate_gap_label, failed_layer,
+            // failure_reason) for prompt-engineering review.
 
         FOR each candidate in candidates.passing_validation:
             DynamoDB.PutItem("clinical-informatics-review-queue", {
@@ -375,6 +397,17 @@ FUNCTION enrich_open_gaps(patient_gaps_today, run_date):
     // window urgency. This is documented policy, version-controlled.
     FOR each gap in open_gaps:
         urgency = read_urgency_score(gap, run_date)
+
+        // Data-quality gate: dampen urgency confidence when source
+        // completeness is unreliable. A confident urgency score on a
+        // patient with fragmentary data is overconfidence.
+        IF gap.data_quality_flag != "complete":
+            urgency.confidence = urgency.confidence * DATA_QUALITY_DAMPENING[gap.data_quality_flag]
+            // dampening factors: sparse_history = 0.7,
+            // multi_source_disagreement = 0.5,
+            // recent_plan_change = 0.6,
+            // cross_provider_fragmentation = 0.4
+
         per_pathway = read_engagement_scores(gap, run_date)
             // dict: pathway -> { engagement_prob, closure_prob }
             // closure_prob = engagement_prob × pathway-specific
@@ -473,6 +506,13 @@ FUNCTION rank_visit_agendas(next_day_schedule, run_date):
         // The visit-fit filter ranks pathways for this specific encounter.
         ranked_for_visit = []
         FOR each gap in patient_open_gaps:
+            // Data-quality gate: suppress low-quality gaps from the
+            // in-visit agenda. Surfacing a "gap" that might already be
+            // closed at a non-network provider wastes limited visit time.
+            IF gap.data_quality_flag IN ("cross_provider_fragmentation",
+                                          "multi_source_disagreement"):
+                CONTINUE  // route to verification-first pathway in Step 4
+
             visit_fit = compute_visit_fit(gap, visit_type, visit_minutes,
                                             provider, encounter.acute_context)
             // visit_fit components:
@@ -544,7 +584,29 @@ FUNCTION rank_visit_agendas(next_day_schedule, run_date):
             //   confidence_notes }
 
         validate_briefing(briefing_parsed, observed_agenda = in_visit_agenda)
-            // 
+            // Four-layer validation:
+            // (1) Schema and length: briefing must have all required
+            //     fields (headline, suggested_focus, agenda_summary,
+            //     deferred_items_summary); total length under 600 words.
+            // (2) Agenda grounding: every gap referenced in the briefing
+            //     as an in-visit item must appear in observed_agenda
+            //     (the LLM cannot hallucinate gaps not on the
+            //     deterministic agenda). Deferred-items references must
+            //     come from the async_queue.
+            // (3) Prohibited content: no PHI not present in the source
+            //     context; no prescriber names other than the visit
+            //     provider's; no suggestions that override or reorder
+            //     the deterministic ranker's choices (the briefing
+            //     summarizes, it does not second-guess).
+            // (4) Required disclaimers: briefing must include "subject
+            //     to clinical judgment" or equivalent phrasing; briefings
+            //     are advisory, not prescriptive.
+            // Failure handling: if validation fails, the LLM briefing is
+            // replaced with a templated fallback that lists the
+            // in_visit_agenda items without LLM narration (measure label,
+            // estimated minutes, priority score). The failure is logged
+            // with (briefing_id, failed_layer, failure_reason) for
+            // prompt-engineering review.
 
         DynamoDB.PutItem("clinician-briefings", {
             briefing_id:      build_briefing_id(encounter, run_date),
@@ -615,7 +677,28 @@ FUNCTION orchestrate_async_closures(visit_agendas, enriched_gaps_today, run_date
         member = lookup_member(candidate.patient_id)
         chosen_pathway = candidate.best_pathway
 
-        // 
+        // Fall-through: if best_pathway is "in_visit" but the patient
+        // has no upcoming visit within the visit-context-ranker horizon,
+        // the gap cannot be surfaced at a visit. Fall through to the
+        // second-best pathway. The visit-context ranker is the only
+        // place in_visit gaps should be surfaced; the async orchestrator
+        // should never hold onto an in_visit allocation with no visit
+        // to attach it to.
+        IF chosen_pathway == "in_visit" AND candidate.patient_id NOT IN visited_or_planned:
+            chosen_pathway = second_best_pathway(candidate)
+            IF chosen_pathway is null:
+                CONTINUE
+
+        // Data-quality gate: route low-quality cases to a verification-
+        // first pathway before any closure-specific outreach. Don't
+        // launch a reminder cascade for a gap that might already be
+        // closed at a non-network provider.
+        IF candidate.data_quality_flag IN ("cross_provider_fragmentation",
+                                            "multi_source_disagreement"):
+            chosen_pathway = "verification_first"
+            // The verification-first pathway: a brief outreach (call
+            // or message) that asks the patient to confirm status
+            // before proceeding with gap-closure-specific actions.
 
         // Per-pathway capacity.
         IF capacity_remaining[chosen_pathway] <= 0:
@@ -752,6 +835,27 @@ FUNCTION orchestrate_async_closures(visit_agendas, enriched_gaps_today, run_date
                 values = { ":one": 1 }
             )
 
+    // Step 4C: outreach-failure reconciliation. The optimistic
+    // increment above happens before send confirmation. Handle
+    // failure and bounce events that arrive asynchronously:
+    //
+    // On event_type == "gap_outreach_failed" or "gap_outreach_bounced":
+    //   decrement outreach_recent_total_30d_count for the patient
+    //   (with ConditionExpression preventing negative values).
+    //   Log the failure with (tracking_id, failure_reason, channel).
+    //
+    // Stale-pending sweep (runs hourly via EventBridge):
+    //   query recommendation-log for tracking_ids dispatched > 24 hours
+    //   ago with no corresponding engagement-stream event. These are
+    //   missing-handoff candidates: either the vendor dropped the
+    //   message or the engagement event was lost. Decrement the
+    //   patient's counter, emit a "stale_pending_outreach" metric,
+    //   and flag for operations review.
+    //
+    // This is critical for cross-recipe coordination: a phantom
+    // contact recorded here suppresses outreach for the patient in
+    // Recipes 4.4, 4.5, and 4.7 via the shared global counter.
+
         Kinesis.PutRecord(stream = "closure-and-engagement-stream", record = {
             event_type:        "gap_surfaced_for_outreach",
             tracking_id:       build_tracking_id(row, run_date),
@@ -860,6 +964,8 @@ FUNCTION process_closure_event(event):
                     })
 ```
 
+**A note on event ordering and replay.** The per-event state mutation in Step 5B is the simplified view. In production, events arrive out of order, sources issue retroactive corrections, late-arriving exclusions can override prior closures, and some sources periodically restate their full history. The durable pattern is event-replay: events are stored in a per-(patient, gap) event log ordered by `event.timestamp`; current state is computed by replaying the log under the canonical-source rules from the registry. New events trigger replay rather than mutating state directly. This guarantees that out-of-order arrivals produce the same final state regardless of receipt order, retroactive corrections work via superseding markers on prior events, late-arriving exclusions can override prior closures, and duplicate events are no-ops (same event replayed twice produces identical state). The replay cost is small in practice because most gaps have fewer than 10 events in their lifetime. The DynamoDB `state_history` attribute serves as this event log; the `state` attribute is the materialized view from replay.
+
 **Step 6: Handle clinician overrides as structured signals.** When a clinician dismisses a high-priority gap with a reason, the override is gold-label data. It informs both immediate suppression (don't keep surfacing this gap on this patient's agenda for some interval) and longer-horizon model retraining (the urgency model should down-weight this pattern in similar contexts). Skip the structured override capture and you either keep nagging the clinician about gaps they've already handled, or you lose the signal entirely.
 
 ```
@@ -869,14 +975,22 @@ FUNCTION process_clinician_override(event):
         LOG("override event with no matched briefing: " + str(event))
         RETURN
 
-    // 
-    // IF event.patient_id != rec.patient_id OR
-    //    event.measure_id != rec.measure_id:
-    //     LOG("override event identity mismatch with briefing; dropping",
-    //         event_patient = event.patient_id,
-    //         briefing_patient = rec.patient_id)
-    //     emit_metric("override_identity_mismatch", value = 1)
-    //     RETURN
+    // Identity-boundary check. An override event arriving with
+    // mismatched (event.patient_id, event.measure_id) versus the
+    // briefing's (rec.patient_id, rec.measure_id) should be dropped,
+    // not written to the override audit trail under the event's
+    // claimed patient_id. Three downstream effects depend on this:
+    // clinician-overrides is part of the audit trail; apply_suppression
+    // denies outreach for 30-180 days; update_training_label feeds
+    // the urgency-model retrain pipeline. A patient_id mismatch
+    // contaminates all three.
+    IF event.patient_id != rec.patient_id OR
+       event.measure_id != rec.measure_id:
+        LOG("override event identity mismatch with briefing; dropping",
+            event_patient = event.patient_id,
+            briefing_patient = rec.patient_id)
+        emit_metric("override_identity_mismatch", value = 1)
+        RETURN
 
     // Validate the override reason against the allowed taxonomy.
     allowed_reasons = ["appropriate_decline",
@@ -952,7 +1066,7 @@ FUNCTION process_clinician_override(event):
 ```json
 {
   "patient_id": "pat-000482",
-  "measure_id": "hedis-cdc-eye-exam",
+  "measure_id": "hedis-eed",
   "measure_version": "2026-v1",
   "state": "open",
   "state_history": [
@@ -1106,6 +1220,18 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Clinical-urgency model training data.** The urgency models work best when trained against longitudinal outcome data. For some gaps (vaccinations, screenings) the outcome that the urgency model is trying to estimate is rare in any individual year and requires multi-year longitudinal data to estimate well. For others (chronic disease monitoring like UACR or A1c), the outcome is common but defining the right outcome variable is non-trivial. Plan for 6 to 12 months of training data preparation per measure family, with explicit handling of confounding (the patients who close their gaps differ from the patients who don't, and the urgency model's training pipeline must adjust for that confounding or the urgency estimates will be systematically biased upward for non-engaged patients).
 
+**Model retrain trigger and promotion path.** The architecture diagram shows "periodic retrain" without specifying the trigger or promotion mechanism. Use the same pattern as Recipes 4.4 and 4.5: an EventBridge schedule (monthly cadence for each model family) triggers a SageMaker Training job; alternatively, a CloudWatch metric threshold on cohort-sliced prediction-vs-actual drift triggers an ad hoc retrain. Promotion path: trained model registers in SageMaker Model Registry as a candidate; a canary run evaluates the candidate against the current production model on a holdout sample (compare AUROC, calibration error, and cohort-fairness metrics); if the candidate passes, it promotes to the production stage in the Model Registry; the next Batch Transform run picks up the new model. A failed canary logs an alert and leaves the prior model in production.
+
+**Tracking IDs must not leak PHI.** The `build_tracking_id` function in the pseudocode suggests string-concatenation of patient_id, measure_id, and run_date. In production, tracking IDs are carried in email open-tracking pixels, SMS click-through links, EHR inbox URLs, and vendor-shared queue messages. Plain-text patient_ids and provider_ids embedded in tracking IDs are PHI leakage. Replace with opaque, non-reversible identifiers: either a UUID (generated per recommendation event and mapped back via the recommendation-log table) or HMAC-SHA256 over the composite key with a per-environment secret. The recommendation-log table preserves the mapping; nothing outside the HIPAA-boundary data store should be able to reconstruct the patient_id from the tracking_id. Update the Expected Results samples accordingly (the sample `tracking_id` values shown are illustrative of the opaque format, not the concatenation pattern).
+
+**Cross-recipe priority arbitration.** When Recipes 4.4, 4.5, 4.6, and 4.7 all want to message the same patient and the global contact-frequency cap allows only one, a priority arbitration policy determines which recipe wins. Default proposal: each recipe's recommendation carries a normalized priority score; the cross-recipe orchestrator picks the highest weighted priority across recipes with a clinical-urgency tiebreaker. Explicit constraint: the operationally-attractive recipes (4.5 adherence reminders near pharmacy refill windows, 4.6 quality-measure-driven gaps near window close) cannot crowd out the high-clinical-urgency cohorts from 4.4 (DPP for newly diagnosed diabetes) or 4.6 (rising eGFR with no CKD conversation). The cross-recipe orchestration is version-controlled, reviewed by the same committee that reviews the priority synthesis weights, and logged in the recommendation-log with `cross_recipe_arbitration_result` for post-hoc audit. Reference the cross-recipe coordination discussed in 4.4 and 4.5.
+
+**Patient-facing message validator specification.** The `validate_clinical_message` and `validate_chase_brief` calls in Step 4 implement a four-layer validator: (1) schema and length (message within character limits, required fields present); (2) required disclosures and identifications (plan-sponsorship identification where required by state, opt-out language, sender identity); (3) prohibited-claims regex and blocklist (no unapproved clinical claims, no off-label drug mentions, no diagnostic conclusions the care gap itself does not support); (4) approved-claims-only check against a per-measure approved-claims artifact maintained by compliance. Failure handling: schema or length failures fall back to a templated default message; clinical-claim or prohibited-claims failures defer the outreach with reason `validator_failed:<reason>` and flag for human review. The per-measure approved-claims artifact is governance-owned and reviewed quarterly. Reference the parallel governance discussion in Recipes 4.4 and 4.5.
+
+**SDOH-cohort PHI boundary in engagement events.** The `cohort_features` attribute carried in engagement and allocation events contains labels like `transportation_barrier` and `low_food_security`. These are PHI-equivalent under the minimum-necessary principle: they reveal sensitive social determinant information about identified patients. Engagement events should carry only the cohort axes the equity dashboard actually consumes (typically the aggregated cohort label, not the underlying raw SDOH signals). The IAM scope on the engagement-event Kinesis stream and the S3 engagement-event lake should be narrower than for general gap-evaluation data: only the equity-monitoring role and the model-retraining role need access to cohort-sliced engagement. The cohort_features field should not propagate into patient-facing systems, vendor-shared queues, or any surface where it is not needed for the equity-monitoring purpose. Mirror the minimum-necessary language from Recipes 4.4 and 4.5.
+
+**DLQ coverage on all Lambda paths.** The architecture diagram currently shows no dead-letter queues. Three DLQ paths are critical: (a) Step Functions to Lambda pipeline: add a Catch on each Lambda task state pointing to an SQS failure queue keyed on (run_date, stage, failure_reason); the Step Functions workflow retries transient errors and routes terminal errors to the DLQ for operations review. (b) Kinesis to closure-tracker Lambda: configure an OnFailure destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth; a silently-dropped closure event is operationally damaging (the chase team calls a patient who already closed the gap). (c) Batch Transform job failures: SageMaker does not surface failures via DLQ natively; wire the Step Functions Catch to handle `TransformJobFailed` states explicitly and route to the failure queue with the failing model name and input path. A DLQ alarm on any of these paths should trigger operations escalation within 30 minutes during business hours.
+
 **Visit-context features need to be accurate.** The visit-context ranker depends on knowing the visit type, the typical visit duration for the provider, the acute context (a patient coming in for back pain has the visit dominated by back pain), and the clinician's closure habits. Visit-type metadata in scheduling systems is often noisy or inconsistent; "annual wellness visit" can mean different things across providers; visit-duration estimates vary widely. Production deployment requires investing in scheduling-data quality: clean visit-type taxonomy, per-provider visit-duration calibration from historical encounter data, and a feedback loop where clinician overrides update the model's understanding of visit fit.
 
 **Clinical informatics review queue for LLM-surfaced candidates.** The candidate-gap surfacer's output is only useful if there's a real review process behind it. Plan for 10 to 20 hours per week of clinical-informatics time on the review queue (varies by sample size and surfacing aggressiveness). Without staff on the review side, the queue grows, the surfacer's quality stagnates (no one is correcting bad patterns), and the candidate-gap mechanism becomes shelfware. If you can't staff the review, scope the surfacer to a small, well-defined set of patient types where the patterns are most likely to be valuable.
@@ -1124,7 +1250,34 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Cost-per-closure tracking.** The cost numbers in the prerequisites table are infrastructure only. Production reporting needs to ladder up to per-measure total cost (infrastructure + staff time + outreach vendor invoices + referral logistics) divided by confirmed closures attributable to the program (above the matched-control baseline). That number is what gets compared to the value of closure (HEDIS bonus for measure-bound gaps, clinical-outcome benefit for clinically-driven gaps). The data engineering to track this end-to-end with attribution is its own project. Without it, the program reports gap-closure totals that include closures that would have happened anyway.
 
-**Quality-measure year-end push handling.** Many quality programs run a year-end "chase" where the team aggressively closes outstanding gaps in the last 60 to 90 days of the measurement year. This creates a natural seasonality in the program and a temptation to throw the priority weights toward window-urgency in the chase period. Build the seasonality into the policy explicitly (e.g., a `chase_period_weight_overrides` block that activates between specific dates), document it, and put the cohort-equity dashboard on a shorter monitoring cycle during the chase. Otherwise the year-end push quietly redistributes effort to the easiest-to-close gaps in the cohorts already best-served by the program.
+**Quality-measure year-end push handling.** Many quality programs run a year-end "chase" where the team aggressively closes outstanding gaps in the last 60 to 90 days of the measurement year. This creates a natural seasonality in the program and a temptation to throw the priority weights toward window-urgency in the chase period. Build the seasonality into the policy explicitly via a `chase_period_weight_overrides` block with a concrete schema:
+
+```json
+{
+  "chase_period_weight_overrides": {
+    "start_date": "2026-10-01",
+    "end_date": "2026-12-31",
+    "weight_overrides": {
+      "clinical_urgency": 0.35,
+      "closure_probability": 0.20,
+      "measure_value": 0.25,
+      "window_urgency": 0.20
+    },
+    "weight_caps": {
+      "window_urgency_max_share": 0.30
+    },
+    "equity_floor_multipliers": {
+      "transportation_barrier": 1.3,
+      "limited_english_proficiency": 1.2,
+      "low_food_security": 1.2
+    },
+    "monitoring_cadence_days": 7,
+    "governance_review_required": true
+  }
+}
+```
+
+The `equity_floor_multipliers` expand (not contract) equity floors during chase periods because chase periods disproportionately benefit operationally-easy cohorts; the multipliers protect the cohorts with documented closure-rate disparities from being squeezed out by the volume push. The `monitoring_cadence_days` shortens the equity-monitoring dashboard review from quarterly to weekly during the chase. The `weight_caps` prevent window_urgency from dominating; even during chase, clinical urgency retains a floor. Seasonal overrides go through the same governance review as base policy changes. Without the override primitive, year-end policy changes happen in a config-management process separate from the recommender, which means the equity-monitoring tightening doesn't happen and the equity floors don't shift; both gaps produce the David failure mode at scale.
 
 **Patient-friendly closure visibility.** Patients should be able to see their own care gaps and closures in the patient portal, with explanations they can understand. "You are due for a screening colonoscopy" is more useful than "HEDIS COL-E open." Patient-facing summaries are a separate UX project, with content review by health-literacy specialists, but the gap state machine in this recipe is the source data for that view. Plan for the patient-facing layer as a parallel deliverable; without it, patients only learn about gaps when the chase team calls, which is the worst time to learn about them.
 
@@ -1145,6 +1298,8 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Care-team load balancing.** When chase-team capacity is bounded and the priority queue exceeds capacity, the allocator from Step 4 picks the top of the priority list. A more sophisticated approach: cluster gaps by patient, route patients with multiple high-priority gaps to a single high-touch outreach contact (the agent addresses all of them in one call), and use lower-touch automation for patients with single moderate-priority gaps. This pattern is sometimes called "outreach bundling" and is operationally more efficient than gap-by-gap routing. 
 
 **Specialist-coordination workflows.** For gaps that close via specialist visits (retinal exam, mammogram, colonoscopy, behavioral-health follow-up), build an end-to-end coordination workflow: scheduling assistance, transportation help, prior auth, reminder cascades, result-return-tracking, and PCP notification. The recommender's referral generation is the entry point; the closure depends on the workflow. Plans that invest in this coordination see materially higher referral-completion rates than plans that send a referral and hope.
+
+The architectural primitive for specialist-coordination: extend the `recommendation-log` table with `chain_id` (UUID), `chain_position` (integer), `chain_total` (integer), and `predecessor_recommendation_id`. Step 4 emits the first link of the chain (e.g., `referral_generation`) with `chain_position = 1`; later links are not allocated until the predecessor completes. Step 5 adds an intermediate-event handler: events that match a chain link without closing the gap (e.g., `referral_scheduled`, `referral_attended`, `result_received`) advance the `chain_position` and trigger the next link's allocation. Only the final qualifying event (per the registry's numerator definition) closes the gap. This prevents the system from treating a referral-send as a closure, and ensures each step in the coordination chain triggers the next step's outreach or tracking. Reference Recipe 14.x for the full multi-stage stochastic-program version of this pattern. Same pattern flagged in Recipe 4.5 Finding A7.
 
 **Cohort-specific intervention catalogs.** Some patient cohorts benefit from cohort-specific closure pathways: patients in rural areas may need mobile screening units; patients with limited English proficiency benefit from in-language outreach; patients with documented transportation barriers may need rideshare-funded transport. The intervention catalog can carry cohort-eligibility flags so the allocator picks cohort-appropriate pathways rather than defaulting to the general-population pathway.
 
