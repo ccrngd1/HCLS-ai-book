@@ -33,29 +33,32 @@ flowchart LR
     D -->|Step 2| E2[Lambda<br/>Segment SKUs]
     E2 -->|Per-Segment Jobs| F[SageMaker Training Jobs<br/>Prophet / Croston / DeepAR]
     F -->|Model Artifacts| G[S3 Bucket<br/>models/]
+    F -->|Persistent Failure| DLQ[SQS Dead-Letter Queue<br/>segment-failures]
     D -->|Step 3| H[SageMaker Batch<br/>Forecast Job]
     H -->|Forecasts| I[S3 Bucket<br/>forecasts/]
     I -->|Lambda<br/>Reorder Calc| J[DynamoDB<br/>sku-forecasts]
     J -->|Query API| K[ERP / Materials<br/>Mgmt Dashboard]
-    D -->|Errors| L[CloudWatch Alarms<br/>SNS Topic]
+    D -->|Errors / Rejections| L[CloudWatch Alarms<br/>SNS Topic]
+    L -->|Page| ML[ML Engineering<br/>On-Call]
 
     style B fill:#f9f,stroke:#333
     style F fill:#ff9,stroke:#333
     style J fill:#9ff,stroke:#333
+    style DLQ fill:#f99,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, AWS Step Functions, Amazon DynamoDB, Amazon EventBridge, AWS Lambda, Amazon CloudWatch |
+| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, AWS Step Functions, Amazon DynamoDB, Amazon EventBridge, AWS Lambda, Amazon CloudWatch, Amazon SNS, Amazon SQS |
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateTransformJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, `dynamodb:BatchWriteItem`, `kms:Decrypt` |
 | **BAA** | AWS BAA signed by default. Hospital consumption data typically carries case-level linkage even when aggregated to daily SKU counts, and PHI-by-association applies. Pure aggregate-SKU-count data with no case-level, patient-level, or procedure-level linkage may fall outside BAA scope, but production systems rarely operate at that level of disconnection. |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest enabled (default); SageMaker training and inference: encrypted EBS volumes, KMS-encrypted output; CloudWatch log groups: configure KMS encryption explicitly.  |
-| **VPC** | Production: SageMaker training and inference jobs in VPC with VPC endpoints for S3, CloudWatch Logs, and KMS. Required for HIPAA workloads.  |
-| **CloudTrail** | Enabled: log all SageMaker, S3, DynamoDB, and Glue API calls for HIPAA audit trail.  |
+| **Encryption (KMS)** | Customer-managed KMS keys (CMKs) per data class for blast-radius containment. Separate CMKs for: (1) consumption-history and SKU-master data (PHI-by-association), (2) model artifacts, (3) forecasts and the DynamoDB serving table, (4) SageMaker training output volumes, (5) CloudWatch log groups. Per-Lambda IAM roles grant `kms:Decrypt` only on the CMK for that Lambda's data class. The reorder-point Lambda holds `kms:Decrypt` on only the forecasts-and-DynamoDB CMK. The training-job role holds `kms:Decrypt` on the consumption-history CMK and `kms:Encrypt` on the model-artifacts CMK. Cross-class key permissions are never granted. |
+| **VPC** | Production: SageMaker training and inference jobs in VPC with no internet egress. VPC endpoints required: **Gateway endpoints** (free, no per-AZ cost) for S3 and DynamoDB. **Interface endpoints** (per-AZ, per-endpoint cost) for SageMaker API, SageMaker Runtime, Step Functions, EventBridge, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, and Secrets Manager (for ERP integration credentials). TLS 1.2 minimum (TLS 1.3 preferred) enforced at every external boundary via endpoint policies and security group rules. |
+| **CloudTrail** | CloudTrail data events enabled on the consumption-history, SKU-master, model-artifacts, and forecasts S3 buckets, on the DynamoDB serving table, and on all customer-managed KMS keys (management events alone log resource creation but not `GetObject`/`GetItem` reads). Dedicated CloudTrail logs bucket with S3 Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. |
 | **Sample Data** | Synthetic SKU consumption data. The [M5 Forecasting Competition dataset](https://www.kaggle.com/competitions/m5-forecasting-accuracy/data) is a useful (retail, not healthcare) public dataset for testing multi-SKU forecasting code. For healthcare-shaped synthetic data, generate from a known process (case volume * per-case usage + smooth consumables + intermittent specialty items + noise) so you can validate the pipeline against ground truth. Never use real consumption data linked to patient identifiers in dev. |
-| **Cost Estimate** | SageMaker training (multiple ml.m5.large jobs in parallel via Map state, ~30 min weekly): ~$2/week. SageMaker batch transform: ~$1/week. Glue ETL (~10 min weekly): ~$0.50/week. S3, DynamoDB, Step Functions, Lambda: pennies per day. Total: $100-$400/month for a single facility's SKU portfolio, dominated by SageMaker compute and SKU count.  |
+| **Cost Estimate** | SageMaker training (multiple ml.m5.large jobs in parallel via Map state, ~30 min weekly): ~$2/week. SageMaker batch transform: ~$1/week. Glue ETL (~10 min weekly): ~$0.50/week. S3, DynamoDB, Step Functions, Lambda: pennies per day. **Total: $100-$400/month for a single facility** (assumes 5,000-15,000 SKUs at weekly forecast cadence). Cost scales approximately linearly with SKU count when per-segment training is decomposed by facility, or sublinearly when a shared DeepAR model is trained across facilities. A 3-facility health system with 30,000 total SKUs and a shared multi-series model typically lands at $250-$700/month total, not 3x the single-facility cost, because the inference cost dominates and DeepAR processes all series in a single batch transform. |
 
 ### Ingredients
 
@@ -70,6 +73,8 @@ flowchart LR
 | **Amazon DynamoDB** | Serves SKU forecasts and reorder points to operational systems at low latency |
 | **AWS KMS** | Manages encryption keys for S3, DynamoDB, Glue, and SageMaker |
 | **Amazon CloudWatch** | Logs, metrics, alarms for pipeline failures and forecast drift per SKU segment |
+| **Amazon SNS** | Notifications to the ML engineering team on quality-gate rejections and segment-training failures |
+| **Amazon SQS** | Dead-letter queue for persistent per-segment training failures requiring manual investigation |
 
 ### Code
 
@@ -115,6 +120,8 @@ FUNCTION prepare_consumption_data(raw_consumption, sku_master):
 
 **Step 2: Segment SKUs by demand pattern.** Every SKU does not get the same model. A one-size-fits-all approach over-fits the smooth items and produces nonsense for the intermittent ones. Segmentation classifies each SKU by its consumption pattern and routes it to the appropriate model family. The standard quantitative classification uses two metrics: the average demand interval (ADI), which captures intermittence, and the coefficient of variation squared of demand size (CV²), which captures variability. The four-corner classification produces smooth, intermittent, erratic, and lumpy categories.
 
+**Cold-start detection:** Before applying the quantitative classification, the segmentation step detects new SKUs with insufficient history (fewer than a configurable threshold of observations, e.g., 30 days of non-zero demand). These route to a `cold_start` segment with an explicit lookup discipline: (1) predecessor from the SKU master's successor map (if the new SKU replaced a retired item), (2) similar-SKU from item-category clustering (borrow demand shape from the nearest neighbor in the same product category), (3) configured default reorder point from the master data. The DynamoDB record for cold-start SKUs carries `cold_start_strategy` (which fallback was used) and `cold_start_until_date` (the date at which enough history has accumulated to re-segment). A `sku_in_cold_start` CloudWatch metric per facility per segment tracks the cold-start population over time.
+
 ```text
 FUNCTION segment_skus(daily_consumption):
     segments = empty mapping  // sku_id -> segment_label
@@ -144,7 +151,9 @@ FUNCTION segment_skus(daily_consumption):
     RETURN segments
 ```
 
-**Step 3: Train models per segment.** Each segment gets a training job tuned to its demand pattern. The Step Functions Map state fans out the per-segment training in parallel, which keeps wall-clock time manageable even on a multi-thousand-SKU portfolio. The training step holds out the most recent 90 days as a validation window, fits the segment's chosen model on everything before that, and computes prediction error on the held-out window using a metric appropriate to the segment (MAPE for smooth, MASE for intermittent).
+**Step 3: Train models per segment.** Each segment gets a training job tuned to its demand pattern. The Step Functions Map state fans out the per-segment training in parallel, which keeps wall-clock time manageable even on a multi-thousand-SKU portfolio. The Map state specifies a `ToleratedFailurePercentage` (e.g., 20%) so that a small number of segment failures do not abort the entire pipeline. Each per-segment iteration retries up to 3 times with exponential backoff on `States.TaskFailed` and `SageMaker.SageMakerException`. On persistent failure, the Catch block routes to an error handler that: (1) emits a CloudWatch metric `segment_training_failed` with dimensions `(facility, segment)`, (2) logs the segment label and SageMaker job name to a dedicated failure log group, (3) sends the segment-failure record to an SQS dead-letter queue for manual investigation, and (4) continues pipeline execution with the segment flagged as failed. On quality-gate rejection (new model regresses against the prior production model by more than 20%), the segment falls back to the prior production model, emits a CloudWatch metric `model_rejected`, and sends an SNS notification to the ML engineering team. At the end of the Map state, a pipeline-level `partial_failure` flag (true/false) with a `failed_segments` list propagates to the downstream reorder-point step, which stamps DynamoDB records for affected segments with `model_freshness: "stale"` rather than `"current"`.
+
+The training step holds out the most recent 90 days as a validation window, fits the segment's chosen model on everything before that, and computes prediction error on the held-out window using a metric appropriate to the segment (MAPE for smooth, MASE for intermittent).
 
 ```text
 FUNCTION train_segment_model(segment_label, segment_history):
@@ -193,6 +202,8 @@ FUNCTION train_segment_model(segment_label, segment_history):
 
 **Step 4: Generate forecasts and reorder points.** With trained models in hand, the inference step produces a 30-to-90-day horizon forecast for each SKU and combines the forecast variance with the SKU's lead time and target service level to compute the reorder point and order quantity. This is the operational output. The materials management system consumes these reorder points, not the raw forecasts.
 
+For a multi-thousand-SKU portfolio, the reorder-point calculation can approach the 15-minute Lambda timeout if implemented naively in a single invocation. The production pattern decomposes this into a Step Functions parallel state with one Lambda invocation per segment, each handling 100-500 SKUs with explicit pagination over the forecast-output S3 prefix, `BatchWriteItem` chunking with retry on `UnprocessedItems` (bounded: 5 retries with exponential backoff), and per-Lambda timeout headroom (10-minute Lambda invocations configured with the 15-minute maximum). Each segment Lambda writes its slice of reorder points to DynamoDB independently; the parallel state collects completion status and surfaces any partial failures to the pipeline-level summary.
+
 ```text
 FUNCTION generate_sku_forecasts_and_reorder_points(models, skus, sku_metadata):
     forecast_records = empty list
@@ -240,7 +251,7 @@ FUNCTION generate_sku_forecasts_and_reorder_points(models, skus, sku_metadata):
     RETURN forecast_records
 ```
 
-**Step 5: Deliver forecasts and reorder points to the materials management system.** The forecast records get written to DynamoDB keyed by facility-and-SKU so the materials management dashboard, the ERP integration job, and any other downstream consumer can query the current values at low latency. As in Recipe 12.1, the write is idempotent: today's forecast for (facility A, SKU B) overwrites yesterday's forecast for the same key.
+**Step 5: Deliver forecasts and reorder points to the materials management system.** The forecast records get written to DynamoDB keyed by facility-and-SKU so the materials management dashboard, the ERP integration job, and any other downstream consumer can query the current values at low latency. The write is idempotent: the `generated_at` timestamp is computed once at the pipeline-start step (derived from the EventBridge schedule's invocation ID for at-least-once trigger idempotency) and propagated through the Step Functions execution state, not recomputed per Lambda invocation. The `CURRENT` upsert uses a conditional write (`ConditionExpression: attribute_not_exists(generated_at) OR generated_at < :new_generated_at`) to prevent stale upserts from overwriting newer records during concurrent or retried executions. The `BatchWriteItem` retry on `UnprocessedItems` is bounded (5 retries with exponential backoff) and surfaces a CloudWatch metric on the count of unprocessed items so throttling-induced data loss is visible.
 
 ```text
 FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
@@ -266,6 +277,8 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
 
     RETURN count of records written
 ```
+
+**Step 6 (ongoing): Forecast monitoring and drift detection.** A separate drift-detection Lambda (or Step Functions step), triggered by EventBridge on its own cadence after each cycle's actuals become available, joins the prior cycle's forecasts against the current cycle's realized consumption. For each SKU and each segment, it computes forecast error (MAPE for smooth, MASE for intermittent) and writes the results to CloudWatch with dimensions `(facility, segment, sku_value_tier)`. When a high-value SKU breaches its error threshold for two consecutive forecast cycles, the detector emits a CloudWatch alarm that triggers retraining outside the normal weekly cadence. This drift detector is architecturally distinct from the release-time quality gate in Step 3: the quality gate prevents a bad model from entering production at training time, while the drift detector catches a previously-good model that has degraded after real-world consumption shifted. Production runs them on separate schedules and separate IAM roles.
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and a forecasting library like Prophet or statsmodels, check out the [Python Example](chapter12.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
@@ -322,7 +335,7 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 **Idempotency, audit trail, and rerun safety.** Materials management decisions feed downstream into purchase orders. The pipeline outputs need to be reproducible and auditable. Each forecast run writes to a versioned model artifact, the DynamoDB writes overwrite cleanly by primary key, and an immutable audit log captures which model version produced which reorder point.
 
-**Integration with the ERP / materials management system.** The forecasts are useless until they actually influence reorder decisions. The integration is rarely a one-shot DynamoDB write; it's typically a flat-file extract or an API call into the ERP that runs on its own cadence and reconciles. Plan for this engineering work, which often dwarfs the modeling work in scope.
+**Integration with the ERP / materials management system.** The forecasts are useless until they actually influence reorder decisions. The integration is rarely a one-shot DynamoDB write; it's typically a flat-file extract or an API call into the ERP that runs on its own cadence and reconciles. Plan for this engineering work, which often dwarfs the modeling work in scope. The ERP-integration egress path depends on the ERP's deployment model: (1) an on-premises ERP reaches via Direct Connect or site-to-site VPN, with the ERP-integration Lambda deployed inside the VPC; (2) a hosted ERP with PrivateLink support connects via a PrivateLink endpoint (no traffic crosses the public internet); (3) a public-internet API call is the last resort, in which case egress routes through a NAT gateway with flow-log capture, and the API call requires TLS 1.2 or higher with mutual-TLS or signed-JWT authentication. Option 3 requires explicit approval in most institutional security reviews.
 
 ---
 

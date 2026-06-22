@@ -54,7 +54,7 @@ import logging
 import math
 import random
 import uuid
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from statistics import mean, stdev
@@ -479,16 +479,22 @@ def generate_synthetic_sku_master():
 This step pulls the raw daily consumption rows, collapses them to one row per `(facility_id, sku_id, date)` triple, fills missing days with zero counts, applies the SKU master successor map, and attaches calendar features. In production this is a Glue ETL job (PySpark or Glue notebooks) reading partitioned Parquet from S3 and writing a modeling-ready Parquet output back to S3. The demo does the equivalent in plain Python over the synthetic rows so you can trace what each transform accomplishes.
 
 ```python
-def prepare_consumption_data(raw_rows, sku_master):
+def prepare_consumption_data(raw_rows, sku_master, case_volume_by_date=None):
     """Step 1: Clean, fill gaps, reconcile successors, add features.
 
     See pseudocode Step 1 in the main recipe. The output is a list
     of rows, one per (facility_id, sku_id, date) triple, with
     quantity (zero-filled), calendar features (day_of_week,
-    month, is_holiday placeholder), and a flag for procedure-
-    driven SKUs that the segmentation step uses to override the
-    quantitative classification.
+    month, is_holiday placeholder, scheduled_cases,
+    flu_season_index), and a flag for procedure-driven SKUs that
+    the segmentation step uses to override the quantitative
+    classification. The scheduled_cases and flu_season_index
+    columns teach the row-as-feature-vector pattern the
+    pseudocode advocates: the modeling-ready table is visibly
+    self-contained with all exogenous signals attached per row.
     """
+    if case_volume_by_date is None:
+        case_volume_by_date = {}
     # 1a. Group raw transactions by (facility, sku, date) and sum.
     grouped = defaultdict(int)
     for row in raw_rows:
@@ -532,6 +538,23 @@ def prepare_consumption_data(raw_rows, sku_master):
         for d_iso in full_dates:
             qty       = grouped.get((facility_id, sku_id, d_iso), 0)
             d         = date.fromisoformat(d_iso)
+            # Scheduled cases: for procedure-driven SKUs, the
+            # forecasted OR case volume is the primary signal.
+            # For other SKUs it is an informational feature that
+            # can improve a multivariate model. Production reads
+            # this from the surgical scheduling system's forward-
+            # looking extract.
+            scheduled_cases = case_volume_by_date.get(d_iso, 0)
+            # Flu/respiratory season index: a simple seasonal
+            # indicator (0.0-1.0) for respiratory SKUs.
+            # Peaks Nov-Feb in the Northern Hemisphere. Production
+            # reads from a configurable seasonal-indicator table.
+            month_num = d.month
+            flu_season_index = (
+                1.0 if month_num in (12, 1, 2) else
+                0.5 if month_num in (11, 3) else
+                0.0
+            )
             output.append({
                 "facility_id":         facility_id,
                 "sku_id":              target_sku_id,
@@ -540,6 +563,8 @@ def prepare_consumption_data(raw_rows, sku_master):
                 "day_of_week":         d.weekday(),
                 "month":               d.month,
                 "is_holiday":          False,   # production reads from a holiday calendar table
+                "scheduled_cases":     scheduled_cases,
+                "flu_season_index":    flu_season_index,
                 "is_procedure_driven": is_procedure_driven,
             })
 
@@ -640,12 +665,11 @@ def segment_skus(prepared_rows):
             "override_reason": None,
         }
 
+    seg_counts = Counter(segments.values())
     logger.info(
         "Segmented %d SKUs: %s",
         len(segments),
-        ", ".join(f"{seg}={n}" for seg, n in
-                  sorted({(s, sum(1 for v in segments.values() if v == s))
-                          for s in set(segments.values())})))
+        ", ".join(f"{seg}={n}" for seg, n in sorted(seg_counts.items())))
     return segments, diagnostics
 ```
 
@@ -1012,20 +1036,12 @@ def generate_sku_forecasts_and_reorder_points(trained, sku_master, run_id):
                          * Decimal(str(math.sqrt(lead_time_days)))
                          * sigma_daily)
 
-        reorder_point = int(round(float(
-            Decimal(str(mean_demand_lead)) + safety_stock)))
-        # TODO (TechWriter): Code review Issue 8 (NOTE). The
-        # round-trip Decimal(str(float)) -> Decimal -> float ->
-        # round -> int discards Decimal's precision benefit
-        # because the immediate float() cast is what determines
-        # the final integer. Either compute everything in float
-        # (Decimal only at the DynamoDB boundary, matching the
-        # demo's existing pattern: int(round(mean_demand_lead +
-        # float(safety_stock)))) or stay in Decimal end-to-end
-        # (mean_demand_lead_dec = Decimal(str(mean_demand_lead));
-        # int((mean_demand_lead_dec + safety_stock).quantize(
-        # Decimal("1")))). The all-float form fits the file
-        # better.
+        # Compute reorder point in float (Decimal only at the
+        # DynamoDB write boundary). The safety-stock formula
+        # operates at unit-count precision; sub-unit decimals
+        # are meaningless for physical inventory.
+        reorder_point = int(round(
+            mean_demand_lead + float(safety_stock)))
 
         order_quantity = _suggest_order_quantity(
             mean_demand_per_day, master_entry)
@@ -1170,7 +1186,7 @@ def run_supply_forecast_pipeline(table, event_bus, cloudwatch):
 
     # --- Step 1: Prepare and clean the consumption data ---
     print("\n[step 1] prepare_consumption_data")
-    prepared = prepare_consumption_data(raw_rows, sku_master)
+    prepared = prepare_consumption_data(raw_rows, sku_master, case_volume_by_date)
     print(f"  -> {len(prepared)} prepared rows")
 
     # --- Step 2: Segment SKUs by demand pattern ---
