@@ -396,9 +396,8 @@ FUNCTION package_and_deliver(analysis_results, original_study_metadata):
 - [DICOM Standard](https://www.dicomstandard.org/): Official DICOM specification for medical imaging interoperability
 
 **AWS Solutions and Blogs:**
-- [Medical Image Analysis on AWS](https://aws.amazon.com/solutions/implementations/medical-image-analysis-on-aws/): Reference architecture for medical imaging workloads on AWS
-
-- [Build a medical image analysis pipeline on AWS](https://aws.amazon.com/blogs/machine-learning/): Blog posts covering SageMaker-based medical imaging pipelines
+- [AWS Solutions Library (Healthcare)](https://aws.amazon.com/solutions/?solutions-all.sort-by=item.additionalFields.sortDate&solutions-all.sort-order=desc&awsf.content-type=content-type%23solution&awsf.industry=industry%23healthcare): Deployable reference architectures for healthcare workloads on AWS
+- [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): Search for "medical imaging" and "SageMaker" to find posts on GPU-based imaging pipelines and DICOM processing
 
 ---
 
