@@ -24,13 +24,13 @@ A few things this recipe is and is not.
 
 It is the assistant that has the recruitment conversation. The patient (or a caregiver or family member acting on the patient's behalf with appropriate authorization) interacts with the assistant via web chat, in-app messaging, SMS, or voice, learns about a trial they may be a candidate for, walks through a structured prescreen that surfaces obvious disqualifiers and captures the medical-history and medication information the coordinator needs, has their questions about the trial answered using the IRB-approved recruitment FAQ, and (if they remain interested and the prescreen does not produce a hard disqualifier) is connected to a human research coordinator with their prescreen results and their stated questions captured. The assistant covers the front of the recruitment funnel.
 
-It is not the informed consent process. Informed consent for clinical research is a specific, regulated activity governed by 21 CFR Part 50, the ICH-GCP guidelines, the IRB-approved consent form, and (in many jurisdictions) state-specific provisions. 
+It is not the informed consent process. Informed consent for clinical research is a specific, regulated activity governed by 21 CFR Part 50, the ICH E6 Good Clinical Practice guidelines (updated to R3 in 2025 with risk-based and quality-by-design framing relevant to recruitment-platform deployments), the IRB-approved consent form, and (in many jurisdictions) state-specific provisions. Where the trial is FDA-regulated, the assistant's recruitment material is part of the IND or IDE record, and the recruitment platform's audit trail is subject to 21 CFR Part 11 electronic-record-and-signature requirements.
 
 The assistant does not collect informed consent. The assistant captures the patient's interest, surfaces the IRB-approved recruitment information, and routes the qualified-and-still-interested patient to the human coordinator who runs the consent process per the IRB-approved consent procedure.
 
 It is not a trial-matching tool that recommends trials to a patient. The assistant operates within a specific recruitment context: the patient is engaging because they have been routed to a specific trial (or a small list of trials in a specific therapeutic area), typically through their treating clinician's referral, through a sponsor's recruitment channel, or through the institution's research-recruitment infrastructure. Trial-matching across a registry of all open trials is a different, related problem with different regulatory considerations.
 
-It is not a clinical-decision tool. The assistant does not diagnose. The assistant does not adjust the patient's clinical care. The assistant does not opine on whether the patient should join the trial. The assistant explains, screens, and routes.
+It is not a clinical-decision tool. The assistant does not diagnose. The assistant does not adjust the patient's clinical care. The assistant does not opine on whether the patient should join the trial. The assistant explains, screens, and routes. This positioning as a non-device informational tool depends on the assistant staying on the correct side of the FDA Clinical Decision Support boundary defined in Section 3060 of the 21st Century Cures Act and the FDA's CDS guidance; the moment the assistant strays into condition-specific recommendations or decision logic that the prospective participant is not expected to independently review, the regulatory classification changes materially.
 
 It is not a substitute for the human research coordinator. The coordinator runs consent. The coordinator runs the visit. The coordinator handles the questions that fall outside the IRB-approved recruitment FAQ. The coordinator stewards the long-running relationship with the participant. The assistant handles the front of the funnel that human coordinators cannot reach at population scale.
 
@@ -82,7 +82,7 @@ The assistant's task surface decomposes roughly as follows.
 
 **Equity-and-representativeness instrumentation.** The assistant captures (with the patient's consent and per the IRB-approved data-collection plan) the demographic information the trial sponsor and the institution use to monitor recruitment representativeness: language, race and ethnicity (per OMB categories with patient-self-report), sex and gender, age cohort, geography, insurance status, social-determinants flags. The data is used for per-cohort recruitment-funnel monitoring and for early detection of under-recruitment in target populations.
 
-**Sensitive-topic handling within recruitment scope.** The assistant handles, within scope, the topics that often arise in recruitment conversations: financial concerns about trial participation (the assistant retrieves IRB-approved language about reimbursement, travel, lost-wages compensation per the trial's specific provisions), transportation-and-logistics concerns, family and caregiver involvement, fear of investigational therapy (the assistant retrieves IRB-approved language about safety monitoring without making safety claims), mistrust of clinical research (the assistant acknowledges with calibrated language reviewed by patient-advocate consultants and IRB), and religious or cultural considerations (with culturally-appropriate language reviewed by the institution's community-research-engagement teams where applicable).
+**Sensitive-topic handling within recruitment scope.** The assistant handles, within scope, the topics that often arise in recruitment conversations: financial concerns about trial participation (the assistant retrieves IRB-approved language about reimbursement, travel, lost-wages compensation per the trial's specific provisions), transportation-and-logistics concerns, family and caregiver involvement, fear of investigational therapy (the assistant retrieves IRB-approved language about safety monitoring without making safety claims), mistrust of clinical research (the assistant acknowledges with calibrated language reviewed by patient-advocate consultants, community-research-engagement teams, and IRB), and religious or cultural considerations (with culturally-appropriate language reviewed by the institution's community-research-engagement teams where applicable).
 
 **Continuous emergency screening across every utterance.** Same as the previous bots in this chapter. The assistant routes acute emergencies (chest pain, suspected stroke, severe symptom presentations, suicidal ideation) immediately to the appropriate emergency pathway; the assistant does not try to handle acute emergencies in conversation, and the assistant pauses the recruitment conversation to handle the safety event.
 
@@ -104,7 +104,7 @@ A naive product approach would be: take a generalist LLM, give it a chat surface
 
 **The model has no theory of assent versus consent versus surrogate-decision-maker.** Pediatric trials require parental permission and pediatric assent; adult trials require informed consent; trials involving cognitively-impaired or incapacitated populations require surrogate-decision-maker consent. The assistant's recruitment conversation has different participants and different obligations across these scenarios; the architecture distinguishes them explicitly.
 
-**The model has no theory of vulnerable populations.** Federal regulations (45 CFR 46 Subparts B, C, D for pregnant women, prisoners, and children respectively) impose additional protections for specific populations.  The LLM does not enforce these; the architecture enforces them through institutional policy and through the IRB-approved recruitment plan for the specific trial.
+**The model has no theory of vulnerable populations.** Federal regulations (45 CFR 46 Subparts B, C, D for pregnant women, prisoners, and children respectively) impose additional protections for specific populations. FDA's diversity-action-plan guidance also explicitly names older adults, pediatric populations, pregnant patients, and patients with disabilities as historically underrepresented populations requiring deliberate recruitment attention. The LLM does not enforce these; the architecture enforces them through institutional policy and through the IRB-approved recruitment plan for the specific trial.
 
 **The model has clinical-decision-rule arithmetic problems.** Eligibility evaluation includes time-window calculations (was the lab value within the required window?), arithmetic comparisons (does the BMI fall within range?), unit conversions (the patient may report HbA1c in different units), date arithmetic (how long since the last episode?), and similar structured arithmetic. The LLM does this poorly. The deterministic eligibility-evaluation tools encapsulate the computation.
 
@@ -154,7 +154,7 @@ A few notes on what makes clinical-trial recruitment specifically harder than th
 
 **The recruitment funnel is the metric, not the conversation count.** Conversations completed is a vanity metric. Qualified-handoffs accepted, prescreen-yield-by-cohort, coordinator-time-saved, and ultimately consented-and-randomized-participants-by-cohort are the substantive metrics. The instrumentation is per-cohort across the full funnel, with the longest-window outcomes (consented, randomized) reported as the trial accumulates them.
 
-**Demographic representativeness is a regulatory and a scientific obligation.** FDA guidance from 2022 has emphasized diversity in clinical-trial enrollment with specific guidance on diversity action plans for FDA-regulated trials.  The recruitment platform's per-cohort monitoring is designed to detect under-recruitment in target populations and to support the sponsor's diversity-action-plan reporting.
+**Demographic representativeness is a regulatory and a scientific obligation.** FDA guidance on diversity action plans for FDA-regulated trials, codified by FDORA Section 3601 in 2022 and operationalized through the FDA's 2024 final guidance on Diversity Action Plans, has raised the operational bar for measuring and improving recruitment representativeness. The recruitment platform's per-cohort monitoring is designed to detect under-recruitment in target populations (including racial and ethnic minorities, older adults, pediatric populations, pregnant patients, patients with disabilities, low-income populations, patients with limited English proficiency, and rural populations) and to support the sponsor's diversity-action-plan reporting.
 
 **Equity considerations cut deep.** Recruitment platforms reach disproportionately the patients who are already plugged in to the digital-tool ecosystem. The patients with the greatest unmet research-participation opportunity are often the patients with the most limited access to digital tools, the most limited integration with the connected data sources, the most limited English proficiency, the most limited transportation flexibility, the most limited paid-time-off access, and the most limited established relationships with academic medical centers. The platform's reach into these populations is a deliberate design and operational commitment, not a default.
 
@@ -184,7 +184,7 @@ A few practical updates worth knowing.
 
 **Decentralized clinical trials have changed the recruitment surface.** Decentralized and hybrid trial designs, accelerated by the operational adaptations of 2020-2022, have expanded the potential reach of trials beyond academic-medical-center catchment areas to broader geographic populations. The recruitment platform can engage prospective participants who live far from the nearest site.  The recruitment-platform reach is calibrated accordingly.
 
-**Diversity action plans are increasingly formalized.** FDA's 2022 draft guidance on diversity action plans for FDA-regulated trials, plus sponsor-and-institutional commitments to representativeness, have raised the operational bar for measuring and improving recruitment representativeness.  Per-cohort recruitment-funnel monitoring is no longer a "nice to have"; for some trial categories it is regulatory expectation.
+**Diversity action plans are increasingly formalized.** FDA guidance on diversity action plans for FDA-regulated trials, codified by FDORA Section 3601 in 2022 and operationalized through the FDA's 2024 final guidance, has raised the operational bar for measuring and improving recruitment representativeness. Per-cohort recruitment-funnel monitoring is no longer a "nice to have"; for some trial categories it is regulatory expectation.
 
 **ClinicalTrials.gov and trial-listing infrastructure has matured.** ClinicalTrials.gov registration is required for most NIH-funded and FDA-regulated trials, and the listings have become a primary patient-facing entry path for trial discovery.  The recruitment platform's integration with ClinicalTrials.gov listings (and with downstream patient-facing trial-discovery products) is part of the architectural surface.
 
@@ -202,21 +202,420 @@ A few practical updates worth knowing.
 
 ## General Architecture Pattern
 
+A clinical trial recruitment conversationalist decomposes into ten logical stages: input safety screening with continuous emergency screening; identity verification with vulnerable-populations-aware posture; trial-context loading with trial-state-and-amendment tracking; tool-use loop with IRB-citation discipline; conversational eligibility prescreen with deterministic per-criterion logic and clinical-judgment routing; output safety with IRB-language faithfulness verification; coordinator handoff orchestration with throughput control; per-cohort representativeness instrumentation with launch-gate discipline; recruitment-decision record persistence with research-grade retention; per-trial reporting and outcome correlation across the recruitment funnel. The cross-cutting concerns from recipes 11.1 through 11.9 carry forward; this recipe adds eight new ones (IRB-approved-content corpus as only allowed source of trial-specific language, per-trial protocol-specific context loading and isolation, eligibility-evaluation engine with deterministic per-criterion logic and named clinical-leadership ownership, coordinator-handoff orchestration as production scope, trial-state and trial-amendment tracking, representativeness instrumentation per trial and per recruitment cohort, vulnerable-populations-aware identity model, and research-data-as-distinct-record-class with research-grade retention).
+
+```text
+┌────────── INPUT SAFETY + CONTINUOUS EMERGENCY SCREEN ────┐
+│                                                           │
+│   [Standard input safety primitives from recipe 11.1]     │
+│    - Prompt-injection detection                           │
+│    - PHI minimization                                     │
+│    - Self-harm and crisis classifier                      │
+│                                                           │
+│   [Recruitment-specific continuous emergency screening]   │
+│    - Runs on every prospective-participant utterance      │
+│    - Detects acute-emergency presentations (chest pain,   │
+│      severe shortness of breath, suspected stroke,        │
+│      suicidal ideation, overdose)                         │
+│    - Detects recruitment-specific acuity scenarios:       │
+│      prospective participants who surface decompensating  │
+│      symptoms; participants who report a recent           │
+│      condition change during eligibility prescreen;       │
+│      participants whose conversation surfaces             │
+│      psychosocial crisis the recruitment platform is not  │
+│      equipped to handle                                   │
+│    - Triggers immediate routing to 911, 988, or           │
+│      institutional crisis line as appropriate             │
+│           │                                               │
+│           ▼                                               │
+│   [Output: input passes / input blocked / emergency       │
+│    routed]                                                │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── IDENTITY VERIFICATION + POPULATIONS POSTURE ───┐
+│                                                           │
+│   [Authenticated session or anonymous entry]              │
+│    - Portal-authenticated patient (EHR-linked referral)   │
+│    - Anonymous entry (sponsor recruitment channel,        │
+│      ClinicalTrials.gov landing page, social-media ad)    │
+│    - Caregiver or family-member entry with appropriate    │
+│      authorization                                        │
+│                                                           │
+│   [Vulnerable-populations-aware identity classification]  │
+│    - Adult self-decision (baseline)                       │
+│    - Parent or guardian for pediatric participant         │
+│      (assent and parental permission per 45 CFR 46       │
+│      Subpart D)                                           │
+│    - Surrogate decision maker for cognitively impaired    │
+│      adult                                                │
+│    - Protected-population flags (pregnant patients under  │
+│      Subpart B, prisoners under Subpart C, children       │
+│      under Subpart D, older adults, patients with         │
+│      disabilities)                                        │
+│                                                           │
+│   [Per-conversation trial binding]                        │
+│    - Bind trial_id at session start                       │
+│    - Switching trials within a session triggers a new     │
+│      conversation with new disclosures and new consent    │
+│      posture                                              │
+│    - Cross-trial recommendation is structurally           │
+│      prohibited at the tool-dispatcher level              │
+│           │                                               │
+│           ▼                                               │
+│   [Output: verified identity, population posture,         │
+│    bound trial_id]                                        │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── TRIAL-CONTEXT LOADING + AMENDMENT TRACKING ────┐
+│                                                           │
+│   [Per-trial IRB-approved content corpus]                 │
+│    - Protocol summary in IRB-approved language            │
+│    - Eligibility criteria in IRB-approved language        │
+│    - Recruitment-FAQ entries in IRB-approved language      │
+│    - Visit-schedule summary                               │
+│    - Study-procedure summary                              │
+│    - Sponsor-and-investigator information                 │
+│    - IRB and protocol identifiers                         │
+│    - Institutional contact information                    │
+│                                                           │
+│   [Trial-state verification]                              │
+│    - Check trial enrollment status (open, paused, closed) │
+│    - Check site-specific enrollment status                │
+│    - Route to alternative pathway if trial is not open    │
+│                                                           │
+│   [IRB-amendment-application mid-conversation handling]   │
+│    - Snapshot trial-context-version at conversation start │
+│    - On every turn, re-fetch trial-state and compare      │
+│      versions                                             │
+│    - If material amendment detected: branch to the        │
+│      IRB-approved re-disclosure flow                      │
+│    - If non-material amendment: continue on the original  │
+│      snapshot with stamped version-history                │
+│                                                           │
+│   [Required first-turn disclosures per IRB]               │
+│    - Assistant is a chat tool, not a person               │
+│    - Assistant is not the research coordinator            │
+│    - Assistant cannot enroll the patient                  │
+│    - Assistant is providing trial information and         │
+│      conducting a preliminary screen                      │
+│    - Patient can stop at any time                         │
+│    - Patient can ask to speak to a coordinator at any     │
+│      point                                                │
+│    - Data-retention notice per institutional policy       │
+│           │                                               │
+│           ▼                                               │
+│   [Output: loaded trial context with versioned snapshot;  │
+│    required disclosures delivered]                        │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── TOOL-USE LOOP + IRB-CITATION DISCIPLINE ───────┐
+│                                                           │
+│   [LLM-orchestrated conversation with tool use]           │
+│    - System prompt parameterized per trial, per           │
+│      population posture, per language                     │
+│    - User message plus recent-conversation context        │
+│    - Tool surface:                                        │
+│      - trial_context_retrieve (IRB-approved corpus only)  │
+│      - recruitment_faq_retrieve (IRB-approved FAQ only)   │
+│      - eligibility_criterion_evaluate (deterministic)     │
+│      - trial_state_check                                  │
+│      - prescreen_capture                                  │
+│      - coordinator_handoff_schedule                       │
+│      - representativeness_record                          │
+│      - emergency_route                                    │
+│      - out_of_scope_route                                 │
+│      - provenance_retrieve                                │
+│                                                           │
+│   [IRB-citation discipline]                               │
+│    - Every trial-specific assertion must cite an          │
+│      IRB-approved source document                         │
+│    - If the question falls outside the IRB-approved FAQ,  │
+│      route the question to the coordinator rather than    │
+│      improvising                                          │
+│    - The LLM produces tool calls, not novel trial         │
+│      language                                             │
+│    - Citation coverage floor enforced (configurable,      │
+│      typically 85% or higher)                             │
+│           │                                               │
+│           ▼                                               │
+│   [Output: composed response with citations and           │
+│    tool-call audit trail]                                 │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── CONVERSATIONAL ELIGIBILITY PRESCREEN ──────────┐
+│                                                           │
+│   [Deterministic per-criterion evaluation engine]         │
+│    - Simple structured criteria (age, sex, geography,     │
+│      basic diagnosis): evaluated from conversation        │
+│    - Complex structured criteria (lab values, medication  │
+│      history, imaging findings): captured as patient-     │
+│      reported with explicit coordinator-verification      │
+│      caveat                                               │
+│    - Clinical-judgment criteria (severity, prognosis):    │
+│      flagged for coordinator review, patient report       │
+│      captured as input not determination                  │
+│    - Verification-only criteria: captured, deferred to    │
+│      coordinator for source verification                  │
+│                                                           │
+│   [Per-criterion rule ownership]                          │
+│    - Each criterion has named clinical-leadership         │
+│      ownership, version history, and IRB-review evidence  │
+│    - The LLM does not interpret eligibility criteria;     │
+│      it surfaces questions, captures responses, and       │
+│      routes responses to the deterministic rule engine    │
+│                                                           │
+│   [Disposition determination]                             │
+│    - Clearly disqualified (hard exclusion met)            │
+│    - Uncertain pending coordinator verification           │
+│    - Likely eligible pending coordinator confirmation     │
+│    - Declined by patient                                  │
+│    - Trial closed or paused (discovered mid-conversation) │
+│           │                                               │
+│           ▼                                               │
+│   [Output: structured prescreen result with per-          │
+│    criterion evaluation, patient-reported data tagged,    │
+│    clinical-judgment items flagged]                       │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── OUTPUT SAFETY + IRB-FAITHFULNESS VERIFY ───────┐
+│                                                           │
+│   [Standard output safety primitives from recipe 11.1]    │
+│    - Scope filter (no recommendation, no diagnosis,       │
+│      no trial comparison)                                 │
+│    - Vendor-managed guardrail layer                       │
+│    - Persona-and-tone check                               │
+│                                                           │
+│   [Recruitment-specific verification]                     │
+│    - IRB-language faithfulness: every trial-specific      │
+│      statement verified against IRB-approved corpus       │
+│    - No unsupported trial-specific assertions             │
+│    - Recommendation-language filter (blocks "you should   │
+│      join", "this trial is right for you", trial          │
+│      comparison across multiple trials)                   │
+│    - Distinction between "interest captured" (allowed;    │
+│      non-consent) and "consent collected" (not allowed;   │
+│      coordinator-only) enforced at the output layer       │
+│    - IRB-approved disclosure copy is authored separately  │
+│      and reviewed by the IRB, not generated by the LLM;  │
+│      the disclosure surface is treated as IRB-approved    │
+│      content, not as LLM-generated text                   │
+│           │                                               │
+│           ▼                                               │
+│   [Output: response cleared for delivery, replaced with   │
+│    a safer template, or regenerated with corrections]     │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── COORDINATOR HANDOFF + THROUGHPUT CONTROL ──────┐
+│                                                           │
+│   [Qualified-handoff orchestration]                        │
+│    - Capture patient's preferred follow-up channel and    │
+│      time                                                 │
+│    - Generate structured prescreen summary for            │
+│      coordinator (patient-reported data clearly tagged,   │
+│      assistant's eligibility assessment clearly tagged    │
+│      as preliminary)                                      │
+│    - Route to coordinator queue                           │
+│    - Confirm handoff arrangement with patient             │
+│    - Set expectations about timing of follow-up           │
+│                                                           │
+│   [Throughput control]                                    │
+│    - When coordinator queue exceeds configured            │
+│      throughput floor, transition to a "coordinator-      │
+│      team-busy, we'll reach out within X business days,   │
+│      here are the trial materials in the meantime" flow   │
+│    - Do not continue enqueuing handoffs that will age     │
+│      out                                                  │
+│    - Monitor handoff-acceptance rate and time-to-         │
+│      coordinator-contact                                  │
+│           │                                               │
+│           ▼                                               │
+│   [Output: structured handoff in coordinator queue;       │
+│    patient confirmed; throughput within bounds]           │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── REPRESENTATIVENESS INSTRUMENTATION ────────────┐
+│                                                           │
+│   [Per-cohort recruitment funnel monitoring]              │
+│    - Entry to prescreen-completion to coordinator-        │
+│      handoff to consent to randomize                      │
+│    - Stratified by: language, race and ethnicity (OMB     │
+│      categories, patient self-report), sex and gender,    │
+│      age cohort, geography, insurance status, referral    │
+│      source, channel, site                                │
+│                                                           │
+│   [Launch-gate discipline]                                │
+│    - Before a trial goes live on the platform, verify     │
+│      that the per-cohort instrumentation is operational   │
+│    - Diversity-action-plan targets configured per trial   │
+│      where applicable                                     │
+│    - Under-recruitment alerts configured per cohort       │
+│                                                           │
+│   [Equity accountability]                                 │
+│    - Per-cohort dashboards reviewed by PI, institutional  │
+│      research-recruitment team, sponsor's recruitment     │
+│      team, and diversity-action-plan-tracking team        │
+│    - Per-cohort gap analysis at configurable intervals    │
+│           │                                               │
+│           ▼                                               │
+│   [Output: per-cohort funnel metrics; under-recruitment   │
+│    alerts; diversity-action-plan reporting data]          │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── RECRUITMENT-DECISION RECORD PERSISTENCE ───────┐
+│                                                           │
+│   [Durable recruitment-decision record]                   │
+│    - User utterances (with speaker identification)        │
+│    - Tool calls with arguments and results                │
+│    - Generated assistant responses                        │
+│    - Active model and prompt versions                     │
+│    - Active IRB-approved-content versions                 │
+│    - Prescreen result with per-criterion evaluation       │
+│    - Handoff disposition                                  │
+│    - Timestamps and session metadata                      │
+│                                                           │
+│   [Research-grade retention]                              │
+│    - Retention sized to the longest of: institutional     │
+│      research-data-retention floor, trial-specific        │
+│      retention obligations, HIPAA research-record         │
+│      provisions, 45 CFR 46 record-retention obligations,  │
+│      and (where applicable) FDA-regulated-trial record-   │
+│      retention obligations                                │
+│    - Separately-keyed encryption for blast-radius         │
+│      containment                                          │
+│    - Access controls scoped to research-data roles        │
+│      (research-data-officer, sponsor-recruitment-team,    │
+│      IRB-inspector audit-only, principal-investigator,    │
+│      coordinator-team)                                    │
+│    - Cross-class read paths between research-data and     │
+│      clinical-care data explicitly disallowed             │
+│           │                                               │
+│           ▼                                               │
+│   [Output: immutable recruitment-decision record          │
+│    supporting IRB and regulatory inspection]              │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌────────── PER-TRIAL REPORTING + OUTCOME CORRELATION ─────┐
+│                                                           │
+│   [Per-trial recruitment-funnel reporting]                 │
+│    - Entry volume by referral source and channel          │
+│    - Prescreen-completion rate                            │
+│    - Prescreen-yield (eligible/total screened) by cohort  │
+│    - Coordinator-handoff volume and accept rate           │
+│    - Time-to-coordinator-contact                          │
+│    - Coordinator-time-saved estimate                      │
+│                                                           │
+│   [Outcome correlation (accumulates over trial timeline)] │
+│    - Consent rate per coordinator-handoff                 │
+│    - Randomization rate per consent                       │
+│    - Per-cohort representation vs diversity-action-plan   │
+│      targets                                              │
+│    - Patient-reported recruitment experience              │
+│    - Coordinator-reported handoff quality                 │
+│                                                           │
+│   [Operational monitoring]                                │
+│    - Citation coverage rate                               │
+│    - IRB-language faithfulness rate                        │
+│    - Emergency-escalation rate                            │
+│    - Out-of-scope routing rate                            │
+│    - Throughput-control activation frequency              │
+│           │                                               │
+│           ▼                                               │
+│   [Output: per-trial dashboards; outcome metrics for      │
+│    clinical and operational review]                       │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+```
+
+A few cross-cutting design points specific to the clinical trial recruitment conversationalist.
+
+**IRB-approved-content corpus as the only allowed source of trial-specific language.** The assistant's trial-specific output is grounded in IRB-approved content with strict citation. The architecture does not permit the LLM to produce novel trial-specific recruitment language. The IRB-approved corpus is the only source. The IRB-approved disclosure copy itself is authored separately and reviewed by the IRB, not generated by the LLM; the architecture treats the disclosure surface as IRB-approved content rather than as LLM-generated text.
+
+**Per-trial isolation is structural, not advisory.** A conversation about Trial A only retrieves content from Trial A's IRB-approved corpus, only evaluates Trial A's eligibility rules, and only emits handoffs to Trial A's coordinator queue. Cross-trial content leakage is the failure mode the architecture exists to prevent.
+
+**Per-conversation trial binding.** The assistant binds a single trial_id at session start. Switching trials within a session triggers a new conversation with new disclosures and new consent posture. Cross-trial recommendation is structurally prohibited at the tool-dispatcher level.
+
+**IRB-amendment-application mid-conversation.** The assistant snapshots the trial-context-version at conversation start. On every turn, the assistant re-fetches trial-state and compares versions. If a material amendment is detected mid-conversation, the assistant branches to the IRB-approved re-disclosure flow. If a non-material amendment is detected, the assistant continues on the original snapshot with stamped version-history. This is a recipe-distinct architectural primitive not present in recipes 11.1 through 11.9.
+
+**Coordinator-queue-as-throughput-control.** When the coordinator queue exceeds the configured throughput floor, the assistant transitions to a "coordinator-team-busy, we will reach out within X business days, here are the trial materials in the meantime" flow rather than continuing to enqueue handoffs that age out. The throughput control protects both the patient experience (no stale handoffs that produce week-long silences) and the coordinator workflow (no queue that grows faster than processing capacity).
+
+**Deterministic eligibility evaluation as architectural primitive.** Each criterion is encoded as a deterministic rule with named clinical-leadership ownership, version history, and IRB-review evidence. The LLM does not interpret eligibility criteria; it surfaces the questions that the deterministic rule needs answered, captures the patient's response, and routes the response to the rule engine.
+
+**"Interest captured" versus "consent collected" as architectural distinction.** The assistant captures interest (allowed; non-consent activity). The assistant does not collect informed consent (coordinator-only activity). This distinction is enforced at the architecture level, not just at the prompt level.
+
+**Out-of-scope routing rules.** Topics outside recruitment scope route to specific alternative pathways: clinical questions about existing care to the patient's care team; requests for medical advice to the institutional patient-services line; requests to enroll without prescreen to the coordinator team; attempts to recruit in violation of the IRB-approved process to the research-compliance office; emergencies to 911.
+
+**Continuous emergency screening across every utterance.** Same as the previous bots in this chapter. The assistant routes acute emergencies immediately to the appropriate emergency pathway. Recruitment-specific extensions cover prospective participants who surface decompensating symptoms, participants who report a recent condition change during eligibility prescreen, and participants whose conversation surfaces psychosocial crisis the recruitment platform is not equipped to handle.
+
+**Research-data-as-distinct-record-class.** Recruitment-conversation content is stored as research data, with retention per the institutional research-data-retention policy, with access controls per the institution's research-data-access policy, and with an audit trail that supports IRB and regulatory inspection. Research-data principals (research-data-officer, sponsor-recruitment-team, IRB-inspector audit-only role, principal-investigator role, coordinator-team role) are separated from clinical-care principals at the IAM-policy level.
+
+**Per-cohort monitoring is non-negotiable.** Recruitment metrics, engagement metrics, and outcome metrics vary by language, channel, race and ethnicity, age cohort, sex, geography, insurance status, referral source, and site. Per-cohort dashboards are reviewed by clinical leadership, the institutional research-recruitment team, the sponsor's recruitment team, and (where applicable) the diversity-action-plan-tracking team.
+
+**Multi-asset clinical-policy-as-code governance.** The IRB-approved trial corpus, eligibility-rule library, recruitment-FAQ corpus, trial-state registry, coordinator-handoff format, representativeness-instrumentation configuration, and out-of-scope routing rules each have per-asset semantic versioning, sandbox testing, staged rollout, rollback-on-regression, named clinical-leadership ownership, IRB review cadence, and per-asset-version stamping on every recruitment-decision record.
+
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter11.10-architecture). The Python example is linked from there.
 
 ---
 
 ## The Honest Take
 
+The clinical trial recruitment conversationalist is the recipe in this chapter where the regulatory governance structure is most complex, the institutional stakeholder set is broadest, the per-trial customization depth is deepest, and the time horizon for outcome demonstration is longest. The architectural decisions and the operational disciplines that distinguish a deployment that genuinely moves the recruitment funnel from a deployment that merely digitizes a broken workflow are not subtle, and most of them have been visible in the published underperformance of earlier-generation recruitment tools.
+
+The first trap is treating the IRB as a sign-off gate rather than an active product-development participant. The IRB reviews the recruitment script, the prescreen flow, the FAQ content, the routing logic, the data-collection plan, and the disclosure language. Any patient-facing change requires IRB review or (where within the previously-approved scope) an institutional-policy assessment. Institutions that design the product first and then present it to the IRB for rubber-stamping find that the IRB has substantive feedback that requires architectural rework. Institutions that bring the IRB into the design process from week one produce products the IRB can approve without rework. The governance relationship is collaborative, not adversarial, and the architecture reflects that with change-management workflows that include the IRB-coordinator naturally.
+
+The second trap is underestimating protocol-amendment cadence. Trials amend their protocols routinely. Eligibility criteria change. The visit schedule changes. The recruitment language may change. The IRB-approved content corpus is a living document, not a one-time load. Institutions that build the platform as if the trial content is static discover, within the first few months, that the amendment-application workflow (update the content, route for IRB review, apply the approved amendment to the active trial-context, handle in-flight conversations that started under the prior version) is core operational infrastructure, not an edge case.
+
+The third trap is treating coordinator capacity as infinitely elastic. The downstream coordinator team has finite capacity. A recruitment platform that delivers more qualified handoffs than the coordinator team can absorb produces patient-experience problems (long delays in follow-up, loss-of-interest during the wait) and trial-operations problems (handoffs aging in the queue, prescreens going stale, patients ghosting by the time the coordinator calls). The platform's throughput is calibrated to the coordinator team's actual processing capacity, with smooth flow rather than burst-and-wait dynamics. This constraint is not a platform limitation; it is a deployment discipline.
+
+The fourth trap is the equity gap between platform reach and recruitment-platform accessibility. Recruitment platforms reach disproportionately the patients who are already plugged in to the digital-tool ecosystem. The patients with the greatest unmet research-participation opportunity (rural populations, older adults, patients with limited English proficiency, patients with disabilities, patients without reliable internet access, patients without smartphones) are often the patients with the most limited access to the platform's primary channels. Closing this gap requires deliberate investment in channel diversification (SMS, voice, multilingual content, community-based-organization partnerships, in-person kiosk options), not just deployment of a web chat.
+
+The fifth trap is treating the diversity action plan as a marketing exercise rather than a regulatory and scientific obligation. The diversity-action-plan landscape has moved past voluntary commitments; for FDA-regulated trials with FDORA obligations, the diversity action plan is a regulatory document with specific expectations for measuring and improving recruitment representativeness. Per-cohort recruitment-funnel monitoring is the infrastructure that makes the reporting possible. Institutions that instrument this from day one have the data to demonstrate representativeness; institutions that bolt it on later have gaps in the historical record.
+
+The sixth trap is expecting ClinicalTrials.gov integration to be clean. ClinicalTrials.gov listings are a primary patient-facing entry path, and integrating with the registry is part of the architectural surface. In practice, the registry data has known limitations: listings are not always updated promptly when trials close enrollment, the structured eligibility criteria do not always match the investigator-written natural-language criteria, and the site-status information has lag. The integration requires validation logic and graceful handling of stale or inconsistent registry data.
+
+The seventh trap is the multi-trial disambiguation problem. Where the institution has multiple open trials in a therapeutic area, a patient may be a candidate for more than one. The assistant must handle this scenario carefully: discussing one trial at a time, offering the patient information about others if institutional policy permits and the patient asks, and avoiding any framing that compares trials or constitutes recommendation. The per-conversation trial-binding primitive exists for this reason.
+
+The eighth trap is treating the consent-versus-recruitment line as obvious. The line between "capturing the patient's interest and providing information" (recruitment, the assistant's scope) and "collecting informed consent" (the consent process, the coordinator's scope) is well-defined in regulation but can blur in conversation. A patient who says "I want to sign up" is expressing interest, not providing informed consent; the architecture must route them to the coordinator for the actual consent process rather than treating the expression of interest as enrollment. The architecture enforces this distinction at the output-safety layer, not just at the prompt level.
+
+The ninth trap is optimizing for conversations-completed as a success metric. Conversations completed is a vanity metric. The substantive metrics are prescreen yield per cohort, qualified-handoff accept rate, coordinator-time-saved per handoff, and (over the longer trial timeline) consented-and-randomized participants per cohort against diversity-action-plan targets. An assistant optimized for conversation volume will be optimized for the wrong thing. An assistant evaluated on prescreen yield, coordinator time saved, demographic representation, handoff accept rate, and patient-reported recruitment experience is being evaluated correctly.
+
+The tenth trap is underestimating the per-trial onboarding effort. Each trial requires multi-week clinical work to onboard: IRB-approved content authoring, eligibility-rule encoding, FAQ population, coordinator-team training, per-trial testing, IRB review, and post-launch monitoring. Institutions expecting per-trial onboarding in days discover that the content quality and the IRB-review cadence require weeks to months. The per-trial onboarding workflow is institutional content with named operational ownership per trial. At scale, the onboarding velocity is the gating factor, not the platform capability.
+
+The eleventh trap is the build-versus-buy ambiguity and vendor coexistence. Several mature commercial vendors offer recruitment platforms with FAQ-bot capabilities, eligibility-prescreen tools, and coordinator-handoff infrastructure. Sponsor-funded trials often have existing patient-recruitment vendor partnerships with their own platforms and contractual obligations. The institutional recruitment conversationalist may complement, replace, or coexist with these vendor relationships. The relationship model is negotiated per trial, and pretending the build-versus-buy question has a generic answer is the trap; making it institution-specific and per-trial-specific is the discipline.
+
+The thing that surprises engineers coming from generic-chatbot backgrounds is how much of the engineering value is in the institutional content (the IRB-approved corpus, the eligibility-rule library, the coordinator-handoff format, the representativeness-instrumentation configuration) rather than in the conversational LLM itself. The LLM and the tool orchestration are largely the same patterns as the previous chapter 11 recipes; the trial-specific content and the IRB-governance relationship are what distinguish a recruitment assistant from a chat surface with a trial description pasted into the system prompt.
+
+The thing that surprises clinical-trial sponsors is how dependent the platform's recruitment value is on the coordinator team's operational capacity and engagement. A platform that delivers qualified handoffs into a coordinator queue that is understaffed, overloaded, or not integrated with the coordinator's existing workflow produces handoffs that age out and patients who lose interest. Co-designing the handoff format and the queue-management with the coordinator team is not optional.
+
+The thing about cost: the dominant operational cost is the per-trial onboarding (IRB-approved content authoring, eligibility-rule encoding, coordinator-team integration), not the cloud infrastructure. The infrastructure cost per conversation is modest relative to the coordinator time saved per qualified handoff. The ROI demonstration is strongest when measured in coordinator-time-saved and in trial-timeline-adherence rather than in conversation volume.
+
+The thing I would do differently the second time: start with a single, well-characterized trial in a therapeutic area where the institution already has strong coordinator relationships and recruitment data. Validate the IRB-governance workflow, the coordinator-handoff integration, the eligibility-prescreen accuracy, and the per-cohort instrumentation against a narrow scope before expanding to a multi-trial portfolio. The narrow start lets the team validate the institutional stakeholder relationships (IRB, sponsor, coordinator team, research-compliance, diversity-action-plan team) while the scope is still manageable. Adding additional trials later, with the validated governance infrastructure already in place, is safer and faster than launching with ten trials simultaneously and discovering failure modes across all of them at once.
+
 ---
 
 ## Related Recipes
+
+- **Recipe 11.1 (FAQ Chatbot):** Same chapter, foundational pattern parent. The recruitment conversationalist inherits the input-screening pipeline, scope filtering, conversation logging, audit pattern, persona discipline, and per-cohort monitoring.
+- **Recipe 11.2 (Appointment Scheduling Bot):** Same chapter. The coordinator-handoff orchestration pattern (structured summary, queue routing, patient confirmation, timing-expectation setting) parallels the scheduling bot's booking-handoff infrastructure.
+- **Recipe 11.6 (Symptom Checker / Triage Bot):** Same chapter. The IRB-versus-medical-device regulatory distinction is inverted: the triage bot is closer to the SaMD line and must demonstrate clinical safety; the recruitment conversationalist sits on the informational-tool side of the CDS boundary and must demonstrate IRB-content faithfulness. Recruitment-specific acuity scenarios route to the triage pathway.
+- **Recipe 11.7 (Chronic Disease Management Coach):** Same chapter. The citation-grounding pattern is shared: the coach grounds in clinical-content-library citations; the recruitment conversationalist grounds in IRB-approved-corpus citations. The architectural primitive is the same; the content governance is different (clinical-leadership-owned library versus IRB-reviewed recruitment corpus).
+- **Recipe 11.8 (Mental Health Support Bot):** Same chapter. The sensitive-topic-handling pattern is shared: both assistants acknowledge with calibrated language and route when the conversation crosses scope. The recruitment conversationalist applies this when prospective participants surface psychosocial distress, mistrust of research institutions, or crisis events during the recruitment conversation.
+- **Recipe 11.9 (Care Coordination Assistant):** Same chapter. The longitudinal-state pattern and the downstream-human-workflow integration pattern are shared. The coordination assistant manages cross-organizational clinical-coordination state; the recruitment conversationalist manages per-trial recruitment-prescreen state with coordinator-handoff as the downstream human workflow.
+- **Recipe 13.x (Knowledge Graphs):** Chapter 13. Knowledge-graph patterns for trial-eligibility encoding (formal ontologies for inclusion/exclusion criteria, hierarchical condition taxonomies, medication-class hierarchies) underpin the deterministic eligibility-evaluation engine's rule definitions.
 
 ---
 
 ## Tags
 
----
+`conversational-ai` · `clinical-trial-recruitment` · `recruitment-conversationalist` · `irb-approved-content` · `irb-governance` · `eligibility-prescreen` · `coordinator-handoff` · `trial-state-tracking` · `protocol-amendment` · `diversity-action-plan` · `fdora` · `representativeness-instrumentation` · `per-cohort-monitoring` · `vulnerable-populations` · `pediatric-recruitment` · `surrogate-decision-maker` · `21-cfr-part-50` · `21-cfr-part-11` · `45-cfr-46` · `ich-e6-gcp` · `fda-cds-boundary` · `clinicaltrials-gov` · `tool-using-llm` · `function-calling` · `citation-grounding` · `deterministic-eligibility-evaluation` · `research-data-as-distinct-record-class` · `research-grade-retention` · `irb-language-faithfulness` · `throughput-control` · `per-trial-isolation` · `per-conversation-trial-binding` · `coordinator-capacity-constraint` · `recruitment-funnel-metrics` · `prescreen-yield` · `qualified-handoff-accept-rate` · `equity-monitoring` · `community-research-engagement` · `multilingual` · `channel-diversification` · `decentralized-trials` · `informed-consent-boundary` · `prompt-injection-defense` · `emergency-screening` · `out-of-scope-routing` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `bedrock-guardrails` · `opensearch-serverless` · `dynamodb` · `step-functions` · `lambda` · `sqs` · `eventbridge` · `connect` · `pinpoint` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `waf` · `complex` · `regulated` · `hipaa` · `phi-handling` · `audit-trail` · `chapter11` · `recipe-11-10`
 
 ---
 
