@@ -597,11 +597,34 @@ def query_patient_pharmacogenomics(
     Returns:
         Dict with findings, metadata, and confidence information.
     """
+    import re
+
     findings = []
+
+    # Input validation: reject malformed inputs before they reach Neptune.
+    # This prevents injection, catches upstream data quality issues early,
+    # and produces clean audit logs.
+    # Note: In production, raw variant data (VCF) is validated at an earlier
+    # pipeline step. By this point, variants are already resolved to
+    # gene + diplotype form. We validate the gene is a known pharmacogene
+    # and the medication has a valid RxNorm CUI format.
+    validated_variants = []
+    for variant in patient_variants:
+        if variant.get("gene") not in CPIC_PHARMACOGENES:
+            print(f"  [SKIP] Gene not in known pharmacogenes list: {variant.get('gene')}")
+            continue
+        validated_variants.append(variant)
+
+    validated_medications = []
+    for medication in current_medications:
+        if not re.match(r"^\d+$", medication.get("rxnorm_cui", "")):
+            print(f"  [SKIP] Invalid RxNorm CUI format: {medication.get('rxnorm_cui')}")
+            continue
+        validated_medications.append(medication)
 
     # Step 5a: Determine patient phenotypes from their variants
     patient_phenotypes = {}
-    for variant in patient_variants:
+    for variant in validated_variants:
         gene = variant["gene"]
         diplotype = variant["diplotype"]
 
@@ -611,7 +634,7 @@ def query_patient_pharmacogenomics(
             print(f"  {gene} {diplotype} -> {phenotype_result['phenotype']}")
 
     # Step 5b: Check each medication against patient phenotypes
-    for medication in current_medications:
+    for medication in validated_medications:
         interactions = find_gene_drug_interactions(
             medication["rxnorm_cui"], evidence_threshold
         )
@@ -640,7 +663,7 @@ def query_patient_pharmacogenomics(
 
     # Step 5c: Check for phenoconversion
     for gene, phenotype in patient_phenotypes.items():
-        phenoconversion = check_phenoconversion(current_medications, gene, phenotype)
+        phenoconversion = check_phenoconversion(validated_medications, gene, phenotype)
         if phenoconversion:
             findings.append(phenoconversion)
 
@@ -657,7 +680,7 @@ def query_patient_pharmacogenomics(
         "genes_with_phenotype": len(patient_phenotypes),
         "findings": findings,
         "medications_without_findings": [
-            m["name"] for m in current_medications
+            m["name"] for m in validated_medications
             if not any(f.get("medication") == m["name"] for f in findings)
         ],
     }
@@ -806,7 +829,7 @@ This example shows the shape of the solution. Here's the distance between this a
 
 **Error handling and retries.** Neptune queries can timeout under load. The bulk loader can fail partway through. Source downloads can be corrupted. Every external call needs try/except with specific handling for throttling (HTTP 429), timeouts, and malformed responses. Use exponential backoff with jitter for retries.
 
-**Graph versioning and blue-green deployment.** This example loads data into a single Neptune cluster. Production systems use either Neptune's cloning feature or a blue-green deployment pattern: load the new version into a clone, run integration tests, then swap the DNS endpoint. This prevents a bad load from corrupting the live graph.
+**Graph versioning and blue-green deployment.** This example loads data into a single Neptune cluster. Production systems use Neptune's `cloneCluster` API for zero-downtime updates: clone the production cluster, bulk load new data into the clone, run integration tests against it, swap the reader endpoint to the clone, then terminate the old cluster. This prevents queries from seeing an inconsistent graph state during the load window.
 
 **Diplotype calling.** This example assumes diplotypes are provided as input. In reality, you receive raw variant calls (VCF format) from the sequencing lab and must translate them into star allele diplotypes. This translation is gene-specific and complex, especially for CYP2D6 (which has structural variants, gene deletions, and duplications). Tools like Stargazer or PharmCAT handle this, but integrating them adds a significant pipeline step.
 
@@ -820,7 +843,7 @@ This example shows the shape of the solution. Here's the distance between this a
 
 **Population-specific frequency filtering.** The graph should flag when a variant is common in the patient's ancestral population (not clinically surprising) versus rare (potentially more significant). This requires the patient's self-reported ancestry or inferred genetic ancestry, plus population-stratified allele frequency data from gnomAD or similar databases.
 
-**KMS encryption key management.** All data at rest (S3 objects, Neptune storage) should use customer-managed KMS keys with automatic rotation. The Neptune cluster, S3 bucket, and any intermediate storage must all reference the same key policy. Key usage should be logged via CloudTrail for compliance auditing.
+**KMS encryption key management.** All data at rest (S3 objects, Neptune storage, CloudWatch Logs) should use a single customer-managed KMS key (CMK) with automatic annual rotation. Neptune encryption is set at cluster creation and cannot be changed later, so plan this before your first deployment. Key usage should be logged via CloudTrail for compliance auditing.
 
 ---
 

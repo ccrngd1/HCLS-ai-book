@@ -73,18 +73,15 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | AWS Services | Neptune, S3, Glue, Lambda, API Gateway, Step Functions, EventBridge, IAM, KMS, CloudWatch |
-| IAM Permissions | neptune-db:*, s3:GetObject/PutObject, glue:StartJobRun, lambda:InvokeFunction, states:StartExecution |
-
-| BAA | Required. Patient genomic data is PHI under HIPAA. Genetic information also protected under GINA. |
-
-| Encryption | S3 SSE-KMS for all data at rest. Neptune encryption at rest enabled. TLS 1.2+ in transit. |
-
-| VPC | Neptune must run in VPC. Lambda in same VPC with Neptune access. VPC endpoints for S3 and Glue. |
-
-| CloudTrail | All API calls logged. Neptune audit logs enabled for query tracking. |
-
+| IAM Permissions | **Query path (Lambda):** `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` only. No graph write permissions. **ETL pipeline (Glue/Step Functions):** full `neptune-db:*` write access, `s3:GetObject/PutObject`, `glue:StartJobRun`, `states:StartExecution`. Principle of least privilege: the query Lambda must never have write access to the graph. |
+| BAA | Required. Patient genomic data is PHI under HIPAA. Genetic information also protected under GINA. Implement role-based access control: pharmacists see full genotype data, ordering physicians see recommendation only (no raw variant detail). Separate audit logs for genetic data access. Note: several U.S. states have genetic privacy laws stricter than GINA (e.g., California GIPA, Illinois GIPA). Consult legal counsel for state-specific requirements in your deployment region. |
+| Encryption | Customer-managed KMS key (CMK) with automatic annual rotation. Apply the same CMK to S3 bucket encryption, Neptune cluster (set at cluster creation, cannot be changed later), and CloudWatch Logs log group encryption. TLS 1.2+ for all data in transit. |
+| VPC | Neptune must run in VPC. Lambda in same VPC with Neptune access. Required VPC endpoints: S3 (Gateway type), KMS (Interface), CloudWatch Logs (Interface), CloudWatch Monitoring (Interface), Step Functions (Interface), EventBridge (Interface). No NAT Gateway required for the query path since all AWS service calls route through VPC endpoints. |
+| Network Security | Neptune security group: allow inbound TCP 8182 only from the Lambda security group. Lambda security group: allow outbound TCP 8182 to Neptune SG and outbound TCP 443 to VPC endpoint security groups. No inbound rules on the Lambda security group. |
+| CloudTrail | All API calls logged. Neptune audit logs enabled via cluster parameter group (`neptune_enable_audit_log=1`). Publish Neptune audit logs to CloudWatch Logs. Encrypt the audit log group with the same CMK. Set log retention to match your HIPAA audit policy (typically 6-7 years). |
 | Sample Data | PharmGKB open-access datasets. ClinVar public XML dump. Synthetic patient variants for testing. |
-| Cost Estimate | Neptune db.r5.large (~$0.58/hr), Glue ETL (~$0.44/DPU-hr weekly), Lambda queries (~$0.0001/query) |
+| High Availability | Deploy Neptune Multi-AZ with a read replica in a different AZ for automatic failover (under 30 seconds). Query Lambda should use the Neptune reader endpoint for all read operations. This separates query load from write load and provides automatic failover if the primary instance fails. |
+| Cost Estimate | Neptune db.r5.large primary + read replica (~$836/month total for the cluster), Glue ETL (~$0.44/DPU-hr weekly), Lambda queries (~$0.0001/query) |
 
 ### Ingredients
 
@@ -182,11 +179,19 @@ FUNCTION resolve_entities(source_records):
         
         resolved.append(record)
     
-    // Detect and flag ambiguous mappings for manual review
+    // Detect and flag ambiguous mappings for manual review.
+    // Conservative strategy: exclude ambiguous records from the graph load
+    // until resolved. An ambiguous mapping could create incorrect edges
+    // (e.g., linking the wrong drug to a gene interaction).
     ambiguous = find_ambiguous_mappings(resolved)
     IF ambiguous.count > 0:
+        exclude_from_load(resolved, ambiguous)
         queue_for_review(ambiguous)
-        log_warning(f"{ambiguous.count} ambiguous mappings queued for review")
+        log_warning(f"{ambiguous.count} ambiguous mappings excluded from graph load, queued for review")
+        // Alert if ambiguity rate is abnormally high (possible source data issue)
+        ambiguity_rate = ambiguous.count / resolved.count
+        IF ambiguity_rate > 0.05:
+            alert_team(f"Ambiguity rate {ambiguity_rate:.1%} exceeds 5% threshold. Possible source data corruption.")
     
     RETURN resolved
 ```
@@ -342,9 +347,27 @@ Given a patient's genetic test results and current medications, traverse the gra
 
 This is the clinical payoff. Everything above was infrastructure. This step answers the question: "For this specific patient, which of their medications might be affected by their genetics, and what should we do about it?"
 
+**Error handling on the query path:** Distinguish between a successful query that returns no findings (HTTP 200, empty results array) and a query that failed to execute (HTTP 503, Neptune timeout, or connection error). When the query fails, the CDS system should display a "pharmacogenomic check unavailable" notification to the clinician rather than silently omitting results. Log failed queries to an SQS dead-letter queue for retry. Set a CloudWatch alarm on the query failure rate: if it exceeds 1% of queries over a 5-minute window, page the on-call team.
+
 ```pseudocode
 FUNCTION query_patient_pharmacogenomics(patient_variants, current_medications, evidence_threshold="2A"):
     findings = []
+    
+    // Input validation: reject malformed inputs before they reach Neptune.
+    // This prevents injection, catches upstream data quality issues, and
+    // produces clean audit logs.
+    FOR EACH variant IN patient_variants:
+        IF NOT matches_pattern(variant.rsid, "rs[0-9]+"):
+            log_and_skip(variant, "Invalid rsID format")
+            CONTINUE
+        IF NOT is_known_pharmacogene(variant.gene):
+            log_and_skip(variant, "Gene not in known pharmacogenes list")
+            CONTINUE
+    
+    FOR EACH medication IN current_medications:
+        IF NOT matches_pattern(medication.rxnorm_cui, "[0-9]+"):
+            log_and_skip(medication, "Invalid RxNorm CUI format")
+            CONTINUE
     
     // Step 5a: Determine patient phenotypes from their variants
     patient_phenotypes = {}
@@ -446,23 +469,33 @@ FUNCTION run_graph_update_pipeline(triggered_sources):
     load_stats = build_graph_load_files(resolved)
     log_info(f"Version {new_version}: {load_stats.node_count} nodes, {load_stats.edge_count} edges")
     
-    // Step 6d: Load into Neptune (using a staging cluster or snapshot-restore)
+    // Step 6d: Zero-downtime graph update using Neptune cloneCluster.
+    // Never bulk-load into the live production cluster. Queries during a load
+    // window would see an inconsistent graph state.
+    // Strategy: clone production -> bulk load into clone -> integration test -> swap endpoint -> terminate old.
+    clone_cluster = neptune_clone_cluster(
+        source_cluster=production_cluster_id,
+        clone_id=f"pgx-graph-{new_version}"
+    )
+    
     load_result = neptune_bulk_load(
+        cluster=clone_cluster.endpoint,
         source="s3://graph-loads/{new_version}/",
         iam_role=neptune_load_role,
         format="opencypher",
         fail_on_error=True
     )
     
-    // Step 6e: Run integration tests against new graph version
-    test_results = run_integration_tests(new_version, test_suite="pharmacogenomics")
+    // Step 6e: Run integration tests against the clone (not production)
+    test_results = run_integration_tests(clone_cluster.endpoint, test_suite="pharmacogenomics")
     IF NOT test_results.all_passed:
         alert_team("Graph update failed integration tests", test_results.failures)
-        ROLLBACK(new_version)
+        terminate_cluster(clone_cluster)
         RETURN {"status": "failed", "reason": test_results.failures}
     
-    // Step 6f: Swap live traffic to new version
-    update_endpoint_to_version(new_version)
+    // Step 6f: Swap live traffic to the new clone, then terminate the old cluster
+    old_cluster = swap_reader_endpoint(production_reader_endpoint, clone_cluster)
+    terminate_cluster(old_cluster)
     
     RETURN {"status": "success", "version": new_version, "stats": load_stats}
 ```
@@ -546,6 +579,24 @@ Sample output from a patient pharmacogenomics query:
 - Patients with ancestry not well-represented in frequency databases (allele frequency data may be unreliable)
 - Novel drugs without established pharmacogenomic data (graph has no edges to traverse)
 - Conflicting evidence between sources (requires human adjudication workflow)
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above give you the shape of the system. Here's what separates this from something you'd connect to a clinical decision support system:
+
+**No clinical validation suite.** Before any pharmacogenomic recommendation reaches a clinician, the system must pass validation against a curated set of known-correct cases (patients with established genotypes and guideline-concordant recommendations). You need hundreds of these test cases covering edge cases: compound heterozygotes, multi-gene interactions, and population-specific variants.
+
+**Diplotype calling is hand-waved.** The pseudocode assumes diplotypes arrive as input. In reality, you receive raw VCF data from sequencing and must call star alleles, which is a hard bioinformatics problem (especially for CYP2D6 with its structural variants, gene deletions, and hybrid alleles). Tools like PharmCAT handle this, but integrating them is a significant pipeline addition.
+
+**No pharmacist review workflow.** When the system produces a recommendation with moderate evidence or when multiple conflicting recommendations exist, a pharmacist must review before the alert reaches the ordering physician. This requires a review queue, a UI, and a feedback loop that updates the system based on pharmacist decisions.
+
+**Entity resolution is simplified.** The cross-reference tables shown here have a handful of entries. Production requires mappings for thousands of genes, tens of thousands of drugs, and millions of variants. The Glue ETL job that maintains these mappings is typically the largest engineering effort.
+
+**No phenoconversion completeness.** Only CYP2D6 inhibitors are modeled here. Production systems must cover CYP2C19, CYP3A4, and other enzyme systems. The inhibitor lists must be maintained as new drugs enter the market.
+
+**No regulatory submission trail.** If the system qualifies as a clinical decision support tool under FDA guidance, you may need 510(k) clearance or documentation showing it falls under an exemption. The audit trail for graph updates, evidence versions, and recommendation logic must be airtight.
 
 ---
 
