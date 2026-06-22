@@ -1149,6 +1149,9 @@ def cluster_claims_by_encounter(patient_resolved_claims: list) -> list:
                 + (claim.get("secondary_diagnoses_icd10") or []))
             claim["cluster_role"] = _infer_role(claim, existing_cluster)
         else:
+            # Build the cluster shell first, score the role, THEN
+            # add the claim so _infer_role's "is any OTHER facility
+            # claim already here" check works correctly.
             new_cluster = {
                 "encounter_cluster_id": _generate_cluster_id(
                     claim["resolved_local_patient_id"],
@@ -1158,7 +1161,7 @@ def cluster_claims_by_encounter(patient_resolved_claims: list) -> list:
                 "encounter_class":      encounter_class,
                 "cluster_window_start": claim["service_from_date"],
                 "cluster_window_end":   claim["service_through_date"],
-                "constituent_claims":   [claim],
+                "constituent_claims":   [],
                 "aggregate_diagnoses":  set(
                     [claim["primary_diagnosis_icd10"]]
                     + (claim.get("secondary_diagnoses_icd10") or [])),
@@ -1168,6 +1171,7 @@ def cluster_claims_by_encounter(patient_resolved_claims: list) -> list:
                     if claim["claim_type"].startswith("facility_") else None,
             }
             claim["cluster_role"] = _infer_role(claim, new_cluster)
+            new_cluster["constituent_claims"].append(claim)
             clusters.append(new_cluster)
 
     # 3D: post-cluster reconciliation. Aggregate the cluster's
@@ -1277,9 +1281,12 @@ def _diagnosis_concordance_score(cluster_dx: list, ehr_dx: list) -> Decimal:
     exact_overlap = cluster_full & ehr_full
     hier_overlap = cluster_hier & ehr_hier
     if exact_overlap:
-        # Exact code match scores higher than chapter-only match.
+        # Exact code match scores higher than chapter-only match,
+        # but the score is normalized to stay in [0, 1] for
+        # comparability with the other features.
         union = cluster_full | ehr_full
-        return _to_decimal(len(exact_overlap) / max(1, len(union)) + 0.3)
+        jaccard = Decimal(len(exact_overlap)) / Decimal(max(1, len(union)))
+        return _to_decimal(min(Decimal("1.0"), jaccard + Decimal("0.3")))
     if hier_overlap:
         union = cluster_hier | ehr_hier
         return _to_decimal(0.4 * (len(hier_overlap) / max(1, len(union))))
@@ -1408,7 +1415,11 @@ def link_encounter(cluster: dict,
                 "link_status":               "LINKED_HIGH_CONFIDENCE",
                 "linked_clinical_encounter_id": best["encounter"]["encounter_id"],
                 "link_confidence":           best["composite"],
-                "link_method":               "probabilistic_high_confidence"}
+                "link_method":               "probabilistic_high_confidence",
+                "matched_clinical_encounter_diagnoses":
+                    best["encounter"].get("encounter_diagnoses", []),
+                "matched_clinical_encounter_drg":
+                    best["encounter"].get("drg_code")}
     if best["composite"] >= ENCOUNTER_LINK_MED_THRESHOLD:
         return {**base,
                 "link_status":               "LINKED_MED_CONFIDENCE",
@@ -1416,7 +1427,11 @@ def link_encounter(cluster: dict,
                 "link_confidence":           best["composite"],
                 "link_method":               "probabilistic_med_confidence",
                 "usage_caveat":
-                    "use_with_confidence_filter_in_quality_measurement"}
+                    "use_with_confidence_filter_in_quality_measurement",
+                "matched_clinical_encounter_diagnoses":
+                    best["encounter"].get("encounter_diagnoses", []),
+                "matched_clinical_encounter_drg":
+                    best["encounter"].get("drg_code")}
     if best["composite"] <= ENCOUNTER_LINK_REJECT_THRESHOLD:
         return {**base,
                 "link_status":          "NO_LINK",
@@ -1600,7 +1615,13 @@ def attribute_care_events(linked_cluster: dict,
     coverage = (Decimal(len(line_item_attributions)) / Decimal(total)
                   if total > 0 else None)
     if coverage is not None:
-        _emit_metric("AttributionCoverage", float(coverage))
+        cohort_bucket = SYNTHETIC_LOCAL_MPI.get(
+            linked_cluster.get("cluster", {}).get("local_patient_id", ""),
+            {}).get("cohort_bucket", "unknown")
+        _emit_metric("AttributionCoverage", float(coverage),
+                      dimensions={"CohortBucket": cohort_bucket,
+                                    "EncounterClass":
+                                        clinical_encounter["encounter_class"]})
 
     return {
         "encounter_cluster_id":     cluster_id,
@@ -1638,8 +1659,18 @@ def persist_and_emit(linkage_decision: dict,
         "cluster_window_end":        cluster["cluster_window_end"],
         "constituent_claim_ids":     [c["claim_id"]
                                           for c in cluster["constituent_claims"]],
-        "primary_diagnoses":         cluster["aggregate_diagnoses"],
-        "drg_code":                  cluster.get("drg_code"),
+        "primary_diagnoses_claim":   sorted({
+            c["primary_diagnosis_icd10"]
+            for c in cluster["constituent_claims"]
+            if c.get("primary_diagnosis_icd10")}),
+        "secondary_diagnoses_claim": sorted({
+            d for c in cluster["constituent_claims"]
+            for d in (c.get("secondary_diagnoses_icd10") or [])}),
+        "primary_diagnoses_ehr":
+            linkage_decision.get("matched_clinical_encounter_diagnoses", []),
+        "drg_code_claim":            cluster.get("drg_code"),
+        "drg_code_ehr":
+            linkage_decision.get("matched_clinical_encounter_drg"),
         "cluster_charge_total":      cluster["cluster_charge_total"],
         "cluster_paid_total":        cluster["cluster_paid_total"],
         "link_status":               linkage_decision["link_status"],
@@ -1660,6 +1691,16 @@ def persist_and_emit(linkage_decision: dict,
         "matcher_config_version":    MATCHER_CONFIG_VERSION,
         "vocabulary_versions":       vocabulary_map.versions_used(),
         "resolved_at":               _now_iso(),
+        # NOTE: Demo writes one item per cluster keyed on
+        # encounter_cluster_id only. The pseudocode's
+        # next_version_for(...) pattern requires a composite
+        # (encounter_cluster_id, version) key on the production
+        # table; the ConditionExpression below would change to
+        # attribute_not_exists(version) so re-links after
+        # invalidation append rather than fail. Production:
+        # extend the table schema to include version as a sort
+        # key, replace version=1 with next_version_for(cluster_id),
+        # and update the ConditionExpression accordingly.
         "version":                   1,
     })
 
@@ -1684,6 +1725,16 @@ def persist_and_emit(linkage_decision: dict,
         "emitted_at":   None,
     }
     try:
+        # Production: wrap both writes in a TransactWriteItems
+        # call so the linkage table and outbox stay consistent on
+        # partial failure. The demo uses two separate put_item
+        # calls because the in-memory fallback tables do not
+        # support transact_write_items. The mechanics:
+        #   dynamodb.meta.client.transact_write_items(TransactItems=[
+        #       {"Put": {"TableName": LINKAGE_TABLE, "Item": ...,
+        #                "ConditionExpression": "..."}},
+        #       {"Put": {"TableName": OUTBOX_TABLE, "Item": ...}},
+        #   ])
         dynamodb.Table(LINKAGE_TABLE).put_item(
             Item=linkage_record,
             ConditionExpression="attribute_not_exists(encounter_cluster_id)",
@@ -1736,7 +1787,10 @@ def persist_and_emit(linkage_decision: dict,
 
     _emit_metric("LinkageOutcome", 1.0,
                   dimensions={"Status": linkage_decision["link_status"],
-                                "EncounterClass": cluster["encounter_class"]})
+                                "EncounterClass": cluster["encounter_class"],
+                                "CohortBucket": SYNTHETIC_LOCAL_MPI.get(
+                                    cluster["local_patient_id"], {}
+                                ).get("cohort_bucket", "unknown")})
     return linkage_record
 
 def invalidate_on_event(event: dict) -> dict:
