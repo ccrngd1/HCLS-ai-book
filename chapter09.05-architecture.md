@@ -10,6 +10,8 @@
 
 **Amazon SageMaker for model hosting and inference.** SageMaker provides managed endpoints for real-time inference with auto-scaling. For a chest X-ray triage model, you need GPU-backed inference (CNNs are computationally intensive on CPU alone), consistent sub-5-second latency, and the ability to scale with imaging volume. SageMaker real-time endpoints with GPU instances (ml.g4dn or ml.g5 family) deliver this. SageMaker also handles model versioning, A/B testing for model updates, and monitoring for data drift. For a regulated medical device, you need all three.
 
+**A note on FDA-regulated model updates:** If your triage system is classified as a medical device, model updates (retraining, architecture changes, threshold adjustments) must go through a predetermined change control plan (PCCP) or require a new regulatory submission. SageMaker Model Registry supports an approval chain (Pending/Approved/Rejected statuses, audit trail of who approved what and when), but it does not replace the regulatory process. Your QMS must define which model changes are covered by the PCCP and which require a new 510(k). SageMaker Model Packages also support SHA-256 integrity verification of model artifacts, which satisfies the artifact traceability requirements in your QMS documentation.
+
 **Amazon S3 for DICOM storage and model artifacts.** Incoming DICOM files need a durable, encrypted landing zone before and after processing. S3 with SSE-KMS encryption provides this. Model artifacts (the trained weights) also live in S3 and are loaded by SageMaker at endpoint startup.
 
 **AWS Lambda for orchestration and lightweight processing.** The workflow coordination (receive notification of new study, validate metadata, trigger preprocessing, call inference endpoint, format results, send worklist update) is a series of short-lived, stateless operations. Lambda handles this without persistent infrastructure. For DICOM metadata parsing and routing decisions, Lambda is the right weight class.
@@ -19,6 +21,18 @@
 **Amazon CloudWatch for monitoring and alerting.** Model performance monitoring (inference latency, error rates, confidence score distributions) feeds into CloudWatch metrics and alarms. A sudden shift in the distribution of confidence scores can indicate data drift (new equipment, changed protocols) that degrades model accuracy. You want to catch this before clinicians notice.
 
 **AWS HealthImaging (optional) for DICOM management.** AWS HealthImaging is a purpose-built service for storing, accessing, and analyzing medical images at scale. If you're building the full imaging pipeline on AWS (not just the AI triage layer), HealthImaging provides DICOM-native storage with sub-second image retrieval, which simplifies the DICOM handling that would otherwise require custom code.
+
+### Fallback Behavior and Graceful Degradation
+
+The system must never block a study from being read because the AI is down. If the SageMaker endpoint is unavailable (deployment in progress, scaling event, transient failure), the pipeline should degrade gracefully to pre-AI FIFO ordering.
+
+**Inference failure handling:** If the SageMaker InvokeEndpoint call fails after retries (3 attempts with exponential backoff), the study-router Lambda marks the study as "triage-unavailable" in DynamoDB and allows it to proceed through the worklist at normal priority. The study is not lost; it simply skips AI prioritization. An immediate CloudWatch alarm fires so the operations team knows the model is degraded.
+
+**SQS buffer for resilience:** Place an SQS queue between the study-router and the inference-caller Lambda. This decouples ingestion from inference. If the endpoint is temporarily unavailable, messages accumulate in the queue and are retried automatically when the endpoint recovers. Configure a visibility timeout of 60 seconds and a maximum receive count of 3 before sending to the Dead Letter Queue.
+
+**Dead Letter Queue (DLQ):** Configure a DLQ on the study-router Lambda (and the inference-caller, if separate). Any study that fails triage processing after retries lands in the DLQ for investigation and reprocessing. Set a CloudWatch alarm on DLQ message count > 0. Studies that fail triage should be flagged in the worklist as "AI triage unavailable" rather than silently proceeding at normal priority, so radiologists know the AI did not evaluate that study.
+
+**Zero-downtime model updates:** Use SageMaker blue/green deployment (via deployment guardrails) for model updates. Traffic shifts gradually from the old endpoint to the new one, with automatic rollback if error rates spike. This eliminates the "endpoint unavailable during deployment" window entirely.
 
 ### Architecture Diagram
 
@@ -43,12 +57,20 @@ flowchart TD
     style J fill:#9f9,stroke:#333
 ```
 
+**How DICOM data gets from on-premises to S3.** The architecture diagram starts at the S3 bucket, but in practice your imaging equipment is on-premises and the DICOM data needs a secure path to the cloud. Three common approaches:
+
+1. **AWS Direct Connect with MACsec encryption** (preferred for production radiology AI). Provides dedicated, low-latency connectivity with consistent bandwidth. Radiology AI workloads are latency-sensitive (you want studies triaged within seconds of acquisition), and Direct Connect delivers predictable sub-10ms round-trip times that public internet cannot guarantee.
+2. **Site-to-Site VPN.** Encrypted tunnel over public internet. Simpler to set up, lower cost, but latency is variable and throughput caps at ~1.25 Gbps per tunnel. Acceptable for pilot deployments or low-volume sites.
+3. **DICOM gateway appliance (on-premises).** A local appliance (commercial or open-source like Orthanc) that receives DICOM from modalities, TLS-encrypts, and forwards to an S3 Transfer Acceleration endpoint. This approach works well when you cannot modify network infrastructure but need to get images flowing quickly.
+
+For any approach, ensure that DICOM data is encrypted in transit (TLS 1.2+) and that the network path does not traverse the public internet unencrypted. Direct Connect is preferred for production because consistent latency directly impacts triage value: a study that takes 30 seconds to upload has already lost its triage window.
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon CloudWatch, Amazon SNS, (optional) AWS HealthImaging |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `s3:HeadObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `cloudwatch:PutMetricData`, `logs:CreateLogGroup`, `logs:PutLogEvents`. Production deployments should use per-function IAM roles with least-privilege scoping; the permissions listed here are the union across all Lambda functions. |
+| **IAM Permissions** | Per-function least-privilege roles required. **study-router Lambda:** `s3:GetObject`, `s3:HeadObject` (on `dicom-inbox/*` prefix), `sqs:SendMessage` (to inference queue). **preprocessor Lambda:** `s3:GetObject` (on `dicom-inbox/*`), `s3:PutObject` (on `preprocessed/*` prefix). **inference-caller Lambda:** `sagemaker:InvokeEndpoint` (on the specific endpoint ARN), `s3:GetObject` (on `preprocessed/*`). **priority-scorer Lambda:** `dynamodb:PutItem`, `dynamodb:GetItem` (on `cxr-triage-results` table), `sns:Publish` (on the alert topic ARN), `cloudwatch:PutMetricData` (for confidence drift monitoring). All functions additionally need `logs:CreateLogGroup` and `logs:PutLogEvents` for CloudWatch Logs. Production deployments must use per-function IAM roles; never share a single role across all Lambdas. |
 | **BAA** | AWS BAA signed (required: DICOM images are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker endpoint: KMS-encrypted storage volumes; all API calls over TLS |
 | **VPC** | Production: Lambda and SageMaker endpoint in VPC with no internet access. Required VPC endpoints: `com.amazonaws.{region}.s3` (Gateway), `com.amazonaws.{region}.dynamodb` (Gateway), `com.amazonaws.{region}.sagemaker.runtime` (Interface), `com.amazonaws.{region}.sns` (Interface), `com.amazonaws.{region}.logs` (Interface), `com.amazonaws.{region}.monitoring` (Interface, for PutMetricData). SageMaker endpoints must be deployed with VPC-only access (no public endpoint). Validate by confirming the endpoint's `VpcConfig` is populated and that no route to an internet gateway exists from the endpoint's subnet. |
@@ -75,8 +97,8 @@ flowchart TD
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns relevant to this recipe:
 >
-> - [`amazon-sagemaker-medical-imaging`](https://github.com/aws-samples/amazon-sagemaker-medical-imaging): SageMaker-based medical imaging inference pipelines including DICOM handling 
-> - [`aws-healthimaging-samples`](https://github.com/aws-samples/aws-healthimaging-samples): Working with AWS HealthImaging for DICOM storage and retrieval
+> - [`aws-healthimaging-samples`](https://github.com/aws-samples/aws-healthimaging-samples): Working with AWS HealthImaging for DICOM storage, retrieval, and metadata access
+> - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including real-time inference endpoint deployment and model monitoring
 
 #### Walkthrough
 
@@ -236,7 +258,14 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
     write record to database table "triage-results":
         study_id          = study_id
         accession_number  = accession_number
-        patient_id        = patient_id           // for linking back to clinical context
+        patient_id        = patient_id           // Required for FDA post-market surveillance:
+                                                 // must correlate AI findings with patient
+                                                 // outcomes over time. Because this field
+                                                 // contains PHI, the DynamoDB table requires
+                                                 // the same access controls as any PHI data
+                                                 // store (encryption at rest with CMK, IAM
+                                                 // policies restricted to authorized roles,
+                                                 // CloudTrail audit logging on all access).
         model_version     = "cxr-triage-v2.1"   // track which model version produced this result
         inference_time    = current UTC timestamp
         priority          = priority_result.priority
@@ -344,8 +373,7 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including real-time inference endpoint deployment 
 
 **AWS Solutions and Blogs:**
-- [Guidance for Medical Imaging on AWS](https://aws.amazon.com/solutions/guidance/medical-imaging-on-aws/): Reference architecture for medical imaging workflows on AWS 
-- [Build a medical image analysis pipeline on AWS](https://aws.amazon.com/blogs/machine-learning/build-a-medical-image-analysis-pipeline-on-aws/): Blog post covering end-to-end medical imaging ML pipelines 
+- [Healthcare and Life Sciences on AWS](https://aws.amazon.com/health/): AWS healthcare industry hub covering medical imaging, genomics, and clinical AI use cases
 
 **Public Datasets (for development only):**
 - [NIH ChestX-ray14](https://nihcc.app.box.com/v/ChestXray-NIHCC): 112,120 frontal chest X-rays with 14 disease labels

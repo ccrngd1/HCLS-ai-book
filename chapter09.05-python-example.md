@@ -419,6 +419,10 @@ def store_triage_result(
     record = {
         "study_id": study_metadata["study_instance_uid"],
         "accession_number": study_metadata["accession_number"],
+        # patient_id is stored for FDA post-market surveillance: correlating AI
+        # findings with patient outcomes over time. Because this is PHI, the
+        # DynamoDB table must have encryption at rest (CMK), restricted IAM
+        # policies, and CloudTrail audit logging on all access.
         "patient_id": study_metadata["patient_id"],
         "s3_key": study_metadata["s3_key"],
         "model_version": "cxr-triage-v2.1",
