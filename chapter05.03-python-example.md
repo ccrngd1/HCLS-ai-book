@@ -51,7 +51,6 @@ import unicodedata
 import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Optional
 
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -471,22 +470,19 @@ def _classify_vendor_response(vr: dict) -> str:
         return "NOT_VALIDATED"
     return "INVALID"
 
-def _build_canonical_hash(delivery_line_1: str, secondary_number: Optional[str],
-                            last_line: str) -> str:
+def _build_canonical_hash(delivery_line_1: str, last_line: str) -> str:
     """
     Stable hash for the canonical address. Same physical address
     with the same secondary unit produces the same hash; that is
     the substrate for household grouping. The hash drops casing
     and whitespace differences so equivalent inputs collide.
 
-    Note: delivery_line_1 already includes the unit number as
-    returned by CASS-certified vendors (e.g., "1421 ELM ST APT 3B"),
-    so the canonical form is simply (delivery_line_1, last_line).
-    The secondary_number parameter is retained for backward
-    compatibility with callers that pass it explicitly, but it is
-    redundant when delivery_line_1 is well-formed.
+    delivery_line_1 from a CASS-certified vendor already includes
+    the unit number when present (e.g., "1421 ELM ST APT 3B"), so
+    the canonical form is simply (delivery_line_1, last_line). No
+    separate secondary_number parameter is needed.
     """
-    canon = _canonical_form(delivery_line_1, secondary_number, last_line)
+    canon = _canonical_form(delivery_line_1, last_line)
     return _sha256(canon)
 
 def standardize_address(raw: dict) -> dict:
@@ -564,7 +560,6 @@ def standardize_address(raw: dict) -> dict:
         standardized["metadata"] = vr.get("metadata") or {}
         standardized["canonical_hash"] = _build_canonical_hash(
             vr.get("delivery_line_1") or "",
-            (vr.get("components") or {}).get("secondary_number"),
             vr.get("last_line") or "",
         )
         if status == "CORRECTED":
@@ -691,6 +686,19 @@ def persist_standardized_record(patient_id: str, raw: dict,
                       extra={"patient_id": patient_id, "error": str(exc)})
         # In production: DLQ + alarm. The demo continues so the
         # rest of the pipeline still runs.
+
+    # Demo-mode mirror: update the in-memory registry so the
+    # canonical-hash GSI fallback in _query_records_at_canonical
+    # stays consistent with the persisted record. In production
+    # this role is filled by the real DynamoDB canonical-hash GSI;
+    # the registry is purely a demo stand-in.
+    if new_canonical_hash:
+        _IN_MEMORY_ADDRESS_REGISTRY[(patient_id, address_role)] = {
+            "patient_id":     patient_id,
+            "address_role":   address_role,
+            "canonical_hash": new_canonical_hash,
+            "standardized":   standardized,
+        }
 
     # 3C: archive the curated record to S3.
     _write_audit({
@@ -1210,16 +1218,11 @@ def simulate_ncoa_processing(movers: list) -> dict:
     match_type}. Production submits the patient address list to a
     NCOAlink-certified vendor and processes the response file.
 
-    Known limitation: this path and `monthly_usps_refresh` both call
-    `persist_standardized_record` directly rather than going through
-    `run_standardize_pipeline_for_patient`, and
-    `persist_standardized_record` does not update the demo-only
-    `_IN_MEMORY_ADDRESS_REGISTRY`. In production the in-memory
-    registry does not exist (DynamoDB is the source of truth), so
-    the limitation is demo-only. A production deployment would move
-    the registry update inside `persist_standardized_record` so
-    every code path that persists a standardized record also updates
-    the lookup substrate for household re-inference.
+    This path calls `persist_standardized_record` directly rather
+    than going through `run_standardize_pipeline_for_patient`; the
+    registry update happens inside `persist_standardized_record` so
+    household re-inference for affected canonical hashes sees the
+    updated state correctly.
     """
     processed = 0
     affected_canonicals = set()
@@ -1295,18 +1298,6 @@ def run_standardize_pipeline_for_patient(source_event: dict) -> dict:
 
     persist_summary = persist_standardized_record(
         source_event["patient_id"], raw, standardized)
-
-    # Maintain the in-memory registry so the household-inference
-    # GSI-fallback path works in the demo.
-    if standardized.get("canonical_hash"):
-        key = (source_event["patient_id"],
-                source_event.get("address_role", "physical"))
-        _IN_MEMORY_ADDRESS_REGISTRY[key] = {
-            "patient_id":     source_event["patient_id"],
-            "address_role":   source_event.get("address_role", "physical"),
-            "canonical_hash": standardized["canonical_hash"],
-            "standardized":   standardized,
-        }
 
     household_summary = None
     if standardized.get("canonical_hash"):
