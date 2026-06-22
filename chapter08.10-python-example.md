@@ -226,70 +226,99 @@ def extract_entities_from_note(note: dict) -> dict:
     note_text = note["text"]
 
     # Comprehend Medical has a 20,000 character limit per call.
-    # Clinical notes rarely exceed this, but in production you'd chunk longer docs.
-    if len(note_text) > 20000:
-        logger.warning("Note %s exceeds 20K chars, truncating", note["note_id"])
-        note_text = note_text[:20000]
+    # For notes exceeding this, split at sentence boundaries before 18,000 chars,
+    # process each chunk independently, then merge and deduplicate results.
+    # Most clinical notes are well under the limit, so chunking rarely fires.
+    chunks = _chunk_note_text(note_text, max_chars=18000)
 
-    # Call DetectEntitiesV2. This is the general-purpose extraction API.
-    # It returns conditions, medications, tests, anatomy, and temporal expressions.
-    response = comprehend_medical.detect_entities_v2(Text=note_text)
+    all_entities = []
+    all_rx_lookup = {}
 
-    # Also call InferRxNorm for normalized medication codes.
-    # This gives us RxNorm CUIs so we can match "Effexor" to "venlafaxine".
-    rx_response = comprehend_medical.infer_rx_norm(Text=note_text)
+    for chunk_text, chunk_offset in chunks:
+        # Call DetectEntitiesV2 on this chunk.
+        response = comprehend_medical.detect_entities_v2(Text=chunk_text)
 
-    # Process entities into a consistent internal format.
-    processed = []
-    for entity in response.get("Entities", []):
-        # Determine assertion status from Traits.
-        # NEGATION trait means the entity is negated ("denies depression").
-        # No NEGATION trait means present/positive.
-        assertion = "POSITIVE"
-        traits = [t["Name"] for t in entity.get("Traits", [])]
-        if "NEGATION" in traits:
-            assertion = "NEGATIVE"
+        # Also call InferRxNorm for normalized medication codes.
+        rx_response = comprehend_medical.infer_rx_norm(Text=chunk_text)
 
-        # Extract linked attributes (dose, frequency, test values, etc.)
-        attributes = []
-        for attr in entity.get("Attributes", []):
-            attributes.append({
-                "type": attr["Type"],
-                "text": attr["Text"],
-                "score": attr["Score"],
+        # Process entities and adjust offsets back to original document coordinates.
+        for entity in response.get("Entities", []):
+            assertion = "POSITIVE"
+            traits = [t["Name"] for t in entity.get("Traits", [])]
+            if "NEGATION" in traits:
+                assertion = "NEGATIVE"
+
+            attributes = []
+            for attr in entity.get("Attributes", []):
+                attributes.append({
+                    "type": attr["Type"],
+                    "text": attr["Text"],
+                    "score": attr["Score"],
+                })
+
+            all_entities.append({
+                "text": entity["Text"],
+                "category": entity["Category"],
+                "type": entity["Type"],
+                "assertion": assertion,
+                "confidence": entity["Score"],
+                "traits": traits,
+                "attributes": attributes,
+                "begin_offset": entity["BeginOffset"] + chunk_offset,
+                "end_offset": entity["EndOffset"] + chunk_offset,
             })
 
-        processed.append({
-            "text": entity["Text"],
-            "category": entity["Category"],
-            "type": entity["Type"],
-            "assertion": assertion,
-            "confidence": entity["Score"],
-            "traits": traits,
-            "attributes": attributes,
-            "begin_offset": entity["BeginOffset"],
-            "end_offset": entity["EndOffset"],
-        })
-
-    # Build a medication normalization lookup from InferRxNorm results.
-    # This lets us link brand names to generics later.
-    rx_lookup = {}
-    for rx_entity in rx_response.get("Entities", []):
-        if rx_entity.get("RxNormConcepts"):
-            top_concept = rx_entity["RxNormConcepts"][0]
-            rx_lookup[rx_entity["Text"].lower()] = {
-                "code": top_concept["Code"],
-                "description": top_concept["Description"],
-                "score": top_concept["Score"],
-            }
+        # Build medication normalization lookup from InferRxNorm results.
+        for rx_entity in rx_response.get("Entities", []):
+            if rx_entity.get("RxNormConcepts"):
+                top_concept = rx_entity["RxNormConcepts"][0]
+                all_rx_lookup[rx_entity["Text"].lower()] = {
+                    "code": top_concept["Code"],
+                    "description": top_concept["Description"],
+                    "score": top_concept["Score"],
+                }
 
     return {
         "note_id": note["note_id"],
         "note_date": note["note_date"],
-        "entities": processed,
-        "rx_normalization": rx_lookup,
-        "entity_count": len(processed),
+        "entities": all_entities,
+        "rx_normalization": all_rx_lookup,
+        "entity_count": len(all_entities),
     }
+
+
+def _chunk_note_text(text: str, max_chars: int = 18000) -> list[tuple[str, int]]:
+    """
+    Split text into chunks that fit within Comprehend Medical's 20K limit.
+    Splits at the last sentence-ending punctuation before max_chars.
+    Returns list of (chunk_text, start_offset) tuples.
+
+    Most notes are under 18K and return as a single chunk with offset 0.
+    """
+    if len(text) <= max_chars:
+        return [(text, 0)]
+
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + max_chars
+        if end >= len(text):
+            chunks.append((text[start:], start))
+            break
+        # Find last sentence boundary before the limit
+        boundary = text.rfind(". ", start, end)
+        if boundary == -1 or boundary <= start:
+            # No sentence boundary found; fall back to whitespace
+            boundary = text.rfind(" ", start, end)
+        if boundary == -1 or boundary <= start:
+            boundary = end  # Hard cut as last resort
+        else:
+            boundary += 1  # Include the period/space
+
+        chunks.append((text[start:boundary], start))
+        start = boundary
+
+    return chunks
 ```
 
 ---
@@ -510,18 +539,33 @@ def aggregate_evidence(all_evidence: list, phenotype_def: dict) -> dict:
                 },
             }
         else:
-            # Standard aggregation: count evidence instances
+            # Standard aggregation: count evidence instances, with temporal
+            # conflict resolution when both positive and negative evidence exist.
+            # "current-status" (default): most recent note wins.
+            # "ever-had": any positive evidence suffices regardless of negations.
+            positive_evidence = [e for e in criterion_evidence if e.get("assertion") == "POSITIVE"]
+            negative_evidence = [e for e in criterion_evidence if e.get("assertion") == "NEGATIVE"]
+
+            temporal_mode = criterion.get("temporal_semantics", "current-status")
+            if positive_evidence and negative_evidence:
+                if temporal_mode == "current-status":
+                    latest_negative_date = max(e["note_date"] for e in negative_evidence)
+                    positive_evidence = [
+                        e for e in positive_evidence if e["note_date"] > latest_negative_date
+                    ]
+                # "ever-had": keep all positive evidence unchanged
+
             min_required = criterion.get("min_evidence_count", 1)
             results[cid] = {
-                "met": len(criterion_evidence) >= min_required,
+                "met": len(positive_evidence) >= min_required,
                 "confidence": (
-                    sum(e["confidence"] for e in criterion_evidence) / len(criterion_evidence)
-                    if criterion_evidence else 0.0
+                    sum(e["confidence"] for e in positive_evidence) / len(positive_evidence)
+                    if positive_evidence else 0.0
                 ),
-                "evidence_count": len(criterion_evidence),
-                "supporting_notes": list(set(e["note_id"] for e in criterion_evidence)),
+                "evidence_count": len(positive_evidence),
+                "supporting_notes": list(set(e["note_id"] for e in positive_evidence)),
                 "details": {
-                    "matched_terms": list(set(e["entity_text"] for e in criterion_evidence)),
+                    "matched_terms": list(set(e["entity_text"] for e in positive_evidence)),
                 },
             }
 
@@ -712,8 +756,17 @@ def store_evidence_item(patient_id: str, evidence_item: dict) -> None:
 
     DynamoDB gotcha: floats must be wrapped in Decimal. boto3's resource layer
     raises TypeError on raw Python floats.
+
+    TTL policy: intermediate NLP artifacts expire after 90 days. Final
+    classifications stored in S3 follow institutional retention (7-10 years).
     """
     table = dynamodb.Table(EVIDENCE_TABLE_NAME)
+
+    # TTL: expire intermediate evidence after 90 days.
+    # Records linked to published cohorts should have TTL removed manually
+    # or set to match the study's data retention schedule.
+    ttl_seconds = 90 * 24 * 60 * 60  # 90 days
+    expires_at = int(datetime.datetime.now(timezone.utc).timestamp()) + ttl_seconds
 
     item = {
         "patient_id": patient_id,
@@ -726,6 +779,7 @@ def store_evidence_item(patient_id: str, evidence_item: dict) -> None:
         "confidence": Decimal(str(round(evidence_item["confidence"], 4))),
         "evidence_type": evidence_item["evidence_type"],
         "stored_at": datetime.datetime.now(timezone.utc).isoformat(),
+        "expires_at": expires_at,  # DynamoDB TTL attribute
     }
 
     # Add optional fields if present
