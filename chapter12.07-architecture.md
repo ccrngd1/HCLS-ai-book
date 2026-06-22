@@ -14,13 +14,17 @@
 
 **Amazon Kinesis Data Analytics (Apache Flink) for continuous stream processing.** For ICU-level continuous monitoring, the stream processing needs stateful windowed computations: rolling averages, slope estimates, cross-parameter correlations computed over sliding windows. Apache Flink (managed via Kinesis Data Analytics) handles stateful stream processing with exactly-once semantics. It maintains per-patient state without external database calls on every event.
 
-**Amazon DynamoDB for patient state storage.** Each patient's rolling baseline, current trajectory metrics, and alert history need to live in a low-latency store that can handle high write throughput. DynamoDB's single-digit millisecond reads and writes make it suitable for the stateful computations that reference and update patient state on every new reading. TTL support automatically ages out data for discharged patients.
+**Amazon DynamoDB for patient state storage.** Each patient's rolling baseline, current trajectory metrics, and alert history need to live in a low-latency store that can handle high write throughput. DynamoDB's single-digit millisecond reads and writes make it suitable for the stateful computations that reference and update patient state on every new reading. TTL provides a safety net for state expiry, but do not rely on it as your primary cleanup mechanism (see ADT event handling below).
+
+**ADT event listener for patient lifecycle management.** Subscribe a Lambda to ADT (Admit/Discharge/Transfer) events from the EHR integration feed. On discharge (A03), immediately delete the patient's state record from DynamoDB; do not rely solely on TTL, because a stale state record for a discharged patient who gets readmitted could seed incorrect baselines. On admission (A01), initialize a fresh state record with `baseline_stable = false` so the system knows it cannot trust its baselines yet. On transfer (A02), preserve the existing state (trajectory history is still valid) but update the unit context field so alert routing directs notifications to the correct nursing station. This event-driven lifecycle management keeps the state store accurate without polling the EHR for census changes.
 
 **Amazon Timestream for historical trajectory storage.** The full history of vital sign readings and computed trajectory metrics goes into a time series database optimized for temporal queries. Timestream handles the time-based retention tiers (hot data for recent trajectories, cold data for research and retrospective analysis) and supports the temporal query patterns (give me this patient's heart rate slope over the last 12 hours) natively.
 
-**Amazon SNS for alert routing.** When trajectory analysis produces an alert, it needs to reach the right person through the right channel. SNS handles fan-out to multiple subscribers: pager, EHR notification, nursing station dashboard, charge nurse summary. Topic-based routing allows different alert severities to reach different endpoints. All subscription endpoints (pager API, dashboard webhook, EHR integration) must be covered under your organization's BAA chain. An alert containing vital signs and patient identifiers is PHI regardless of the delivery channel.
+**Amazon SNS for alert routing.** When trajectory analysis produces an alert, it needs to reach the right person through the right channel. SNS handles fan-out to multiple subscribers: pager, EHR notification, nursing station dashboard, charge nurse summary. Topic-based routing allows different alert severities to reach different endpoints. All subscription endpoints (pager API, dashboard webhook, EHR integration) must be covered under your organization's BAA chain. An alert containing vital signs and patient identifiers is PHI regardless of the delivery channel. If alert delivery targets external endpoints (a pager vendor API, for example), configure a NAT gateway in a controlled private subnet with outbound security group rules limited to the vendor's published IP ranges. Prefer VPC-internal integrations via PrivateLink wherever possible to avoid PHI egress to the public internet entirely. The VPC prerequisite row below specifies "no NAT gateway" for the processing workloads; the NAT gateway exception applies only to the narrow alert-delivery path, in a dedicated subnet with its own restricted security group.
 
 **Amazon CloudWatch for system health monitoring.** You're building a clinical safety system. You need to know immediately if the pipeline falls behind, if Lambda errors spike, if Kinesis is throttling, or if alert delivery latency exceeds acceptable bounds. CloudWatch alarms on processing latency, error rates, and alert delivery confirmation close the operational monitoring loop.
+
+**Amazon SQS dead-letter queues for failure isolation.** In a clinical safety system, a silently dropped vital sign reading is a patient safety risk. Both Lambda functions (trajectory-processor and alert-evaluator) must have SQS dead-letter queues configured so that events that fail processing after retries are captured rather than lost. The Flink application uses a side-output stream for records that fail parsing or state-update logic. Set CloudWatch alarms on DLQ depth > 0 with a 1-minute evaluation period. When a DLQ alarm fires, it means a patient's trajectory is not being computed, and that patient is invisible to the monitoring system. Treat DLQ depth > 0 as an operational incident requiring immediate investigation, not a metric to trend over time.
 
 ### Architecture Diagram
 
@@ -43,6 +47,14 @@ flowchart TD
     F -->|Alert Triggers| J[Lambda\nalert-evaluator]
     G -->|Alert Triggers| J
 
+    F -->|Failed Events| Q[Kinesis Stream\nflink-side-output]
+    G -->|Failed Events| R[SQS DLQ\ntrajectory-dlq]
+    J -->|Failed Events| S[SQS DLQ\nalert-dlq]
+
+    Q -->|Alarm: depth > 0| T[CloudWatch Alarms\nDLQ Monitors]
+    R -->|Alarm: depth > 0| T
+    S -->|Alarm: depth > 0| T
+
     J -->|Fetch Context| H
     J -->|Threshold Check| K{Alert Level?}
 
@@ -56,6 +68,9 @@ flowchart TD
     style H fill:#9ff,stroke:#333
     style I fill:#9ff,stroke:#333
     style M fill:#ff9,stroke:#333
+    style R fill:#f66,stroke:#333
+    style S fill:#f66,stroke:#333
+    style Q fill:#f66,stroke:#333
 ```
 
 The routing decision is implicit in the data source: continuous monitor feeds (sub-second frequency) route to the Flink application; EHR-documented assessments (multi-hour frequency) route to Lambda. A patient transferred to the ICU starts producing continuous data immediately, and the Flink path activates without manual intervention. Both paths write to the same patient state store, so trajectory history is preserved across transitions.
@@ -64,8 +79,8 @@ The routing decision is implicit in the data source: continuous monitor feeds (s
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Kinesis Data Streams, Kinesis Data Analytics (Flink), AWS Lambda, Amazon DynamoDB, Amazon Timestream, Amazon SNS, Amazon CloudWatch |
-| **IAM Permissions** | Runtime role: `kinesis:PutRecord`, `kinesis:GetRecords`, `kinesisanalytics:DescribeApplication`, `lambda:InvokeFunction`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `timestream:WriteRecords`, `timestream:Select`, `sns:Publish`. Deployment role (separate, CI/CD only): `kinesisanalytics:CreateApplication`, `kinesisanalytics:UpdateApplication`, `kinesisanalytics:StartApplication`, `kinesisanalytics:StopApplication`. |
+| **AWS Services** | Amazon Kinesis Data Streams, Kinesis Data Analytics (Flink), AWS Lambda, Amazon DynamoDB, Amazon Timestream, Amazon SNS, Amazon SQS, Amazon CloudWatch |
+| **IAM Permissions** | Runtime role: `kinesis:PutRecord`, `kinesis:GetRecords`, `kinesisanalytics:DescribeApplication`, `lambda:InvokeFunction`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `timestream:WriteRecords`, `timestream:Select`, `sns:Publish`, `sqs:SendMessage`, `sqs:GetQueueAttributes`. Deployment role (separate, CI/CD only): `kinesisanalytics:CreateApplication`, `kinesisanalytics:UpdateApplication`, `kinesisanalytics:StartApplication`, `kinesisanalytics:StopApplication`. |
 | **BAA** | AWS BAA signed (vital signs are PHI; all services must be HIPAA-eligible) |
 | **Encryption** | Kinesis: server-side encryption with KMS; DynamoDB: encryption at rest (default); Timestream: encryption at rest (default); SNS: SSE-KMS encrypted topics (CMK), all subscribers must be BAA-covered endpoints; all transit over TLS |
 | **VPC** | Production: Flink application and Lambda in VPC with VPC endpoints for DynamoDB, Timestream, SNS, CloudWatch Logs. Interface endpoints for Kinesis. Lambda and Flink subnets: private subnets with no NAT gateway. All AWS service access via VPC endpoints. No internet egress path for PHI-processing workloads. |
@@ -84,8 +99,9 @@ The routing decision is implicit in the data source: continuous monitor feeds (s
 | **Amazon DynamoDB** | Stores per-patient rolling state: baselines, current trajectory, alert history |
 | **Amazon Timestream** | Stores full vital sign history and computed trajectory metrics for temporal queries |
 | **Amazon SNS** | Routes clinical alerts to appropriate channels based on severity |
+| **Amazon SQS** | Dead-letter queues for both Lambda functions capturing failed events for investigation |
 | **AWS KMS** | Manages encryption keys for all data stores and streams |
-| **Amazon CloudWatch** | Monitors pipeline health, latency, error rates; alarms on processing delays |
+| **Amazon CloudWatch** | Monitors pipeline health, latency, error rates; alarms on DLQ depth and processing delays |
 
 ### Pseudocode Walkthrough
 
@@ -479,6 +495,20 @@ In production, pager notifications typically contain location identifiers (room/
 | Cost per patient-hour (floor, intermittent) | ~$0.03-0.05 |
 
 **Where it struggles:** Patients with highly variable baselines (atrial fibrillation patients whose HR naturally swings 30+ bpm). Post-operative patients where expected recovery trajectories are hard to distinguish from deterioration. Patients on multiple vasoactive medications where vital signs are being actively managed. And the first 4-6 hours of any admission, where the system doesn't yet know what "normal" is for this patient.
+
+---
+
+## Why This Isn't Production-Ready
+
+**Clinical validation study required.** Before this system can influence clinical decisions, you need a prospective observational study comparing its alerts against actual deterioration events (rapid response calls, unplanned ICU transfers, code blues) in your specific patient population. The deterioration signatures and threshold values in this recipe are informed guesses. Your alarm committee will need to review sensitivity/specificity data from at least 3-6 months of silent-mode operation before approving active alerting.
+
+**Alarm committee approval and governance.** Most hospitals have a formal alarm management committee that must approve any new clinical alerting system. This involves defining alert escalation pathways, specifying which roles receive which severity levels, establishing override and silencing policies, and documenting the clinical rationale for each deterioration signature. This governance process typically takes 2-4 months independent of the technical build.
+
+**EHR integration certification.** Writing alerts into the patient's chart (via CDS Hooks, SMART on FHIR, or a proprietary EHR API) requires formal integration certification with the EHR vendor. Epic, Cerner, and MEDITECH each have their own certification and testing programs. The trajectory system can operate in a "display only" mode (unit dashboard, pager notifications) without EHR write-back, but full clinical workflow integration demands this certification step.
+
+**Clinical workflow integration testing.** Nurses, physicians, and rapid response teams need training on what the alerts mean, how to acknowledge them, and when to override them. Workflow integration testing with clinical staff (simulation exercises, usability studies) reveals alert fatigue patterns, display layout issues, and escalation logic gaps that no amount of technical testing uncovers.
+
+**Regulatory classification.** Depending on how the system is positioned (decision support vs. autonomous alerting, FDA Class I vs. Class II), regulatory review may be required. A system that only surfaces information for clinician interpretation faces lower regulatory burden than one that triggers automated clinical actions. Consult your regulatory affairs team early.
 
 ---
 
