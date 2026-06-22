@@ -104,7 +104,9 @@ The parameter tuning is where I've seen teams get stuck. DBSCAN's epsilon and mi
 
 The geocoding quality issue surprised me more than I expected. In one project, 22% of addresses failed to geocode at high confidence. Most were rural routes, PO Boxes, and addresses with typos. That 22% wasn't randomly distributed. It was concentrated in exactly the underserved areas we were trying to analyze. The analysis was systematically blind to the populations that needed it most. We ended up running a separate process to estimate locations for failed geocodes using ZIP code centroids, which is imprecise but better than exclusion.
 
-One more thing: don't forget that clusters change. Run this quarterly, not once. Patient populations shift, new developments open, employers relocate. A cluster analysis from January that drives a facility decision in December is working with stale data. For ongoing operations, maintain a change-data-capture feed from your EHR. Track address changes by comparing the current extract against the previous run's input. Only geocode new or changed addresses. This reduces geocoding costs from ~$100/run to ~$5-10/run for typical monthly patient churn (2-5% address changes).
+One more thing: don't forget that clusters change. Run this quarterly, not once. Patient populations shift, new developments open, employers relocate. A cluster analysis from January that drives a facility decision in December is working with stale data.
+
+The incremental refresh pattern that actually works in production looks like this: maintain a "last processed" snapshot of patient addresses alongside the geocoded output. On each pipeline run, diff the current EHR extract against that snapshot to identify three categories: new patients (never geocoded), changed addresses (geocode again), and unchanged (carry forward the previous coordinates). Only send the new and changed addresses through the geocoding step. Merge the fresh geocoding results with the carried-forward coordinates, then run clustering on the full merged set. This approach reduces geocoding costs from ~$100/run to ~$5-10/run for typical monthly patient churn (2-5% address changes). The merge step is the part teams underestimate. You need a reliable patient identifier that persists across extracts, a consistent output schema so old and new coordinates interleave cleanly, and a "staleness" flag so you can periodically re-geocode even unchanged addresses (postal service renumberings happen, geocoder accuracy improves over time). Without these, you'll accumulate drift between your cached coordinates and reality.
 
 ---
 
@@ -116,3 +118,11 @@ One more thing: don't forget that clusters change. Run this quarterly, not once.
 - **Recipe 14.3 (Facility Location Optimization):** Uses cluster output as input for mathematical optimization of facility placement
 
 ---
+
+## Tags
+
+`clustering` · `geospatial` · `DBSCAN` · `facility-planning` · `network-adequacy` · `population-health` · `simple` · `mvp`
+
+---
+
+*← [Chapter 6 Index](chapter06-preface) · [Next: Recipe 6.2 - Utilization Pattern Segmentation →](chapter06.02-utilization-pattern-segmentation)*

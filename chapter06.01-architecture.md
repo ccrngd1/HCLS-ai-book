@@ -14,6 +14,8 @@
 
 **AWS Lambda for orchestration and clustering logic.** The geocoding and clustering steps are batch workloads that run periodically (weekly or monthly refresh). Lambda handles the orchestration: trigger the geocoding batch, run the clustering algorithm, write results. For datasets under ~500,000 points, the clustering algorithm itself runs comfortably within Lambda's memory and timeout limits.
 
+**AWS Step Functions for large geocoding batches.** When your address list exceeds 50,000 records, a single Lambda invocation risks hitting the 15-minute timeout during the geocoding loop (each address requires an individual API call). Use a Step Functions Map state to fan out geocoding across parallel Lambda invocations. Split your address file into chunks of 5,000-10,000 records, let the Map state invoke a geocoding Lambda per chunk in parallel (up to your concurrency limit), then collect results in a subsequent state that merges the geocoded outputs into S3. This keeps each individual Lambda well within its timeout budget and lets you tune concurrency to stay under Location Service rate limits.
+
 **Amazon SageMaker for large-scale clustering.** If your patient population exceeds what Lambda can handle in memory (roughly 500K+ points with enrichment data), SageMaker provides managed compute for running scikit-learn or custom clustering jobs. SageMaker Processing Jobs give you ephemeral compute that spins up, runs the algorithm, writes results to S3, and shuts down. For datasets exceeding 500K points or requiring GPU-accelerated HDBSCAN, replace the clustering Lambda with a SageMaker Processing Job. The job reads from the same S3 geocoded/ prefix, runs the same algorithm, and writes to the same cluster-results/ prefix. The only difference is compute: SageMaker provides instances with more memory and optional GPU. Use the `sklearn` container or bring your own.
 
 **Amazon QuickSight for visualization.** QuickSight supports geospatial visualizations (point maps, filled maps, heat maps) and connects directly to S3 or Athena. For the "show me where the clusters are" question that executives ask, QuickSight delivers without requiring a custom mapping application.
@@ -44,7 +46,7 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Location Service, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon QuickSight (optional), Amazon SageMaker (for large datasets) |
+| **AWS Services** | Amazon Location Service, Amazon S3, AWS Lambda, AWS Step Functions (for large batches), Amazon DynamoDB, Amazon QuickSight (optional), Amazon SageMaker (for large datasets) |
 | **IAM Permissions** | Geocoding Lambda: `geo:SearchPlaceIndexForText`, `s3:GetObject` (raw-addresses), `s3:PutObject` (geocoded), `kms:Decrypt`, `kms:GenerateDataKey`, CloudWatch Logs. Clustering Lambda/SageMaker: `s3:GetObject` (geocoded), `s3:PutObject` (cluster-results), `dynamodb:PutItem`, `kms:Decrypt`, `kms:GenerateDataKey`, CloudWatch Logs. Dashboard role: `dynamodb:Query`, `s3:GetObject` (cluster-results). |
 | **BAA** | Required. Patient addresses are PHI. Geocoded coordinates derived from addresses are PHI. Verify Amazon Location Service appears on the [HIPAA Eligible Services list](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/) before sending patient addresses. |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda environment variables encrypted with KMS; all transit over TLS |
@@ -60,6 +62,7 @@ flowchart TD
 | **Amazon Location Service** | Geocodes patient addresses to lat/long coordinates |
 | **Amazon S3** | Stores address extracts, geocoded data, and cluster results |
 | **AWS Lambda** | Orchestrates geocoding batches and runs clustering for moderate datasets |
+| **AWS Step Functions** | Fans out geocoding across parallel Lambda invocations for datasets over 50K addresses |
 | **Amazon SageMaker** | Runs clustering algorithms on large datasets (500K+ patients) |
 | **Amazon DynamoDB** | Stores cluster assignments and metadata for fast lookup |
 | **Amazon QuickSight** | Geospatial visualization of clusters and coverage gaps |
@@ -292,6 +295,8 @@ FUNCTION store_results(clustered_records, cluster_metadata):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter06.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
+**S3 lifecycle policy for cluster snapshots.** Each pipeline run writes a date-prefixed snapshot to S3 containing patient coordinates and cluster assignments. This is PHI. Every retained snapshot increases your exposure surface if the bucket is ever compromised. Configure an S3 Lifecycle rule on the `cluster-results/` prefix to retain the current snapshot and one previous snapshot (for rollback), then expire older snapshots after 6-12 months. If your compliance framework requires longer retention for audit purposes, move older snapshots to S3 Glacier with a separate, more restrictive access policy. The goal is minimizing the number of "live" copies of your entire patient population's home locations.
+
 ### Expected Results
 
 **Sample cluster metadata output:**
@@ -335,6 +340,22 @@ FUNCTION store_results(clustered_records, cluster_metadata):
 - PO Box addresses geocode to the post office, not the patient's home. High PO Box rates (common in rural areas) distort cluster locations.
 - Apartment complexes and nursing homes create artificial density spikes. 500 patients at one address looks like a cluster core but represents a single building, not a neighborhood.
 - Seasonal populations (snowbirds, college students) shift dramatically between summer and winter. A single snapshot misses this.
+
+---
+
+## Why This Isn't Production-Ready
+
+This pipeline produces correct, useful cluster output. But "produces correct output on a good day" and "runs reliably in production every month without human intervention" are different things. Here's where the gaps live:
+
+**No automated parameter tuning.** The DBSCAN epsilon and min_samples values are hardcoded. In production, your service area likely spans urban cores and rural fringes that need different density thresholds. You'd want either an automated parameter sweep (run multiple parameter combinations, select based on a stability metric) or HDBSCAN (which handles varying density natively). Without this, someone manually picks parameters and hopes they stay reasonable as the population shifts.
+
+**No drive-time validation.** Clusters are computed using straight-line (Haversine) distance, which is fast and cheap but misleading near geographic barriers. A cluster that looks compact on a map might span a 45-minute drive if a river or highway interchange sits in the middle. Before making facility placement decisions, validate top candidate clusters against actual drive-time isochrones from a routing API.
+
+**No CI/CD pipeline.** There's no automated testing, no deployment mechanism, no rollback strategy. If the clustering logic changes (new enrichment fields, different algorithm), someone manually updates the Lambda/SageMaker code. A production system has unit tests for the clustering logic with known synthetic inputs, integration tests against Location Service, and an automated deployment path with canary metrics.
+
+**No data drift monitoring.** Patient populations shift over time, and the pipeline has no mechanism to detect when its output is becoming stale or when input data quality is degrading. You'd want alerts on: geocoding failure rate exceeding a threshold (suggests data quality drop), cluster count changing dramatically between runs (suggests population shift or parameter staleness), and cluster membership stability falling below a threshold (suggests high churn that might invalidate downstream decisions).
+
+**No graceful handling of Location Service outages.** If Location Service is unavailable or throttling heavily during a geocoding run, the pipeline either fails entirely or produces partial results with no clear indication of what's missing. Production needs circuit-breaker logic that detects sustained failures, pauses the run, alerts operators, and resumes when the service recovers.
 
 ---
 
