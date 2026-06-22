@@ -405,6 +405,22 @@ FUNCTION generate_treatment_recommendation(patient_id, new_hba1c, visit_data, po
 
 ---
 
+## Why This Isn't Production-Ready
+
+**Regulatory classification is unresolved.** A system that recommends specific medication changes almost certainly qualifies as a Software as a Medical Device (SaMD) under FDA guidance, not a CDS exemption. The 2022 FDA CDS guidance exempts tools that "enable a healthcare professional to independently review the basis for the recommendation." An RL policy's basis (a Q-table or neural network trained on thousands of trajectories) is not independently reviewable in the way a risk score formula is. Expect a Class II 510(k) pathway at minimum, which means clinical validation studies, a predicate device argument, and ongoing post-market surveillance.
+
+**Off-policy evaluation gives estimates, not guarantees.** The concordance metrics in this example show how often the policy agrees with clinicians, but they don't prove the policy would produce better outcomes. Full OPE (importance sampling, doubly-robust estimators) gives tighter counterfactual estimates but requires accurate behavior policy modeling, which is hard when clinician behavior varies by institution, experience level, and patient context. You need a prospective randomized trial to actually prove benefit.
+
+**Clinician trust requires explainability.** An endocrinologist isn't going to follow a recommendation from a system that says "trust me, the Q-value is high." Production systems need to surface the reasoning: "This patient has been above target for 3 quarters, adherence is good, no contraindications, and similar patients did well with escalation." Building that explanation layer on top of a Q-table-based policy is non-trivial and may require a separate interpretability model.
+
+**Reward function design embeds value judgments.** The weights in the reward function (how much to penalize hypoglycemia vs. how much to reward HbA1c reduction) encode clinical priorities that should be set by clinicians, not engineers. Different institutions may weigh these differently. The reward function needs a governance process: clinical committee review, sensitivity analysis showing how recommendations change with different weights, and periodic re-evaluation as guidelines evolve.
+
+**Population bias propagates through the policy.** If your training data comes from a health system that undertreats certain demographics (documented disparities exist in diabetes care), the BCQ policy will learn to reproduce those patterns because it constrains itself to historical behavior. Detecting and mitigating this requires careful subgroup analysis and potentially fairness constraints during training, which adds complexity.
+
+**Temporal validity degrades.** Clinical guidelines change (the ADA updates Standards of Care annually), new medications enter the market, and patient populations shift. A policy trained on 2020-2023 data may recommend outdated treatment pathways by 2026. You need a retraining cadence, but each retrained model needs the same validation pipeline, which is expensive.
+
+---
+
 ## Variations and Extensions
 
 **Multi-condition optimization.** Most patients with type 2 diabetes have multiple chronic conditions (hypertension, hyperlipidemia, CKD, heart failure). Extend the framework to jointly optimize across conditions, since some medications have cross-condition benefits (SGLT2 inhibitors help both diabetes and heart failure). The state space grows, but the architecture is the same.
