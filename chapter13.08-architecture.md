@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Neptune for the knowledge graph store.** Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be.
+**Amazon Neptune for the knowledge graph store.** Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be. Deploy Neptune with multi-AZ enabled as the primary availability mechanism; this gives you automatic failover if the primary instance becomes unhealthy. For unavailability scenarios beyond what multi-AZ covers (regional issues, prolonged Neptune throttling), implement a fallback strategy in the Lambda layer: if Neptune is unreachable, return cached results with a `"stale": true` flag so consumers know the data may be outdated. For cache misses during Neptune outages, return a `"status": "service_degraded"` response rather than failing the request entirely. This lets downstream systems decide whether to proceed with degraded data or queue the request for retry.
 
 **AWS Glue for terminology ingestion.** Terminology files come in various formats (RRF for UMLS/RxNorm, RF2 for SNOMED, CSV for ICD-10, custom formats for LOINC). Glue ETL jobs handle the parsing and transformation, writing Neptune bulk loader CSV files to S3. The Neptune bulk loader then reads directly from S3 using its own IAM role (Neptune fetches the files, not Glue). This means Neptune's VPC needs an S3 Gateway endpoint, and Neptune's IAM role needs `s3:GetObject` on the processed files bucket. The jobs run on each terminology release, which means monthly at most. Glue's serverless Spark environment handles the large file sizes (UMLS is multiple gigabytes) without requiring persistent infrastructure.
 
@@ -53,7 +53,7 @@ flowchart TD
 | **CloudTrail** | Enabled for all API calls. Neptune audit logging enabled for query-level audit trail. |
 | **Terminology Licenses** | UMLS license (free, requires registration with NLM). SNOMED CT (free in US via NLM). CPT (paid AMA license). ICD-10 (free from CMS). LOINC (free, requires registration). RxNorm (free via NLM). |
 | **Sample Data** | UMLS Metathesaurus subset. NLM provides sample files for development. Never load full UMLS into a dev environment without understanding the size (multiple GB). |
-| **Cost Estimate** | Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200-2,000/month for a basic deployment. |
+| **Cost Estimate** | Neptune db.r5.xlarge (32 GB RAM, minimum for full UMLS deployment): ~$1,400/month for primary plus one read replica. Route API queries to the read replica; route ingestion writes to the primary. This isolates query latency from bulk load I/O. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,900-2,500/month for a basic deployment. |
 
 ### Ingredients
 
@@ -373,6 +373,54 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
     }
 ```
 
+**Step 7: Cache invalidation during terminology updates.** When you load a new terminology version into Neptune, your Redis cache holds stale mappings. The naive approach (flush everything) causes a thundering herd of cache misses against Neptune. The smart approach computes what changed and selectively invalidates only the affected keys. For large annual updates (like the yearly ICD-10-CM release that changes thousands of codes), selective invalidation can still be massive, so you need a threshold above which you flush the entire cache and optionally run a cache warming step for the most frequently queried concepts.
+
+```pseudocode
+FUNCTION invalidate_cache_after_load(terminology_name, old_version, new_version):
+    // Compute the delta: which concept codes changed between versions.
+    // "Changed" means added, retired, or had relationships modified.
+    // The terminology release notes typically include a changes file
+    // (e.g., ICD-10-CM provides an addendum with new/revised/deleted codes).
+    
+    changed_codes = compute_terminology_delta(terminology_name, old_version, new_version)
+    
+    // Define a threshold for switching between selective and full invalidation.
+    // If more than 10% of cached concepts changed, it's cheaper to flush everything
+    // than to issue thousands of individual DELETE commands.
+    SELECTIVE_THRESHOLD = 5000
+    
+    IF length(changed_codes) > SELECTIVE_THRESHOLD:
+        // Large delta (e.g., annual ICD-10 update). Flush the entire cache.
+        redis.flushdb()
+        
+        // Optionally warm the cache for the top-N most queried concepts.
+        // Pull top queries from CloudWatch Logs Insights or a separate counter.
+        top_concepts = get_top_queried_concepts(limit=1000)
+        FOR each concept in top_concepts:
+            normalize_concept(concept.code, concept.terminology)
+            // Each call populates the cache as a side effect.
+    ELSE:
+        // Small delta (e.g., monthly RxNorm update with a few hundred changes).
+        // Selectively delete cache keys for changed concepts.
+        FOR each code in changed_codes:
+            // Delete all cache keys that reference this code.
+            // Cache keys follow the pattern: norm:{terminology}:{code}:{targets}
+            // Use a SCAN + match pattern rather than KEYS (KEYS blocks Redis).
+            pattern = "norm:" + terminology_name + ":" + code + ":*"
+            matching_keys = redis.scan_match(pattern)
+            IF matching_keys is not empty:
+                redis.delete(matching_keys)
+            
+            // Also invalidate any value set expansions that might include this code.
+            // This is harder: you'd need to track which expansions contain which codes.
+            // A practical shortcut: set a shorter TTL on value set expansion cache entries
+            // so they naturally refresh within hours of a load.
+    
+    log("Cache invalidation complete. Strategy: " + 
+        (IF length(changed_codes) > SELECTIVE_THRESHOLD THEN "full_flush" ELSE "selective") +
+        ", changed_codes: " + length(changed_codes))
+```
+
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune graph client, check out the [Python Example](chapter13.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -437,6 +485,26 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
 - Ambiguous mappings where UMLS provides multiple candidate targets with similar confidence. Consumers need logic to pick the best match for their context.
 - Retired codes that appear in historical data but have no active mapping target. You need a "best available" fallback strategy.
 - Composite concepts that require multiple codes in the target terminology. The API returns individual mappings; the consumer must assemble them.
+
+---
+
+## Why This Isn't Production-Ready
+
+This pseudocode demonstrates the normalization pattern, but a production deployment needs to close several gaps:
+
+**No authentication or authorization on the API.** The walkthrough shows API Gateway with IAM auth mentioned in the "Why These Services" section but not enforced in the pseudocode. Production requires SigV4 request signing, scoped IAM policies per consuming service, and request throttling configured per caller.
+
+**No graceful degradation under Neptune failure.** The pseudocode returns errors if Neptune is unreachable. Production needs the fallback strategy described above: serve stale cached results with a degradation flag, and return structured error responses for cache misses during outages.
+
+**No cache invalidation logic in the ingestion pipeline.** Step 7 describes cache invalidation, but it's not wired into the Step Functions orchestration. Production must invoke cache invalidation as a mandatory step after a successful bulk load, with rollback logic if invalidation fails partway through.
+
+**No audit trail for normalization decisions.** When your system maps ICD-10 E11 to SNOMED 44054006, downstream clinical decisions depend on that mapping being correct. Production logs every normalization result (code, mapping chosen, confidence, timestamp) to an immutable audit store for retrospective analysis and compliance reviews.
+
+**Single-region deployment.** The architecture assumes one Neptune cluster in one region. For organizations with multi-region requirements (disaster recovery, data residency), you need Neptune global databases or a replication strategy for the terminology data.
+
+**No terminology version pinning per consumer.** Different consuming systems may need different terminology versions simultaneously. A claims system processing last month's data needs last month's ICD-10 codes. Production requires version-aware routing so each consumer gets mappings from the correct terminology vintage.
+
+**Missing input validation.** The pseudocode trusts input codes. Production validates format patterns (ICD-10 codes match `[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?`, SNOMED codes are numeric, LOINC codes match `[0-9]+-[0-9]`). Malformed inputs should fail fast with clear error messages.
 
 ---
 

@@ -605,11 +605,33 @@ def normalize_concept(
 
     # Cache miss. Query Neptune via openCypher.
     logger.info("Cache miss for %s:%s, querying Neptune", terminology, code)
-    result = query_neptune_for_mappings(code, terminology, target_terminologies)
+    try:
+        result = query_neptune_for_mappings(code, terminology, target_terminologies)
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        # Neptune unreachable. Check if we have a stale cached version
+        # (previous TTL may have expired but we keep a backup key with longer TTL).
+        stale_key = f"norm_stale:{terminology}:{code}:{targets_key}"
+        stale = redis_client.get(stale_key)
+        if stale:
+            logger.warning("Neptune unavailable, returning stale cache for %s:%s", terminology, code)
+            stale_result = json.loads(stale)
+            stale_result["stale"] = True
+            return stale_result
+        # No stale data available either. Return degraded status.
+        logger.error("Neptune unavailable and no stale cache for %s:%s: %s", terminology, code, e)
+        return {
+            "status": "service_degraded",
+            "code": code,
+            "terminology": terminology,
+            "message": "Normalization service temporarily unavailable",
+        }
 
     # Cache the result for future lookups.
     if result["status"] == "found":
         redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(result))
+        # Also store a longer-lived stale copy for fallback during outages.
+        stale_key = f"norm_stale:{terminology}:{code}:{targets_key}"
+        redis_client.setex(stale_key, CACHE_TTL_SECONDS * 7, json.dumps(result))
 
     return result
 
@@ -871,6 +893,64 @@ def batch_normalize(
 Here's the full pipeline assembled into callable functions. The ingestion pipeline runs when new terminology releases arrive. The normalization service runs continuously, serving queries from consuming systems.
 
 ```python
+def invalidate_cache_after_load(
+    terminology: str,
+    changed_codes: list[str],
+    selective_threshold: int = 5000,
+) -> dict:
+    """
+    Invalidate Redis cache entries affected by a terminology update.
+
+    After loading a new terminology version into Neptune, stale mappings
+    live in the cache. This function computes whether to selectively
+    invalidate affected keys or flush the entire cache based on the size
+    of the change delta.
+
+    Args:
+        terminology: Which terminology was updated (e.g., "ICD10CM")
+        changed_codes: List of codes that were added, retired, or modified
+        selective_threshold: If more codes changed than this, flush everything
+
+    Returns:
+        Summary of invalidation actions taken.
+    """
+    if len(changed_codes) > selective_threshold:
+        # Large delta (annual update). Flush and optionally warm.
+        redis_client.flushdb()
+        logger.info("Full cache flush: %d codes changed (threshold: %d)",
+                    len(changed_codes), selective_threshold)
+        return {"strategy": "full_flush", "codes_affected": len(changed_codes)}
+
+    # Small delta. Selectively delete matching keys.
+    deleted_count = 0
+    for code in changed_codes:
+        # SCAN for matching keys (never use KEYS in production, it blocks Redis).
+        pattern = f"norm:{terminology}:{code}:*"
+        cursor = 0
+        while True:
+            cursor, keys = redis_client.scan(cursor=cursor, match=pattern, count=100)
+            if keys:
+                redis_client.delete(*keys)
+                deleted_count += len(keys)
+            if cursor == 0:
+                break
+        # Also clear stale fallback keys.
+        stale_pattern = f"norm_stale:{terminology}:{code}:*"
+        cursor = 0
+        while True:
+            cursor, keys = redis_client.scan(cursor=cursor, match=stale_pattern, count=100)
+            if keys:
+                redis_client.delete(*keys)
+                deleted_count += len(keys)
+            if cursor == 0:
+                break
+
+    logger.info("Selective cache invalidation: deleted %d keys for %d changed codes",
+                deleted_count, len(changed_codes))
+    return {"strategy": "selective", "codes_affected": len(changed_codes),
+            "keys_deleted": deleted_count}
+
+
 def run_terminology_ingestion(
     mrconso_path: str,
     mrrel_path: str,
@@ -984,7 +1064,7 @@ if __name__ == "__main__":
 
 This example demonstrates the core patterns. It parses UMLS files, builds graph load files, queries Neptune, and caches results. But there's a significant distance between this sketch and something you'd deploy to support clinical systems. Here's where that gap lives:
 
-**Error handling and resilience.** Every external call (Neptune, Redis, S3) can fail. Production code wraps each in try/except with specific handling for connection timeouts, throttling, and transient errors. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Your normalization service needs graceful degradation: if the cache is down, fall through to Neptune directly (slower but functional).
+**Error handling and resilience.** Every external call (Neptune, Redis, S3) can fail. The `normalize_concept` function above demonstrates basic Neptune fallback (returning stale cached data or a degraded status), but production code needs the same pattern for every integration point. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Extend the graceful degradation pattern to value set expansion and batch normalization as well.
 
 **Retries and backoff.** The boto3 retry config handles S3 and basic AWS calls, but Neptune HTTP queries and Redis operations need their own retry logic. Exponential backoff with jitter prevents thundering herd problems when a service recovers from an outage.
 
@@ -1000,7 +1080,7 @@ This example demonstrates the core patterns. It parses UMLS files, builds graph 
 
 **Version management.** This example loads a single version. Production maintains multiple versions simultaneously (the current ICD-10 release and the previous one, because claims filed before October use the old codes). You need version-aware queries and a strategy for retiring old versions without breaking historical lookups.
 
-**Cache invalidation.** When you load a new terminology version, which cache entries are stale? The naive approach (flush everything) causes a thundering herd on Neptune. The smart approach computes the delta (which concepts changed between versions) and selectively invalidates only affected cache keys. This requires tracking which CUIs were modified in the new release.
+**Cache invalidation.** The `invalidate_cache_after_load` function above demonstrates the basic strategy (selective vs. full flush based on delta size). Production needs additional work: tracking which value set expansions contain which concepts for precise invalidation, wiring the invalidation into your Step Functions orchestrator as a mandatory post-load step, and adding monitoring to alert when invalidation takes longer than expected.
 
 **Bulk query optimization.** The `batch_normalize` function processes misses one at a time. Production uses Neptune's ability to handle multiple patterns in a single query (via UNWIND in openCypher) to batch cache misses into fewer round trips. For a batch of 1,000 codes, you want 1-2 Neptune queries, not 1,000.
 
