@@ -317,6 +317,24 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above covers the statistical machinery and the data flow. Deploying this as a real clinical trial randomization system requires closing several gaps that matter to regulators, patients, and your ops team:
+
+**Formal software validation (IQ/OQ/PQ).** FDA expects computerized systems used in clinical trials to undergo Installation Qualification, Operational Qualification, and Performance Qualification. That means documented test protocols, traceability matrices from requirements to test cases, and signed validation reports. The architecture gives you the building blocks, but you need a validation framework around them. Budget 2-4 months of validation work on top of development.
+
+**Disaster recovery and failover testing.** If the randomization API goes down during a multi-site trial, sites cannot enroll patients. You need a documented DR plan: multi-region failover for the Lambda/DynamoDB stack, a manual randomization fallback procedure (sealed envelopes or a phone-based backup), and regular DR drills with documented results. Regulators will ask about your contingency plan during an inspection.
+
+**EDC system integration and data reconciliation.** The architecture assumes outcome data arrives in S3 from an Electronic Data Capture system. In practice, EDC integration involves HL7 FHIR or custom API adapters, data transformation, deduplication of re-submitted outcomes, and reconciliation processes to detect drift between the EDC's view of the trial and the randomization system's view. A single missed or duplicated outcome corrupts the posterior.
+
+**Audit trail completeness for 21 CFR Part 11.** The pseudocode logs assignments and overrides to DynamoDB. A Part 11 compliant system also needs: electronic signatures on DSMB override actions, timestamp integrity (synced to a trusted time source), a process for generating human-readable audit reports on demand, and documented procedures for who can access what. CloudTrail covers API-level actions, but the application-level audit trail needs explicit design.
+
+**Statistical simulation package for regulatory submission.** Before the trial starts, you must demonstrate (through simulation) that the adaptive design controls Type I error, maintains adequate power, and behaves correctly under various scenarios (all arms equal, one arm dominant, early stopping). The posterior engine is one component; the simulation harness that runs thousands of simulated trials is a separate deliverable that goes into the regulatory submission package (typically as part of the Statistical Analysis Plan).
+
+**Concurrent enrollment race conditions under load.** The pseudocode mentions atomic transactions, but a high-enrollment multi-site trial can see bursts of 10+ simultaneous enrollment requests. DynamoDB transactions handle this correctly, but you need load testing that demonstrates the system behaves under concurrent access patterns, and you need a strategy for the (rare) case where a transaction fails due to contention: retry with backoff, or queue the request and return asynchronously.
+
+---
+
 ## Variations and Extensions
 
 **Platform trials with multiple experimental arms.** Instead of a fixed set of arms, new experimental treatments can enter the trial while others graduate (to Phase III) or are dropped (for futility). The I-SPY 2 model. This requires a smarter allocation engine that handles arms coming and going while keeping the statistics valid. The architecture extends naturally: add arm management endpoints and modify the posterior engine to handle variable-length arm vectors.
@@ -342,6 +360,8 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 - [FDA Guidance: Master Protocols for Drug and Biological Products (2022)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/master-protocols-efficient-clinical-trial-design-strategies-expedite-development-oncology-drugs-and)
 
 **Key References:**
+- Berry, S.M., Carlin, B.P., Lee, J.J., and Muller, P. (2010). *Bayesian Adaptive Methods for Clinical Trials.* CRC Press.
+- Thall, P.F. and Wathen, J.K. (2007). "Practical Bayesian adaptive randomisation in clinical trials." *European Journal of Cancer*, 43(5), 859-866.
 
 ---
 
