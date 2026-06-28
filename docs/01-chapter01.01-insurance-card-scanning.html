@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Print pipeline (Phase C) — flagship-15 6×9 PDF</title>
+  <title>Chapter 1: Insurance Card Scanning ⭐</title>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/pygments.css">
 </head>
@@ -14,7 +14,7 @@
       <nav class="sidebar">
 <h3 class="nav-section">📖 Table of Contents</h3>
 <a class="nav-link" href="Home.html">Home</a>
-<a class="nav-link nav-active" href="README.html">Introduction</a>
+<a class="nav-link" href="README.html">Introduction</a>
 <h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
 <a class="nav-link" href="chapter01-index.html">Overview</a>
 <a class="nav-link" href="chapter01-preface.html">Preface</a>
@@ -506,63 +506,73 @@
     </aside>
     <main class="content">
       <article>
-        <h1 id="print-pipeline-phase-c--flagship-15-69-pdf">Print pipeline (Phase C) — flagship-15 6×9 PDF</h1>
-<p>Builds the curated <strong>flagship-15</strong> print edition as a derived artifact from the
-canonical recipe sources. It <strong>never edits the canonical <code>.md</code> files</strong> — all
-transforms run on a copy written to <code>print/build/</code> (gitignored).</p>
-<p>Pipeline: <code>canonical Markdown → print-adapted Markdown → combined HTML → 6×9 PDF</code></p>
-<h2 id="files">Files</h2>
-<ul>
-<li><code>manifest.json</code> — the single source of truth: the 15 recipes, their print
-chapter numbers, titles, and <code>approved</code> flags, plus book metadata
-(title, author, copyright year, digital-edition URL). <strong>Edit this</strong> to flip a
-recipe to <code>approved: true</code> as you sign off on it, or to set the real
-digital-edition URL / author name.</li>
-<li><code>build.py</code> — the deterministic, re-runnable build.</li>
-<li><code>print.css</code> — 6×9 trade-paperback stylesheet (honored by headless-Chrome
-print via <code>preferCSSPageSize</code>).</li>
-<li><code>build/</code> — output (gitignored): adapted <code>.md</code> per recipe, <code>book.md</code>,
-<code>book.html</code>, <code>book.pdf</code>, and <code>print-warnings.txt</code>.</li>
-</ul>
-<h2 id="usage">Usage</h2>
-<p>Run with a Python that has a Markdown engine (the md-to-html venv works):</p>
-<div class="code"><pre><span></span><span class="nv">PY</span><span class="o">=</span><span class="s2">&quot;/…/projects/md-to-html/.venv/bin/python&quot;</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w">            </span><span class="c1"># approved recipes only (default)</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w"> </span>--all<span class="w">      </span><span class="c1"># all 15 (unapproved/missing included)</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w"> </span>--pdf<span class="w">      </span><span class="c1"># also render book.pdf (needs puppeteer + Chrome)</span>
+        <h1 id="chapter-1-insurance-card-scanning-">Chapter 1: Insurance Card Scanning ⭐</h1>
+<p><strong>Complexity:</strong> Simple · <strong>Phase:</strong> MVP · <strong>Estimated Cost:</strong> ~$0.05 per card</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>Picture the front desk at a primary care clinic on a Monday morning. Six patients are already waiting. The person checking them in is asking each one to hand over their insurance card, typing the member ID by hand into the EHR, squinting at the group number, asking &quot;is that a zero or an O?&quot; The patient behind them is sighing. The phone is ringing.</p>
+<p>This is not a rare scenario. It's the default state of healthcare administration in 2026.</p>
+<p>Manual transcription of insurance card data is slow, error-prone, and genuinely expensive. A single transposed digit in a member ID cascades into a failed eligibility check, a denied claim, a billing department investigation, and eventually a frustrated patient on the phone asking why they got a bill. Multiply that across millions of check-ins and the operational cost is staggering. The American Medical Association has estimated that administrative waste in healthcare claims processing runs into the hundreds of billions annually. Not all of that is from typos, but a meaningful chunk is.</p>
+<p>The information we need is right there on the card: member ID, group number, payer name, plan type, copays, pharmacy benefits. It's printed clearly (usually). Getting a computer to reliably read it has been a hard problem for longer than you'd expect, and the solutions have gotten genuinely good in the last few years.</p>
+<p>Let's talk about how this works.</p>
+<hr />
+<h2 id="the-technology-how-computers-read-cards">The Technology: How Computers Read Cards</h2>
+<h3 id="ocr-the-basics">OCR: The Basics</h3>
+<p>OCR stands for Optical Character Recognition. At its simplest, it's the process of taking an image of text and turning it into a machine-readable string. The concept goes back to the 1970s, but modern OCR is a completely different beast. Early systems were template-matching engines: they'd compare pixels against stored character shapes. Brittle, font-dependent, and deeply unhappy about anything that wasn't clean laser-printed text in a known typeface.</p>
+<p>Modern OCR uses deep learning. A convolutional neural network processes the image, identifies character regions, and classifies each region into a character. The models are trained on millions of document images across languages, fonts, handwriting styles, and image qualities. The result is something that can read a crumpled Post-it note photographed at an angle under fluorescent lighting and get most of it right.</p>
+<p>(Most of it. We'll come back to the failure modes.)</p>
+<p>The output of an OCR pass is typically raw text: a sequence of detected characters with associated bounding box coordinates. Those coordinates tell you where on the image each character or word lives. This spatial information is more important than it might seem, and we'll use it heavily.</p>
+<h3 id="the-key-value-problem">The Key-Value Problem</h3>
+<p>Raw text from a card is not useful by itself. We don't want a blob of characters. We want a structured object:</p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;member_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XGP928471003&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;group_number&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;84023&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;plan_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PPO&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;copay_pcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$25&quot;</span>
+<span class="p">}</span>
 </pre></div>
 
-<p>PDF rendering needs puppeteer:</p>
-<div class="code"><pre><span></span><span class="nb">cd</span><span class="w"> </span>print/build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>init<span class="w"> </span>-y<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>i<span class="w"> </span>puppeteer<span class="w">    </span><span class="c1"># one-time, ~Chromium download</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w"> </span>--pdf
-</pre></div>
-
-<h2 id="transforms-applied-plan_docsphysical-book-planmd-2b">Transforms applied (plan_docs/physical-book-plan.md §2b)</h2>
-<ol>
-<li><strong>Strip the web nav footer</strong> (<code>*← … →*</code>).</li>
-<li><strong>Reframe <code>## Related Recipes</code></strong> → a digital-edition pointer. The original
-bullet list is preserved as an HTML comment (<code>PRINT-TODO</code>) so you can later
-hand-write a one-sentence concept summary.</li>
-<li><strong>Inline <code>Recipe N.N</code> refs:</strong> if <code>N.N</code> is a flagship → renumbered to
-<code>Chapter &lt;print_chapter&gt;</code>; if not → left as-is and reported in
-<code>print-warnings.txt</code> as <code>[PRINT-WARN]</code> for you to reword to a concept.</li>
-<li><strong>Rewrite the architecture-companion callout</strong> → points at the digital edition.</li>
-</ol>
-<ul>
-<li>Also strips the web-only <code>## Tags</code> chip section and collapses orphaned rules.</li>
-</ul>
-<p>Front matter (title, copyright, preface, how-to-use) and back matter
-(contents, &quot;more recipes online&quot;) are generated from <code>manifest.json</code>.</p>
-<h2 id="still-todo-phase-c-remainder">Still TODO (Phase C remainder)</h2>
-<ul>
-<li><strong>Mermaid pre-render (§2c):</strong> render ```mermaid blocks to SVG once and embed
-across HTML/EPUB/PDF. The approved flagship main files are currently ASCII
-diagrams (0 Mermaid), so this is low-impact for the subset today but required
-before the heavy recipes (10.7, 11.6) and EPUB.</li>
-<li><strong>QR code</strong> for the digital-edition URL on the front matter.</li>
-<li><strong>Index</strong> generation (back matter currently lists contents only).</li>
-<li>Review each recipe's <code>[PRINT-WARN]</code> prose refs and reword to concepts.</li>
-</ul>
+<p>Getting from raw OCR output to that structure is called <strong>key-value extraction</strong> (or key-value pair extraction, KVP). The idea is that on a form or card, some text is a label (&quot;Member ID:&quot;) and some text is the corresponding value (&quot;XGP928471003&quot;). Associating the right value with the right key is the extraction problem.</p>
+<p>Insurance cards are what you'd call semi-structured documents. They have consistent semantic fields (every card has a member ID, a group number, a payer name), but the layout varies wildly across payers. Blue Cross lays it out differently than Aetna. Aetna in 2019 looks different from Aetna in 2024. Regional co-ops look different from everyone. The label text also varies: &quot;Member ID,&quot; &quot;Mem ID,&quot; &quot;Subscriber #,&quot; &quot;ID Number&quot; all mean the same field. There's no standard.</p>
+<p>Key-value extraction systems handle this by reasoning about spatial proximity (the value usually appears near its label) and about textual patterns (if something looks like &quot;MBR 928471003,&quot; there's a good chance &quot;928471003&quot; is the member ID). Modern systems combine layout-aware models that understand the 2D structure of the document, not just the linear text sequence.</p>
+<h3 id="what-makes-this-hard">What Makes This Hard</h3>
+<p>Here's the honest list of things that will humble you when you first build this:</p>
+<p><strong>Image quality.</strong> A card photographed on a phone is not a scanned document. It might be slightly blurred, slightly rotated, taken in dim light, or shot at a 30-degree angle. Each of those degrades OCR accuracy. Glare on laminated cards is a particular nuisance. Some OCR systems include preprocessing (deskewing, contrast enhancement, noise reduction) to compensate, but there are limits.</p>
+<p><strong>Card wear.</strong> Physical cards get worn, scratched, cracked. Embossed cards (less common now, but still out there) have raised text that photographs strangely. If the member ID has a digit that's worn off, no amount of ML will reconstruct it correctly.</p>
+<p><strong>Non-standard layouts.</strong> You'll build a field mapping for the top 20 payers in your market and feel good about your coverage. Then a patient hands you a card from a small regional plan and none of your labels match. Your normalization logic needs to handle unknown fields gracefully, not crash.</p>
+<p><strong>Handwriting.</strong> Most insurance cards are printed, but the &quot;copay&quot; field is sometimes handwritten by a benefits coordinator. Handwriting recognition is dramatically harder than printed text recognition. The error rates are measurably worse. Plan for it.</p>
+<p><strong>Fields that span multiple lines or sections.</strong> &quot;Blue Cross Blue Shield of North Carolina&quot; might wrap. Copay tiers might be in a table. Front vs. back matters: member information typically lives on the front, pharmacy benefit fields (RX BIN, PCN, Group) on the back. If you only process one side, you're missing half the data.</p>
+<p>The good news: for standard, well-photographed printed cards, modern systems achieve 95-99% field accuracy. That's good enough for most healthcare workflows when paired with a confidence score and a human review queue for the uncertain cases.</p>
+<h2 id="the-general-architecture-pattern">The General Architecture Pattern</h2>
+<p>At a conceptual level, the pipeline looks like this:</p>
+<pre class="code code-plain"><code>[Capture] → [OCR / KVP Extraction] → [Normalize Fields] → [Store] → [Expose via API]
+</code></pre>
+<p><strong>Capture:</strong> An image arrives in your system. This might be a mobile app where the patient photographs their own card, a flatbed scanner at a clinic, a fax-to-image conversion, or a camera peripheral at the front desk. The capture mechanism affects quality, and quality affects accuracy. If you control the capture UX, guide the user: &quot;Hold the card flat, in good light, parallel to the camera.&quot;</p>
+<p><strong>OCR / KVP Extraction:</strong> The image is passed to an OCR engine or service. For key-value extraction from semi-structured documents, you want more than raw text: you want a system that understands the spatial relationships on the page and can return key-value pairs with confidence scores. There are open-source options (Tesseract for raw OCR, LayoutParser for layout-aware extraction), commercial libraries, and managed cloud services. The managed services have gotten very good and are often the right choice unless you have specific on-premises requirements or cost constraints at very high volume.</p>
+<p><strong>Normalize Fields:</strong> The extracted key-value pairs come back with whatever labels the card happened to use. You need a normalization layer that maps &quot;Mem ID&quot;, &quot;Member #&quot;, &quot;Subscriber ID&quot;, and &quot;ID Number&quot; all to a canonical <code>member_id</code> field. This mapping is straightforward to build but requires ongoing maintenance as you encounter new payer layouts. It's not glamorous work. It's necessary work.</p>
+<p><strong>Store:</strong> Structured extraction results need to live somewhere durable and queryable. A document store, relational database, or key-value store all work here. The right choice depends on your access patterns: are you looking up by member ID? By scan date? By payer? In healthcare, you also need to think about encryption at rest and audit logging, because insurance cards contain PHI.</p>
+<p><strong>Expose via API:</strong> Downstream systems (EHRs, eligibility verification services, patient portals) need to consume the structured data. A REST or GraphQL API is the standard interface. Design it around the consuming system's needs: a point-of-care app needs a synchronous response in under 3 seconds; a batch eligibility verification job can tolerate asynchronous processing.</p>
+<p>That's the whole concept. Capture, extract, normalize, store, serve. The rest is implementation detail.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS implementation lives in the digital edition.</strong> This printed recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and step-by-step pseudocode, see the digital edition at <a href="https://example.github.io/HCLS-ai-book/">https://example.github.io/HCLS-ai-book/</a>.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>This recipe is genuinely easy to get to 90% accuracy on. The first few hundred cards will look great. Then you'll start seeing the long tail: the Medicaid card with a layout you've never encountered, the card where the member ID is split across two lines, the card photographed in a car with the window casting a glare stripe directly across the group number.</p>
+<p>The field normalization map is the thing that requires the most ongoing attention. Build tooling to log unrecognized keys (keys that didn't match any canonical field) so you can identify new payer layouts as they appear. Treat it as a living config, not a one-time build.</p>
+<p>The confidence threshold is where you make your reliability tradeoff. 90% sounds reasonable until you're processing 10,000 cards a day and 1% of them are in your manual review queue: that's 100 reviews a day. Calibrate based on your actual cost-of-error. A wrong member ID on a claim costs more than a human taking five seconds to confirm a value.</p>
+<p>The part that surprised me: front-of-card processing gets you maybe 70% of what you need. The pharmacy benefit fields (RX BIN, PCN, Group) almost always live on the back. If your use case touches medication workflows at all, you need both sides.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<p>In the full digital cookbook, this recipe connects to related patterns across the library — upstream inputs, downstream consumers, and adjacent techniques in other chapters. Explore the complete set of recipes in the digital edition at <a href="https://example.github.io/HCLS-ai-book/">https://example.github.io/HCLS-ai-book/</a>.</p>
+<!-- PRINT-TODO: optionally replace the generic pointer above with a one-sentence concept summary. Original web links preserved below:
+     - **Recipe 1.2 (Patient Intake Form Digitization):** Extends this single-image pattern to multi-section forms with tables and checkboxes
+     - **Recipe 1.4 (Prior Auth Document Processing):** Uses the same forms extraction foundation but on multi-page documents
+     - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Builds the human review queue that confidence flagging in this recipe feeds into
+     - **Recipe 8.1 (Insurance Eligibility Matching):** Consumes the structured output from this recipe to verify coverage in real time
+     
+     ---
+-->
 
       </article>
       <footer class="page-footer">

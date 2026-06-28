@@ -58,23 +58,15 @@ In practice, most successful implementations use a hybrid: clinicians define the
 
 ### Clustering Algorithms for Stratification
 
-Several algorithms work for severity stratification, each with tradeoffs:
+K-Means is the default: fast, simple, and a natural fit when you want every patient assigned to one of a handful of tiers. Its constraint is that you specify the number of tiers up front. Reach for a Gaussian Mixture Model (GMM) when patients near tier boundaries matter — instead of a hard assignment, it gives each patient a probability of belonging to each tier, which helps when the line between "moderate" and "severe" is genuinely fuzzy. Hierarchical clustering is useful earlier, for exploring whether 3, 4, or 5 tiers is the right number. Density-based methods like DBSCAN don't fit here: they're built to leave outliers unassigned, and in stratification you want every patient placed in a tier.
 
-**K-Means:** Fast, simple, produces spherical clusters. Works well when severity tiers are roughly evenly sized and features are continuous. The main limitation is that you must specify K (the number of tiers) in advance, and it assumes clusters are roughly the same shape and size.
-
-**Gaussian Mixture Models (GMM):** More flexible than K-Means because clusters can be elliptical (different variances in different dimensions). Better for clinical data where some features have wider spread in certain severity tiers. Also provides soft assignments (probability of belonging to each tier), which is useful for patients near tier boundaries.
-
-**Hierarchical clustering:** Produces a dendrogram showing how patients nest into groups at different granularities. Useful for exploring whether 3, 4, or 5 tiers is the right number. Computationally expensive for large populations (O(n^2) or worse), so often applied to a sample first.
-
-**DBSCAN and density-based methods:** Good at finding irregularly shaped clusters and identifying outliers. Less useful for stratification because you typically want every patient assigned to a tier, and the number of tiers should be small and interpretable.
-
-For most severity stratification use cases, K-Means or GMM with K=3 to 5 is the starting point. Three tiers (mild, moderate, severe) is the minimum for actionability. Five tiers provide more granularity but require more distinct intervention strategies to justify the complexity.
+For most severity stratification use cases, K-Means or GMM with K=3 to 5 is the starting point. Three tiers (mild, moderate, severe) is the minimum for actionability; five give more granularity but only pay off if you have five genuinely distinct intervention strategies.
 
 ### Choosing K: How Many Tiers?
 
 This is partly a technical question and partly an operational one.
 
-**Technical approaches:** The elbow method (plot within-cluster sum of squares vs. K, look for the "elbow"), silhouette scores (measure how well-separated clusters are), and the gap statistic all provide quantitative guidance on the "natural" number of clusters in the data.
+**Technical approaches:** Several standard techniques, like the elbow method, silhouette scores, and the gap statistic, estimate how many natural tiers actually exist in the data. They optimize for different things (cluster compactness, separation between groups, or improvement over random grouping), but they all produce the same kind of output: a suggested K. Treat it as a starting point, not an answer.
 
 **Operational reality:** Your care management team can only operationalize so many tiers. If you have three intervention programs (intensive, moderate, self-management), then three tiers is the right answer regardless of what the silhouette score says. The algorithm should serve the workflow, not the other way around.
 
@@ -126,7 +118,7 @@ Downstream: getting care managers to actually use the tiers. If the stratificati
 
 The thing that surprised me: the biggest predictor of whether a stratification system gets adopted is not accuracy. It's explainability. Care managers need to understand why a patient is in a given tier. "The algorithm said so" is not acceptable. Including key drivers in the output (the top features that placed this patient in this tier) is not optional. It's the difference between a system that gets used and one that gets ignored.
 
-One more thing: tier assignments are not destiny. They're a snapshot. A patient in Tier 3 who gets intensive care management and improves should move to Tier 2 on the next run. If your tiers never change, either your interventions aren't working or your refresh cadence is too slow. Track tier migration as a program effectiveness metric.
+One more thing to keep in mind. Tier assignments are not destiny; they're a snapshot. A patient in Tier 3 who gets intensive care management and improves should move to Tier 2 on the next run. If your tiers never change, either your interventions aren't working or your refresh cadence is too slow. Track tier migration as a program effectiveness metric.
 
 ---
 

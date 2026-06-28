@@ -42,7 +42,7 @@ One marquee recipe per chapter, chosen for broad relatability and self-contained
 | 3 | Anomaly & Outlier Detection | 3.1 Duplicate Claim Detection *(pilot)* | 3,964 | **author-approved 2026-06-18** |
 | 4 | Recommendation & Personalization | 4.9 Personalized Care Plan Generation | 4,981 | **author-approved 2026-06-20** (tightened from 8,575; deps reframed) |
 | 5 | Entity Resolution & Record Linkage | 5.1 Internal Duplicate Patient Detection | 6,115 | **author-approved 2026-06-21** |
-| 6 | Clustering & Patient Segmentation | 6.4 Disease Severity Stratification | 2,015 | lean |
+| 6 | Clustering & Patient Segmentation | 6.4 Disease Severity Stratification | 1,976 | **author-approved 2026-06-28** (algo-section depth trimmed) |
 | 7 | Predictive Risk Modeling | 7.5 30-Day Readmission Risk | 2,958 | lean |
 | 8 | Clinical NLP & Information Extraction | 8.3 ICD-10 Code Suggestion | 2,351 | lean |
 | 9 | Medical Imaging & Computer Vision | 9.6 Diabetic Retinopathy Screening | 1,801 | lean |
