@@ -119,7 +119,7 @@ For the *later* full-book pass, after the physical book ships. The median recipe
 
 - **Phase A — Lock selection.** Confirm/adjust the flagship-15 (§3).
 - **Phase B — Finalize the 15.** Apply the §4 rubric. Pilot the tightening on the 4 heavy ones (2.5, 4.9, 10.7, 11.6) by hand for sign-off, then light cleanup on the other 11. Higher editorial bar than the web polish run.
-- **Phase C — Print pipeline.** `print/` manifest of the 15; 6x9 PDF build path; front matter (title, copyright, preface, how-to-use, URL/QR to the digital edition) + back matter (index, "137 more recipes online"). Includes the cross-reference transform (see section 2b).
+- **Phase C — Print pipeline.** `print/` manifest of the 15; 6x9 PDF build path; front matter (title, copyright, preface, how-to-use, URL/QR to the digital edition) + back matter (index, "137 more recipes online"). Includes the cross-reference transform (see section 2b). **BUILT 2026-06-28** — `print/build.py` (deterministic §2b transforms + generated front/back matter + 6x9 HTML/PDF), `print/manifest.json` (flagship source of truth with per-recipe `approved` flags), `print/print.css`. **Usage + resume instructions live in `print/README.md`** (run with the md-to-html venv python; `--all` / `--pdf` flags). Remaining in Phase C: Mermaid pre-render (§2c), QR code, index generation, and the one-time `npm i puppeteer` for PDF rendering.
 - **Phase D — Publish.** KDP or IngramSpark.
 - **Phase E — Book-wide tightening.** Work the 41-recipe backlog (§5) via a ralph run (TechEditor edits, TechExpertReviewer enforces rubric), independent/parallel, plus scaffolding + vendor cleanup across the broader corpus.
 
