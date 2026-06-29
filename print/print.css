@@ -1,73 +1,100 @@
-/* 6x9 trade-paperback print stylesheet for the flagship-15 PDF.
+/* 6x9 trade-paperback stylesheet for the flagship print edition.
+   Grayscale interior (color interiors ~3x KDP/IngramSpark cost).
    Honored by headless-Chrome print with preferCSSPageSize:true. */
 
+/* ---- Page geometry: mirrored margins with a binding gutter ---- */
 @page {
   size: 6in 9in;
-  margin: 0.75in 0.6in 0.8in 0.6in;
-  @bottom-center { content: counter(page); font-family: Georgia, serif; font-size: 9pt; color: #555; }
+  margin: 0.85in 0.65in 0.9in 0.8in;     /* top right bottom left */
+  @bottom-center { content: counter(page); font-family: Georgia, serif; font-size: 9pt; color: #777; }
 }
-@page :first { @bottom-center { content: none; } }   /* no number on title page */
+@page :left  { margin-left: 0.65in; margin-right: 0.8in; }   /* verso: gutter on the right edge */
+@page :right { margin-left: 0.8in;  margin-right: 0.65in; }  /* recto: gutter on the left edge */
+@page :first { @bottom-center { content: none; } }
 
 html, body { margin: 0; padding: 0; }
 body {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 10.5pt;
-  line-height: 1.46;
-  color: #111;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
+  line-height: 1.52;                     /* airier leading (was 1.46) */
+  color: #1b1b1b;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 
-/* Each recipe / front-back matter section starts on a fresh page. */
+/* Each recipe / front-back section starts on a fresh page. */
 section { page-break-before: always; }
-section.title-page { page-break-before: avoid; }   /* very first page */
+section.title-page { page-break-before: avoid; }
 
-/* Title page */
-.title-page { text-align: center; padding-top: 1.6in; }
-.title-page h1 { font-size: 26pt; line-height: 1.12; border: none; margin: 0 0 .3em; }
-.title-page h2 { font-size: 13pt; font-style: italic; font-weight: normal; border: none; color: #333; margin: 0 0 2em; }
-.copyright-page { font-size: 9pt; color: #333; line-height: 1.5; padding-top: 1.2in; }
+/* ---- Body text: justified with hyphenation = book feel ---- */
+p { margin: 0 0 .72em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; orphans: 2; widows: 2; }
+ul, ol { margin: 0 0 .8em 1.25em; padding: 0; }   /* lists stay left-aligned */
+li { margin: 0 0 .3em; line-height: 1.48; }
+strong { color: #111; }
 
-/* Table of contents */
-.toc h1 { margin-bottom: 1em; }
-.toc p { margin: 0 0 .7em; line-height: 1.3; }
-.toc p strong { font-size: 11pt; }            /* category line */
-.toc p br + * , .toc p { }                      /* recipe title sits on its own line */
+/* ---- Recipe chapter-opener ---- */
+.recipe h1:first-child {
+  margin: 1.0in 0 .1em;                  /* drop the title down the page */
+  font-size: 23pt; font-weight: 600; line-height: 1.12;
+  letter-spacing: -0.2px; color: #111; border: none;
+}
+.recipe h1:first-child::after {          /* short accent rule under the opener */
+  content: ""; display: block; width: 2.1in; height: 2px;
+  background: #444; margin-top: .5em;
+}
+.recipe h1 + p {                         /* the Complexity/Phase/Cost line */
+  font-size: 8.8pt; color: #666; letter-spacing: .2px;
+  margin: .85em 0 1.3em; text-align: left;
+}
 
-/* Headings */
-h1 { font-size: 19pt; line-height: 1.15; margin: 0 0 .5em; }
-h2 { font-size: 13.5pt; margin: 1.3em 0 .4em; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
-h3 { font-size: 11.5pt; margin: 1em 0 .3em; }
-h4 { font-size: 10.5pt; margin: .9em 0 .25em; font-variant: small-caps; letter-spacing: .3px; }
+/* ---- Headings: no web underline; hierarchy via weight + space ---- */
+h1 { font-size: 21pt; font-weight: 600; line-height: 1.15; margin: 0 0 .5em; color: #111; }
+h2 {
+  font-size: 13.5pt; font-weight: 600; color: #111;
+  margin: 1.7em 0 .55em; padding: 0; border: none; line-height: 1.2;
+}
+h3 { font-size: 11pt; font-weight: 700; color: #1b1b1b; margin: 1.25em 0 .35em; }
+h4 { font-size: 10pt; font-variant: small-caps; letter-spacing: .4px; color: #333; margin: .9em 0 .25em; }
+h1, h2, h3, h4 { page-break-after: avoid; }
 
-p { margin: 0 0 .65em; orphans: 2; widows: 2; }
-ul, ol { margin: 0 0 .7em 1.1em; padding: 0; }
-li { margin: 0 0 .2em; }
+/* ---- Front matter ---- */
+.title-page { text-align: center; padding-top: 1.9in; }
+.title-page h1 { font-size: 27pt; border: none; margin: 0 0 .35em; line-height: 1.12; }
+.title-page h1::after { content: none; }
+.title-page h2 { font-size: 13pt; font-style: italic; font-weight: normal; color: #444; border: none; margin: 0 0 2.4em; }
+.title-page p { text-align: center; }
+.copyright-page { font-size: 9pt; color: #333; line-height: 1.55; padding-top: 1.4in; }
+.copyright-page p { text-align: left; }
+.frontmatter h1, .backmatter h1 { margin-top: .25in; font-size: 20pt; }
+.frontmatter h1::after, .backmatter h1::after { content: none; }
 
-/* Code & ASCII diagrams */
+/* ---- Table of contents ---- */
+.toc h1 { margin-bottom: 1.1em; }
+.toc p { margin: 0 0 .85em; text-align: left; line-height: 1.3; }
+.toc p strong { font-size: 11.5pt; color: #111; }
+
+/* ---- Code & ASCII diagrams ---- */
 pre {
   white-space: pre-wrap; word-wrap: break-word;
-  background: #f6f6f6; border: 1px solid #e2e2e2;
-  padding: 7px 9px; font-size: 7.6pt; line-height: 1.3;
-  border-radius: 3px; page-break-inside: avoid;
+  background: #f6f6f3; border: 1px solid #e6e6e0; border-left: 3px solid #bdbdb6;
+  padding: 8px 10px; font-size: 7.6pt; line-height: 1.34;
+  border-radius: 2px; page-break-inside: avoid; margin: .8em 0;
 }
 code { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.6pt; }
 pre code { font-size: inherit; }
+p code, li code, td code { background: #f1f1ec; padding: 0 2px; border-radius: 2px; }
 
-/* Tables */
-table { border-collapse: collapse; font-size: 8.6pt; width: 100%; margin: .5em 0; page-break-inside: avoid; }
-th, td { border: 1px solid #ccc; padding: 3px 6px; text-align: left; vertical-align: top; }
-th { background: #f0f0f0; }
+/* ---- Tables: clean horizontal rules, no full grid ---- */
+table { border-collapse: collapse; font-size: 8.8pt; width: 100%; margin: .8em 0; page-break-inside: avoid; }
+th, td { padding: 4px 8px; text-align: left; vertical-align: top; border: none; border-bottom: 1px solid #ddd; }
+th { border-bottom: 1.5px solid #777; font-weight: 600; }
 
-/* Blockquotes (used for the digital-edition pointers / honest takes) */
+/* ---- Callout blockquotes (digital-edition pointers, asides) ---- */
 blockquote {
-  border-left: 3px solid #bbb; margin: .7em 0; padding: .15em .85em;
-  color: #333; font-style: italic; page-break-inside: avoid;
+  border-left: 3px solid #888; background: #f3f3f1;
+  margin: .85em 0; padding: .45em .9em; color: #222;
+  font-style: normal; page-break-inside: avoid;
 }
+blockquote p { text-align: left; margin: .25em 0; }
 
-/* Mermaid SVGs once pre-rendered (Phase C 2c) */
 svg, img { max-width: 100%; height: auto; }
-
-hr { border: none; border-top: 1px solid #ddd; margin: 1em 0; }
-
-h1, h2, h3, h4 { page-break-after: avoid; }
+hr { border: none; border-top: 1px solid #e2e2e2; margin: 1.2em 0; }
