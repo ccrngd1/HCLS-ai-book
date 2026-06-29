@@ -112,27 +112,28 @@ def split_related(md: str) -> tuple[str, str | None]:
     return md2, original
 
 
-def build_related_pointer(original: str, url: str) -> str:
+def build_related_pointer(original: str, recipe_url: str, base_url: str) -> str:
     commented = "\n".join("     " + ln for ln in original.splitlines())
     return (
         "In the full digital cookbook, this recipe connects to related "
         "patterns across the library \u2014 upstream inputs, downstream "
         "consumers, and adjacent techniques in other chapters. "
-        f"Explore the complete set of recipes in the digital edition at "
-        f"<{url}>.\n\n"
+        f"Read this recipe with its full set of cross-links in the digital "
+        f"edition at <{recipe_url}>, or browse the complete library at "
+        f"<{base_url}>.\n\n"
         "<!-- PRINT-TODO: optionally replace the generic pointer above with "
         "a one-sentence concept summary. Original web links preserved below:\n"
         f"{commented}\n-->"
     )
 
 
-def rewrite_arch_callout(md: str, url: str) -> tuple[str, int]:
+def rewrite_arch_callout(md: str, arch_url: str) -> tuple[str, int]:
     replacement = (
         "> **The AWS implementation lives in the digital edition.** This printed "
         "recipe covers the problem, the underlying technology, and the "
         "vendor-agnostic architecture. For the AWS services, architecture "
-        "diagram, prerequisites, and step-by-step pseudocode, see the digital "
-        f"edition at <{url}>."
+        "diagram, prerequisites, and step-by-step pseudocode, see the companion "
+        f"page at <{arch_url}>."
     )
     return ARCH_CALLOUT_RE.subn(replacement, md)
 
@@ -162,20 +163,28 @@ def collapse_rules(md: str) -> str:
 
 
 def transform_recipe(
-    md: str, entry: dict, flagship_map: dict[str, int], url: str, src_name: str
+    md: str, entry: dict, flagship_map: dict[str, int], url: str,
+    template: str | None, src_name: str
 ) -> tuple[str, list[str], dict[str, int]]:
     counts: dict[str, int] = {}
+    # Per-recipe deep links into the digital edition.
+    main_slug = src_name[:-3]
+    ch, rr = entry["recipe"].split(".")
+    arch_slug = f"chapter{int(ch):02d}.{int(rr):02d}-architecture"
+    recipe_url = template.format(slug=main_slug) if template else url
+    arch_url = template.format(slug=arch_slug) if template else url
     # 1. Pull the Related section out first (replaced by an inert placeholder),
     #    so the ref-rewriter never touches the list or its preserved comment.
     md, related_orig = split_related(md)
-    md, counts["arch_callout"] = rewrite_arch_callout(md, url)
+    md, counts["arch_callout"] = rewrite_arch_callout(md, arch_url)
     md, counts["tags"] = strip_tags(md)
     md, counts["nav_footer"] = strip_nav_footer(md)
     # 2. Rewrite inline refs on the body (placeholder is digit-free, so inert).
     md, warns = rewrite_recipe_refs(md, flagship_map, entry["recipe"], src_name)
     # 3. Reattach the digital-edition pointer (+ commented original) last.
     if related_orig is not None:
-        md = md.replace(RELATED_PLACEHOLDER, build_related_pointer(related_orig, url))
+        md = md.replace(RELATED_PLACEHOLDER,
+                        build_related_pointer(related_orig, recipe_url, url))
     counts["related"] = 1 if related_orig is not None else 0
     md = collapse_rules(md)
     return md, warns, counts
@@ -361,6 +370,7 @@ def main() -> int:
 
     man = load_manifest()
     url = man["digital_edition_url"]
+    template = man.get("recipe_url_template")
     flagship_map = {e["recipe"]: e["print_chapter"] for e in man["flagship"]}
 
     out = args.out
@@ -378,7 +388,7 @@ def main() -> int:
             continue
         src_name = os.path.basename(src)
         md = open(src, encoding="utf-8").read()
-        adapted, warns, counts = transform_recipe(md, e, flagship_map, url, src_name)
+        adapted, warns, counts = transform_recipe(md, e, flagship_map, url, template, src_name)
         # prepend a print chapter heading so the running structure is by chapter
         slug = src_name[:-3]
         outfile = os.path.join(out, f"{e['print_chapter']:02d}-{slug}.md")
