@@ -184,7 +184,7 @@ def transform_recipe(
 # --------------------------------------------------------------------------- #
 # Front / back matter
 # --------------------------------------------------------------------------- #
-def front_matter(man: dict) -> list[tuple[str, str]]:
+def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     """Return list of (css_class, markdown) front-matter sections."""
     y = man["copyright_year"]
     url = man["digital_edition_url"]
@@ -235,9 +235,17 @@ def front_matter(man: dict) -> list[tuple[str, str]]:
         f"implementation, diagrams, runnable examples, and {n - 15}+ more "
         "recipes.\n"
     )
+    toc_lines = ["# Contents", ""]
+    for b in built:
+        # category (broader chapter) on top, the recipe itself beneath it
+        toc_lines.append(f"**{b['print_chapter']} \u00b7 {b['chapter_name']}**  ")
+        toc_lines.append(b["title"])
+        toc_lines.append("")
+    toc = "\n".join(toc_lines)
     return [
         ("frontmatter title-page", title_pg),
         ("frontmatter copyright-page", copyright_pg),
+        ("frontmatter toc", toc),
         ("frontmatter", preface),
         ("frontmatter", how_to),
     ]
@@ -246,10 +254,6 @@ def front_matter(man: dict) -> list[tuple[str, str]]:
 def back_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     url = man["digital_edition_url"]
     n = man["total_recipes_in_digital"]
-    contents = "# Recipes in This Volume\n\n" + "\n".join(
-        f"{b['print_chapter']}. **{b['title']}** \u2014 {b['chapter_name']}"
-        for b in built
-    ) + "\n"
     more = (
         "# There Are More Recipes Online\n\n"
         f"This volume is 15 of {n} recipes. The full digital cookbook covers "
@@ -258,7 +262,7 @@ def back_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
         "current as services and best practices evolve.\n\n"
         f"**Read the complete cookbook:** {url}\n"
     )
-    return [("backmatter", contents), ("backmatter", more)]
+    return [("backmatter", more)]
 
 
 # --------------------------------------------------------------------------- #
@@ -392,7 +396,7 @@ def main() -> int:
 
     # assemble book.md + book.html
     sections: list[tuple[str, str]] = []
-    sections += front_matter(man)
+    sections += front_matter(man, built)
     for b in built:
         sections.append(("recipe", b["md"]))
     sections += back_matter(man, built)
