@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Print pipeline (Phase C) — flagship-15 6×9 PDF</title>
+  <title>README</title>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/pygments.css">
 </head>
@@ -506,63 +506,178 @@
     </aside>
     <main class="content">
       <article>
-        <h1 id="print-pipeline-phase-c--flagship-15-69-pdf">Print pipeline (Phase C) — flagship-15 6×9 PDF</h1>
-<p>Builds the curated <strong>flagship-15</strong> print edition as a derived artifact from the
-canonical recipe sources. It <strong>never edits the canonical <code>.md</code> files</strong> — all
-transforms run on a copy written to <code>print/build/</code> (gitignored).</p>
-<p>Pipeline: <code>canonical Markdown → print-adapted Markdown → combined HTML → 6×9 PDF</code></p>
-<h2 id="files">Files</h2>
-<ul>
-<li><code>manifest.json</code> — the single source of truth: the 15 recipes, their print
-chapter numbers, titles, and <code>approved</code> flags, plus book metadata
-(title, author, copyright year, digital-edition URL). <strong>Edit this</strong> to flip a
-recipe to <code>approved: true</code> as you sign off on it, or to set the real
-digital-edition URL / author name.</li>
-<li><code>build.py</code> — the deterministic, re-runnable build.</li>
-<li><code>print.css</code> — 6×9 trade-paperback stylesheet (honored by headless-Chrome
-print via <code>preferCSSPageSize</code>).</li>
-<li><code>build/</code> — output (gitignored): adapted <code>.md</code> per recipe, <code>book.md</code>,
-<code>book.html</code>, <code>book.pdf</code>, and <code>print-warnings.txt</code>.</li>
-</ul>
-<h2 id="usage">Usage</h2>
-<p>Run with a Python that has a Markdown engine (the md-to-html venv works):</p>
-<div class="code"><pre><span></span><span class="nv">PY</span><span class="o">=</span><span class="s2">&quot;/…/projects/md-to-html/.venv/bin/python&quot;</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w">            </span><span class="c1"># approved recipes only (default)</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w"> </span>--all<span class="w">      </span><span class="c1"># all 15 (unapproved/missing included)</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w"> </span>--pdf<span class="w">      </span><span class="c1"># also render book.pdf (needs puppeteer + Chrome)</span>
+        <p align="center">
+  <img src="logo.svg" width="200px" align="center" alt="Zod logo" />
+  <h1 align="center">Zod</h1>
+  <p align="center">
+    TypeScript-first schema validation with static type inference
+    <br/>
+    by <a href="https://x.com/colinhacks">@colinhacks</a>
+  </p>
+</p>
+<br/>
+<p align="center">
+<a href="https://github.com/colinhacks/zod/actions?query=branch%3Amaster"><img src="https://github.com/colinhacks/zod/actions/workflows/test.yml/badge.svg?event=push&branch=master" alt="Zod CI status" /></a>
+<a href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/github/license/colinhacks/zod" alt="License"></a>
+<a href="https://www.npmjs.com/package/zod" rel="nofollow"><img src="https://img.shields.io/npm/dw/zod.svg" alt="npm"></a>
+<a href="https://discord.gg/KaSRdyX2vc" rel="nofollow"><img src="https://img.shields.io/discord/893487829802418277?label=Discord&logo=discord&logoColor=white" alt="discord server"></a>
+<a href="https://github.com/colinhacks/zod" rel="nofollow"><img src="https://img.shields.io/github/stars/colinhacks/zod" alt="stars"></a>
+</p>
+<div align="center">
+  <a href="https://zod.dev/api">Docs</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://discord.gg/RcG33DQJdf">Discord</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://twitter.com/colinhacks">𝕏</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://bsky.app/profile/zod.dev">Bluesky</a>
+  <br />
+</div>
+<br/>
+<br/>
+<h2 align="center">Featured sponsor: Jazz</h2>
+<div align="center">
+  <a href="https://jazz.tools/?utm_source=zod">
+    <picture width="85%" >
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/garden-co/jazz/938f6767e46cdfded60e50d99bf3b533f4809c68/homepage/homepage/public/Zod%20sponsor%20message.png">
+      <img alt="jazz logo" src="https://raw.githubusercontent.com/garden-co/jazz/938f6767e46cdfded60e50d99bf3b533f4809c68/homepage/homepage/public/Zod%20sponsor%20message.png" width="85%">
+    </picture>
+  </a>
+  <br/>
+  <p><sub>Learn more about <a target="_blank" rel="noopener noreferrer" href="mailto:sponsorship@colinhacks.com">featured sponsorships</a></sub></p>
+</div>
+<br/>
+<br/>
+<br/>
+<h3 id="read-the-docs-"><a href="https://zod.dev/api">Read the docs →</a></h3>
+<br/>
+<br/>
+<h2 id="what-is-zod">What is Zod?</h2>
+<p>Zod is a TypeScript-first validation library. Define a schema and parse some data with it. You'll get back a strongly typed, validated result.</p>
+<div class="code"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">z</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;zod/v4&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">z.string</span><span class="p">(),</span>
+<span class="p">});</span>
+
+<span class="c1">// some untrusted data...</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="cm">/* stuff */</span>
+<span class="p">};</span>
+
+<span class="c1">// the parsed result is validated and type safe!</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">User</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">input</span><span class="p">);</span>
+
+<span class="c1">// so you can use it with confidence :)</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
 </pre></div>
 
-<p>PDF rendering needs puppeteer:</p>
-<div class="code"><pre><span></span><span class="nb">cd</span><span class="w"> </span>print/build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>init<span class="w"> </span>-y<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>i<span class="w"> </span>puppeteer<span class="w">    </span><span class="c1"># one-time, ~Chromium download</span>
-<span class="s2">&quot;</span><span class="nv">$PY</span><span class="s2">&quot;</span><span class="w"> </span>print/build.py<span class="w"> </span>--pdf
+<br/>
+<h2 id="features">Features</h2>
+<ul>
+<li>Zero external dependencies</li>
+<li>Works in Node.js and all modern browsers</li>
+<li>Tiny: <code>2kb</code> core bundle (gzipped)</li>
+<li>Immutable API: methods return a new instance</li>
+<li>Concise interface</li>
+<li>Works with TypeScript and plain JS</li>
+<li>Built-in JSON Schema conversion</li>
+<li>Extensive ecosystem</li>
+</ul>
+<br/>
+<h2 id="installation">Installation</h2>
+<div class="code"><pre><span></span>npm<span class="w"> </span>install<span class="w"> </span>zod
 </pre></div>
 
-<h2 id="transforms-applied-plan_docsphysical-book-planmd-2b">Transforms applied (plan_docs/physical-book-plan.md §2b)</h2>
-<ol>
-<li><strong>Strip the web nav footer</strong> (<code>*← … →*</code>).</li>
-<li><strong>Reframe <code>## Related Recipes</code></strong> → a digital-edition pointer. The original
-bullet list is preserved as an HTML comment (<code>PRINT-TODO</code>) so you can later
-hand-write a one-sentence concept summary.</li>
-<li><strong>Inline <code>Recipe N.N</code> refs:</strong> if <code>N.N</code> is a flagship → renumbered to
-<code>Chapter &lt;print_chapter&gt;</code>; if not → left as-is and reported in
-<code>print-warnings.txt</code> as <code>[PRINT-WARN]</code> for you to reword to a concept.</li>
-<li><strong>Rewrite the architecture-companion callout</strong> → points at the digital edition.</li>
-</ol>
-<ul>
-<li>Also strips the web-only <code>## Tags</code> chip section and collapses orphaned rules.</li>
-</ul>
-<p>Front matter (title, copyright, preface, how-to-use) and back matter
-(contents, &quot;more recipes online&quot;) are generated from <code>manifest.json</code>.</p>
-<h2 id="still-todo-phase-c-remainder">Still TODO (Phase C remainder)</h2>
-<ul>
-<li><strong>Mermaid pre-render (§2c):</strong> render ```mermaid blocks to SVG once and embed
-across HTML/EPUB/PDF. The approved flagship main files are currently ASCII
-diagrams (0 Mermaid), so this is low-impact for the subset today but required
-before the heavy recipes (10.7, 11.6) and EPUB.</li>
-<li><strong>QR code</strong> for the digital-edition URL on the front matter.</li>
-<li><strong>Index</strong> generation (back matter currently lists contents only).</li>
-<li>Review each recipe's <code>[PRINT-WARN]</code> prose refs and reword to concepts.</li>
-</ul>
+<br/>
+<h2 id="basic-usage">Basic usage</h2>
+<p>Before you can do anything else, you need to define a schema. For the purposes of this guide, we'll use a simple object schema.</p>
+<div class="code"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">z</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;zod/v4&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">Player</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">z.string</span><span class="p">(),</span>
+<span class="w">  </span><span class="nx">xp</span><span class="o">:</span><span class="w"> </span><span class="kt">z.number</span><span class="p">(),</span>
+<span class="p">});</span>
+</pre></div>
+
+<h3 id="parsing-data">Parsing data</h3>
+<p>Given any Zod schema, use <code>.parse</code> to validate an input. If it's valid, Zod returns a strongly-typed <em>deep clone</em> of the input.</p>
+<div class="code"><pre><span></span><span class="nx">Player</span><span class="p">.</span><span class="nx">parse</span><span class="p">({</span><span class="w"> </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;billie&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">xp</span><span class="o">:</span><span class="w"> </span><span class="kt">100</span><span class="w"> </span><span class="p">});</span>
+<span class="c1">// =&gt; returns { username: &quot;billie&quot;, xp: 100 }</span>
+</pre></div>
+
+<p><strong>Note</strong> — If your schema uses certain asynchronous APIs like <code>async</code> <a href="#refine">refinements</a> or <a href="#transform">transforms</a>, you'll need to use the <code>.parseAsync()</code> method instead.</p>
+<div class="code"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="kt">string</span><span class="p">().</span><span class="nx">refine</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">val</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">val</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mf">8</span><span class="p">);</span>
+
+<span class="k">await</span><span class="w"> </span><span class="nx">schema</span><span class="p">.</span><span class="nx">parseAsync</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">);</span>
+<span class="c1">// =&gt; &quot;hello&quot;</span>
+</pre></div>
+
+<h3 id="handling-errors">Handling errors</h3>
+<p>When validation fails, the <code>.parse()</code> method will throw a <code>ZodError</code> instance with granular information about the validation issues.</p>
+<div class="code"><pre><span></span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">Player</span><span class="p">.</span><span class="nx">parse</span><span class="p">({</span><span class="w"> </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">42</span><span class="p">,</span><span class="w"> </span><span class="nx">xp</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;100&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="ow">instanceof</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">ZodError</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">err</span><span class="p">.</span><span class="nx">issues</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* [</span>
+<span class="cm">      {</span>
+<span class="cm">        expected: &#39;string&#39;,</span>
+<span class="cm">        code: &#39;invalid_type&#39;,</span>
+<span class="cm">        path: [ &#39;username&#39; ],</span>
+<span class="cm">        message: &#39;Invalid input: expected string&#39;</span>
+<span class="cm">      },</span>
+<span class="cm">      {</span>
+<span class="cm">        expected: &#39;number&#39;,</span>
+<span class="cm">        code: &#39;invalid_type&#39;,</span>
+<span class="cm">        path: [ &#39;xp&#39; ],</span>
+<span class="cm">        message: &#39;Invalid input: expected number&#39;</span>
+<span class="cm">      }</span>
+<span class="cm">    ] */</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>To avoid a <code>try/catch</code> block, you can use the <code>.safeParse()</code> method to get back a plain result object containing either the successfully parsed data or a <code>ZodError</code>. The result type is a <a href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions">discriminated union</a>, so you can handle both cases conveniently.</p>
+<div class="code"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">Player</span><span class="p">.</span><span class="nx">safeParse</span><span class="p">({</span><span class="w"> </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">42</span><span class="p">,</span><span class="w"> </span><span class="nx">xp</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;100&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">result</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">result</span><span class="p">.</span><span class="nx">error</span><span class="p">;</span><span class="w"> </span><span class="c1">// ZodError instance</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">result</span><span class="p">.</span><span class="nx">data</span><span class="p">;</span><span class="w"> </span><span class="c1">// { username: string; xp: number }</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Note</strong> — If your schema uses certain asynchronous APIs like <code>async</code> <a href="#refine">refinements</a> or <a href="#transform">transforms</a>, you'll need to use the <code>.safeParseAsync()</code> method instead.</p>
+<div class="code"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="kt">string</span><span class="p">().</span><span class="nx">refine</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">val</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">val</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mf">8</span><span class="p">);</span>
+
+<span class="k">await</span><span class="w"> </span><span class="nx">schema</span><span class="p">.</span><span class="nx">safeParseAsync</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">);</span>
+<span class="c1">// =&gt; { success: true; data: &quot;hello&quot; }</span>
+</pre></div>
+
+<h3 id="inferring-types">Inferring types</h3>
+<p>Zod infers a static type from your schema definitions. You can extract this type with the <code>z.infer&lt;&gt;</code> utility and use it however you like.</p>
+<div class="code"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">Player</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">z.string</span><span class="p">(),</span>
+<span class="w">  </span><span class="nx">xp</span><span class="o">:</span><span class="w"> </span><span class="kt">z.number</span><span class="p">(),</span>
+<span class="p">});</span>
+
+<span class="c1">// extract the inferred type</span>
+<span class="kr">type</span><span class="w"> </span><span class="nx">Player</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">infer</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">Player</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="c1">// use it in your code</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">player</span><span class="o">:</span><span class="w"> </span><span class="kt">Player</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;billie&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">xp</span><span class="o">:</span><span class="w"> </span><span class="kt">100</span><span class="w"> </span><span class="p">};</span>
+</pre></div>
+
+<p>In some cases, the input &amp; output types of a schema can diverge. For instance, the <code>.transform()</code> API can convert the input from one type to another. In these cases, you can extract the input and output types independently:</p>
+<div class="code"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">mySchema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="kt">string</span><span class="p">().</span><span class="nx">transform</span><span class="p">((</span><span class="nx">val</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">val</span><span class="p">.</span><span class="nx">length</span><span class="p">);</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">MySchemaIn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">input</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">mySchema</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="c1">// =&gt; string</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">MySchemaOut</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">output</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">mySchema</span><span class="o">&gt;</span><span class="p">;</span><span class="w"> </span><span class="c1">// equivalent to z.infer&lt;typeof mySchema&gt;</span>
+<span class="c1">// number</span>
+</pre></div>
+
 
       </article>
       <footer class="page-footer">

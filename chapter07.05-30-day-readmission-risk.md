@@ -12,9 +12,9 @@ This is the 30-day readmission problem, and it is one of the most studied, most 
 
 CMS penalizes hospitals for excess readmissions through the Hospital Readmissions Reduction Program (HRRP). The penalties are real: up to 3% of total Medicare reimbursement, applied across all Medicare discharges, not just the readmitted ones. For a mid-size hospital doing $200M in Medicare revenue, that's up to $6M at stake annually. The program covers heart failure, AMI, pneumonia, COPD, hip/knee replacement, and CABG. And the penalty calculation compares your readmission rate against a risk-adjusted expected rate, so you can't game it by simply avoiding sick patients.
 
-But the financial penalty is almost secondary to the human cost. A readmission usually means something went wrong in the transition of care. The patient didn't understand their medications. They couldn't get to their follow-up appointment. Their home environment wasn't safe for recovery. They developed a complication that nobody was monitoring for. These are preventable failures, and they happen at scale: roughly 15-20% of Medicare patients are readmitted within 30 days of discharge.
+But the financial penalty is almost secondary to the human cost. A readmission usually means something went wrong in the transition of care. The patient didn't understand their medications. They couldn't get to their follow-up appointment. Their home environment wasn't safe for recovery. They developed a complication that nobody was monitoring for. These are preventable failures, and they happen at scale; roughly 15-20% of Medicare patients are readmitted within 30 days of discharge.
 
-The good news: targeted post-discharge interventions work. Transition care programs, nurse follow-up calls, medication reconciliation, home health visits, remote patient monitoring. These programs reduce readmissions by 20-40% when applied to the right patients. The key phrase there is "the right patients." These interventions are expensive. You can't give every discharged patient a dedicated care transition nurse. You need to know who is most likely to bounce back, so you can focus your limited resources where they'll have the most impact.
+The good news is that targeted post-discharge interventions work. Transition care programs, nurse follow-up calls, medication reconciliation, home health visits, remote patient monitoring. These programs reduce readmissions by 20-40% when applied to the right patients. The key phrase there is "the right patients." These interventions are expensive. You can't give every discharged patient a dedicated care transition nurse. You need to know who is most likely to bounce back, so you can focus your limited resources where they'll have the most impact.
 
 That's the prediction problem. Score every patient at discharge. Identify the high-risk ones. Route them to the appropriate intervention. Measure whether it worked.
 
@@ -24,7 +24,7 @@ That's the prediction problem. Score every patient at discharge. Identify the hi
 
 ### Readmission Prediction as a Time-Bounded Classification Problem
 
-At its core, 30-day readmission prediction is binary classification with a fixed time horizon: will this patient be readmitted to any acute care hospital within 30 days of discharge? Yes or no. You train on historical discharge records where you know the outcome, then apply the model to new discharges in real time (or near-real-time) to generate risk scores.
+At its core, 30-day readmission prediction is binary classification with a fixed time horizon. Will this patient be readmitted to any acute care hospital within 30 days of discharge? Yes or no. You train on historical discharge records where you know the outcome, then apply the model to new discharges in real time (or near-real-time) to generate risk scores.
 
 The 30-day window is not arbitrary. It's the CMS measurement window for HRRP penalties. Some organizations also track 7-day and 90-day readmissions, but 30-day is the regulatory standard and the most common prediction target.
 
@@ -72,13 +72,13 @@ The features that predict 30-day readmission cluster into several domains:
 
 For readmission prediction, calibration is arguably more important than discrimination. Here's why: your care transition team has finite capacity. If you tell them "these 50 patients are high-risk," they need to trust that those patients genuinely have elevated risk. If your model says "40% readmission probability" but the actual rate for that group is 20%, you're wasting half your intervention capacity on patients who would have been fine anyway.
 
-Calibration means that predicted probabilities match observed frequencies. Platt scaling or isotonic regression applied after model training can fix calibration without sacrificing discrimination. Always check calibration plots stratified by key subgroups (diagnosis category, age, race) because a model can be well-calibrated overall but poorly calibrated for specific populations.
+Calibration asks a simple question; are the predicted numbers actually true? If the model says a group of patients is "20% risk," it's well-calibrated when about 20 out of every 100 of them really are eadmitted. A model can be good at ranking who's higher-risk and still get these numbers wrong. The numbers matter the moment they drive a decision, like who gets an expensive intervention.  Calibration can be corrected after the model is trained, without hurting that ranking. 
 
 ### Fairness and Bias Considerations
 
 Readmission risk models trained on historical data will encode existing disparities. Patients from disadvantaged communities have higher readmission rates partly because of worse post-discharge support systems (fewer pharmacies, less transportation, fewer follow-up options). A model that accurately predicts this disparity might seem "fair" in a statistical sense, but using it to allocate interventions could either help (directing more resources to disadvantaged patients) or harm (if high-risk scores are used punitively or to avoid admitting certain patients).
 
-The ethical framing matters: are you using the score to help high-risk patients get more support, or to penalize them? The same model can serve either purpose depending on how the score is operationalized. Be explicit about this in your implementation design.
+The ethical framing matters. Are you using the score to help high-risk patients get more support, or to penalize them? The same model can serve either purpose depending on how the score is operationalized. Be explicit about this in your implementation design.
 
 ---
 
@@ -108,8 +108,6 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 ---
 
 ## The Honest Take
-
-Here's what I've learned from watching organizations implement readmission prediction:
 
 **The model is the easy part.** Getting a C-statistic of 0.70 with XGBoost on a decent feature set takes a few weeks of data science work. Getting the ADT integration working, the feature assembly pipeline reliable, the scores into the right hands at the right time, and the care transition team actually acting on the scores? That takes 6-12 months of operational work. The ML is maybe 20% of the effort.
 

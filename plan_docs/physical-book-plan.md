@@ -43,7 +43,7 @@ One marquee recipe per chapter, chosen for broad relatability and self-contained
 | 4 | Recommendation & Personalization | 4.9 Personalized Care Plan Generation | 4,981 | **author-approved 2026-06-20** (tightened from 8,575; deps reframed) |
 | 5 | Entity Resolution & Record Linkage | 5.1 Internal Duplicate Patient Detection | 6,115 | **author-approved 2026-06-21** |
 | 6 | Clustering & Patient Segmentation | 6.4 Disease Severity Stratification | 1,976 | **author-approved 2026-06-28** (algo-section depth trimmed) |
-| 7 | Predictive Risk Modeling | 7.5 30-Day Readmission Risk | 2,958 | lean |
+| 7 | Predictive Risk Modeling | 7.5 30-Day Readmission Risk | 2,597 | **author-approved 2026-07-04** (calibration/C-stat passages simplified) |
 | 8 | Clinical NLP & Information Extraction | 8.3 ICD-10 Code Suggestion | 2,351 | lean |
 | 9 | Medical Imaging & Computer Vision | 9.6 Diabetic Retinopathy Screening | 1,801 | lean |
 | 10 | Speech & Voice AI | 10.7 Ambient Clinical Documentation | 12,335 | **HEAVY** |
