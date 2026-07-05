@@ -14,7 +14,7 @@ Medical coding is one of the largest labor bottlenecks in the revenue cycle. The
 
 Here's the thing: for 60-70% of encounters, the relevant ICD-10 codes are fairly obvious from the clinical text. When the note says "Type 2 diabetes mellitus with peripheral neuropathy," a trained model can suggest E11.40 or E11.42 with reasonable confidence. It can't replace the coder's judgment on which is more appropriate. But it can present a ranked list of candidates so the coder is selecting from a pre-screened set rather than navigating the entire 70,000-code taxonomy from scratch.
 
-This is the ICD-10 code suggestion problem: given clinical text, suggest a ranked list of diagnosis codes that a human coder can review, accept, modify, or reject. It's not auto-coding. It's not replacing the coder. It's presenting an intelligent starting point that turns an 8-minute recall-and-search task into a 3-minute verify-and-confirm task.
+This is the ICD-10 code suggestion problem. Given clinical text, suggest a ranked list of diagnosis codes that a human coder can review, accept, modify, or reject. It's not auto-coding. It's not replacing the coder. It's presenting an intelligent starting point that turns an 8-minute recall-and-search task into a 3-minute verify-and-confirm task.
 
 The distinction between "suggestion" and "auto-coding" is not semantic. It's regulatory, it's legal, and it's practical. Auto-coding implies the system assigns codes without human review. That creates liability, audit risk, and compliance concerns that most organizations are nowhere near ready to accept. Suggestion means a human is always in the loop. The system accelerates their work. It doesn't replace their judgment.
 
@@ -69,7 +69,7 @@ A robust ICD-10 suggestion system runs assertion detection as a preprocessing st
 
 Training an ICD-10 suggestion model requires labeled data: clinical text paired with the correct codes. The obvious source is your existing coded encounters. Your coders have been assigning codes to notes for years. That's your training set.
 
-Except there are problems with this obvious approach:
+Except there are problems with this obvious approach.
 
 **Coder variability.** Different coders assign different codes to the same note. Studies show inter-coder agreement rates of 60-80% at the full code level for complex encounters. Your training data contains noise from this variability.
 
@@ -119,17 +119,15 @@ The practical approach is to use your coded encounter data as the training found
 
 ## The Honest Take
 
-I'll be upfront: ICD-10 code suggestion is one of those problems that's deceptively easy to demo and genuinely hard to deploy well.
+ICD-10 code suggestion is one of those problems that's deceptively easy to demo and genuinely hard to deploy well.
 
 The demo is impressive. You feed a clinical note into Comprehend Medical, you get back a list of codes with confidence scores, and 85% of them are right. Executives love it. "We'll cut coding time in half!" And maybe you will. But the gap between "85% of common codes suggested correctly" and "coders trust this enough to change their workflow" is enormous.
 
-Here's what surprised me: coders don't trust the suggestions for about the first two weeks. They verify everything independently, which makes the system slower, not faster. Then they start trusting the high-confidence suggestions for common codes (hypertension, diabetes, hyperlipidemia). Then they gradually extend trust to medium-confidence suggestions. The adoption curve is weeks to months, not days. Plan for it.
+Coders won't trust the suggestions for about the first two weeks. They verify everything independently, which makes the system slower, not faster. Then they start trusting the high-confidence suggestions for common codes (hypertension, diabetes, hyperlipidemia). Then they gradually extend trust to medium-confidence suggestions. The adoption curve is months, not days. Plan for it.
 
 The specificity problem is the most persistent frustration. Comprehend Medical will happily suggest E11.9 (Type 2 diabetes, unspecified) when the note clearly documents peripheral neuropathy that should push it to E11.42. The model is being conservative. That's defensible behavior for an AI system in healthcare. But it means the coder still needs to read the note carefully and make the specificity determination themselves. The suggestion saved them the lookup time, but not the clinical judgment time.
 
 The feedback loop is where the real value emerges. When you track which suggestions coders accept, modify, and reject, you build a dataset that tells you exactly where the system fails. After three months of feedback data, you know which code families need supplementary rules, which documentation patterns confuse the model, and which coders disagree with each other (which is a training opportunity, not a system failure). The suggestion system becomes a quality analytics platform almost by accident.
-
-One more thing: don't overlook the cost model. At $0.01 per 100 characters, processing a 3,000-character note costs $0.30 per API call. If you're processing 500 encounters per day, that's $150/day or $4,500/month just for the Comprehend Medical calls. That's cheap compared to a coder's salary, but it's not nothing. The section-targeted approach (processing only the Assessment/Plan rather than the full note) cuts costs by 60-80% with minimal accuracy loss for code suggestion specifically.
 
 ---
 
