@@ -46,6 +46,14 @@
 
 **AWS HealthLake (optional) for FHIR-based EHR integration.** HealthLake stores FHIR resources and supports writing completed notes as FHIR DocumentReference resources. For EHR integrations that use Epic, Oracle Health, or other vendor APIs, a vendor-specific integration layer (built on Lambda or using a HealthLake-sourced feed) handles the write-back.
 
+### Notes on the Services
+
+The thing about AWS HealthScribe specifically: it is the right starting point for most institutions building this on AWS. It collapses the ASR, diarization, role assignment, clinical-content classification, and structured note drafting into one managed service with explicit transcript-to-note traceability. The trade-off is opinionatedness: HealthScribe has its own default note structure, its own default diarization tuning, and its own default behavior for the harder cases. Institutions with strong opinions about the note format or the diarization configuration will use HealthScribe as the ASR and diarization primitive and add their own institutional-template rendering on top via Bedrock. Institutions without those strong opinions deploy HealthScribe as the end-to-end pipeline and accept its defaults.
+
+The thing about Amazon Bedrock specifically: the LLM-driven institutional-template rendering is genuinely useful when the institutional note format does not match HealthScribe's defaults. The faithfulness story is genuinely tractable with citation grounding plus separate faithfulness-checker passes plus offline sampling review. The structured-extraction pattern works well when paired with explicit clinician confirmation gates. Treat the LLM as a drafting partner with mandatory clinician oversight. Do not let the system auto-apply structured updates without clinician review. Recipe 2.8 covers the Bedrock-based pattern in detail.
+
+The thing about Amazon Comprehend Medical specifically: the RxNorm and ICD-10 linking saves the institution from building its own clinical-entity-coding pipeline. The output quality is good enough for production use. Use it for the entity extraction even if Bedrock is doing the higher-level structuring; the canonical clinical coding is worth the extra service call.
+
 ### In-Room Device-to-Cloud Audio Path
 
 The audio path between the in-room device and the cloud ASR service is the highest-risk data-in-transit segment in the pipeline, because it carries raw biometric PHI (the patient's and clinician's voices) over a network hop that varies by device pattern.
