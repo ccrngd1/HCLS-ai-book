@@ -38,6 +38,10 @@
 
 **Amazon QuickSight (optional) for compliance, clinical-quality, and operational dashboards.** Per-protocol over-triage and under-triage rate, per-cohort recommendation accuracy, citation-coverage rate, escalation rate, and outcome-correlation dashboards.
 
+### Notes on the Services
+
+**Cloud-service selection.** As with the other chapter-11 bots, the institutional value lives in the protocol corpus, the clinical-decision-rule library, the chart-context integration, and the regulatory artifact, not in the specific cloud services. The managed-agent pattern (LLM orchestration with tool-use action groups, managed RAG for protocol retrieval, and managed guardrails for scope enforcement) is the right level of abstraction.
+
 ### Architecture Diagram
 
 ```mermaid

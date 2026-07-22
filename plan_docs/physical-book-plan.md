@@ -47,7 +47,7 @@ One marquee recipe per chapter, chosen for broad relatability and self-contained
 | 8 | Clinical NLP & Information Extraction | 8.3 ICD-10 Code Suggestion | 2,247 | **author-approved 2026-07-04** |
 | 9 | Medical Imaging & Computer Vision | 9.6 Diabetic Retinopathy Screening | 1,921 | **author-approved 2026-07-06** (added buy-vs-build beat; stats fact-checked) |
 | 10 | Speech & Voice AI | 10.7 Ambient Clinical Documentation | 8,166 | **author-approved 2026-07-09** (tightened from 12,335: audio/diarization consolidation, ASCII diagram → compact flow, Honest Take trim, AWS notes → companion) |
-| 11 | Conversational AI & Virtual Agents | 11.6 Symptom Checker / Triage Bot | 12,938 | **HEAVY** |
+| 11 | Conversational AI & Virtual Agents | 11.6 Symptom Checker / Triage Bot | 6,610 | **author-approved 2026-07-21** (tightened from 12,938: 398-line ASCII diagram → compact flow, Technology-section consolidation, Honest Take trim, FDA points fact-checked; cloud-service note → companion) |
 | 12 | Forecasting & Time-Series Analysis | 12.5 Hospital Census Forecasting | 4,244 | lean |
 | 13 | Knowledge Graphs & Clinical Reasoning | 13.4 Drug-Drug Interaction Knowledge Base | 2,451 | lean |
 | 14 | Optimization & Resource Allocation | 14.4 Nurse Staffing Optimization | 2,246 | lean |
