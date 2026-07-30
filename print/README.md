@@ -56,3 +56,12 @@ Front matter (title, copyright, preface, how-to-use) and back matter
 - **QR code** for the digital-edition URL on the front matter.
 - **Index** generation (back matter currently lists contents only).
 - Review each recipe's `[PRINT-WARN]` prose refs and reword to concepts.
+
+## TOC page numbers (two-pass)
+
+`build.py --pdf` renders the PDF, extracts each recipe's printed page from that
+render (`extract-toc-pages.js`, via `pdfjs-dist` installed in `build/node_modules`),
+writes `build/toc-pagemap.json`, then rebuilds and re-renders so the Table of
+Contents shows real page numbers with dot leaders. If Node or `pdfjs-dist` is
+unavailable, the step is skipped and the TOC renders without page numbers (no error).
+One-time setup: `cd build && npm i pdfjs-dist`.

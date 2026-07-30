@@ -42,6 +42,8 @@ import html as _html
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -262,13 +264,22 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
         "recipes.\n"
     )
     how_to = how_to + _qr_block(url)
-    toc_lines = ["# Contents", ""]
+    import os as _os, json as _json
+    _pm = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "build", "toc-pagemap.json")
+    try:
+        _pmap = _json.load(open(_pm, encoding="utf-8"))
+    except OSError:
+        _pmap = {}
+    items = []
     for b in built:
-        # category (broader chapter) on top, the recipe itself beneath it
-        toc_lines.append(f"**{b['print_chapter']} \u00b7 {b['chapter_name']}**  ")
-        toc_lines.append(b["title"])
-        toc_lines.append("")
-    toc = "\n".join(toc_lines)
+        cat = f"{b['print_chapter']} \u00b7 {b['chapter_name']}"
+        pg = _pmap.get(str(b["print_chapter"]), "")
+        items.append(
+            f'<div class="toc-item"><div class="toc-cat">{cat}</div>'
+            f'<div class="toc-line"><span class="toc-t">{b["title"]}</span>'
+            f'<span class="toc-dots"></span><span class="toc-pg">{pg}</span></div></div>'
+        )
+    toc = '# Contents\n\n<div class="toc-wrap">\n' + "\n".join(items) + "\n</div>"
     return [
         ("frontmatter title-page", title_pg),
         ("frontmatter copyright-page", copyright_pg),
@@ -484,30 +495,34 @@ def main() -> int:
               f"nav-{c['nav_footer']} rel-{c['related']} arch-{c['arch_callout']} "
               f"tags-{c['tags']} warn-{len(warns)}")
 
-    # assemble book.md + book.html
-    sections: list[tuple[str, str]] = []
-    sections += front_matter(man, built)
-    for b in built:
-        sections.append(("recipe", b["md"]))
-    sections += back_matter(man, built)
-    _ap = appendix_catalog(man)
-    if _ap:
-        sections.append(_ap)
-    _ix = appendix_index(man)
-    if _ix:
-        sections.append(_ix)
-
-    book_md = "\n\n<!-- ===== PAGE ===== -->\n\n".join(s[1] for s in sections)
-    with open(os.path.join(out, "book.md"), "w", encoding="utf-8") as fh:
-        fh.write(book_md)
-
+    # assemble book.md + book.html (re-callable so the TOC two-pass can rebuild)
     render, engine = get_md_renderer()
-    html_ok = False
-    if render:
+
+    def _assemble() -> bool:
+        sections: list[tuple[str, str]] = []
+        sections += front_matter(man, built)
+        for b in built:
+            _md = re.sub(r"[\u2b50\U0001F536\U0001F537\U0001F3E5\uFE0F]", "", b["md"])
+            _anchor = f'<span class="pgm">PGMK{b["print_chapter"]}ENDPGMK</span>\n\n'
+            sections.append(("recipe", _anchor + _md))
+        sections += back_matter(man, built)
+        _ap = appendix_catalog(man)
+        if _ap:
+            sections.append(_ap)
+        _ix = appendix_index(man)
+        if _ix:
+            sections.append(_ix)
+        book_md = "\n\n<!-- ===== PAGE ===== -->\n\n".join(s[1] for s in sections)
+        with open(os.path.join(out, "book.md"), "w", encoding="utf-8") as fh:
+            fh.write(book_md)
+        if not render:
+            return False
         html = build_html(sections, render, man["title"])
         with open(os.path.join(out, "book.html"), "w", encoding="utf-8") as fh:
             fh.write(html)
-        html_ok = True
+        return True
+
+    html_ok = _assemble()
 
     # warnings report
     warn_path = os.path.join(out, "print-warnings.txt")
@@ -523,7 +538,7 @@ def main() -> int:
 
     # summary
     print(f"\nbuilt {len(built)} recipe(s) -> {out}")
-    print(f"  book.md: {len(book_md):,} chars")
+    print(f"  book.md: {os.path.getsize(os.path.join(out, 'book.md')):,} bytes")
     if html_ok:
         print(f"  book.html: rendered via {engine}")
     else:
@@ -539,6 +554,19 @@ def main() -> int:
         else:
             pdf = os.path.join(out, "book.pdf")
             if render_pdf(os.path.join(out, "book.html"), pdf):
+                # Two-pass TOC: extract each recipe's page from pass 1, then
+                # rebuild with page numbers and re-render. Degrades gracefully.
+                node = shutil.which("node")
+                extractor = os.path.join(HERE, "extract-toc-pages.js")
+                if node and os.path.exists(extractor) and out == os.path.join(HERE, "build"):
+                    try:
+                        subprocess.run([node, extractor], check=True, timeout=120,
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        _assemble()
+                        render_pdf(os.path.join(out, "book.html"), pdf)
+                        print("  book.pdf: TOC page numbers applied (two-pass)")
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"  [toc] page-number pass skipped ({exc})", file=sys.stderr)
                 sz = os.path.getsize(pdf)
                 print(f"  book.pdf: {sz/1024:.0f} KB")
 
