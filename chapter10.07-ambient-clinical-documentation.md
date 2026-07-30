@@ -153,12 +153,22 @@ A few practical updates worth knowing.
 
 An in-person ambient clinical documentation system decomposes into eight logical stages: encounter setup and consent capture (the visit begins with the appropriate disclosures and the ambient feature is enabled per institutional policy), in-room audio capture (the audio is captured by the device or microphone array, with VAD and noise suppression applied), streaming ASR with diarization (the audio becomes a real-time transcript with speaker labels), in-encounter live display (optional, the live transcript appears for the clinician to monitor during the encounter), batch ASR for finalization (a higher-accuracy transcript is produced after the encounter), clinical-content classification and LLM-driven note generation (the relevant transcript segments become a draft note with extracted clinical data), clinician review and signature (the clinician reviews, edits, confirms structured extractions, and signs), and audit, archive, and learning (the audio, transcript, generated note, and metadata are stored with appropriate retention).
 
-```text
-Consent & Setup  →  In-Room Audio Capture  →  Streaming ASR + Diarization  →
-[Live Display (optional)]  →  Batch ASR (canonical transcript)  →
-Clinical Classify + LLM Note Generation  →  Clinician Review & Sign  →
-Audit / Archive / Cohort Monitoring
-```
+<style>
+.vflow { margin:.6em 0 .6em .35em; border-left:2px solid #bcbcbc; }
+.vflow .step { position:relative; padding:3.5px 0 3.5px 16px; line-height:1.32; font-size:0.9em; }
+.vflow .step::before { content:""; position:absolute; left:-5.5px; top:.62em; width:7px; height:7px; border-radius:50%; background:#fff; border:1.6px solid #8a8a8a; }
+</style>
+
+<div class="vflow">
+  <div class="step">Consent &amp; Setup</div>
+  <div class="step">In-Room Audio Capture</div>
+  <div class="step">Streaming ASR + Diarization</div>
+  <div class="step">Live Display (optional)</div>
+  <div class="step">Batch ASR (canonical transcript)</div>
+  <div class="step">Clinical Classify + LLM Note Generation</div>
+  <div class="step">Clinician Review &amp; Sign</div>
+  <div class="step">Audit / Archive / Cohort Monitoring</div>
+</div>
 A few cross-cutting design points that the architecture has to bake in.
 
 **Audio is PHI throughout, and biometric.** The microphone in the room captures the patient's voice (a biometric identifier), the clinician's voice, and any bystanders. The audio is PHI by HIPAA definition; in some jurisdictions (Illinois under BIPA, for instance) the voiceprint itself is regulated as biometric data with specific consent and disclosure requirements. The architecture treats audio as PHI throughout, with encryption at rest and in transit, access controls, and explicit retention policy enforcement. Audio retention is typically brief; some institutions discard audio within hours of successful note signing; some retain longer for QA or model adaptation under explicit consent.

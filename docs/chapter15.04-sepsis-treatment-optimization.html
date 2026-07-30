@@ -555,10 +555,20 @@ The math - π* = argmax E[Σ γ^t * r_t], where γ discounts future rewards (we 
 <p><strong>Non-stationarity.</strong> Treatment protocols change over time. A policy learned from 2015-2018 data may not be optimal for 2026 patients, because the standard of care has shifted, new drugs are available, and patient populations have changed.</p>
 <p><strong>Evaluation is the hardest part.</strong> How do you know if your learned policy is actually better than what clinicians did? You can't deploy it and see (not without extensive safety validation). You're stuck with off-policy evaluation (OPE): estimating how well the policy would have performed using historical data. OPE methods (importance sampling, doubly robust estimators, fitted Q-evaluation) all have significant variance and bias issues, especially when the learned policy differs substantially from the behavior policy.</p>
 <h3 id="general-architecture-pattern">General Architecture Pattern</h3>
-<pre class="code code-plain"><code>[EHR Data] → [Cohort Selection &amp; Preprocessing] → [State/Action/Reward Construction]
-    → [Offline RL Training] → [Off-Policy Evaluation] → [Clinical Validation]
-    → [Decision Support Interface]
-</code></pre>
+<style>
+.vflow { margin:.6em 0 .6em .35em; border-left:2px solid #bcbcbc; }
+.vflow .step { position:relative; padding:3.5px 0 3.5px 16px; line-height:1.32; font-size:0.9em; }
+.vflow .step::before { content:""; position:absolute; left:-5.5px; top:.62em; width:7px; height:7px; border-radius:50%; background:#fff; border:1.6px solid #8a8a8a; }
+</style>
+<div class="vflow">
+  <div class="step">EHR Data</div>
+  <div class="step">Cohort Selection &amp; Preprocessing</div>
+  <div class="step">State / Action / Reward Construction</div>
+  <div class="step">Offline RL Training</div>
+  <div class="step">Off-Policy Evaluation</div>
+  <div class="step">Clinical Validation</div>
+  <div class="step">Decision-Support Interface</div>
+</div>
 <p><strong>Cohort selection.</strong> Identify sepsis patients from historical EHR data using clinical criteria (Sepsis-3 definitions: suspected infection plus organ dysfunction). Exclude patients with DNR/comfort-care-only orders, those who died within the first hour (no opportunity for treatment optimization), and those with incomplete data.</p>
 <p><strong>Preprocessing.</strong> Handle missing values (forward-fill for vitals, imputation for labs), align to regular time steps (4-hour windows), normalize features, and construct the trajectory format.</p>
 <p><strong>State construction.</strong> Extract and engineer features at each time step. Decide between discrete state spaces (clustering) and continuous representations (neural networks). Include enough clinical context to mitigate confounding.</p>

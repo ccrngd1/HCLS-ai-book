@@ -80,11 +80,21 @@ The standard formulation (following the influential work by Komorowski et al., 2
 
 ### General Architecture Pattern
 
-```text
-[EHR Data] → [Cohort Selection & Preprocessing] → [State/Action/Reward Construction]
-    → [Offline RL Training] → [Off-Policy Evaluation] → [Clinical Validation]
-    → [Decision Support Interface]
-```
+<style>
+.vflow { margin:.6em 0 .6em .35em; border-left:2px solid #bcbcbc; }
+.vflow .step { position:relative; padding:3.5px 0 3.5px 16px; line-height:1.32; font-size:0.9em; }
+.vflow .step::before { content:""; position:absolute; left:-5.5px; top:.62em; width:7px; height:7px; border-radius:50%; background:#fff; border:1.6px solid #8a8a8a; }
+</style>
+
+<div class="vflow">
+  <div class="step">EHR Data</div>
+  <div class="step">Cohort Selection &amp; Preprocessing</div>
+  <div class="step">State / Action / Reward Construction</div>
+  <div class="step">Offline RL Training</div>
+  <div class="step">Off-Policy Evaluation</div>
+  <div class="step">Clinical Validation</div>
+  <div class="step">Decision-Support Interface</div>
+</div>
 
 **Cohort selection.** Identify sepsis patients from historical EHR data using clinical criteria (Sepsis-3 definitions: suspected infection plus organ dysfunction). Exclude patients with DNR/comfort-care-only orders, those who died within the first hour (no opportunity for treatment optimization), and those with incomplete data.
 

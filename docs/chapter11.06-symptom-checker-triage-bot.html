@@ -582,13 +582,25 @@
 <hr />
 <h2 id="general-architecture-pattern">General Architecture Pattern</h2>
 <p>A healthcare triage bot decomposes into ten logical stages: channel entry, input safety screening with continuous-emergency-screening, identity-and-chart-context loading, symptom identification and protocol selection, structured protocol-driven questioning, clinical-decision-rule computation, acuity scoring and recommendation, output safety screening with conservative-bias verification, recommendation delivery, and nurse-line escalation when applicable. The cross-cutting concerns from recipes 11.1 through 11.5 carry forward; this recipe adds four new ones (clinical-protocol-corpus governance with medical-director sign-off, conservative-bias-default policy, continuous-emergency-screening pipeline, and FDA-strategy-alignment artifact maintenance).</p>
-<pre class="code code-plain"><code>Channel Entry  →  Input Safety + Continuous Emergency Screen  →  Identity + Chart-Context Loading  →
-Symptom Identification + Protocol Selection  →  Structured Protocol-Driven Questioning  →
-Clinical-Decision-Rule Computation  →  Acuity Scoring + Recommendation  →
-Output Safety + Conservative-Bias Verify  →  Recommendation Delivery + Instructions  →
-Nurse-Line Escalation (first-class)  →  Audit, Log, and Post-Market Surveillance
-</code></pre>
-<p>A few cross-cutting design points specific to the triage bot.</p>
+<style>
+.vflow { margin:.6em 0 .6em .35em; border-left:2px solid #bcbcbc; }
+.vflow .step { position:relative; padding:3.5px 0 3.5px 16px; line-height:1.32; font-size:0.9em; }
+.vflow .step::before { content:""; position:absolute; left:-5.5px; top:.62em; width:7px; height:7px; border-radius:50%; background:#fff; border:1.6px solid #8a8a8a; }
+</style>
+<div class="vflow">
+  <div class="step">Channel Entry</div>
+  <div class="step">Input Safety + Continuous Emergency Screen</div>
+  <div class="step">Identity + Chart-Context Loading</div>
+  <div class="step">Symptom Identification + Protocol Selection</div>
+  <div class="step">Structured Protocol-Driven Questioning</div>
+  <div class="step">Clinical-Decision-Rule Computation</div>
+  <div class="step">Acuity Scoring + Recommendation</div>
+  <div class="step">Output Safety + Conservative-Bias Verify</div>
+  <div class="step">Recommendation Delivery + Instructions</div>
+  <div class="step">Nurse-Line Escalation (first-class)</div>
+  <div class="step">Audit, Log, and Post-Market Surveillance</div>
+</div>
+A few cross-cutting design points specific to the triage bot.
 <p><strong>Clinical-protocol corpus governance with medical-director sign-off.</strong> The protocols are clinical content. They are owned jointly by the medical director, the nurse-line operations leadership, and the compliance team. Each protocol is reviewed before adoption, reviewed annually, and re-reviewed when material updates are made. The protocols are versioned with effective dates; the conversation log records which protocol version was active for any given conversation. The medical director's signature is the launch gate for any protocol going into production.</p>
 <p><strong>Conservative-bias-default policy.</strong> When the bot is uncertain at any step (low intent classification confidence, ambiguous patient response, conflicting protocol-and-rule recommendations, low chart-context completeness), the policy is to escalate. The conservative-bias policy is documented, reviewed by the compliance team, and audited in the quality-review process.</p>
 <p><strong>Continuous-emergency-screening pipeline.</strong> Emergency screening is not a one-time check at conversation start. Every patient utterance runs through the screening layer. The screening uses both keyword detection and learned classifiers tuned for emergency feature constellations. Mid-conversation emergencies trigger immediate routing regardless of where the conversation was in the protocol flow. The pipeline's false-negative rate is monitored as a launch-gate metric.</p>

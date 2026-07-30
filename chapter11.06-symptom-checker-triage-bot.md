@@ -150,13 +150,25 @@ A few practical updates worth knowing.
 
 A healthcare triage bot decomposes into ten logical stages: channel entry, input safety screening with continuous-emergency-screening, identity-and-chart-context loading, symptom identification and protocol selection, structured protocol-driven questioning, clinical-decision-rule computation, acuity scoring and recommendation, output safety screening with conservative-bias verification, recommendation delivery, and nurse-line escalation when applicable. The cross-cutting concerns from recipes 11.1 through 11.5 carry forward; this recipe adds four new ones (clinical-protocol-corpus governance with medical-director sign-off, conservative-bias-default policy, continuous-emergency-screening pipeline, and FDA-strategy-alignment artifact maintenance).
 
-```text
-Channel Entry  →  Input Safety + Continuous Emergency Screen  →  Identity + Chart-Context Loading  →
-Symptom Identification + Protocol Selection  →  Structured Protocol-Driven Questioning  →
-Clinical-Decision-Rule Computation  →  Acuity Scoring + Recommendation  →
-Output Safety + Conservative-Bias Verify  →  Recommendation Delivery + Instructions  →
-Nurse-Line Escalation (first-class)  →  Audit, Log, and Post-Market Surveillance
-```
+<style>
+.vflow { margin:.6em 0 .6em .35em; border-left:2px solid #bcbcbc; }
+.vflow .step { position:relative; padding:3.5px 0 3.5px 16px; line-height:1.32; font-size:0.9em; }
+.vflow .step::before { content:""; position:absolute; left:-5.5px; top:.62em; width:7px; height:7px; border-radius:50%; background:#fff; border:1.6px solid #8a8a8a; }
+</style>
+
+<div class="vflow">
+  <div class="step">Channel Entry</div>
+  <div class="step">Input Safety + Continuous Emergency Screen</div>
+  <div class="step">Identity + Chart-Context Loading</div>
+  <div class="step">Symptom Identification + Protocol Selection</div>
+  <div class="step">Structured Protocol-Driven Questioning</div>
+  <div class="step">Clinical-Decision-Rule Computation</div>
+  <div class="step">Acuity Scoring + Recommendation</div>
+  <div class="step">Output Safety + Conservative-Bias Verify</div>
+  <div class="step">Recommendation Delivery + Instructions</div>
+  <div class="step">Nurse-Line Escalation (first-class)</div>
+  <div class="step">Audit, Log, and Post-Market Surveillance</div>
+</div>
 A few cross-cutting design points specific to the triage bot.
 
 **Clinical-protocol corpus governance with medical-director sign-off.** The protocols are clinical content. They are owned jointly by the medical director, the nurse-line operations leadership, and the compliance team. Each protocol is reviewed before adoption, reviewed annually, and re-reviewed when material updates are made. The protocols are versioned with effective dates; the conversation log records which protocol version was active for any given conversation. The medical director's signature is the launch gate for any protocol going into production.
