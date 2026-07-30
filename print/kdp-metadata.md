@@ -13,10 +13,8 @@ The Healthcare AI/ML Cookbook
 ## Subtitle
 Architecture Patterns for Real-World Healthcare AI: A 15-Recipe Sampler
 
-> NOTE: `manifest.json` currently stores this subtitle with an em dash
-> ("… Healthcare AI — A 15-Recipe Sampler"), which breaks the no-em-dash house
-> style and prints on the title page. Recommend updating the manifest to the
-> colon form above.
+> NOTE: In sync with `manifest.json` (subtitle uses the colon form; the earlier
+> em-dash version was corrected).
 
 ## Author
 Nick Lawson

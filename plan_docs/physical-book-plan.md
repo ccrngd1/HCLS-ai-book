@@ -1,7 +1,7 @@
 # Physical Book Plan & Main-Third Finalization
 
-Status: **DRAFT — pending selection sign-off**
-Last updated: 2026-06-20 (added section 2c: Mermaid pre-render decision)
+Status: **Phases A-C complete. Phase D (KDP publishing) in planning.**
+Last updated: 2026-07-30 (flagship-15 finalized; print pipeline, QR, Appendix A catalog, Appendix B index, and two-pass TOC page numbers all done; KDP metadata drafted)
 
 ## 1. Vision
 
@@ -117,10 +117,10 @@ For the *later* full-book pass, after the physical book ships. The median recipe
 
 ## 6. Phased plan
 
-- **Phase A — Lock selection.** Confirm/adjust the flagship-15 (§3).
-- **Phase B — Finalize the 15.** Apply the §4 rubric. Pilot the tightening on the 4 heavy ones (2.5, 4.9, 10.7, 11.6) by hand for sign-off, then light cleanup on the other 11. Higher editorial bar than the web polish run.
-- **Phase C — Print pipeline.** `print/` manifest of the 15; 6x9 PDF build path; front matter (title, copyright, preface, how-to-use, URL/QR to the digital edition) + back matter (index, "137 more recipes online"). Includes the cross-reference transform (see section 2b). **BUILT 2026-06-28** — `print/build.py` (deterministic §2b transforms + generated front/back matter + 6x9 HTML/PDF), `print/manifest.json` (flagship source of truth with per-recipe `approved` flags), `print/print.css`. **Usage + resume instructions live in `print/README.md`** (run with the md-to-html venv python; `--all` / `--pdf` flags). Remaining in Phase C: Mermaid pre-render (§2c), QR code, index generation, and the one-time `npm i puppeteer` for PDF rendering.
-- **Phase D — Publish.** KDP or IngramSpark.
+- **Phase A (Lock selection): DONE.** Flagship-15 confirmed and author-approved (§3).
+- **Phase B (Finalize the 15): DONE.** All 15 finalized to the §4 rubric: the 4 heavy recipes (2.5, 4.9, 10.7, 11.6) tightened by hand plus light cleanup on the other 11, each fact-checked and author-approved.
+- **Phase C (Print pipeline): DONE.** `print/build.py` (deterministic §2b transforms + generated front/back matter + 6x9 HTML/PDF), `print/manifest.json` (flagship source of truth with per-recipe `approved` flags), `print/print.css`; usage in `print/README.md`. Delivered: QR code to the digital edition, Appendix A (complete 152-recipe catalog), Appendix B (tag-derived topic/service index), and TOC page numbers via an automatic two-pass render (pdfjs-dist). Puppeteer + pdfjs live in `print/build/node_modules`. Mermaid pre-render (§2c) determined unnecessary for the print subset (the 15 mains carry no Mermaid; the digital edition renders it client-side). Current PDF: 268 pages, 0 cross-reference warnings.
+- **Phase D (Publish): in planning.** KDP paperback, KDP-only distribution with the free KDP ISBN. Listing metadata (description, 7 keywords, 3 BISAC categories, author bio, print settings) drafted in `print/kdp-metadata.md`. Interior pre-flight passes: 6x9 trim, embedded fonts, 268 even pages, 0.8in gutter (>= KDP minimum). Remaining: lock the interior page count, generate the cover PDF (~0.60in spine, back/spine/front + 0.125in bleed), set list price via KDP's printing-cost/royalty calculator, order a physical proof, then publish.
 - **Phase E — Book-wide tightening.** Work the 41-recipe backlog (§5) via a ralph run (TechEditor edits, TechExpertReviewer enforces rubric), independent/parallel, plus scaffolding + vendor cleanup across the broader corpus.
 
 ## 6b. Finding-resolution overnight run (added 2026-06-18)
