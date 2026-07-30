@@ -51,7 +51,7 @@ One marquee recipe per chapter, chosen for broad relatability and self-contained
 | 12 | Forecasting & Time-Series Analysis | 12.5 Hospital Census Forecasting | 3,997 | **author-approved 2026-07-22** (stats fact-checked & attributed: ED admit rate, ED share, discharge timing; Poisson→negative binomial for bursty inflows; Monte Carlo attribution) |
 | 13 | Knowledge Graphs & Clinical Reasoning | 13.4 Drug-Drug Interaction Knowledge Base | 2,372 | **author-approved 2026-07-27** (override-rate stat attributed to peer-reviewed studies/systematic reviews; added inline CYP2C9 definition) |
 | 14 | Optimization & Resource Allocation | 14.4 Nurse Staffing Optimization | 2,179 | **author-approved 2026-07-27** (fixed staffing math: 18 nurse-shifts/day + 10,584 vars, self-consistent with 42-nurse roster; AHA labor stat updated to ~60% with corrected attribution; MIP/CP descriptions reviewed, "gold standard"→"classic workhorse") |
-| 15 | Sequential Decision-Making & RL | 15.4 Sepsis Treatment Optimization | 2,237 | lean |
+| 15 | Sequential Decision-Making & RL | 15.4 Sepsis Treatment Optimization | 2,167 | **author-approved 2026-07-29** (opening swapped to CDC/NIH "leading cause of death in hospitals" framing, verified 1.7M incidence + 250-350K deaths; Komorowski 2018 Nature Medicine citation & finding fact-checked accurate) |
 
 **Finalization load for the flagship batch: only 4 heavy tightens + 11 light cleanups.** Selection is swappable — pick a different recipe per chapter if a stronger showcase exists.
 
