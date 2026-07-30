@@ -101,5 +101,23 @@ and royalty calculator. For reference, the KDP rate structure for a ~268-page
 B&W 6x9 paperback is roughly a fixed per-book charge plus a per-page charge;
 royalty is 60% of list minus printing cost. Confirm current figures in KDP.
 
-## Author bio (optional; to be written)
-_TODO: 2-3 sentence author bio for the KDP contributor page._
+## Author bio
+Nick is a Solution Architect at Amazon Web Services, specializing in healthcare,
+where he helps organizations design and deploy AI/ML systems that survive contact
+with real clinical, regulatory, and operational constraints. He spent the bulk of
+his career as a software engineer before moving into architecture, and that
+engineering instinct still drives everything he builds: hands-on, first-principles,
+and deeply skeptical of anything that doesn't "just work."
+
+His academic background includes a BS, an MEng, and doctoral research in AI/ML,
+giving him a rare mix of theoretical depth and production-grade pragmatism. That
+combination is the backbone of this book: not just what the models can do, but
+what it takes to run them responsibly in one of the most demanding domains there
+is.
+
+Away from the keyboard, Nick is a woodworker, though not the kind who agonizes
+over dovetails. He gravitates toward bigger, structural projects like decks and
+larger builds, where the satisfaction comes from something sturdy that holds up
+over time. It's a fitting hobby for someone who thinks the same way about
+software: get the structure right, make it durable, and don't confuse
+ornamentation for engineering. He lives in Louisville, Kentucky.
