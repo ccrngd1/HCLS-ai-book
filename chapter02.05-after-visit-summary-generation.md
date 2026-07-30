@@ -28,7 +28,7 @@ This is the kind of problem that LLMs are uncommonly good at. You have structure
 
 ### What Makes After-Visit Summaries Different
 
-Patient message drafting (Recipe 2.1) and terminology simplification (Recipe 2.2) are useful mental contrasts. Patient messages are short, one-topic, and conversational. Terminology simplification is a straight transformation: clinical text in, plain-language version out.
+Patient message drafting and terminology simplification are useful mental contrasts. Patient messages are short, one-topic, and conversational. Terminology simplification is a straight transformation: clinical text in, plain-language version out.
 
 An after-visit summary sits in the harder middle ground. It's multi-topic (diagnoses, medications, tests, follow-up, education, warning signs), it's safety-critical (wrong medication instructions can hurt people), and it's patient-facing (no clinician sits between the output and the reader to filter errors). It's also highly structured: a good AVS follows a consistent template so patients learn where to look for specific information.
 
@@ -91,7 +91,7 @@ The content personalization decisions are architectural. They drive what data th
 
 ### Grounded Generation, Encounter-Scoped Edition
 
-The architectural pattern that makes this viable is the same grounded-generation approach used for prior auth letters (Recipe 2.4), but scoped to a single clinical encounter. The flow:
+The architectural pattern that makes this viable is the same grounded-generation approach used for prior auth letters, but scoped to a single clinical encounter. The flow:
 
 1. Pull the encounter's structured data: the visit note, medication changes, orders placed, referrals made, follow-up plan. Everything the physician produced or recorded during the visit.
 2. Extract a structured "visit summary object" with discrete fields for each category of content. This is where you turn unstructured note text into structured facts.
