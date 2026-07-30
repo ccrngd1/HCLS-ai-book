@@ -278,6 +278,39 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     ]
 
 
+def appendix_catalog(man: dict):
+    """Return an ('backmatter catalog', markdown) section for Appendix A, or None."""
+    import os, json
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "appendix-catalog.json")
+    try:
+        cat = json.load(open(p, encoding="utf-8"))
+    except OSError:
+        return None
+    url = man["digital_edition_url"]
+    n = man["total_recipes_in_digital"]
+    out = ["# Appendix A: The Complete Recipe Catalog", ""]
+    out.append(
+        f"All {n} recipes in the digital cookbook, listed by chapter. The 15 marked "
+        "*(in this volume)* are the flagship recipes you just read; every other recipe "
+        f"is available in full in the digital edition at {url}."
+    )
+    out.append("")
+    cur = None
+    for e in cat:
+        if e["chapter"] != cur:
+            cur = e["chapter"]
+            out.append(f"## Chapter {cur} \u00b7 {e['chapter_name']}")
+            out.append("")
+        marker = " *(in this volume)*" if e["in_volume"] else ""
+        desc = (e.get("desc") or "").strip()
+        line = f"**{e['recipe']} {e['title']}**{marker}."
+        if desc:
+            line += f" {desc}"
+        out.append(line)
+        out.append("")
+    return ("backmatter catalog", "\n".join(out))
+
+
 def back_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     url = man["digital_edition_url"]
     n = man["total_recipes_in_digital"]
@@ -428,6 +461,9 @@ def main() -> int:
     for b in built:
         sections.append(("recipe", b["md"]))
     sections += back_matter(man, built)
+    _ap = appendix_catalog(man)
+    if _ap:
+        sections.append(_ap)
 
     book_md = "\n\n<!-- ===== PAGE ===== -->\n\n".join(s[1] for s in sections)
     with open(os.path.join(out, "book.md"), "w", encoding="utf-8") as fh:
