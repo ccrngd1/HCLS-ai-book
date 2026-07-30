@@ -193,6 +193,23 @@ def transform_recipe(
 # --------------------------------------------------------------------------- #
 # Front / back matter
 # --------------------------------------------------------------------------- #
+def _qr_block(url: str) -> str:
+    """Return an inline HTML block with the digital-edition QR (empty if asset missing)."""
+    import os
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "digital-edition-qr.svg")
+    try:
+        with open(p, encoding="utf-8") as fh:
+            svg = fh.read().strip()
+    except OSError:
+        return ""
+    return (
+        "\n\n<div class=\"qr-block\">\n"
+        f"{svg}\n"
+        f"<div class=\"qr-cap\">Scan to open the digital edition<br>{url}</div>\n"
+        "</div>\n"
+    )
+
+
 def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     """Return list of (css_class, markdown) front-matter sections."""
     y = man["copyright_year"]
@@ -244,6 +261,7 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
         f"implementation, diagrams, runnable examples, and {n - 15}+ more "
         "recipes.\n"
     )
+    how_to = how_to + _qr_block(url)
     toc_lines = ["# Contents", ""]
     for b in built:
         # category (broader chapter) on top, the recipe itself beneath it
