@@ -49,7 +49,7 @@ managers working under HIPAA, FDA, and real operational constraints. The
 patterns are vendor-agnostic in the body, with cloud-specific implementation
 kept in the companion digital edition.
 
-The complete digital cookbook, with all 152 recipes, full architectures, and
+The complete digital cookbook, with all 150+ recipes, full architectures, and
 runnable examples, is free online and kept current as the field moves.
 
 ---
@@ -92,7 +92,7 @@ None
 - Paper: White (cream is an acceptable alternative for a text-heavy book)
 - Bleed: No bleed
 - Cover finish: Matte (recommended) or glossy
-- Interior page count: 268 (even) — LOCK before generating the cover; spine width depends on it
+- Interior page count: 268 (even). LOCK before generating the cover; spine width depends on it
 - Approx. spine width: 268 x 0.002252 in ≈ 0.60 in (B&W, white paper)
 
 ## Pricing
