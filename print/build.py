@@ -278,6 +278,35 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     ]
 
 
+def appendix_index(man: dict):
+    """Return an ('backmatter index', markdown) section for Appendix B, or None."""
+    import os, json
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index-terms.json")
+    try:
+        idx = json.load(open(p, encoding="utf-8"))
+    except OSError:
+        return None
+    out = ["# Appendix B: Topic and Service Index", ""]
+    out.append(
+        "Cross-cutting topics, techniques, and AWS services, each pointing to the recipes "
+        "(by number) where it appears. Pervasive elements common to most recipes, such as "
+        "HIPAA and core AWS infrastructure, are omitted here; locate any recipe by number in "
+        "Appendix A or in the digital edition."
+    )
+    out.append("")
+    cur = None
+    for term in idx:  # pre-sorted alphabetically
+        c = term[0].upper()
+        grp = "0-9" if c.isdigit() else c
+        if grp != cur:
+            cur = grp
+            out.append(f"### {grp}")
+            out.append("")
+        out.append(f"**{term}** {', '.join(idx[term])}")
+        out.append("")
+    return ("backmatter index", "\n".join(out))
+
+
 def appendix_catalog(man: dict):
     """Return an ('backmatter catalog', markdown) section for Appendix A, or None."""
     import os, json
@@ -464,6 +493,9 @@ def main() -> int:
     _ap = appendix_catalog(man)
     if _ap:
         sections.append(_ap)
+    _ix = appendix_index(man)
+    if _ix:
+        sections.append(_ix)
 
     book_md = "\n\n<!-- ===== PAGE ===== -->\n\n".join(s[1] for s in sections)
     with open(os.path.join(out, "book.md"), "w", encoding="utf-8") as fh:
