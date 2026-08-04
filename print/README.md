@@ -45,17 +45,23 @@ cd print/build && npm init -y && npm i puppeteer    # one-time, ~Chromium downlo
 4. **Rewrite the architecture-companion callout** → points at the digital edition.
 - Also strips the web-only `## Tags` chip section and collapses orphaned rules.
 
-Front matter (title, copyright, preface, how-to-use) and back matter
-(contents, "more recipes online") are generated from `manifest.json`.
+Front matter (title, copyright, preface, how-to-use, digital-edition QR) and
+back matter (contents, Appendix A recipe catalog, Appendix B topic/service
+index, "more recipes online") are generated from `manifest.json` plus
+`appendix-catalog.json` and `index-terms.json`.
 
-## Still TODO (Phase C remainder)
-- **Mermaid pre-render (§2c):** render ```mermaid blocks to SVG once and embed
-  across HTML/EPUB/PDF. The approved flagship main files are currently ASCII
-  diagrams (0 Mermaid), so this is low-impact for the subset today but required
-  before the heavy recipes (10.7, 11.6) and EPUB.
-- **QR code** for the digital-edition URL on the front matter.
-- **Index** generation (back matter currently lists contents only).
-- Review each recipe's `[PRINT-WARN]` prose refs and reword to concepts.
+## Phase C status: COMPLETE
+Delivered: the §2b transforms, generated front/back matter, the digital-edition
+QR code, Appendix A (all 152 recipes), Appendix B (tag-derived topic/service
+index), and TOC page numbers via the two-pass render. Current PDF: 268 pages,
+0 cross-reference warnings (all `[PRINT-WARN]` prose refs reworded to concepts).
+
+Mermaid pre-render (§2c) was assessed and is **not needed for print**: the 15
+flagship main files carry no Mermaid blocks, and the digital edition renders
+Mermaid client-side. It remains a prerequisite for EPUB.
+
+Next: Phase D (KDP publishing) — see `plan_docs/physical-book-plan.md` §6 and
+`print/kdp-metadata.md`.
 
 ## TOC page numbers (two-pass)
 
