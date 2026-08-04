@@ -191,7 +191,7 @@ There's a bigger opportunity hiding in this use case, too. The AVS is the visibl
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Same grounded-generation architecture, different audience. The structural patterns (structured extraction, prompt grounding, claim validation) are nearly identical. If you've built the PA pipeline, the AVS pipeline is largely a rebuild with a different target audience.
 - **Recipe 2.6 (Clinical Note Summarization):** Summarization for clinicians rather than patients. The architectural patterns overlap but the audience-specific prompting differs substantially.
 - **Recipe 2.8 (Ambient Clinical Documentation):** When ambient documentation is generating the clinical note, the note structure is often cleaner and more recent, which improves downstream AVS generation quality.
-- **Recipe 11.x (Conversational AI):** A conversational follow-up agent (teach-back, reminder confirmation, question-answering) pairs well with the AVS. The AVS delivers content; the conversational layer helps the patient engage with it. 
+- **Recipe 11.1 (FAQ Chatbot) and Recipe 11.7 (Chronic Disease Management Coach):** A conversational follow-up agent pairs well with the AVS. The AVS delivers the content; a question-answering assistant lets the patient interrogate it ("what did the doctor mean by 'hold the metformin'?"), and a coaching agent carries the teach-back and reminder confirmation forward over the days and weeks after the visit. 
 
 ---
 
