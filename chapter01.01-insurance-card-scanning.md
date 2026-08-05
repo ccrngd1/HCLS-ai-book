@@ -91,6 +91,8 @@ That's the whole concept. Capture, extract, normalize, store, serve. The rest is
 
 ## The Honest Take
 
+**Buy versus build: buy the OCR, build the normalization.** Nobody should be training a text-detection model for this. Document OCR is thoroughly commoditized, and the managed services read a clean insurance card about as well as anything you could build. Check one thing before you build anything at all: your EHR or revenue-cycle vendor may already ship card capture, and if it does and it works, use it. What no vendor will do for you is the payer-specific field normalization map, the confidence gating, and the correction workflow, which is where this recipe spends its time and where essentially all of the long-tail accuracy lives. The OCR is a line item. The normalization map is the product.
+
 This recipe is genuinely easy to get to 90% accuracy on. The first few hundred cards will look great. Then you'll start seeing the long tail: the Medicaid card with a layout you've never encountered, the card where the member ID is split across two lines, the card photographed in a car with the window casting a glare stripe directly across the group number.
 
 The field normalization map is the thing that requires the most ongoing attention. Build tooling to log unrecognized keys (keys that didn't match any canonical field) so you can identify new payer layouts as they appear. Treat it as a living config, not a one-time build.

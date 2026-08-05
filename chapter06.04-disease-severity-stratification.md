@@ -110,6 +110,8 @@ The pipeline for disease severity stratification has five logical stages:
 
 ## The Honest Take
 
+**Buy versus build: build it, but check the literature before you cluster anything.** The algorithms are free and the tooling is a commodity, so there is nothing meaningful to buy here. The real question comes earlier: does a validated clinical severity index already exist for this disease? For a great many conditions one does, developed and validated on far more patients than you have, and an established score that clinicians already trust will beat your bespoke clusters on adoption even where it loses on statistical fit. Discover your own strata when the published indices genuinely do not fit your population or your intended intervention, and be able to say which of those it is before you start. Where you do build, the work is the feature consensus and the clinical validation described below rather than the modeling, and no vendor can do either for you, because both are arguments with your own clinicians.
+
 The algorithm is the easy part. K-Means on 40,000 patients with 30 features takes seconds. The hard parts are all upstream and downstream.
 
 Upstream: getting clinicians to agree on the feature set. Every specialist thinks their favorite metric is the most important one. Endocrinologists want HbA1c weighted heavily. Nephrologists want eGFR. Cardiologists want cardiovascular event history. You'll spend more time in consensus meetings than you will writing code.

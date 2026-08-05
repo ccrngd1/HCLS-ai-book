@@ -119,6 +119,8 @@ The practical approach is to use your coded encounter data as the training found
 
 ## The Honest Take
 
+**Buy versus build: buy, and be honest that you are unlikely to beat the incumbents.** Computer-assisted coding is one of the oldest and most consolidated commercial markets in health IT. The established CAC vendors have spent decades accumulating coding rules, payer-specific edits, specialty content, and, most importantly, coder-facing workflow that coding professionals already know how to use. A from-scratch effort competes with all of that using a model and a confidence score. The realistic build case is not a CAC replacement but a narrow supplement: a specialty your vendor covers badly, a documentation-improvement nudge at the point of authoring, or a pre-bill audit pass over what the vendor already produced. Scoped that way, this recipe is useful. Scoped as "replace our CAC," it is two years spent rediscovering why coding is hard.
+
 ICD-10 code suggestion is one of those problems that's deceptively easy to demo and genuinely hard to deploy well.
 
 The demo is impressive. You feed a clinical note into Comprehend Medical, you get back a list of codes with confidence scores, and 85% of them are right. Executives love it. "We'll cut coding time in half!" And maybe you will. But the gap between "85% of common codes suggested correctly" and "coders trust this enough to change their workflow" is enormous.
