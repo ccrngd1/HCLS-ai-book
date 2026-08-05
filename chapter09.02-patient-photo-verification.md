@@ -1,6 +1,6 @@
 # Recipe 9.2: Patient Photo Verification
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001 per verification
+**Effort:** 1 of 5
 
 ---
 

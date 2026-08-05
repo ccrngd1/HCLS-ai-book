@@ -1,6 +1,6 @@
 # Recipe 11.3: Prescription Refill Request Bot
 
-**Complexity:** Simple-Medium · **Phase:** Quick-win to Foundational · **Estimated Cost:** ~$0.03-0.15 per completed refill conversation (depends on conversation length, model choice, identity-verification path, and pharmacy integration overhead)
+**Effort:** 2 of 5
 
 ---
 

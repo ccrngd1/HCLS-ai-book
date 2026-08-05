@@ -1,6 +1,6 @@
 # Recipe 7.4: ED Visit Prediction
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.03 per patient per scoring cycle
+**Effort:** 3 of 5
 
 ---
 

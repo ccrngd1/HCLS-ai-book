@@ -1,6 +1,6 @@
 # Recipe 11.5: Insurance Benefits Navigator
 
-**Complexity:** Medium · **Phase:** Foundational · **Estimated Cost:** ~$0.05-0.30 per completed benefits-navigation conversation (depends on conversation length, model choice, eligibility-API call volume, plan-document RAG depth, and language coverage)
+**Effort:** 3 of 5
 
 ---
 

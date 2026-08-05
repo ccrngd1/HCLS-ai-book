@@ -1,6 +1,6 @@
 # Recipe 13.2: Provider Directory as Knowledge Graph
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.10 per 1,000 queries
+**Effort:** 1 of 5
 
 ---
 

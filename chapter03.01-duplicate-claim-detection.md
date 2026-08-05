@@ -1,6 +1,6 @@
-# Recipe 3.1: Duplicate Claim Detection ⭐
+# Recipe 3.1: Duplicate Claim Detection
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.002-0.01 per claim screened (mostly compute; rule layer is nearly free)
+**Effort:** 1 of 5
 
 ---
 

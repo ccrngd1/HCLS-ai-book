@@ -1,6 +1,6 @@
 # Recipe 7.12: Cohort Matching and Case-Based Reasoning for Novel Claims
 
-**Complexity:** Medium-Complex · **Phase:** Complement to 7.11 · **Estimated Cost:** ~$0.003 per query (vector search + retrieval)
+**Effort:** 4 of 5
 
 ---
 

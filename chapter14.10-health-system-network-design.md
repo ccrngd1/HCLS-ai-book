@@ -1,6 +1,6 @@
 # Recipe 14.10: Health System Network Design
 
-**Complexity:** Complex · **Phase:** Strategic Planning · **Estimated Cost:** ~$2,000-$15,000 per optimization run (compute-intensive)
+**Effort:** 5 of 5
 
 ---
 

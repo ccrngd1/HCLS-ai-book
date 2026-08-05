@@ -1,6 +1,6 @@
-# Recipe 4.6: Care Gap Prioritization ⭐⭐
+# Recipe 4.6: Care Gap Prioritization
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)
+**Effort:** 3 of 5
 
 ---
 

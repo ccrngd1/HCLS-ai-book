@@ -1,6 +1,6 @@
 # Recipe 6.5: Provider Practice Pattern Analysis
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.03 per provider per analysis cycle
+**Effort:** 3 of 5
 
 ---
 

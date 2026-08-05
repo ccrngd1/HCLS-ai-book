@@ -1,6 +1,6 @@
-# Recipe 1.5: Claims Attachment Processing 🔶
+# Recipe 1.5: Claims Attachment Processing
 
-**Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$2.20-2.40 per 30-page claims package 
+**Effort:** 5 of 5
 
 ---
 

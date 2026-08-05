@@ -1,6 +1,6 @@
-# Recipe 5.5: Cross-Facility Patient Matching (HIE) ⭐⭐⭐
+# Recipe 5.5: Cross-Facility Patient Matching (HIE)
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.0001-0.001 per query at HIE scale, dominated by infrastructure rather than per-transaction fees (depends on participant volume, query patterns, and the consent-and-audit overhead the framework imposes)
+**Effort:** 3 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 14.9: Chemotherapy Scheduling
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$1,500-6,000/month depending on infusion center size and scheduling volume
+**Effort:** 5 of 5
 
 ---
 

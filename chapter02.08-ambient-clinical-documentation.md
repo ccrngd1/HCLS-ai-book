@@ -1,6 +1,6 @@
 # Recipe 2.8: Ambient Clinical Documentation
 
-**Complexity:** Complex · **Phase:** MVP → Production · **Estimated Cost:** ~$0.40-$2.50 per clinical encounter
+**Effort:** 5 of 5
 
 ---
 

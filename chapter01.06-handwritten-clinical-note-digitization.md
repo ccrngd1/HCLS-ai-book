@@ -1,6 +1,6 @@
-# Recipe 1.6: Handwritten Clinical Note Digitization 🔷
+# Recipe 1.6: Handwritten Clinical Note Digitization
 
-**Complexity:** Complex · **Phase:** Phase 3 · **Estimated Cost:** ~$0.08-0.35 per page (blended with human review)
+**Effort:** 5 of 5
 
 ---
 

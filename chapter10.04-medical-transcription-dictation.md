@@ -1,6 +1,6 @@
-# Recipe 10.4: Medical Transcription (Dictation) ⭐⭐
+# Recipe 10.4: Medical Transcription (Dictation)
 
-**Complexity:** Medium · **Phase:** Production-track · **Estimated Cost:** ~$0.02-0.10 per dictated note (depends on note length, choice of general-purpose vs medical-domain ASR, optional LLM post-processing for formatting, and whether human QA review is in the loop)
+**Effort:** 3 of 5
 
 ---
 

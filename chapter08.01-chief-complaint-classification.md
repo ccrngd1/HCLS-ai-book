@@ -1,6 +1,6 @@
 # Recipe 8.1: Chief Complaint Classification
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$360-720/month (endpoint hosting) + ~$0.001 per request
+**Effort:** 1 of 5
 
 ---
 

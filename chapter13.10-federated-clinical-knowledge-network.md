@@ -1,6 +1,6 @@
 # Recipe 13.10: Federated Clinical Knowledge Network
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$8,000-15,000/month (multi-node federation)
+**Effort:** 5 of 5
 
 ---
 

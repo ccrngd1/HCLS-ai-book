@@ -1,6 +1,6 @@
 # Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
 
-**Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.02-0.08 per note
+**Effort:** 2 of 5
 
 ---
 

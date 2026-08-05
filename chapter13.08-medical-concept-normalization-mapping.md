@@ -1,6 +1,6 @@
 # Recipe 13.8: Medical Concept Normalization and Mapping
 
-**Complexity:** Complex · **Phase:** Foundation · **Estimated Cost:** ~$2,000-8,000/month (graph database + compute)
+**Effort:** 5 of 5
 
 ---
 

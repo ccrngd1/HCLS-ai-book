@@ -1,6 +1,6 @@
 # Recipe 6.6: Patient Similarity for Care Planning
 
-**Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.15-$0.40 per similarity query (depending on cohort size and feature count)
+**Effort:** 4 of 5
 
 ---
 

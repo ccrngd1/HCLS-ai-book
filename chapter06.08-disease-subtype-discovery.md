@@ -1,6 +1,6 @@
 # Recipe 6.8: Disease Subtype Discovery
 
-**Complexity:** Complex · **Phase:** Research/Innovation · **Estimated Cost:** ~$2.00-$8.00 per patient in the analysis cohort (depending on feature dimensionality and compute requirements)
+**Effort:** 5 of 5
 
 ---
 

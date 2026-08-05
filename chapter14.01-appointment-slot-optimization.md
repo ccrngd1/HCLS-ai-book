@@ -1,6 +1,6 @@
 # Recipe 14.1: Appointment Slot Optimization
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50-200/month compute
+**Effort:** 1 of 5
 
 ---
 

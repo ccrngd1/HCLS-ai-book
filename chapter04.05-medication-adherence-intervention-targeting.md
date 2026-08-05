@@ -1,6 +1,6 @@
-# Recipe 4.5: Medication Adherence Intervention Targeting ⭐⭐
+# Recipe 4.5: Medication Adherence Intervention Targeting
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.003-0.015 per intervention recommendation (depends on uplift model serving and LLM tailoring)
+**Effort:** 3 of 5
 
 ---
 

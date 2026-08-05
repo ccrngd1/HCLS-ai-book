@@ -1,6 +1,6 @@
-# Recipe 5.1: Internal Duplicate Patient Detection ⭐
+# Recipe 5.1: Internal Duplicate Patient Detection
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.01 per record-pair scored (depends on blocking efficiency, similarity-function complexity, and review-queue volume)
+**Effort:** 1 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 3.2: Patient No-Show Pattern Detection ⭐
+# Recipe 3.2: Patient No-Show Pattern Detection
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.005 per appointment scored (mostly compute; feature pulls dominate)
+**Effort:** 1 of 5
 
 ---
 

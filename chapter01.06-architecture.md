@@ -1,4 +1,4 @@
-# Recipe 1.6 Architecture and Implementation: Handwritten Clinical Note Digitization 🔷
+# Recipe 1.6 Architecture and Implementation: Handwritten Clinical Note Digitization
 
 *Companion to [Recipe 1.6: Handwritten Clinical Note Digitization 🔷](chapter01.06-handwritten-clinical-note-digitization). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

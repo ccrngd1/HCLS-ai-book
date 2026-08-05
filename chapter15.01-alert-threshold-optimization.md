@@ -1,6 +1,6 @@
-# Recipe 15.1: Alert Threshold Optimization ⭐
+# Recipe 15.1: Alert Threshold Optimization
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50-200/month (training infrastructure)
+**Effort:** 1 of 5
 
 ---
 

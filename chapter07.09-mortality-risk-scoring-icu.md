@@ -1,6 +1,6 @@
 # Recipe 7.9: Mortality Risk Scoring (ICU)
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.02-$0.08 per prediction
+**Effort:** 5 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 2.7: Literature Search and Evidence Synthesis
 
-**Complexity:** Medium-Complex · **Phase:** MVP → Production · **Estimated Cost:** ~$0.08-0.60 per clinical question answered
+**Effort:** 4 of 5
 
 ---
 

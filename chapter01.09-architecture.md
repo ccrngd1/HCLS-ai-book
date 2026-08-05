@@ -1,4 +1,4 @@
-# Recipe 1.9 Architecture and Implementation: Medical Records Request Extraction 🔶
+# Recipe 1.9 Architecture and Implementation: Medical Records Request Extraction
 
 *Companion to [Recipe 1.9: Medical Records Request Extraction 🔶](chapter01.09-medical-records-request-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

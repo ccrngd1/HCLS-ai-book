@@ -1,6 +1,6 @@
-# Recipe 12.3: ED Arrival Forecasting ⭐⭐
+# Recipe 12.3: ED Arrival Forecasting
 
-**Complexity:** Simple-Medium · **Phase:** MVP+ · **Estimated Cost:** ~$200-$700 per month per ED
+**Effort:** 2 of 5
 
 ---
 

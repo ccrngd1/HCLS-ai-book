@@ -1,6 +1,6 @@
 # Recipe 13.6: Care Gap Reasoning Engine
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002 per patient evaluation
+**Effort:** 3 of 5
 
 ---
 

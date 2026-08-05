@@ -1,6 +1,6 @@
 # Recipe 2.5: After-Visit Summary Generation
 
-**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.03-0.10 per summary
+**Effort:** 3 of 5
 
 ---
 

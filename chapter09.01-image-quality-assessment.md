@@ -1,6 +1,6 @@
-# Recipe 9.1: Image Quality Assessment ⭐
+# Recipe 9.1: Image Quality Assessment
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01 per image
+**Effort:** 1 of 5
 
 ---
 

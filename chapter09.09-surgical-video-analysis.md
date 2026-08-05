@@ -1,6 +1,6 @@
 # Recipe 9.9: Surgical Video Analysis
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2.50-$8.00 per procedure (processing only)
+**Effort:** 5 of 5
 
 ---
 

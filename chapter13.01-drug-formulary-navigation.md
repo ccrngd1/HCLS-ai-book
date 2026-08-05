@@ -1,6 +1,6 @@
-# Recipe 13.1: Drug Formulary Navigation ⭐
+# Recipe 13.1: Drug Formulary Navigation
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01 per query
+**Effort:** 1 of 5
 
 ---
 

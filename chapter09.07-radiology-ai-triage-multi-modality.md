@@ -1,6 +1,6 @@
-# Recipe 9.7: Radiology AI Triage (Multi-Modality) 🏥
+# Recipe 9.7: Radiology AI Triage (Multi-Modality)
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.50-$2.00 per study
+**Effort:** 5 of 5
 
 ---
 

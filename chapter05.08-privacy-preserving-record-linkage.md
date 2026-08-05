@@ -1,6 +1,6 @@
-# Recipe 5.8: Privacy-Preserving Record Linkage ⭐⭐⭐⭐
+# Recipe 5.8: Privacy-Preserving Record Linkage
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.001-0.01 per linked pair at population scale, dominated by the cryptographic-token generation, the secure-exchange infrastructure, and the governance-and-audit overhead rather than per-record matching fees (depends on the protocol chosen, the participant count, the volume of records exchanged per cycle, and the strictness of the trust framework the institution operates under)
+**Effort:** 5 of 5
 
 ---
 

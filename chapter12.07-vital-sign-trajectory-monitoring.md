@@ -1,6 +1,6 @@
 # Recipe 12.7: Vital Sign Trajectory Monitoring
 
-**Complexity:** Medium-Complex · **Phase:** Clinical Integration · **Estimated Cost:** ~$0.15-0.40 per patient-hour (streaming)
+**Effort:** 4 of 5
 
 ---
 

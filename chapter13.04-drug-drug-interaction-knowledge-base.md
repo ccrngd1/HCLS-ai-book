@@ -1,6 +1,6 @@
 # Recipe 13.4: Drug-Drug Interaction Knowledge Base
 
-**Complexity:** Medium · **Phase:** Clinical Safety · **Estimated Cost:** ~$0.02 per interaction check
+**Effort:** 3 of 5
 
 ---
 

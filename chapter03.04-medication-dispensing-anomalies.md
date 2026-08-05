@@ -1,6 +1,6 @@
-# Recipe 3.4: Medication Dispensing Anomalies ⭐
+# Recipe 3.4: Medication Dispensing Anomalies
 
-**Complexity:** Medium · **Phase:** MVP+ · **Estimated Cost:** ~$0.002 to $0.012 per dispense event screened (mostly compute; reference-data joins dominate)
+**Effort:** 3 of 5
 
 ---
 

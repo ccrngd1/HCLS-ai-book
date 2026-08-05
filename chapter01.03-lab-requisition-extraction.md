@@ -1,6 +1,6 @@
-# Recipe 1.3: Lab Requisition Form Extraction 🔶
+# Recipe 1.3: Lab Requisition Form Extraction
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.10-0.15 per form
+**Effort:** 3 of 5
 
 ---
 

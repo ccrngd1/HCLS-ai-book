@@ -1,6 +1,6 @@
 # Recipe 15.4: Sepsis Treatment Optimization
 
-**Complexity:** Medium · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-$8,000/month (training infrastructure)
+**Effort:** 3 of 5
 
 ---
 

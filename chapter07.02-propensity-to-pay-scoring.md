@@ -1,6 +1,6 @@
 # Recipe 7.2: Propensity to Pay Scoring
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001 per prediction
+**Effort:** 1 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 6.1: Geographic Patient Clustering ⭐
+# Recipe 6.1: Geographic Patient Clustering
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.10 per 10,000 patients clustered
+**Effort:** 1 of 5
 
 ---
 

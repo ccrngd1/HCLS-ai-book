@@ -1,6 +1,6 @@
-# Recipe 1.9: Medical Records Request Extraction 🔶 
+# Recipe 1.9: Medical Records Request Extraction
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.12-0.18 per request form
+**Effort:** 3 of 5
 
 ---
 

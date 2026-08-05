@@ -1,6 +1,6 @@
 # Recipe 6.3: Payer Mix Financial Risk Clustering
 
-**Complexity:** Simple-Medium · **Phase:** Production · **Estimated Cost:** ~$50-200/month depending on population size
+**Effort:** 2 of 5
 
 ---
 

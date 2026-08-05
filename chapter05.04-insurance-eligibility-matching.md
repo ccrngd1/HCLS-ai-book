@@ -1,6 +1,6 @@
-# Recipe 5.4: Insurance Eligibility Matching ⭐⭐⭐
+# Recipe 5.4: Insurance Eligibility Matching
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.001-0.005 per real-time eligibility match attempt and ~$0.0005 per batch-processed record (depends on payer connectivity model, X12 270/271 transaction fees, and review-queue volume for ambiguous matches)
+**Effort:** 3 of 5
 
 ---
 

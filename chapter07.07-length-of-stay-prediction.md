@@ -1,6 +1,6 @@
 # Recipe 7.7: Length of Stay Prediction
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.02 per prediction (batch); ~$0.08 per real-time inference
+**Effort:** 4 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 8.9: Temporal Relationship Extraction
 
-**Complexity:** Complex · **Phase:** Advanced NLP Pipeline · **Estimated Cost:** ~$0.03 per note
+**Effort:** 5 of 5
 
 ---
 

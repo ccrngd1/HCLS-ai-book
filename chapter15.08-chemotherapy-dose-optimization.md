@@ -1,6 +1,6 @@
 # Recipe 15.8: Chemotherapy Dose Optimization
 
-**Complexity:** Complex · **Phase:** Research/Clinical Validation · **Estimated Cost:** ~$2,000-$8,000/month (training infrastructure)
+**Effort:** 5 of 5
 
 ---
 

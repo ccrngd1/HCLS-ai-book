@@ -1,6 +1,6 @@
 # Recipe 8.6: Social Determinants of Health (SDOH) Extraction
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.02-0.08 per note
+**Effort:** 4 of 5
 
 ---
 

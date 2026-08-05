@@ -1,6 +1,6 @@
 # Recipe 11.7: Chronic Disease Management Coach
 
-**Complexity:** Complex · **Phase:** Regulated · **Estimated Cost:** ~$3-15 per active member per month (depends on engagement frequency, channel mix, model choice, RAG depth, biometric-data integration depth, and clinical-escalation overhead)
+**Effort:** 5 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 15.3: Clinical Trial Adaptive Randomization
 
-**Complexity:** Simple-Medium · **Phase:** Research/Pilot · **Estimated Cost:** ~$200-800/month per active trial
+**Effort:** 2 of 5
 
 ---
 

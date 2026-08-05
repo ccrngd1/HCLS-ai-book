@@ -1,6 +1,6 @@
 # Recipe 13.3: ICD/CPT Hierarchy Navigation
 
-**Complexity:** Simple-Medium · **Phase:** Foundation · **Estimated Cost:** ~$0.01 per query
+**Effort:** 2 of 5
 
 ---
 

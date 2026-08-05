@@ -1,6 +1,6 @@
 # Recipe 9.5: Chest X-Ray Triage
 
-**Complexity:** Medium · **Phase:** Production (FDA pathway required) · **Estimated Cost:** ~$0.10-$0.50 per study
+**Effort:** 3 of 5
 
 ---
 

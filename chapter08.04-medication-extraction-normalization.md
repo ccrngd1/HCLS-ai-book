@@ -1,6 +1,6 @@
 # Recipe 8.4: Medication Extraction and Normalization
 
-**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.20-0.50 per note (varies by note length and medication count)
+**Effort:** 3 of 5
 
 ---
 

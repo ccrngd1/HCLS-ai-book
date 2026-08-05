@@ -1,6 +1,6 @@
-# Recipe 5.7: Longitudinal Patient Matching Across Name Changes ⭐⭐⭐⭐
+# Recipe 5.7: Longitudinal Patient Matching Across Name Changes
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.0001-0.001 per name-change resolution at population scale, dominated by review tooling and audit infrastructure rather than per-record fees (depends on the institution's name-change rate, the depth of historical retention, and the sensitivity-handling overhead the institution requires)
+**Effort:** 5 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 11.1: FAQ Chatbot ⭐
+# Recipe 11.1: FAQ Chatbot
 
-**Complexity:** Simple · **Phase:** Quick-win · **Estimated Cost:** ~$0.005-0.04 per resolved conversation (depends on retrieval volume, model choice, and average conversation length)
+**Effort:** 1 of 5
 
 ---
 

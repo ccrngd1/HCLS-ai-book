@@ -1,6 +1,6 @@
-# Recipe 4.8: Treatment Response Prediction ⭐⭐⭐⭐
+# Recipe 4.8: Treatment Response Prediction
 
-**Complexity:** Complex · **Phase:** Research-to-Production · **Estimated Cost:** ~$0.02-0.10 per-patient treatment-comparison decision (depends on per-treatment CATE model serving, similar-cohort retrieval, and clinician-facing rationale generation)
+**Effort:** 5 of 5
 
 ---
 

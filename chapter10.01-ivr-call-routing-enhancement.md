@@ -1,6 +1,6 @@
-# Recipe 10.1: IVR Call Routing Enhancement ⭐
+# Recipe 10.1: IVR Call Routing Enhancement
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.02-0.10 per call (depending on call duration, ASR usage, and whether the call is fulfilled in self-service or transferred to an agent)
+**Effort:** 1 of 5
 
 ---
 

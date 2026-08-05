@@ -1,6 +1,6 @@
-# Recipe 3.8: Readmission Risk Anomaly Detection ⭐
+# Recipe 3.8: Readmission Risk Anomaly Detection
 
-**Complexity:** Complex · **Phase:** Production (with care management governance) · **Estimated Cost:** ~$0.0005 to $0.003 per patient-day monitored (mostly compute, feature joins, and RPM ingest; outreach staff time dwarfs infrastructure cost)
+**Effort:** 5 of 5
 
 ---
 

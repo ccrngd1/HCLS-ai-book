@@ -1,6 +1,6 @@
 # Recipe 8.7: Adverse Event Detection in Clinical Text
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.40-1.00 per note
+**Effort:** 4 of 5
 
 ---
 

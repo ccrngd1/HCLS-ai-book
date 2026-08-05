@@ -1,6 +1,6 @@
-# Recipe 6.2: Utilization Pattern Segmentation ⭐
+# Recipe 6.2: Utilization Pattern Segmentation
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.15 per 10,000 patients segmented
+**Effort:** 1 of 5
 
 ---
 

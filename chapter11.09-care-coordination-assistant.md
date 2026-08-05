@@ -1,6 +1,6 @@
 # Recipe 11.9: Care Coordination Assistant
 
-**Complexity:** Complex · **Phase:** Regulated · **Estimated Cost:** ~$3-12 per active member per month (depends on member acuity, channel mix, model choice, RAG depth, referral-tracking integration depth, and clinical-escalation overhead)
+**Effort:** 5 of 5
 
 ---
 

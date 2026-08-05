@@ -1,6 +1,6 @@
-# Recipe 5.2: Provider NPI Matching ⭐
+# Recipe 5.2: Provider NPI Matching
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.0001-0.001 per provider record matched (depends on whether you query the live registry API or batch-match against the downloadable NPPES file, plus review-queue volume)
+**Effort:** 1 of 5
 
 ---
 

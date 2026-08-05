@@ -1,6 +1,6 @@
-# Recipe 10.8: Voice Biomarker Detection ⭐⭐⭐
+# Recipe 10.8: Voice Biomarker Detection
 
-**Complexity:** Complex · **Phase:** Research-and-pilot-track for most indications, production-track for narrow validated use cases · **Estimated Cost:** ~$0.05-0.40 per voice sample analyzed (varies with sample length, feature pipeline complexity, model count, and whether cloud-managed acoustic analysis services are used)
+**Effort:** 5 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 1.2: Patient Intake Form Digitization ⭐
+# Recipe 1.2: Patient Intake Form Digitization
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.20 per 3-page form
+**Effort:** 1 of 5
 
 ---
 

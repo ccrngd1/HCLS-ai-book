@@ -1,6 +1,6 @@
 # Recipe 2.9: Clinical Decision Support Synthesis
 
-**Complexity:** Complex · **Phase:** MVP → Production · **Estimated Cost:** ~$0.15-$1.20 per synthesized recommendation (typical); approaching $2.00 for complex multi-scenario syntheses with validator retry
+**Effort:** 5 of 5
 
 ---
 

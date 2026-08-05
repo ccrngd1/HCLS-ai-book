@@ -1,6 +1,6 @@
 # Recipe 7.5: 30-Day Readmission Risk
 
-**Complexity:** Medium · **Phase:** Growth · **Estimated Cost:** ~$0.003 per discharge scored
+**Effort:** 3 of 5
 
 ---
 

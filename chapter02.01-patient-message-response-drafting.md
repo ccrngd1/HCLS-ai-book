@@ -1,6 +1,6 @@
-# Recipe 2.1: Patient Message Response Drafting ⭐
+# Recipe 2.1: Patient Message Response Drafting
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01-0.03 per message
+**Effort:** 1 of 5
 
 ---
 

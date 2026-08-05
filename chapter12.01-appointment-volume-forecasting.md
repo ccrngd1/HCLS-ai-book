@@ -1,6 +1,6 @@
-# Recipe 12.1: Appointment Volume Forecasting ⭐
+# Recipe 12.1: Appointment Volume Forecasting
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50-$200 per month for a single clinic forecast
+**Effort:** 1 of 5
 
 ---
 

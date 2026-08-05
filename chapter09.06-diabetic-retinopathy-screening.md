@@ -1,6 +1,6 @@
 # Recipe 9.6: Diabetic Retinopathy Screening
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.50-$2.00 per screening
+**Effort:** 4 of 5
 
 ---
 

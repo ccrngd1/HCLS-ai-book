@@ -1,6 +1,6 @@
-# Recipe 3.10: Epidemic / Outbreak Detection ⭐
+# Recipe 3.10: Epidemic / Outbreak Detection
 
-**Complexity:** Complex · **Phase:** Production (with public health partnership and clinical surveillance governance) · **Estimated Cost:** ~$0.0001 to $0.001 per encounter scored (mostly ingest, syndrome classification, and spatiotemporal aggregation; daily full-population recompute dominates the bill)
+**Effort:** 5 of 5
 
 ---
 

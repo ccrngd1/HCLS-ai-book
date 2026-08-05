@@ -1,6 +1,6 @@
-# Recipe 4.2: Patient Education Content Matching ⭐
+# Recipe 4.2: Patient Education Content Matching
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.01 per recommendation (depends on LLM use)
+**Effort:** 1 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 15.6: Glucose Control in ICU
 
-**Complexity:** Medium-Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-5,000/month (training infrastructure)
+**Effort:** 4 of 5
 
 ---
 

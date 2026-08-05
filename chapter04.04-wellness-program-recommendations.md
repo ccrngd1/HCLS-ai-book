@@ -1,6 +1,6 @@
-# Recipe 4.4: Wellness Program Recommendations ⭐⭐
+# Recipe 4.4: Wellness Program Recommendations
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.005-0.02 per recommendation (depends on uplift model serving and LLM tailoring)
+**Effort:** 3 of 5
 
 ---
 

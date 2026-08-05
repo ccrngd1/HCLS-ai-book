@@ -1,6 +1,6 @@
-# Recipe 5.3: Address Standardization and Household Linkage ⭐⭐
+# Recipe 5.3: Address Standardization and Household Linkage
 
-**Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.01 per address standardized and per household-link decision (depends on USPS API or third-party CASS-certified vendor pricing, plus review-queue volume for ambiguous household assignments)
+**Effort:** 2 of 5
 
 ---
 

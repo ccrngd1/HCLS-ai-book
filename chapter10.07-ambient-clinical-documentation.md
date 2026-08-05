@@ -1,6 +1,6 @@
-# Recipe 10.7: Ambient Clinical Documentation ⭐⭐⭐
+# Recipe 10.7: Ambient Clinical Documentation
 
-**Complexity:** Complex · **Phase:** Production-track · **Estimated Cost:** ~$0.40-2.50 per encounter (varies with audio length, ASR choice, LLM-driven note generation, faithfulness checks, and audio retention policy)
+**Effort:** 5 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 15.9: Radiation Therapy Adaptive Planning
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-$8,000/month (training infrastructure)
+**Effort:** 5 of 5
 
 ---
 

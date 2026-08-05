@@ -1,6 +1,6 @@
-# Recipe 10.5: Patient-Facing Voice Assistant ⭐⭐
+# Recipe 10.5: Patient-Facing Voice Assistant
 
-**Complexity:** Medium · **Phase:** Production-track · **Estimated Cost:** ~$0.05-0.30 per completed conversation (depends on call duration, choice of ASR and TTS tier, LLM usage for intent and dialog, and whether the conversation is fulfilled in self-service or transferred to a human agent)
+**Effort:** 3 of 5
 
 ---
 

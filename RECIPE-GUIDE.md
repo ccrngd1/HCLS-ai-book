@@ -20,6 +20,42 @@ This separation keeps the readable core small (each main recipe is ~5,000 words 
 
 The main file is entirely vendor-agnostic except for the closing sections. **No S3, no Lambda, no Textract** in The Problem / The Technology / General Architecture Pattern. A reader on GCP, Azure, or on-premises should learn everything valuable here.
 
+### Front matter: the Effort rating
+
+Immediately under the H1, every main recipe carries exactly one metadata line:
+
+```
+**Effort:** 3 of 5
+```
+
+That is the whole line. There is no Phase field and no Estimated Cost field; both
+were removed in 2026-08 (Phase had drifted to 41 distinct values across 152
+recipes and could not be used to compare anything, and cost estimates mixed
+non-comparable units and could only go stale in a printed book). Complexity was
+folded into Effort, because they were the same idea under two names.
+
+**The scale.** Effort is total effort to get to a trustworthy production system,
+not just the modeling difficulty. Weigh the data plumbing, the clinical
+governance, the integration, and the change management, because in most of these
+recipes the model is the smallest line item.
+
+| Rating | Meaning |
+|--------|---------|
+| 1 of 5 | A small team ships it in weeks. Commodity capability, thin governance, little workflow change. |
+| 2 of 5 | Straightforward, but with one real complication: a nasty data source, a review queue, or a compliance check. |
+| 3 of 5 | A quarter or two of work. Meaningful integration plus a named owner and ongoing operations. |
+| 4 of 5 | Multi-quarter. Serious clinical governance, cross-team dependencies, and real change management. |
+| 5 of 5 | A program, not a project. Clinical safety review, permanent operations, and adoption work that outlasts the build. |
+
+**Rules.** Rate the honest total, not the demo. Do not use half steps or ranges.
+Do not use star characters or any other symbol: the embedded print font (Gelasio)
+has no star, circle, or geometric-shape glyph, so symbols either drop out of the
+PDF or silently fall back to a monospace face. Plain text renders everywhere and
+stays greppable.
+
+**No emoji in headings**, at any level, for the same font reason plus the fact
+that decorative ratings in titles duplicate this field.
+
 **The Problem.** Make the reader feel why this sucks today. Real-world scenario, human impact, scale of the pain. A VP of Operations should read this and nod along.
 
 **The Technology.** Teach the underlying tech from first principles. What is it? How does it work? Why is it hard, and why is it good enough anyway? Where has the field moved? No vendor names.

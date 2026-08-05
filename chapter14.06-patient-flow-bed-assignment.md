@@ -1,6 +1,6 @@
 # Recipe 14.6: Patient Flow and Bed Assignment
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$500-1,500/month (solver compute + real-time infrastructure)
+**Effort:** 4 of 5
 
 ---
 

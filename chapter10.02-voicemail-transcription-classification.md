@@ -1,6 +1,6 @@
-# Recipe 10.2: Voicemail Transcription and Classification ⭐
+# Recipe 10.2: Voicemail Transcription and Classification
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.03-0.12 per voicemail (depending on length, ASR usage, and whether classification uses a managed service or a foundation model)
+**Effort:** 1 of 5
 
 ---
 

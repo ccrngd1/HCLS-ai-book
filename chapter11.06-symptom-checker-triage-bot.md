@@ -1,6 +1,6 @@
 # Recipe 11.6: Symptom Checker / Triage Bot
 
-**Complexity:** Medium-Complex · **Phase:** Regulated · **Estimated Cost:** ~$0.10-0.50 per completed triage conversation (depends on conversation length, model choice, clinical-protocol RAG depth, language coverage, and nurse-line escalation overhead)
+**Effort:** 4 of 5
 
 ---
 

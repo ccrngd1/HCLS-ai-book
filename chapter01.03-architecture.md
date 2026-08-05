@@ -1,4 +1,4 @@
-# Recipe 1.3 Architecture and Implementation: Lab Requisition Form Extraction 🔶
+# Recipe 1.3 Architecture and Implementation: Lab Requisition Form Extraction
 
 *Companion to [Recipe 1.3: Lab Requisition Form Extraction 🔶](chapter01.03-lab-requisition-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

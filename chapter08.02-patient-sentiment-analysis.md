@@ -1,6 +1,6 @@
 # Recipe 8.2: Patient Sentiment Analysis
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01 per feedback item
+**Effort:** 1 of 5
 
 ---
 

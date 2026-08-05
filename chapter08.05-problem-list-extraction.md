@@ -1,6 +1,6 @@
 # Recipe 8.5: Problem List Extraction
 
-**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.30-0.80 per note
+**Effort:** 3 of 5
 
 ---
 

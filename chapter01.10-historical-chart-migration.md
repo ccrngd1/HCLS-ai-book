@@ -1,6 +1,6 @@
-# Recipe 1.10: Historical Chart Migration 🔷
+# Recipe 1.10: Historical Chart Migration
 
-**Complexity:** Complex · **Phase:** Phase 3 · **Estimated Cost:** ~$0.80-8.00 per chart (varies by page count, handwriting density, and model tier distribution)
+**Effort:** 5 of 5
 
 ---
 

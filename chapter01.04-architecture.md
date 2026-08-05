@@ -1,4 +1,4 @@
-# Recipe 1.4 Architecture and Implementation: Prior Authorization Document Processing 🔶
+# Recipe 1.4 Architecture and Implementation: Prior Authorization Document Processing
 
 *Companion to [Recipe 1.4: Prior Authorization Document Processing 🔶](chapter01.04-prior-auth-document-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

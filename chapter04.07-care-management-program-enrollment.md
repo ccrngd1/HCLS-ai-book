@@ -1,6 +1,6 @@
-# Recipe 4.7: Care Management Program Enrollment ⭐⭐⭐
+# Recipe 4.7: Care Management Program Enrollment
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.005-0.025 per enrollment recommendation (depends on uplift model serving, LLM-generated enrollment briefings, and longitudinal outcome tracking)
+**Effort:** 4 of 5
 
 ---
 

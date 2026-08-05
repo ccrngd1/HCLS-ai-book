@@ -1,6 +1,6 @@
-# Recipe 4.9: Personalized Care Plan Generation ⭐⭐⭐⭐
+# Recipe 4.9: Personalized Care Plan Generation
 
-**Complexity:** Complex · **Phase:** Research-to-Production · **Estimated Cost:** ~$0.05-0.20 per generated care plan (depends on number of recommended actions assembled, LLM tokens for tailored narrative, and the breadth of care-team review surfaces)
+**Effort:** 5 of 5
 
 ---
 

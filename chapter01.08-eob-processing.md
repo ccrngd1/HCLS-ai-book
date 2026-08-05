@@ -1,6 +1,6 @@
-# Recipe 1.8: Explanation of Benefits Processing 🔶
+# Recipe 1.8: Explanation of Benefits Processing
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.13-0.22 per EOB 
+**Effort:** 3 of 5
 
 ---
 

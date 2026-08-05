@@ -1,6 +1,6 @@
-# Recipe 3.7: Patient Deterioration Early Warning ⭐
+# Recipe 3.7: Patient Deterioration Early Warning
 
-**Complexity:** Complex · **Phase:** Production (with clinical governance) · **Estimated Cost:** ~$0.0008 to $0.005 per patient-hour scored (mostly compute and feature joins; vendor models often run as separate licensed costs)
+**Effort:** 5 of 5
 
 ---
 

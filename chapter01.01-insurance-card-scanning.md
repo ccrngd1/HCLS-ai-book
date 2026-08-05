@@ -1,6 +1,6 @@
-# Recipe 1.1: Insurance Card Scanning ⭐
+# Recipe 1.1: Insurance Card Scanning
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.05 per card
+**Effort:** 1 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 7.1: Appointment No-Show Prediction ⭐
+# Recipe 7.1: Appointment No-Show Prediction
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001 per prediction
+**Effort:** 1 of 5
 
 ---
 

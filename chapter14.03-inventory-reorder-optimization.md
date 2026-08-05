@@ -1,6 +1,6 @@
 # Recipe 14.3: Inventory Reorder Optimization
 
-**Complexity:** Simple-Medium · **Phase:** Production · **Estimated Cost:** ~$50-200/month (batch optimization for mid-size hospital)
+**Effort:** 2 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 3.5: Lab Result Outlier Detection ⭐
+# Recipe 3.5: Lab Result Outlier Detection
 
-**Complexity:** Medium · **Phase:** MVP+ · **Estimated Cost:** ~$0.0005 to $0.003 per lab result screened (mostly compute and reference-data joins)
+**Effort:** 3 of 5
 
 ---
 

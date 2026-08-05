@@ -1,6 +1,6 @@
 # Recipe 7.3: Patient Churn / Disenrollment Prediction
 
-**Complexity:** Simple-Medium · **Phase:** Growth · **Estimated Cost:** ~$0.002 per member per month (scoring)
+**Effort:** 2 of 5
 
 ---
 

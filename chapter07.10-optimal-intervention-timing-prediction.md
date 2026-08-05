@@ -1,6 +1,6 @@
 # Recipe 7.10: Optimal Intervention Timing Prediction
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,500-8,000/month (model training + inference)
+**Effort:** 5 of 5
 
 ---
 

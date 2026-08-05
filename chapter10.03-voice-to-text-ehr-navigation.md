@@ -1,6 +1,6 @@
-# Recipe 10.3: Voice-to-Text for EHR Navigation ⭐
+# Recipe 10.3: Voice-to-Text for EHR Navigation
 
-**Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.01 per voice command (depending on streaming ASR usage, command frequency per session, and whether intent classification uses a managed bot service or a foundation model)
+**Effort:** 2 of 5
 
 ---
 

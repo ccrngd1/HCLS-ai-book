@@ -1,6 +1,6 @@
-# Recipe 12.6: Revenue Cycle Cash Flow Forecasting ⭐⭐⭐
+# Recipe 12.6: Revenue Cycle Cash Flow Forecasting
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$500-$2,000 per month per hospital workload
+**Effort:** 3 of 5
 
 ---
 

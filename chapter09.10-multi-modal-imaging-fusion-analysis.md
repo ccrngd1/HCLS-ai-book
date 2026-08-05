@@ -1,6 +1,6 @@
 # Recipe 9.10: Multi-Modal Imaging Fusion and Analysis
 
-**Complexity:** Complex · **Phase:** Research/Enterprise · **Estimated Cost:** ~$2.50-8.00 per fusion study
+**Effort:** 5 of 5
 
 ---
 

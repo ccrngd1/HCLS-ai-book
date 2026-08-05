@@ -1,6 +1,6 @@
 # Recipe 6.9: Social Determinant Phenotyping
 
-**Complexity:** Complex · **Phase:** Research/Production · **Estimated Cost:** ~$0.15-$0.40 per patient profile
+**Effort:** 5 of 5
 
 ---
 

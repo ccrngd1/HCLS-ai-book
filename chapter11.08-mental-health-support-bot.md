@@ -1,6 +1,6 @@
 # Recipe 11.8: Mental Health Support Bot
 
-**Complexity:** Complex · **Phase:** Regulated · **Estimated Cost:** ~$2-10 per active member per month (depends on engagement frequency, channel mix, model choice, RAG depth, crisis-pathway integration depth, and clinical-escalation overhead)
+**Effort:** 5 of 5
 
 ---
 

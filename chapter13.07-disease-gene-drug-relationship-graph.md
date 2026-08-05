@@ -1,6 +1,6 @@
 # Recipe 13.7: Disease-Gene-Drug Relationship Graph
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.01 per query traversal
+**Effort:** 4 of 5
 
 ---
 

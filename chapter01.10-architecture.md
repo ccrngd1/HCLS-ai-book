@@ -1,4 +1,4 @@
-# Recipe 1.10 Architecture and Implementation: Historical Chart Migration 🔷
+# Recipe 1.10 Architecture and Implementation: Historical Chart Migration
 
 *Companion to [Recipe 1.10: Historical Chart Migration 🔷](chapter01.10-historical-chart-migration). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

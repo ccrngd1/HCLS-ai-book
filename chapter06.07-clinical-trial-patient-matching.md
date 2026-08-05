@@ -1,6 +1,6 @@
 # Recipe 6.7: Clinical Trial Patient Matching
 
-**Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.20-$0.75 per patient screened (depending on criteria complexity and NLP requirements)
+**Effort:** 4 of 5
 
 ---
 

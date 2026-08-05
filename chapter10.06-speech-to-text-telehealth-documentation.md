@@ -1,6 +1,6 @@
-# Recipe 10.6: Speech-to-Text for Telehealth Documentation ⭐⭐
+# Recipe 10.6: Speech-to-Text for Telehealth Documentation
 
-**Complexity:** Medium · **Phase:** Production-track · **Estimated Cost:** ~$0.20-1.50 per telehealth visit (depends on visit duration, choice of streaming vs batch ASR, diarization rigor, optional LLM-driven summarization, and whether the audio is retained beyond the immediate visit window)
+**Effort:** 3 of 5
 
 ---
 

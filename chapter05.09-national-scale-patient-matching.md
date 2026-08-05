@@ -1,6 +1,6 @@
-# Recipe 5.9: National-Scale Patient Matching (TEFCA) ⭐⭐⭐⭐
+# Recipe 5.9: National-Scale Patient Matching (TEFCA)
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.0001-0.001 per cross-network identity-resolution decision at national scale, dominated by the federation-routing infrastructure, the cross-network audit-and-attribution overhead, and the multi-organization-governance program rather than per-record matching fees (depends on the institution's role in the network, the volume of cross-network queries the institution participates in, the depth of the institution's cross-network audit retention, and the maturity of the federation framework the institution operates under)
+**Effort:** 5 of 5
 
 ---
 

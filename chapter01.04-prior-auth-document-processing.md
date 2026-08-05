@@ -1,6 +1,6 @@
-# Recipe 1.4: Prior Authorization Document Processing 🔶
+# Recipe 1.4: Prior Authorization Document Processing
 
-**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$0.80-1.00 per 10-page submission
+**Effort:** 3 of 5
 
 ---
 

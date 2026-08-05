@@ -1,6 +1,6 @@
 # Recipe 14.2: Patient-Provider Assignment
 
-**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$30-150/month compute
+**Effort:** 3 of 5
 
 ---
 

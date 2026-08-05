@@ -1,6 +1,6 @@
 # Recipe 15.5: Ventilator Weaning Protocols
 
-**Complexity:** Medium · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-5,000/month (training infrastructure)
+**Effort:** 3 of 5
 
 ---
 

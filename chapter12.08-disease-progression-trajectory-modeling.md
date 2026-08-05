@@ -1,6 +1,6 @@
-# Recipe 12.8: Disease Progression Trajectory Modeling ⭐⭐⭐⭐
+# Recipe 12.8: Disease Progression Trajectory Modeling
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$800-$3,500 per month per disease-cohort workload
+**Effort:** 5 of 5
 
 ---
 

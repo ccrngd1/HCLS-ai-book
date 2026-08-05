@@ -1,6 +1,6 @@
 # Recipe 14.7: OR Case Sequencing
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$200-800/month (solver compute)
+**Effort:** 4 of 5
 
 ---
 

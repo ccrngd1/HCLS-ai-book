@@ -1,6 +1,6 @@
-# Recipe 4.3: Provider Directory Search Optimization ⭐
+# Recipe 4.3: Provider Directory Search Optimization
 
-**Complexity:** Simple-Medium · **Phase:** MVP+ · **Estimated Cost:** ~$0.001-0.005 per ranked search response (depends on personalization depth)
+**Effort:** 2 of 5
 
 ---
 

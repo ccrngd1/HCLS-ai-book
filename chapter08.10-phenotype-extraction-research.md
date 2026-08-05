@@ -1,6 +1,6 @@
 # Recipe 8.10: Phenotype Extraction for Research
 
-**Complexity:** Complex · **Phase:** Research Infrastructure · **Estimated Cost:** ~$8-15 per patient record set (full NLP processing)
+**Effort:** 5 of 5
 
 ---
 

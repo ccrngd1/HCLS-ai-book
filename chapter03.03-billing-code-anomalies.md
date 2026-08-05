@@ -1,6 +1,6 @@
-# Recipe 3.3: Billing Code Anomalies ⭐
+# Recipe 3.3: Billing Code Anomalies
 
-**Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.008 per claim screened (mostly compute; baseline lookups dominate)
+**Effort:** 2 of 5
 
 ---
 

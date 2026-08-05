@@ -1,6 +1,6 @@
 # Recipe 2.4: Prior Authorization Letter Generation
 
-**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$1.50-2.50 per letter (multi-call pipeline on Claude Sonnet)
+**Effort:** 3 of 5
 
 ---
 

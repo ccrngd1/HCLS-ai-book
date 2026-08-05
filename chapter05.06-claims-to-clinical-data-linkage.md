@@ -1,6 +1,6 @@
-# Recipe 5.6: Claims-to-Clinical Data Linkage ⭐⭐⭐⭐
+# Recipe 5.6: Claims-to-Clinical Data Linkage
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.0001-0.001 per linked encounter at population scale, dominated by infrastructure and storage rather than per-record fees (depends on linkage strategy, retention windows, and the proportion of encounters that require human review)
+**Effort:** 4 of 5
 
 ---
 

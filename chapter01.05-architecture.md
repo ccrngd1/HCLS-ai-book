@@ -1,4 +1,4 @@
-# Recipe 1.5 Architecture and Implementation: Claims Attachment Processing 🔶
+# Recipe 1.5 Architecture and Implementation: Claims Attachment Processing
 
 *Companion to [Recipe 1.5: Claims Attachment Processing 🔶](chapter01.05-claims-attachment-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

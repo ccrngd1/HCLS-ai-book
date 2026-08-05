@@ -1,6 +1,6 @@
 # Recipe 7.8: Disease Progression Modeling
 
-**Complexity:** Complex · **Phase:** Research/Production · **Estimated Cost:** ~$2,500-$8,000/month (model training + inference at scale)
+**Effort:** 5 of 5
 
 ---
 

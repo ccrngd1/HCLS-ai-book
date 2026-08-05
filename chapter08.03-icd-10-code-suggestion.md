@@ -1,6 +1,6 @@
 # Recipe 8.3: ICD-10 Code Suggestion
 
-**Complexity:** Simple-Medium · **Phase:** Phase 1-2 · **Estimated Cost:** ~$0.05-$0.15 per note (section-targeted)
+**Effort:** 2 of 5
 
 ---
 

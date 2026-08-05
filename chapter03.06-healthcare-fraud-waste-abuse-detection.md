@@ -1,6 +1,6 @@
-# Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
+# Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.002 to $0.02 per claim scored (mostly compute and graph traversal; full provider-level scoring runs weekly and dominates cost)
+**Effort:** 4 of 5
 
 ---
 

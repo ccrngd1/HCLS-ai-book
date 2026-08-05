@@ -1,6 +1,6 @@
 # Recipe 2.2: Medical Terminology Simplification
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.15-0.30 per document (Comprehend Medical dominates; see the [Architecture companion](chapter02.02-architecture) for a cost breakdown)
+**Effort:** 1 of 5
 
 ---
 

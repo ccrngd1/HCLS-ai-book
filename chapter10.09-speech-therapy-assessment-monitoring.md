@@ -1,6 +1,6 @@
-# Recipe 10.9: Speech Therapy Assessment and Monitoring ⭐⭐⭐
+# Recipe 10.9: Speech Therapy Assessment and Monitoring
 
-**Complexity:** Complex · **Phase:** Production-track for established assessment workflows; pilot-track for autonomous scoring and pediatric expansions · **Estimated Cost:** ~$0.10-0.50 per assessment session analyzed (varies with session length, number of tasks, model count, and whether linguistic-feature pipelines run alongside acoustic analysis)
+**Effort:** 5 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 4.10: Dynamic Treatment Regime Recommendation ⭐⭐⭐⭐⭐
+# Recipe 4.10: Dynamic Treatment Regime Recommendation
 
-**Complexity:** Complex · **Phase:** Research-to-Production · **Estimated Cost:** ~$0.05-0.25 per-patient regime evaluation (depends on horizon length, number of decision points, off-policy evaluation cost, and clinician-facing rationale generation)
+**Effort:** 5 of 5
 
 ---
 

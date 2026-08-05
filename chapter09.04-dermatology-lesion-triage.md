@@ -1,6 +1,6 @@
 # Recipe 9.4: Dermatology Lesion Triage
 
-**Complexity:** Medium · **Phase:** Pilot · **Estimated Cost:** ~$0.08-$0.15 per image
+**Effort:** 3 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 12.10: Physiological Waveform Analysis
 
-**Complexity:** Complex · **Phase:** Specialized · **Estimated Cost:** ~$0.15-$0.80 per patient-hour of monitoring
+**Effort:** 5 of 5
 
 ---
 

@@ -1,6 +1,6 @@
-# Recipe 5.10: Deceased Patient Resolution and Record Reconciliation ⭐⭐⭐⭐
+# Recipe 5.10: Deceased Patient Resolution and Record Reconciliation
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.0001-0.001 per death-event resolution at population scale, dominated by reconciliation tooling, the multi-source vital-records ingestion infrastructure, and the human review of conflicting death reports rather than per-record matching fees (depends on the institution's death-event volume, the depth of historical retention, and the multi-source vital-records subscriptions the institution maintains)
+**Effort:** 5 of 5
 
 ---
 

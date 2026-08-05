@@ -1,6 +1,6 @@
 # Recipe 14.5: Operating Room Block Scheduling
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$200-800/month (solver compute)
+**Effort:** 3 of 5
 
 ---
 

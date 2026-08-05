@@ -1,6 +1,6 @@
 # Recipe 11.4: Pre-Visit Intake Bot
 
-**Complexity:** Medium · **Phase:** Foundational · **Estimated Cost:** ~$0.05-0.30 per completed intake conversation (depends on conversation length, model choice, branching depth, language coverage, and EHR write integration overhead)
+**Effort:** 3 of 5
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 6.10: Multi-Morbidity Pattern Discovery
 
-**Complexity:** Complex · **Phase:** Research/Innovation · **Estimated Cost:** ~$1.50-$6.00 per patient in the analysis cohort
+**Effort:** 5 of 5
 
 ---
 

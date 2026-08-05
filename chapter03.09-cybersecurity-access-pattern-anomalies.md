@@ -1,6 +1,6 @@
-# Recipe 3.9: Cybersecurity / Access Pattern Anomalies ⭐
+# Recipe 3.9: Cybersecurity / Access Pattern Anomalies
 
-**Complexity:** Complex · **Phase:** Production (with privacy office and infosec governance) · **Estimated Cost:** ~$0.0001 to $0.001 per audit event scored (mostly ingest, enrichment, and storage; full user-graph rescoring runs nightly and dominates compute)
+**Effort:** 5 of 5
 
 ---
 

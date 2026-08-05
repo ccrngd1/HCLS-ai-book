@@ -1,6 +1,6 @@
 # Recipe 9.3: Wound Photography Measurement
 
-**Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.02-0.05 per image
+**Effort:** 2 of 5
 
 ---
 

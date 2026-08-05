@@ -1,6 +1,6 @@
 # Recipe 7.6: Rising Risk Identification
 
-**Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.01 per patient per scoring cycle
+**Effort:** 4 of 5
 
 ---
 

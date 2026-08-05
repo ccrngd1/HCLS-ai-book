@@ -1,6 +1,6 @@
 # Recipe 13.9: Literature-Derived Knowledge Graph
 
-**Complexity:** Complex · **Phase:** Research/Production Hybrid · **Estimated Cost:** ~$2,000-8,000/month depending on ingestion volume
+**Effort:** 5 of 5
 
 ---
 

@@ -68,7 +68,7 @@ EOB_REVIEW_QUEUE    = "https://sqs.us-east-1.amazonaws.com/123456789012/eob-revi
 TEXTRACT_ROLE_ARN   = "arn:aws:iam::123456789012:role/TextractSNSPublishRole"
 SNS_TOPIC_ARN       = "arn:aws:sns:us-east-1:123456789012:textract-jobs"
 
-# ⚠️ REPLACE BEFORE DEPLOYING: The constants above use AWS documentation example
+# ⚠ REPLACE BEFORE DEPLOYING: The constants above use AWS documentation example
 # values (account 123456789012). These must be replaced with your actual AWS
 # account ID, queue URLs, and role ARNs before deployment.
 assert "123456789012" not in EOB_REVIEW_QUEUE, \

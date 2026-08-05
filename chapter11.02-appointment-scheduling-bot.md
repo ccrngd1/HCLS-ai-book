@@ -1,6 +1,6 @@
 # Recipe 11.2: Appointment Scheduling Bot
 
-**Complexity:** Simple-Medium · **Phase:** Quick-win to Foundational · **Estimated Cost:** ~$0.02-0.10 per completed booking (depends on conversation length, model choice, and back-end integration overhead)
+**Effort:** 2 of 5
 
 ---
 

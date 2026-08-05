@@ -1,6 +1,6 @@
-# Recipe 12.5: Hospital Census Forecasting ⭐⭐⭐
+# Recipe 12.5: Hospital Census Forecasting
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$400-$1,800 per month per hospital workload
+**Effort:** 3 of 5
 
 ---
 

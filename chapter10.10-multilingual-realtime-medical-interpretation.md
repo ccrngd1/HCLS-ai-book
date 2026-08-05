@@ -1,6 +1,6 @@
-# Recipe 10.10: Multilingual Real-Time Medical Interpretation ⭐⭐⭐
+# Recipe 10.10: Multilingual Real-Time Medical Interpretation
 
-**Complexity:** Complex · **Phase:** Pilot-track for clinical-grade encounters; production-track for low-stakes administrative and patient-self-service flows · **Estimated Cost:** ~$0.15-1.20 per minute of bilingual encounter (varies with streaming ASR engine, machine-translation engine, neural TTS choice, language pair, and whether human-interpreter handoff is included)
+**Effort:** 5 of 5
 
 ---
 

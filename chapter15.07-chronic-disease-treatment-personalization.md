@@ -1,6 +1,6 @@
 # Recipe 15.7: Chronic Disease Treatment Personalization
 
-**Complexity:** Complex · **Phase:** Research/Early Pilot · **Estimated Cost:** ~$1,500-4,000/month (training infrastructure + inference)
+**Effort:** 5 of 5
 
 ---
 

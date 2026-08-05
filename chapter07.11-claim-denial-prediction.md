@@ -1,6 +1,6 @@
 # Recipe 7.11: Claim Denial and Prior-Auth Determination Prediction
 
-**Complexity:** Medium-Complex · **Phase:** MVP · **Estimated Cost:** ~$0.002 per prediction
+**Effort:** 4 of 5
 
 ---
 

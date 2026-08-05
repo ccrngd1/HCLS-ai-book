@@ -1,4 +1,4 @@
-# Recipe 9.7 Architecture and Implementation: Radiology AI Triage (Multi-Modality) 🏥
+# Recipe 9.7 Architecture and Implementation: Radiology AI Triage (Multi-Modality)
 
 *Companion to [Recipe 9.7: Radiology AI Triage (Multi-Modality) 🏥](chapter09.07-radiology-ai-triage-multi-modality). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

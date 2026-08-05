@@ -1,6 +1,6 @@
 # Recipe 15.10: Hospital Resource Allocation Under Uncertainty
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$4,000-$8,000/month (assumes monthly retraining cadence with 8-24 hour GPU training runs, parallel CPU instances for simulator rollout workers, real-time inference via Lambda, and DynamoDB state/audit storage)
+**Effort:** 5 of 5
 
 ---
 

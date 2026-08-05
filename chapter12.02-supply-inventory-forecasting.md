@@ -1,6 +1,6 @@
-# Recipe 12.2: Supply Inventory Forecasting ⭐
+# Recipe 12.2: Supply Inventory Forecasting
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$100-$400 per month for a single facility's SKU portfolio
+**Effort:** 1 of 5
 
 ---
 

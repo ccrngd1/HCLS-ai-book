@@ -1,6 +1,6 @@
 # Recipe 9.8: Pathology Slide Analysis
 
-**Complexity:** Complex · **Phase:** Research/Production Hybrid · **Estimated Cost:** ~$2.50-$8.00 per slide (compute-heavy)
+**Effort:** 5 of 5
 
 ---
 

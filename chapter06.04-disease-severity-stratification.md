@@ -1,6 +1,6 @@
 # Recipe 6.4: Disease Severity Stratification
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.02 per patient per stratification run
+**Effort:** 3 of 5
 
 ---
 

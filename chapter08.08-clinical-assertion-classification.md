@@ -1,6 +1,6 @@
 # Recipe 8.8: Clinical Assertion Classification
 
-**Complexity:** Complex · **Phase:** Advanced NLP Pipeline · **Estimated Cost:** ~$0.02 per note
+**Effort:** 5 of 5
 
 ---
 
