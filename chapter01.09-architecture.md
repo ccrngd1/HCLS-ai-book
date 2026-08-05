@@ -1,6 +1,6 @@
 # Recipe 1.9 Architecture and Implementation: Medical Records Request Extraction
 
-*Companion to [Recipe 1.9: Medical Records Request Extraction 🔶](chapter01.09-medical-records-request-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.9: Medical Records Request Extraction ](chapter01.09-medical-records-request-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -16,7 +16,7 @@ Medical records request forms are one to two pages, so the synchronous `AnalyzeD
 
 **Amazon Bedrock with Amazon Nova Pro or Claude Haiku for request classification.** Classification is a simpler task than regulatory consistency checking. Nova Pro (`us.amazon.nova-pro-v1:0`) offers strong document understanding at lower cost. Claude Haiku 4.5 (`us.anthropic.claude-haiku-4-5-v1:0`) is slightly more expensive but returns richer reasoning explanations that are useful for routing records. Cost per classification call: roughly $0.001 to $0.002. Either model works; the choice depends on whether you value reasoning detail over cost.
 
-**AWS Lambda with four functions.** The pipeline splits across four Lambda functions: extraction (rr-extract), validation (rr-validate), classification (rr-classify), and assembly and routing (rr-route). Keeping them separate makes it easier to update validation logic independently of extraction logic, which matters because HIPAA requirements do evolve. The validation Lambda requires a longer timeout than the extraction Lambda because it makes a Bedrock API call for the LLM consistency check (in addition to running the rule-based Python logic), and Bedrock calls can take 2 to 15 seconds depending on load and whether retry backoff kicks in. 
+**AWS Lambda with four functions.** The pipeline splits across four Lambda functions: extraction (rr-extract), validation (rr-validate), classification (rr-classify), and assembly and routing (rr-route). Keeping them separate makes it easier to update validation logic independently of extraction logic, which matters because HIPAA requirements do evolve. The validation Lambda requires a longer timeout than the extraction Lambda because it makes a Bedrock API call for the LLM consistency check (in addition to running the rule-based Python logic), and Bedrock calls can take 2 to 15 seconds depending on load and whether retry backoff kicks in.
 
 **Amazon DynamoDB.** The structured request record lives in DynamoDB. The record captures the full lifecycle: extracted fields, rule-based validation result, LLM consistency findings, request type classification, routing decision, and status. DynamoDB's millisecond latency is appropriate for downstream fulfillment systems that query request status.
 
@@ -30,32 +30,32 @@ Medical records request forms are one to two pages, so the synchronous `AnalyzeD
 
 ```mermaid
 flowchart TB
-    A[📠 Fax Server / Portal] -->|Request PDF| B[S3 Bucket\nrecords-requests/]
-    B -->|S3 Event| C[Lambda: rr-extract\nTimeout: 2 min]
-    C -->|AnalyzeDocument\nFORMS + SIGNATURES| D[Amazon Textract]
-    D -->|Fields + Signature Blocks| C
-    C -->|Normalized fields\n+ signatures| E[Lambda: rr-validate\nTimeout: 5 min]
-    E -->|Rule check first| F{Rule-Based\nElement Check}
-    F -->|Missing elements\nor expired| G[SNS: rr-deficiency]
-    G -->|Alert| H[Deficiency Letter\nWorkflow]
-    F -->|All elements present| I[Bedrock Sonnet\nConsistency Check]
-    I -->|LLM concerns flagged| J[SQS: rr-review\nHuman Review Queue]
-    I -->|No concerns| K[Lambda: rr-classify\nTimeout: 3 min]
-    K -->|Full request text| L[Bedrock Nova Pro\nRequest Classification]
-    L -->|Request type +\nreasoning| M[Lambda: rr-route\nTimeout: 2 min]
-    M -->|Structured record| N[DynamoDB\nrecords-requests]
-    M -->|care_coordination| O[SQS: cc-fulfillment]
-    M -->|legal| P[SQS: legal-fulfillment]
-    M -->|underwriting| Q[SQS: underwriting-fulfillment]
-    M -->|patient_access| R[SQS: patient-access]
-    M -->|general| S[SQS: general-review]
+ A[Fax Server / Portal] -->|Request PDF| B[S3 Bucket\nrecords-requests/]
+ B -->|S3 Event| C[Lambda: rr-extract\nTimeout: 2 min]
+ C -->|AnalyzeDocument\nFORMS + SIGNATURES| D[Amazon Textract]
+ D -->|Fields + Signature Blocks| C
+ C -->|Normalized fields\n+ signatures| E[Lambda: rr-validate\nTimeout: 5 min]
+ E -->|Rule check first| F{Rule-Based\nElement Check}
+ F -->|Missing elements\nor expired| G[SNS: rr-deficiency]
+ G -->|Alert| H[Deficiency Letter\nWorkflow]
+ F -->|All elements present| I[Bedrock Sonnet\nConsistency Check]
+ I -->|LLM concerns flagged| J[SQS: rr-review\nHuman Review Queue]
+ I -->|No concerns| K[Lambda: rr-classify\nTimeout: 3 min]
+ K -->|Full request text| L[Bedrock Nova Pro\nRequest Classification]
+ L -->|Request type +\nreasoning| M[Lambda: rr-route\nTimeout: 2 min]
+ M -->|Structured record| N[DynamoDB\nrecords-requests]
+ M -->|care_coordination| O[SQS: cc-fulfillment]
+ M -->|legal| P[SQS: legal-fulfillment]
+ M -->|underwriting| Q[SQS: underwriting-fulfillment]
+ M -->|patient_access| R[SQS: patient-access]
+ M -->|general| S[SQS: general-review]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style I fill:#e8f5e9,stroke:#2e7d32
-    style L fill:#e8f5e9,stroke:#2e7d32
-    style N fill:#9ff,stroke:#333
-    style F fill:#ffa,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style I fill:#e8f5e9,stroke:#2e7d32
+ style L fill:#e8f5e9,stroke:#2e7d32
+ style N fill:#9ff,stroke:#333
+ style F fill:#ffa,stroke:#333
 ```
 
 ### Prerequisites
@@ -102,89 +102,89 @@ The SIGNATURES feature instructs Textract to run an additional detection pass fo
 
 ```pseudocode
 FUNCTION extract_records_request(bucket, document_key):
-    // Synchronous AnalyzeDocument: one call, one response.
-    // FORMS: key-value pair extraction (labeled fields).
-    // SIGNATURES: handwritten signature region detection.
-    response = textract.AnalyzeDocument(
-        Document = { Bucket: bucket, Name: document_key },
-        FeatureTypes = ["FORMS", "SIGNATURES"]
-    )
+ // Synchronous AnalyzeDocument: one call, one response.
+ // FORMS: key-value pair extraction (labeled fields).
+ // SIGNATURES: handwritten signature region detection.
+ response = textract.AnalyzeDocument(
+ Document = { Bucket: bucket, Name: document_key },
+ FeatureTypes = ["FORMS", "SIGNATURES"]
+ )
 
-    all_blocks = response.Blocks
+ all_blocks = response.Blocks
 
-    kv_blocks   = [b for b in all_blocks if b.BlockType == "KEY_VALUE_SET"]
-    sig_blocks  = [b for b in all_blocks if b.BlockType == "SIGNATURE"]
-    line_blocks = [b for b in all_blocks if b.BlockType == "LINE"]
-    block_map   = { b.Id: b for b in all_blocks }
+ kv_blocks = [b for b in all_blocks if b.BlockType == "KEY_VALUE_SET"]
+ sig_blocks = [b for b in all_blocks if b.BlockType == "SIGNATURE"]
+ line_blocks = [b for b in all_blocks if b.BlockType == "LINE"]
+ block_map = { b.Id: b for b in all_blocks }
 
-    RETURN {
-        kv_blocks:   kv_blocks,
-        sig_blocks:  sig_blocks,
-        line_blocks: line_blocks,
-        block_map:   block_map
-    }
+ RETURN {
+ kv_blocks: kv_blocks,
+ sig_blocks: sig_blocks,
+ line_blocks: line_blocks,
+ block_map: block_map
+ }
 ```
 
 **Step 2: Parse and normalize request fields.** The FIELD_MAP normalization pattern from Recipe 1.1, applied to the medical records request vocabulary. Because there is no standard template, the map covers label variants across the most common form designs in the wild.
 
 ```pseudocode
 REQUEST_FIELD_MAP = {
-    "patient_name":     ["patient name", "member name", "name of individual", "patient"],
-    "patient_dob":      ["date of birth", "dob", "birth date", "patient dob"],
-    "patient_id":       ["medical record number", "mrn", "member id", "patient id"],
-    "requestor_name":   ["requesting party", "requestor", "requested by", "authorized by"],
-    "requestor_org":    ["organization", "facility name", "practice name", "firm name"],
-    "requestor_fax":    ["fax", "fax number", "fax #"],
-    "records_requested":["records requested", "information requested", "type of records",
-                         "specific information to be disclosed", "records needed"],
-    "date_range":       ["date range", "dates of service", "treatment dates", "from"],
-    "purpose":          ["purpose", "purpose of disclosure", "reason for request", "intended use"],
-    "authorization_date":["date signed", "authorization date", "signature date", "date"],
-    "expiration_date":  ["expiration date", "expiration", "this authorization expires",
-                         "valid through", "expires"],
-    "requestor_npi":    ["npi", "national provider identifier", "provider npi"]
+ "patient_name": ["patient name", "member name", "name of individual", "patient"],
+ "patient_dob": ["date of birth", "dob", "birth date", "patient dob"],
+ "patient_id": ["medical record number", "mrn", "member id", "patient id"],
+ "requestor_name": ["requesting party", "requestor", "requested by", "authorized by"],
+ "requestor_org": ["organization", "facility name", "practice name", "firm name"],
+ "requestor_fax": ["fax", "fax number", "fax #"],
+ "records_requested":["records requested", "information requested", "type of records",
+ "specific information to be disclosed", "records needed"],
+ "date_range": ["date range", "dates of service", "treatment dates", "from"],
+ "purpose": ["purpose", "purpose of disclosure", "reason for request", "intended use"],
+ "authorization_date":["date signed", "authorization date", "signature date", "date"],
+ "expiration_date": ["expiration date", "expiration", "this authorization expires",
+ "valid through", "expires"],
+ "requestor_npi": ["npi", "national provider identifier", "provider npi"]
 }
 
 FUNCTION parse_and_normalize_fields(kv_blocks, block_map):
-    // Extract raw key-value pairs using the KEY_VALUE_SET traversal pattern
-    // from Recipe 1.1. See that recipe for the full block traversal logic.
-    raw_kv = parse_key_value_pairs(kv_blocks, block_map)
+ // Extract raw key-value pairs using the KEY_VALUE_SET traversal pattern
+ // from Recipe 1.1. See that recipe for the full block traversal logic.
+ raw_kv = parse_key_value_pairs(kv_blocks, block_map)
 
-    normalized = empty map
-    FOR each canonical_name, variants in REQUEST_FIELD_MAP:
-        FOR each label in variants:
-            matching_keys = [k for k in raw_kv if label appears in lowercase(k)]
-            IF matching_keys is not empty:
-                best_match = matching_keys entry with highest confidence
-                normalized[canonical_name] = raw_kv[best_match]
-                BREAK
+ normalized = empty map
+ FOR each canonical_name, variants in REQUEST_FIELD_MAP:
+ FOR each label in variants:
+ matching_keys = [k for k in raw_kv if label appears in lowercase(k)]
+ IF matching_keys is not empty:
+ best_match = matching_keys entry with highest confidence
+ normalized[canonical_name] = raw_kv[best_match]
+ BREAK
 
-    RETURN normalized
+ RETURN normalized
 ```
 
 **Step 3: Extract signature data.** Pull all SIGNATURE blocks and sort them into document reading order by page and vertical position. The page number matters downstream: the authorization signature is most likely on page 2 of a two-page form, not page 1.
 
 ```pseudocode
 FUNCTION extract_signatures(sig_blocks):
-    signatures = empty list
+ signatures = empty list
 
-    FOR each block in sig_blocks:
-        sig = {
-            confidence:  block.Confidence,
-            page:        block.Page,
-            bounding_box: {
-                top:    block.Geometry.BoundingBox.Top,
-                left:   block.Geometry.BoundingBox.Left,
-                width:  block.Geometry.BoundingBox.Width,
-                height: block.Geometry.BoundingBox.Height
-            }
-        }
-        signatures.append(sig)
+ FOR each block in sig_blocks:
+ sig = {
+ confidence: block.Confidence,
+ page: block.Page,
+ bounding_box: {
+ top: block.Geometry.BoundingBox.Top,
+ left: block.Geometry.BoundingBox.Left,
+ width: block.Geometry.BoundingBox.Width,
+ height: block.Geometry.BoundingBox.Height
+ }
+ }
+ signatures.append(sig)
 
-    // Sort into document reading order.
-    SORT signatures by (page, bounding_box.top)
+ // Sort into document reading order.
+ SORT signatures by (page, bounding_box.top)
 
-    RETURN signatures
+ RETURN signatures
 ```
 
 **Step 4: Rule-based HIPAA element validation.** This runs first and is authoritative. It checks the six required elements from 45 CFR § 164.508(c)(1): signature, signing date, description of records requested, purpose of disclosure, and expiration. It also checks that the expiration date, if it is a parseable date, has not already passed.
@@ -193,90 +193,90 @@ If this step fails, the request is deficient. The LLM step does not run. The def
 
 ```pseudocode
 REQUIRED_ELEMENTS = {
-    "patient_or_rep_signature": "Signature of patient or authorized representative (45 CFR § 164.508(c)(1)(vi))",
-    "authorization_date":       "Date the authorization was signed (45 CFR § 164.508(c)(1)(vi))",
-    "records_requested":        "Description of information to be disclosed (45 CFR § 164.508(c)(1)(i))",
-    "purpose":                  "Purpose of the requested disclosure (45 CFR § 164.508(c)(1)(iv))",
-    "expiration_date":          "Expiration date or event (45 CFR § 164.508(c)(1)(v))"
+ "patient_or_rep_signature": "Signature of patient or authorized representative (45 CFR § 164.508(c)(1)(vi))",
+ "authorization_date": "Date the authorization was signed (45 CFR § 164.508(c)(1)(vi))",
+ "records_requested": "Description of information to be disclosed (45 CFR § 164.508(c)(1)(i))",
+ "purpose": "Purpose of the requested disclosure (45 CFR § 164.508(c)(1)(iv))",
+ "expiration_date": "Expiration date or event (45 CFR § 164.508(c)(1)(v))"
 }
 
 SIGNATURE_CONFIDENCE_THRESHOLD = 70.0
 
 FUNCTION validate_elements_rule_based(normalized_fields, signatures):
-    result = {
-        passed:          true,   // set to false if any element is missing or expired
-        elements:        empty map,
-        missing:         empty list,
-        expired:         false,
-        event_expiration: false  // true when expiration is a non-date event string
-    }
+ result = {
+ passed: true, // set to false if any element is missing or expired
+ elements: empty map,
+ missing: empty list,
+ expired: false,
+ event_expiration: false // true when expiration is a non-date event string
+ }
 
-    // --- Signature check ---
-    high_conf_sigs = [s for s in signatures if s.confidence >= SIGNATURE_CONFIDENCE_THRESHOLD]
-    has_signature  = length(high_conf_sigs) > 0
-    result.elements["patient_or_rep_signature"] = has_signature
+ // --- Signature check ---
+ high_conf_sigs = [s for s in signatures if s.confidence >= SIGNATURE_CONFIDENCE_THRESHOLD]
+ has_signature = length(high_conf_sigs) > 0
+ result.elements["patient_or_rep_signature"] = has_signature
 
-    IF NOT has_signature:
-        result.passed = false
-        IF signatures is empty:
-            result.missing.append(REQUIRED_ELEMENTS["patient_or_rep_signature"])
-        ELSE:
-            // A signature was detected but below the confidence threshold.
-            // Low-confidence detection is handled separately from total absence.
-            result.missing.append(
-                REQUIRED_ELEMENTS["patient_or_rep_signature"] +
-                " (possible signature detected at " + max_confidence(signatures) + "% confidence; below threshold)"
-            )
+ IF NOT has_signature:
+ result.passed = false
+ IF signatures is empty:
+ result.missing.append(REQUIRED_ELEMENTS["patient_or_rep_signature"])
+ ELSE:
+ // A signature was detected but below the confidence threshold.
+ // Low-confidence detection is handled separately from total absence.
+ result.missing.append(
+ REQUIRED_ELEMENTS["patient_or_rep_signature"] +
+ " (possible signature detected at " + max_confidence(signatures) + "% confidence; below threshold)"
+ )
 
-    // --- Signing date ---
-    auth_date = normalized_fields.get("authorization_date")
-    has_auth_date = auth_date is not null AND auth_date.value.strip() is not empty
-    result.elements["authorization_date"] = has_auth_date
-    IF NOT has_auth_date:
-        result.passed = false
-        result.missing.append(REQUIRED_ELEMENTS["authorization_date"])
+ // --- Signing date ---
+ auth_date = normalized_fields.get("authorization_date")
+ has_auth_date = auth_date is not null AND auth_date.value.strip() is not empty
+ result.elements["authorization_date"] = has_auth_date
+ IF NOT has_auth_date:
+ result.passed = false
+ result.missing.append(REQUIRED_ELEMENTS["authorization_date"])
 
-    // --- Records description ---
-    records = normalized_fields.get("records_requested")
-    has_records = records is not null AND records.value.strip() is not empty
-    result.elements["records_requested"] = has_records
-    IF NOT has_records:
-        result.passed = false
-        result.missing.append(REQUIRED_ELEMENTS["records_requested"])
+ // --- Records description ---
+ records = normalized_fields.get("records_requested")
+ has_records = records is not null AND records.value.strip() is not empty
+ result.elements["records_requested"] = has_records
+ IF NOT has_records:
+ result.passed = false
+ result.missing.append(REQUIRED_ELEMENTS["records_requested"])
 
-    // --- Purpose ---
-    purpose = normalized_fields.get("purpose")
-    has_purpose = purpose is not null AND purpose.value.strip() is not empty
-    result.elements["purpose"] = has_purpose
-    IF NOT has_purpose:
-        result.passed = false
-        result.missing.append(REQUIRED_ELEMENTS["purpose"])
+ // --- Purpose ---
+ purpose = normalized_fields.get("purpose")
+ has_purpose = purpose is not null AND purpose.value.strip() is not empty
+ result.elements["purpose"] = has_purpose
+ IF NOT has_purpose:
+ result.passed = false
+ result.missing.append(REQUIRED_ELEMENTS["purpose"])
 
-    // --- Expiration ---
-    exp = normalized_fields.get("expiration_date")
-    has_expiration = exp is not null AND exp.value.strip() is not empty
-    result.elements["expiration_date"] = has_expiration
-    IF NOT has_expiration:
-        result.passed = false
-        result.missing.append(REQUIRED_ELEMENTS["expiration_date"])
-    ELSE:
-        exp_value = exp.value.strip()
-        exp_date  = attempt_date_parse(exp_value)
-        IF exp_date is not null:
-            IF exp_date < today:
-                result.passed   = false
-                result.expired  = true
-                result.missing.append(
-                    "Authorization expired " + exp_date.to_string("YYYY-MM-DD") +
-                    ". A current authorization is required."
-                )
-        ELSE:
-            // Non-date expiration event string. Flag for LLM and human review;
-            // it is not a rule-based failure because event-based expirations
-            // are valid under HIPAA.
-            result.event_expiration = true
+ // --- Expiration ---
+ exp = normalized_fields.get("expiration_date")
+ has_expiration = exp is not null AND exp.value.strip() is not empty
+ result.elements["expiration_date"] = has_expiration
+ IF NOT has_expiration:
+ result.passed = false
+ result.missing.append(REQUIRED_ELEMENTS["expiration_date"])
+ ELSE:
+ exp_value = exp.value.strip()
+ exp_date = attempt_date_parse(exp_value)
+ IF exp_date is not null:
+ IF exp_date < today:
+ result.passed = false
+ result.expired = true
+ result.missing.append(
+ "Authorization expired " + exp_date.to_string("YYYY-MM-DD") +
+ ". A current authorization is required."
+ )
+ ELSE:
+ // Non-date expiration event string. Flag for LLM and human review;
+ // it is not a rule-based failure because event-based expirations
+ // are valid under HIPAA.
+ result.event_expiration = true
 
-    RETURN result
+ RETURN result
 ```
 
 **Step 5: LLM authorization consistency check.** This step runs only when the rule-based check passes. It uses Bedrock Converse with Claude Sonnet to read the full authorization text alongside the extracted fields. The LLM looks for coherence issues that rules cannot detect: dates that conflict with each other, scope language that is ambiguous or inconsistent with the stated purpose, and required elements that are present in the document text but were not captured in structured fields.
@@ -292,41 +292,41 @@ You are flagging concerns for human review.
 
 Return a JSON object with this schema:
 {
-  "concerns": [
-    {
-      "type": "date_conflict" | "scope_ambiguity" | "missing_element" | "other",
-      "severity": "high" | "medium" | "low",
-      "description": "Brief description of the concern (do not quote PHI)"
-    }
-  ],
-  "overall_coherence": "no_concerns" | "minor_concerns" | "significant_concerns",
-  "review_recommended": true | false
+ "concerns": [
+ {
+ "type": "date_conflict" | "scope_ambiguity" | "missing_element" | "other",
+ "severity": "high" | "medium" | "low",
+ "description": "Brief description of the concern (do not quote PHI)"
+ }
+ ],
+ "overall_coherence": "no_concerns" | "minor_concerns" | "significant_concerns",
+ "review_recommended": true | false
 }
 
 Return only valid JSON. No markdown fences, no explanatory text outside the JSON object.
 """
 
 FUNCTION check_authorization_consistency_llm(normalized_fields, signatures, line_blocks, event_expiration):
-    // Build the document context for the LLM.
-    // Sanitize the full text before including in the prompt.
-    // Authorization forms are untrusted free-text authored by patients, attorneys,
-    // and providers. Strip control characters and injection patterns first.
-    // [EDITOR: review fix: sanitization step added; was only in Gap to Production in v2.]
-    full_text = join all line_blocks text values with newline
-    sanitized_text = sanitize_for_prompt(full_text)
+ // Build the document context for the LLM.
+ // Sanitize the full text before including in the prompt.
+ // Authorization forms are untrusted free-text authored by patients, attorneys,
+ // and providers. Strip control characters and injection patterns first.
+ // [EDITOR: review fix: sanitization step added; was only in Gap to Production in v2.]
+ full_text = join all line_blocks text values with newline
+ sanitized_text = sanitize_for_prompt(full_text)
 
-    // The coherence check requires the full authorization text.
-    // The LLM must see all field values (including dates, scope descriptions, and
-    // purpose statements) to detect cross-field inconsistencies and elements present
-    // in prose but absent from extracted fields.
-    // Full-text transmission is necessary for this use case; selective PHI suppression
-    // would defeat the coherence analysis. All transmission to Bedrock is covered by
-    // the BAA; AWS does not retain this data. The prompt instructs the model not to
-    // echo PHI in its response descriptions.
-    // [EDITOR: review fix: replaced "pass structural information rather than raw PHI
-    // where possible" which contradicted the code and the design intent.]
+ // The coherence check requires the full authorization text.
+ // The LLM must see all field values (including dates, scope descriptions, and
+ // purpose statements) to detect cross-field inconsistencies and elements present
+ // in prose but absent from extracted fields.
+ // Full-text transmission is necessary for this use case; selective PHI suppression
+ // would defeat the coherence analysis. All transmission to Bedrock is covered by
+ // the BAA; AWS does not retain this data. The prompt instructs the model not to
+ // echo PHI in its response descriptions.
+ // [EDITOR: review fix: replaced "pass structural information rather than raw PHI
+ // where possible" which contradicted the code and the design intent.]
 
-    user_message = """
+ user_message = """
 Review this HIPAA authorization for logical consistency.
 
 Extracted fields:
@@ -352,37 +352,37 @@ Important: Do not include patient names, member IDs, or other PHI in your descri
 Describe structural and logical issues only.
 """
 
-    // Populate template with sanitized text and extracted values.
-    // Use normalized field values; fall back to "(not extracted)" if field is missing.
-    user_message = populate_template(user_message, normalized_fields, signatures, event_expiration, sanitized_text)
+ // Populate template with sanitized text and extracted values.
+ // Use normalized field values; fall back to "(not extracted)" if field is missing.
+ user_message = populate_template(user_message, normalized_fields, signatures, event_expiration, sanitized_text)
 
-    response = bedrock.converse(
-        modelId = "us.anthropic.claude-sonnet-4-6-v1:0",
-        system  = [{ text: LLM_VALIDATION_SYSTEM_PROMPT }],
-        messages = [{ role: "user", content: [{ text: user_message }] }],
-        inferenceConfig = { maxTokens: 512, temperature: 0 }
-    )
+ response = bedrock.converse(
+ modelId = "us.anthropic.claude-sonnet-4-6-v1:0",
+ system = [{ text: LLM_VALIDATION_SYSTEM_PROMPT }],
+ messages = [{ role: "user", content: [{ text: user_message }] }],
+ inferenceConfig = { maxTokens: 512, temperature: 0 }
+ )
 
-    response_text = response.output.message.content[0].text
-    llm_result    = parse_json(response_text)
-    // On JSONDecodeError: retry once with an explicit JSON-only suffix appended
-    // to the user message. If the second attempt also fails, fall back to a safe
-    // default result and log the parse failure (metadata only, no response content).
-    // This closes the failure mode where the model includes markdown fences or
-    // preamble text despite being instructed not to.
+ response_text = response.output.message.content[0].text
+ llm_result = parse_json(response_text)
+ // On JSONDecodeError: retry once with an explicit JSON-only suffix appended
+ // to the user message. If the second attempt also fails, fall back to a safe
+ // default result and log the parse failure (metadata only, no response content).
+ // This closes the failure mode where the model includes markdown fences or
+ // preamble text despite being instructed not to.
 
-    // Do NOT log response_text. It may contain information derived from PHI.
-    // Log only the result metadata: concern count and overall_coherence value.
-    log: "LLM consistency check: " + llm_result.overall_coherence +
-         ", concerns: " + length(llm_result.concerns) +
-         ", review_recommended: " + llm_result.review_recommended
+ // Do NOT log response_text. It may contain information derived from PHI.
+ // Log only the result metadata: concern count and overall_coherence value.
+ log: "LLM consistency check: " + llm_result.overall_coherence +
+ ", concerns: " + length(llm_result.concerns) +
+ ", review_recommended: " + llm_result.review_recommended
 
-    RETURN {
-        overall_coherence:  llm_result.get("overall_coherence", "no_concerns"),
-        concerns:           llm_result.get("concerns", []),
-        review_recommended: llm_result.get("review_recommended", false)
-    }
-``` 
+ RETURN {
+ overall_coherence: llm_result.get("overall_coherence", "no_concerns"),
+ concerns: llm_result.get("concerns", []),
+ review_recommended: llm_result.get("review_recommended", false)
+ }
+```
 
 **Step 6: LLM request classification.** The classification step reads the full request text and the extracted fields together. It uses a smaller, faster model than the validation step because classification is a simpler reasoning task.
 
@@ -390,12 +390,12 @@ The response includes reasoning, not just a label. That reasoning goes into the 
 
 ```pseudocode
 CLASSIFICATION_CATEGORIES = {
-    "care_coordination":  "Treating physician or provider requesting records for continuity of care",
-    "legal":              "Attorney, law firm, or litigation-related request",
-    "underwriting":       "Insurance or financial underwriting purpose",
-    "utilization_review": "Utilization management, case management, or independent medical examination",
-    "patient_access":     "Patient or personal representative exercising right of access",
-    "general":            "Unclear purpose or category; route to general review queue"
+ "care_coordination": "Treating physician or provider requesting records for continuity of care",
+ "legal": "Attorney, law firm, or litigation-related request",
+ "underwriting": "Insurance or financial underwriting purpose",
+ "utilization_review": "Utilization management, case management, or independent medical examination",
+ "patient_access": "Patient or personal representative exercising right of access",
+ "general": "Unclear purpose or category; route to general review queue"
 }
 
 CLASSIFICATION_SYSTEM_PROMPT = """
@@ -410,22 +410,22 @@ into exactly one of these categories:
 
 Return JSON:
 {
-  "request_type": "<category>",
-  "confidence": <float 0.0-1.0>,
-  "reasoning": "Brief explanation of classification basis (no PHI)"
+ "request_type": "<category>",
+ "confidence": <float 0.0-1.0>,
+ "reasoning": "Brief explanation of classification basis (no PHI)"
 }
 
 Return only valid JSON. No markdown, no text outside the JSON object.
 """
 
 FUNCTION classify_request_type(normalized_fields, line_blocks):
-    full_text    = join all line_blocks text values with newline
-    purpose_text = normalized_fields.get("purpose", {}).value or "(not provided)"
-    requestor    = normalized_fields.get("requestor_org", {}).value or
-                   normalized_fields.get("requestor_name", {}).value or
-                   "(not extracted)"
+ full_text = join all line_blocks text values with newline
+ purpose_text = normalized_fields.get("purpose", {}).value or "(not provided)"
+ requestor = normalized_fields.get("requestor_org", {}).value or
+ normalized_fields.get("requestor_name", {}).value or
+ "(not extracted)"
 
-    user_message = """
+ user_message = """
 Classify this medical records request.
 
 Requestor: {requestor}
@@ -436,28 +436,28 @@ Full request text:
 {full_text}
 ---
 """
-    user_message = populate_template(user_message, requestor, purpose_text, full_text)
+ user_message = populate_template(user_message, requestor, purpose_text, full_text)
 
-    response = bedrock.converse(
-        modelId = "us.amazon.nova-pro-v1:0",
-        system  = [{ text: CLASSIFICATION_SYSTEM_PROMPT }],
-        messages = [{ role: "user", content: [{ text: user_message }] }],
-        inferenceConfig = { maxTokens: 256, temperature: 0 }
-    )
+ response = bedrock.converse(
+ modelId = "us.amazon.nova-pro-v1:0",
+ system = [{ text: CLASSIFICATION_SYSTEM_PROMPT }],
+ messages = [{ role: "user", content: [{ text: user_message }] }],
+ inferenceConfig = { maxTokens: 256, temperature: 0 }
+ )
 
-    response_text = response.output.message.content[0].text
-    result        = parse_json(response_text)
-    // On JSONDecodeError: retry once with JSON-only suffix, same as Step 5.
+ response_text = response.output.message.content[0].text
+ result = parse_json(response_text)
+ // On JSONDecodeError: retry once with JSON-only suffix, same as Step 5.
 
-    // Log classification metadata only. No document content in logs.
-    log: "Request classified as " + result.get("request_type", "unknown") +
-         " (confidence: " + result.get("confidence", 0.0) + ")"
+ // Log classification metadata only. No document content in logs.
+ log: "Request classified as " + result.get("request_type", "unknown") +
+ " (confidence: " + result.get("confidence", 0.0) + ")"
 
-    RETURN {
-        request_type: result.get("request_type", "general"),
-        confidence:   clamp(result.get("confidence", 0.5), 0.0, 1.0),
-        reasoning:    result.get("reasoning", "(classification reasoning unavailable)")
-    }
+ RETURN {
+ request_type: result.get("request_type", "general"),
+ confidence: clamp(result.get("confidence", 0.5), 0.0, 1.0),
+ reasoning: result.get("reasoning", "(classification reasoning unavailable)")
+ }
 ```
 
 **Step 7: Assemble the record and route.** The final step combines all extracted and validated data into a structured record, writes it to DynamoDB, and sends to the appropriate queue. The routing logic reflects three possible outcomes: rule-deficient (SNS notification only, no fulfillment), LLM-flagged (human review queue), and clean (type-specific fulfillment queue).
@@ -466,12 +466,12 @@ The LLM observations in the DynamoDB record are stored under `llm_consistency_fi
 
 ```pseudocode
 FULFILLMENT_QUEUES = {
-    "care_coordination":  env.CARE_COORDINATION_QUEUE_URL,
-    "legal":              env.LEGAL_QUEUE_URL,
-    "underwriting":       env.UNDERWRITING_QUEUE_URL,
-    "utilization_review": env.UR_QUEUE_URL,
-    "patient_access":     env.PATIENT_ACCESS_QUEUE_URL,
-    "general":            env.GENERAL_REVIEW_QUEUE_URL
+ "care_coordination": env.CARE_COORDINATION_QUEUE_URL,
+ "legal": env.LEGAL_QUEUE_URL,
+ "underwriting": env.UNDERWRITING_QUEUE_URL,
+ "utilization_review": env.UR_QUEUE_URL,
+ "patient_access": env.PATIENT_ACCESS_QUEUE_URL,
+ "general": env.GENERAL_REVIEW_QUEUE_URL
 }
 
 // Dedicated queue for LLM-flagged authorization reviews.
@@ -481,106 +481,106 @@ FULFILLMENT_QUEUES = {
 REVIEW_QUEUE_URL = env.REVIEW_QUEUE_URL
 
 FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
-                             rule_validation, llm_consistency, classification):
-    record = {
-        document_key:   document_key,
-        processed_at:   current UTC timestamp (ISO 8601),
+ rule_validation, llm_consistency, classification):
+ record = {
+ document_key: document_key,
+ processed_at: current UTC timestamp (ISO 8601),
 
-        patient: {
-            name:      normalized_fields.get("patient_name", {}).value,
-            dob:       normalized_fields.get("patient_dob", {}).value,
-            member_id: normalized_fields.get("patient_id", {}).value
-        },
+ patient: {
+ name: normalized_fields.get("patient_name", {}).value,
+ dob: normalized_fields.get("patient_dob", {}).value,
+ member_id: normalized_fields.get("patient_id", {}).value
+ },
 
-        requestor: {
-            name:         normalized_fields.get("requestor_name", {}).value,
-            organization: normalized_fields.get("requestor_org", {}).value,
-            fax:          normalized_fields.get("requestor_fax", {}).value,
-            npi:          normalized_fields.get("requestor_npi", {}).value
-        },
+ requestor: {
+ name: normalized_fields.get("requestor_name", {}).value,
+ organization: normalized_fields.get("requestor_org", {}).value,
+ fax: normalized_fields.get("requestor_fax", {}).value,
+ npi: normalized_fields.get("requestor_npi", {}).value
+ },
 
-        request_details: {
-            records_requested: normalized_fields.get("records_requested", {}).value,
-            date_range:        normalized_fields.get("date_range", {}).value,
-            purpose:           normalized_fields.get("purpose", {}).value
-        },
+ request_details: {
+ records_requested: normalized_fields.get("records_requested", {}).value,
+ date_range: normalized_fields.get("date_range", {}).value,
+ purpose: normalized_fields.get("purpose", {}).value
+ },
 
-        // Authoritative: rule-based validation only.
-        // This section is the audit trail for HIPAA compliance decisions.
-        authorization_rule_check: {
-            passed:             rule_validation.passed,
-            elements_present:   rule_validation.elements,
-            deficiency_reasons: rule_validation.missing,    // maps to regulatory citations
-            expired:            rule_validation.expired,
-            event_expiration:   rule_validation.event_expiration,
-            signature_detected: length(signatures),
-            signature_max_confidence: max_confidence(signatures) or 0.0,
-            signing_date:       normalized_fields.get("authorization_date", {}).value,
-            expiration_date:    normalized_fields.get("expiration_date", {}).value
-        },
+ // Authoritative: rule-based validation only.
+ // This section is the audit trail for HIPAA compliance decisions.
+ authorization_rule_check: {
+ passed: rule_validation.passed,
+ elements_present: rule_validation.elements,
+ deficiency_reasons: rule_validation.missing, // maps to regulatory citations
+ expired: rule_validation.expired,
+ event_expiration: rule_validation.event_expiration,
+ signature_detected: length(signatures),
+ signature_max_confidence: max_confidence(signatures) or 0.0,
+ signing_date: normalized_fields.get("authorization_date", {}).value,
+ expiration_date: normalized_fields.get("expiration_date", {}).value
+ },
 
-        // Non-authoritative: LLM screening layer.
-        // These are model observations, NOT regulatory findings.
-        // Label as such in any UI or report that surfaces this data.
-        llm_consistency_findings: {
-            note:               "LLM model observations. Not a regulatory determination.",
-            overall_coherence:  llm_consistency.overall_coherence,
-            review_recommended: llm_consistency.review_recommended,
-            concerns:           llm_consistency.concerns
-        },
+ // Non-authoritative: LLM screening layer.
+ // These are model observations, NOT regulatory findings.
+ // Label as such in any UI or report that surfaces this data.
+ llm_consistency_findings: {
+ note: "LLM model observations. Not a regulatory determination.",
+ overall_coherence: llm_consistency.overall_coherence,
+ review_recommended: llm_consistency.review_recommended,
+ concerns: llm_consistency.concerns
+ },
 
-        classification: {
-            request_type:  classification.request_type,
-            confidence:    classification.confidence,
-            // LLM-generated inference. Not a statement of fact about the document.
-            llm_reasoning: classification.reasoning
-        },
+ classification: {
+ request_type: classification.request_type,
+ confidence: classification.confidence,
+ // LLM-generated inference. Not a statement of fact about the document.
+ llm_reasoning: classification.reasoning
+ },
 
-        status: determine_status(rule_validation, llm_consistency)
-        // "deficient"          - rule_validation.passed == false
-        // "pending_llm_review" - rules passed, llm_consistency.review_recommended == true
-        // "routed"             - rules passed, no LLM concerns
-    }
+ status: determine_status(rule_validation, llm_consistency)
+ // "deficient" - rule_validation.passed == false
+ // "pending_llm_review" - rules passed, llm_consistency.review_recommended == true
+ // "routed" - rules passed, no LLM concerns
+ }
 
-    // Write to DynamoDB with idempotency guard.
-    // All confidence floats must be stored as Decimal, not float.
-    dynamo_record = convert_floats_to_decimal(record)
-    write dynamo_record to DynamoDB table "records-requests" with:
-        condition: attribute_not_exists(document_key)
+ // Write to DynamoDB with idempotency guard.
+ // All confidence floats must be stored as Decimal, not float.
+ dynamo_record = convert_floats_to_decimal(record)
+ write dynamo_record to DynamoDB table "records-requests" with:
+ condition: attribute_not_exists(document_key)
 
-    // Route based on validation outcome.
-    IF NOT rule_validation.passed:
-        publish to SNS deficiency topic:
-            document_key:    document_key,
-            missing_elements: rule_validation.missing,
-            expired:          rule_validation.expired
-        log: "HIPAA auth deficient for " + document_key +
-             ". Rule failures: " + join(rule_validation.missing, "; ")
-        RETURN record
+ // Route based on validation outcome.
+ IF NOT rule_validation.passed:
+ publish to SNS deficiency topic:
+ document_key: document_key,
+ missing_elements: rule_validation.missing,
+ expired: rule_validation.expired
+ log: "HIPAA auth deficient for " + document_key +
+ ". Rule failures: " + join(rule_validation.missing, "; ")
+ RETURN record
 
-    IF llm_consistency.review_recommended:
-        publish to SNS review topic with llm_consistency.concerns
-        // Route to the dedicated review queue, not the general fulfillment queue.
-        // LLM-flagged authorizations and unclear-category requests are different
-        // work items with different SLAs and different coordinator workflows.
-        // [EDITOR: review fix: was FULFILLMENT_QUEUES["general"] in v2.]
-        send to SQS at REVIEW_QUEUE_URL:
-            document_key:  document_key,
-            concerns:      llm_consistency.concerns,
-            overall_coherence: llm_consistency.overall_coherence
-        log: "Auth passed rules; LLM flagged " + length(llm_consistency.concerns) +
-             " concern(s) for " + document_key + ". Routing to review queue."
-        RETURN record
+ IF llm_consistency.review_recommended:
+ publish to SNS review topic with llm_consistency.concerns
+ // Route to the dedicated review queue, not the general fulfillment queue.
+ // LLM-flagged authorizations and unclear-category requests are different
+ // work items with different SLAs and different coordinator workflows.
+ // [EDITOR: review fix: was FULFILLMENT_QUEUES["general"] in v2.]
+ send to SQS at REVIEW_QUEUE_URL:
+ document_key: document_key,
+ concerns: llm_consistency.concerns,
+ overall_coherence: llm_consistency.overall_coherence
+ log: "Auth passed rules; LLM flagged " + length(llm_consistency.concerns) +
+ " concern(s) for " + document_key + ". Routing to review queue."
+ RETURN record
 
-    // Both checks passed. Route to fulfillment.
-    queue_url = FULFILLMENT_QUEUES.get(classification.request_type, FULFILLMENT_QUEUES["general"])
-    send to SQS queue at queue_url:
-        document_key:      document_key,
-        request_type:      classification.request_type,
-        records_requested: record.request_details.records_requested
-    log: "Request " + document_key + " routed to " + classification.request_type +
-         " queue."
-    RETURN record
+ // Both checks passed. Route to fulfillment.
+ queue_url = FULFILLMENT_QUEUES.get(classification.request_type, FULFILLMENT_QUEUES["general"])
+ send to SQS queue at queue_url:
+ document_key: document_key,
+ request_type: classification.request_type,
+ records_requested: record.request_details.records_requested
+ log: "Request " + document_key + " routed to " + classification.request_type +
+ " queue."
+ RETURN record
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -593,53 +593,53 @@ FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
 
 ```json
 {
-  "document_key": "records-requests/2026/03/01/fax-00519.pdf",
-  "processed_at": "2026-03-01T15:44:12Z",
-  "patient": {
-    "name": "David Park",
-    "dob": "07/23/1982",
-    "member_id": "AET6182940"
-  },
-  "requestor": {
-    "name": "Dr. Michael Torres",
-    "organization": "Louisville Cardiology Associates",
-    "fax": "(502) 555-0291",
-    "npi": "1740293847"
-  },
-  "request_details": {
-    "records_requested": "All cardiology records including stress tests, echocardiograms, catheterization reports, and office visit notes",
-    "date_range": "01/01/2023 - present",
-    "purpose": "Continuity of care - patient transferring to new treating cardiologist"
-  },
-  "authorization_rule_check": {
-    "passed": true,
-    "elements_present": {
-      "patient_or_rep_signature": true,
-      "authorization_date": true,
-      "records_requested": true,
-      "purpose": true,
-      "expiration_date": true
-    },
-    "deficiency_reasons": [],
-    "expired": false,
-    "event_expiration": false,
-    "signature_detected": 1,
-    "signature_max_confidence": 91.4,
-    "signing_date": "02/28/2026",
-    "expiration_date": "02/28/2027"
-  },
-  "llm_consistency_findings": {
-    "note": "LLM model observations. Not a regulatory determination.",
-    "overall_coherence": "no_concerns",
-    "review_recommended": false,
-    "concerns": []
-  },
-  "classification": {
-    "request_type": "care_coordination",
-    "confidence": 0.97,
-    "llm_reasoning": "Request is from a treating cardiologist for cardiac records. Purpose explicitly states continuity of care for patient transferring to new provider."
-  },
-  "status": "routed"
+ "document_key": "records-requests/2026/03/01/fax-00519.pdf",
+ "processed_at": "2026-03-01T15:44:12Z",
+ "patient": {
+ "name": "David Park",
+ "dob": "07/23/1982",
+ "member_id": "AET6182940"
+ },
+ "requestor": {
+ "name": "Dr. Michael Torres",
+ "organization": "Louisville Cardiology Associates",
+ "fax": "(502) 555-0291",
+ "npi": "1740293847"
+ },
+ "request_details": {
+ "records_requested": "All cardiology records including stress tests, echocardiograms, catheterization reports, and office visit notes",
+ "date_range": "01/01/2023 - present",
+ "purpose": "Continuity of care - patient transferring to new treating cardiologist"
+ },
+ "authorization_rule_check": {
+ "passed": true,
+ "elements_present": {
+ "patient_or_rep_signature": true,
+ "authorization_date": true,
+ "records_requested": true,
+ "purpose": true,
+ "expiration_date": true
+ },
+ "deficiency_reasons": [],
+ "expired": false,
+ "event_expiration": false,
+ "signature_detected": 1,
+ "signature_max_confidence": 91.4,
+ "signing_date": "02/28/2026",
+ "expiration_date": "02/28/2027"
+ },
+ "llm_consistency_findings": {
+ "note": "LLM model observations. Not a regulatory determination.",
+ "overall_coherence": "no_concerns",
+ "review_recommended": false,
+ "concerns": []
+ },
+ "classification": {
+ "request_type": "care_coordination",
+ "confidence": 0.97,
+ "llm_reasoning": "Request is from a treating cardiologist for cardiac records. Purpose explicitly states continuity of care for patient transferring to new provider."
+ },
+ "status": "routed"
 }
 ```
 
@@ -647,40 +647,40 @@ FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
 
 ```json
 {
-  "document_key": "records-requests/2026/03/01/fax-00523.pdf",
-  "processed_at": "2026-03-01T16:02:19Z",
-  "authorization_rule_check": {
-    "passed": true,
-    "elements_present": {
-      "patient_or_rep_signature": true,
-      "authorization_date": true,
-      "records_requested": true,
-      "purpose": true,
-      "expiration_date": true
-    },
-    "deficiency_reasons": [],
-    "expired": false,
-    "signing_date": "03/01/2026",
-    "expiration_date": "02/15/2026"
-  },
-  "llm_consistency_findings": {
-    "note": "LLM model observations. Not a regulatory determination.",
-    "overall_coherence": "significant_concerns",
-    "review_recommended": true,
-    "concerns": [
-      {
-        "type": "date_conflict",
-        "severity": "high",
-        "description": "Signing date appears to be after expiration date. Authorization signed March 1, 2026 but expires February 15, 2026. This may indicate a data entry error or an already-expired authorization being reused."
-      }
-    ]
-  },
-  "classification": {
-    "request_type": "underwriting",
-    "confidence": 0.89,
-    "llm_reasoning": "Requestor is an insurance company and stated purpose indicates disability underwriting review."
-  },
-  "status": "pending_llm_review"
+ "document_key": "records-requests/2026/03/01/fax-00523.pdf",
+ "processed_at": "2026-03-01T16:02:19Z",
+ "authorization_rule_check": {
+ "passed": true,
+ "elements_present": {
+ "patient_or_rep_signature": true,
+ "authorization_date": true,
+ "records_requested": true,
+ "purpose": true,
+ "expiration_date": true
+ },
+ "deficiency_reasons": [],
+ "expired": false,
+ "signing_date": "03/01/2026",
+ "expiration_date": "02/15/2026"
+ },
+ "llm_consistency_findings": {
+ "note": "LLM model observations. Not a regulatory determination.",
+ "overall_coherence": "significant_concerns",
+ "review_recommended": true,
+ "concerns": [
+ {
+ "type": "date_conflict",
+ "severity": "high",
+ "description": "Signing date appears to be after expiration date. Authorization signed March 1, 2026 but expires February 15, 2026. This may indicate a data entry error or an already-expired authorization being reused."
+ }
+ ]
+ },
+ "classification": {
+ "request_type": "underwriting",
+ "confidence": 0.89,
+ "llm_reasoning": "Requestor is an insurance company and stated purpose indicates disability underwriting review."
+ },
+ "status": "pending_llm_review"
 }
 ```
 
@@ -714,9 +714,9 @@ The pseudocode above demonstrates the core pipeline. A production deployment in 
 
 **The LLM is a screening layer, not a compliance gate.** The LLM consistency check surfaces observations for human review. It does not override rule-based deficiency determinations, and it cannot make a deficient authorization valid. Frame this accurately when presenting the system to your legal and compliance teams. The right description: "The LLM identifies potential coherence issues for human review. It does not perform legal compliance determinations." Framing it as "the system validates HIPAA compliance" overstates what it does and creates liability exposure.
 
-**LLM behavior is not perfectly deterministic.** At temperature=0, Bedrock models are close to deterministic, but not perfectly so, and model updates can shift behavior. An authorization processed in March 2026 may get a slightly different LLM consistency assessment if reprocessed after a model update. This is not a problem for the rule-based layer, which is fully deterministic. It is a consideration for the LLM layer: if you need the ability to reproduce exact outputs for audit purposes, store the model ID and version used for each LLM call alongside the findings in the DynamoDB record. The Python companion shows where to add this. 
+**LLM behavior is not perfectly deterministic.** At temperature=0, Bedrock models are close to deterministic, but not perfectly so, and model updates can shift behavior. An authorization processed in March 2026 may get a slightly different LLM consistency assessment if reprocessed after a model update. This is not a problem for the rule-based layer, which is fully deterministic. It is a consideration for the LLM layer: if you need the ability to reproduce exact outputs for audit purposes, store the model ID and version used for each LLM call alongside the findings in the DynamoDB record. The Python companion shows where to add this.
 
-**LLM output retry on JSON parse failure.** The consistency check and classification steps both call Bedrock and parse the response as JSON. When the model returns markdown fences or preamble text despite instructions, the parse fails. The recommended pattern: on first `JSONDecodeError`, append `"\n\nYou MUST return only valid JSON. No markdown, no explanation."` to the user message and retry the Bedrock call once. If the second attempt also fails, fall back to a safe default and log the failure (metadata only, no response content). This is about 15 lines of code and closes the most common model output failure mode. The Python companion implements this pattern. 
+**LLM output retry on JSON parse failure.** The consistency check and classification steps both call Bedrock and parse the response as JSON. When the model returns markdown fences or preamble text despite instructions, the parse fails. The recommended pattern: on first `JSONDecodeError`, append `"\n\nYou MUST return only valid JSON. No markdown, no explanation."` to the user message and retry the Bedrock call once. If the second attempt also fails, fall back to a safe default and log the failure (metadata only, no response content). This is about 15 lines of code and closes the most common model output failure mode. The Python companion implements this pattern.
 
 **The signature confidence threshold is a policy decision.** 70% is a reasonable starting point for fax-quality documents, but the right threshold depends on your organization's risk tolerance. Too high and you generate deficiency letters for valid authorizations where fax degradation hurt the signature. Too low and you accept artifacts as valid signatures. Your compliance and legal teams should set this threshold. It should be configurable per environment, not hardcoded.
 

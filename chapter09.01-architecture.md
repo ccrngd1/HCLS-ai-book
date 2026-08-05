@@ -26,21 +26,21 @@ Now let's build this on AWS. The architecture handles both near-real-time assess
 
 ```mermaid
 flowchart LR
-    A[🏥 Modality\nX-ray / CT / MRI] -->|DICOM| B[DICOM Router\non-premises]
-    B -->|Store| C[S3 Bucket\nimaging-inbox/]
-    C -->|S3 Event| Q[SQS Queue]
-    Q -->|Trigger| D[Lambda\nimage-quality-orchestrator]
-    D -->|Extract pixels\npreprocess| D
-    D -->|Invoke endpoint| E[SageMaker Endpoint\nquality-model]
-    E -->|Quality scores| D
-    D -->|Store results| F[DynamoDB\nquality-assessments]
-    D -->|Fail notification| G[SNS Topic\nquality-alerts]
-    G -->|Alert| H[Tech Console /\nPACS Integration]
-    Q -->|Failed messages| DLQ[Dead Letter Queue]
+ A[Modality\nX-ray / CT / MRI] -->|DICOM| B[DICOM Router\non-premises]
+ B -->|Store| C[S3 Bucket\nimaging-inbox/]
+ C -->|S3 Event| Q[SQS Queue]
+ Q -->|Trigger| D[Lambda\nimage-quality-orchestrator]
+ D -->|Extract pixels\npreprocess| D
+ D -->|Invoke endpoint| E[SageMaker Endpoint\nquality-model]
+ E -->|Quality scores| D
+ D -->|Store results| F[DynamoDB\nquality-assessments]
+ D -->|Fail notification| G[SNS Topic\nquality-alerts]
+ G -->|Alert| H[Tech Console /\nPACS Integration]
+ Q -->|Failed messages| DLQ[Dead Letter Queue]
 
-    style C fill:#f9f,stroke:#333
-    style E fill:#ff9,stroke:#333
-    style F fill:#9ff,stroke:#333
+ style C fill:#f9f,stroke:#333
+ style E fill:#ff9,stroke:#333
+ style F fill:#9ff,stroke:#333
 ```
 
 For production, place an SQS queue between the S3 event notification and Lambda (S3 -> SQS -> Lambda), with a dead letter queue on the SQS queue for messages that fail after the configured retry count. A missed quality check should trigger an operational alert, not silent data loss.
@@ -78,104 +78,104 @@ For production, place an SQS queue between the S3 event notification and Lambda 
 
 ```pseudocode
 FUNCTION receive_image(bucket, key):
-    // Download the DICOM file from S3
-    dicom_bytes = download from S3 at bucket/key
+ // Download the DICOM file from S3
+ dicom_bytes = download from S3 at bucket/key
 
-    // Parse the DICOM structure to extract pixel data and metadata.
-    // DICOM files contain both image pixels and extensive metadata
-    // (patient info, acquisition parameters, modality type, etc.)
-    dicom_object = parse DICOM from dicom_bytes
+ // Parse the DICOM structure to extract pixel data and metadata.
+ // DICOM files contain both image pixels and extensive metadata
+ // (patient info, acquisition parameters, modality type, etc.)
+ dicom_object = parse DICOM from dicom_bytes
 
-    // Extract what we need for quality assessment
-    pixel_array = dicom_object.pixel_array          // the actual image data as a 2D numeric array
-    modality    = dicom_object.Modality             // "CR", "CT", "MR", "DX", etc.
-    study_uid   = dicom_object.StudyInstanceUID     // unique identifier for this imaging study
-    series_uid  = dicom_object.SeriesInstanceUID    // unique identifier for this series within the study
-    body_part   = dicom_object.BodyPartExamined     // "CHEST", "KNEE", "HEAD", etc.
+ // Extract what we need for quality assessment
+ pixel_array = dicom_object.pixel_array // the actual image data as a 2D numeric array
+ modality = dicom_object.Modality // "CR", "CT", "MR", "DX", etc.
+ study_uid = dicom_object.StudyInstanceUID // unique identifier for this imaging study
+ series_uid = dicom_object.SeriesInstanceUID // unique identifier for this series within the study
+ body_part = dicom_object.BodyPartExamined // "CHEST", "KNEE", "HEAD", etc.
 
-    RETURN {
-        pixels:     pixel_array,
-        modality:   modality,
-        study_uid:  study_uid,
-        series_uid: series_uid,
-        body_part:  body_part,
-        source_key: key
-    }
+ RETURN {
+ pixels: pixel_array,
+ modality: modality,
+ study_uid: study_uid,
+ series_uid: series_uid,
+ body_part: body_part,
+ source_key: key
+ }
 ```
 
 **Step 2: Compute rule-based quality metrics.** Before invoking the ML model, compute the fast, deterministic metrics that catch obvious failures. These are cheap to compute (milliseconds), require no model inference, and catch the most egregious problems: completely black images (detector malfunction), completely white images (overexposure), and severe blur (patient moved significantly). Think of this as the "fast reject" gate. If an image fails here, there's no point spending compute on the ML model. These metrics also feed into the ML model as additional input features, giving it both the raw pixels and the computed statistics.
 
 ```pseudocode
 FUNCTION compute_basic_metrics(pixel_array):
-    metrics = empty map
+ metrics = empty map
 
-    // --- Blur Detection ---
-    // The Laplacian operator computes the second derivative of the image.
-    // Sharp images have high-frequency content (edges), which produces high variance
-    // in the Laplacian output. Blurry images are smooth, producing low variance.
-    laplacian        = apply Laplacian filter to pixel_array
-    metrics["blur_score"] = variance(laplacian)
-    // Higher score = sharper image. Typical threshold: 100-500 depending on modality.
+ // --- Blur Detection ---
+ // The Laplacian operator computes the second derivative of the image.
+ // Sharp images have high-frequency content (edges), which produces high variance
+ // in the Laplacian output. Blurry images are smooth, producing low variance.
+ laplacian = apply Laplacian filter to pixel_array
+ metrics["blur_score"] = variance(laplacian)
+ // Higher score = sharper image. Typical threshold: 100-500 depending on modality.
 
-    // --- Exposure Analysis ---
-    // Compute the histogram of pixel intensities (how many pixels at each brightness level).
-    // A well-exposed image uses a broad range of the available dynamic range.
-    histogram        = compute intensity histogram of pixel_array
-    metrics["mean_intensity"]   = mean(pixel_array)
-    metrics["std_intensity"]    = standard_deviation(pixel_array)
-    metrics["percentile_5"]     = 5th percentile of pixel_array    // darkest region
-    metrics["percentile_95"]    = 95th percentile of pixel_array   // brightest region
-    metrics["dynamic_range"]    = metrics["percentile_95"] - metrics["percentile_5"]
+ // --- Exposure Analysis ---
+ // Compute the histogram of pixel intensities (how many pixels at each brightness level).
+ // A well-exposed image uses a broad range of the available dynamic range.
+ histogram = compute intensity histogram of pixel_array
+ metrics["mean_intensity"] = mean(pixel_array)
+ metrics["std_intensity"] = standard_deviation(pixel_array)
+ metrics["percentile_5"] = 5th percentile of pixel_array // darkest region
+ metrics["percentile_95"] = 95th percentile of pixel_array // brightest region
+ metrics["dynamic_range"] = metrics["percentile_95"] - metrics["percentile_5"]
 
-    // --- Noise Estimation ---
-    // Estimate noise by looking at the standard deviation in a smooth region.
-    // We use the median absolute deviation of the wavelet coefficients (robust estimator).
-    noise_estimate   = estimate_noise(pixel_array)  // e.g., using wavelet-based method
-    metrics["noise_level"] = noise_estimate
+ // --- Noise Estimation ---
+ // Estimate noise by looking at the standard deviation in a smooth region.
+ // We use the median absolute deviation of the wavelet coefficients (robust estimator).
+ noise_estimate = estimate_noise(pixel_array) // e.g., using wavelet-based method
+ metrics["noise_level"] = noise_estimate
 
-    // --- Basic Sanity Checks ---
-    // These catch hardware failures and gross acquisition errors.
-    metrics["is_blank"]    = (metrics["dynamic_range"] < 10)       // nearly uniform image
-    metrics["is_saturated"] = (metrics["percentile_95"] >= 0.99 * max_possible_value)
+ // --- Basic Sanity Checks ---
+ // These catch hardware failures and gross acquisition errors.
+ metrics["is_blank"] = (metrics["dynamic_range"] < 10) // nearly uniform image
+ metrics["is_saturated"] = (metrics["percentile_95"] >= 0.99 * max_possible_value)
 
-    RETURN metrics
+ RETURN metrics
 ```
 
 **Step 3: Invoke the ML quality model.** The rule-based metrics catch the obvious cases. The ML model handles the nuanced ones: subtle motion blur that the Laplacian variance doesn't flag, positioning errors that require understanding anatomy, and the complex interaction between multiple quality factors. The model takes the preprocessed pixel array (resized to a standard input dimension) and optionally the computed metrics as auxiliary features. It returns a quality score (0 to 1, where 1 is perfect quality) and optionally per-category scores (blur, exposure, positioning, artifacts). The model was trained on your institution's historical rejection data, so it learns your radiologists' quality standards.
 
 ```pseudocode
 FUNCTION assess_quality_ml(pixel_array, basic_metrics, modality):
-    // Preprocess the image for model input.
-    // Resize to the model's expected input dimensions (e.g., 512x512).
-    // Normalize pixel values to 0-1 range.
-    preprocessed = resize(pixel_array, target_size=(512, 512))
-    preprocessed = normalize(preprocessed, min=0, max=1)
+ // Preprocess the image for model input.
+ // Resize to the model's expected input dimensions (e.g., 512x512).
+ // Normalize pixel values to 0-1 range.
+ preprocessed = resize(pixel_array, target_size=(512, 512))
+ preprocessed = normalize(preprocessed, min=0, max=1)
 
-    // Combine pixel data with computed metrics as model input.
-    // The model architecture accepts both the image and tabular features.
-    model_input = {
-        "image":    preprocessed,
-        "metrics":  basic_metrics,
-        "modality": modality          // modality as a categorical feature
-    }
+ // Combine pixel data with computed metrics as model input.
+ // The model architecture accepts both the image and tabular features.
+ model_input = {
+ "image": preprocessed,
+ "metrics": basic_metrics,
+ "modality": modality // modality as a categorical feature
+ }
 
-    // Call the SageMaker endpoint for inference.
-    // The endpoint hosts the trained quality assessment model.
-    response = invoke SageMaker endpoint "image-quality-model" with model_input
+ // Call the SageMaker endpoint for inference.
+ // The endpoint hosts the trained quality assessment model.
+ response = invoke SageMaker endpoint "image-quality-model" with model_input
 
-    // Parse the model's output: overall score plus per-category breakdown.
-    quality_score = response["overall_quality"]    // 0.0 to 1.0
-    category_scores = {
-        "sharpness":    response["sharpness_score"],
-        "exposure":     response["exposure_score"],
-        "positioning":  response["positioning_score"],
-        "artifacts":    response["artifact_score"]
-    }
+ // Parse the model's output: overall score plus per-category breakdown.
+ quality_score = response["overall_quality"] // 0.0 to 1.0
+ category_scores = {
+ "sharpness": response["sharpness_score"],
+ "exposure": response["exposure_score"],
+ "positioning": response["positioning_score"],
+ "artifacts": response["artifact_score"]
+ }
 
-    RETURN {
-        overall_score:    quality_score,
-        category_scores:  category_scores
-    }
+ RETURN {
+ overall_score: quality_score,
+ category_scores: category_scores
+ }
 ```
 
 **Step 4: Apply decision thresholds.** The model gives you a continuous score. The clinical workflow needs a discrete decision: accept, flag for review, or reject. This step applies configurable thresholds that translate scores into actions. The thresholds are stored externally (not baked into the model) so they can be tuned per site, per modality, and per body part without retraining. A three-tier system works well in practice: clear pass, borderline (flag for tech review), and clear fail (immediate retake alert). Skip this step and you're dumping raw probability scores on technologists who need a yes/no answer.
@@ -184,75 +184,75 @@ FUNCTION assess_quality_ml(pixel_array, basic_metrics, modality):
 // Thresholds are configurable per modality and body part.
 // These are loaded from a configuration store, not hardcoded.
 THRESHOLDS = {
-    "CR_CHEST": { "accept": 0.85, "review": 0.65 },
-    "CT_HEAD":  { "accept": 0.90, "review": 0.70 },
-    "MR_KNEE":  { "accept": 0.80, "review": 0.60 },
-    "DEFAULT":  { "accept": 0.85, "review": 0.65 }
+ "CR_CHEST": { "accept": 0.85, "review": 0.65 },
+ "CT_HEAD": { "accept": 0.90, "review": 0.70 },
+ "MR_KNEE": { "accept": 0.80, "review": 0.60 },
+ "DEFAULT": { "accept": 0.85, "review": 0.65 }
 }
 
 FUNCTION apply_decision(quality_result, modality, body_part):
-    // Look up the appropriate thresholds for this modality/body part combination.
-    threshold_key = modality + "_" + body_part
-    thresholds = THRESHOLDS[threshold_key] OR THRESHOLDS["DEFAULT"]
+ // Look up the appropriate thresholds for this modality/body part combination.
+ threshold_key = modality + "_" + body_part
+ thresholds = THRESHOLDS[threshold_key] OR THRESHOLDS["DEFAULT"]
 
-    overall = quality_result.overall_score
+ overall = quality_result.overall_score
 
-    IF overall >= thresholds["accept"]:
-        decision = "ACCEPT"
-        action   = "Route to PACS normally"
+ IF overall >= thresholds["accept"]:
+ decision = "ACCEPT"
+ action = "Route to PACS normally"
 
-    ELSE IF overall >= thresholds["review"]:
-        decision = "REVIEW"
-        action   = "Flag for technologist review before patient leaves"
+ ELSE IF overall >= thresholds["review"]:
+ decision = "REVIEW"
+ action = "Flag for technologist review before patient leaves"
 
-    ELSE:
-        decision = "REJECT"
-        action   = "Alert technologist: retake recommended"
-        // Include the worst-scoring category to give actionable feedback.
-        worst_category = find category with lowest score in quality_result.category_scores
-        action = action + " (primary issue: " + worst_category + ")"
+ ELSE:
+ decision = "REJECT"
+ action = "Alert technologist: retake recommended"
+ // Include the worst-scoring category to give actionable feedback.
+ worst_category = find category with lowest score in quality_result.category_scores
+ action = action + " (primary issue: " + worst_category + ")"
 
-    RETURN {
-        decision:        decision,
-        action:          action,
-        overall_score:   overall,
-        category_scores: quality_result.category_scores,
-        thresholds_used: thresholds
-    }
+ RETURN {
+ decision: decision,
+ action: action,
+ overall_score: overall,
+ category_scores: quality_result.category_scores,
+ thresholds_used: thresholds
+ }
 ```
 
 **Step 5: Store results and alert.** Write the quality assessment to the database for audit and analytics, and fire an alert if the image was rejected or flagged. The stored record links back to the original image (by study UID and source key) so you can always trace a quality decision back to its source. The alert goes through SNS to whatever channel the technologist monitors: a dashboard, a pager, or an integration with the modality console software.
 
 ```pseudocode
 FUNCTION store_and_alert(image_info, decision_result):
-    // Write the complete assessment record to DynamoDB.
-    // This is the audit trail: what was assessed, when, and what was decided.
-    write record to database table "quality-assessments":
-        study_uid        = image_info.study_uid
-        series_uid       = image_info.series_uid
-        source_key       = image_info.source_key
-        modality         = image_info.modality
-        body_part        = image_info.body_part
-        assessment_time  = current UTC timestamp (ISO 8601)
-        decision         = decision_result.decision          // "ACCEPT", "REVIEW", or "REJECT"
-        overall_score    = decision_result.overall_score
-        category_scores  = decision_result.category_scores
-        thresholds_used  = decision_result.thresholds_used
-        action           = decision_result.action
+ // Write the complete assessment record to DynamoDB.
+ // This is the audit trail: what was assessed, when, and what was decided.
+ write record to database table "quality-assessments":
+ study_uid = image_info.study_uid
+ series_uid = image_info.series_uid
+ source_key = image_info.source_key
+ modality = image_info.modality
+ body_part = image_info.body_part
+ assessment_time = current UTC timestamp (ISO 8601)
+ decision = decision_result.decision // "ACCEPT", "REVIEW", or "REJECT"
+ overall_score = decision_result.overall_score
+ category_scores = decision_result.category_scores
+ thresholds_used = decision_result.thresholds_used
+ action = decision_result.action
 
-    // If the image was rejected or flagged, alert the technologist.
-    IF decision_result.decision IN ["REJECT", "REVIEW"]:
-        publish to SNS topic "quality-alerts":
-            message = {
-                study_uid:  image_info.study_uid,
-                modality:   image_info.modality,
-                body_part:  image_info.body_part,
-                decision:   decision_result.decision,
-                action:     decision_result.action,
-                score:      decision_result.overall_score
-            }
+ // If the image was rejected or flagged, alert the technologist.
+ IF decision_result.decision IN ["REJECT", "REVIEW"]:
+ publish to SNS topic "quality-alerts":
+ message = {
+ study_uid: image_info.study_uid,
+ modality: image_info.modality,
+ body_part: image_info.body_part,
+ decision: decision_result.decision,
+ action: decision_result.action,
+ score: decision_result.overall_score
+ }
 
-    RETURN decision_result.decision
+ RETURN decision_result.decision
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -263,21 +263,21 @@ FUNCTION store_and_alert(image_info, decision_result):
 
 ```json
 {
-  "study_uid": "1.2.840.113619.2.55.3.604688.2026.03.15.09.42.31",
-  "series_uid": "1.2.840.113619.2.55.3.604688.2026.03.15.09.42.31.1",
-  "source_key": "imaging-inbox/2026/03/15/study-00891.dcm",
-  "modality": "CR",
-  "body_part": "CHEST",
-  "assessment_time": "2026-03-15T09:42:35Z",
-  "decision": "REJECT",
-  "overall_score": 0.42,
-  "category_scores": {
-    "sharpness": 0.31,
-    "exposure": 0.88,
-    "positioning": 0.76,
-    "artifacts": 0.92
-  },
-  "action": "Alert technologist: retake recommended (primary issue: sharpness)"
+ "study_uid": "1.2.840.113619.2.55.3.604688.2026.03.15.09.42.31",
+ "series_uid": "1.2.840.113619.2.55.3.604688.2026.03.15.09.42.31.1",
+ "source_key": "imaging-inbox/2026/03/15/study-00891.dcm",
+ "modality": "CR",
+ "body_part": "CHEST",
+ "assessment_time": "2026-03-15T09:42:35Z",
+ "decision": "REJECT",
+ "overall_score": 0.42,
+ "category_scores": {
+ "sharpness": 0.31,
+ "exposure": 0.88,
+ "positioning": 0.76,
+ "artifacts": 0.92
+ },
+ "action": "Alert technologist: retake recommended (primary issue: sharpness)"
 }
 ```
 

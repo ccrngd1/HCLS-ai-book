@@ -24,19 +24,19 @@
 
 ```mermaid
 flowchart LR
-    A[📠 Scanner / Fax Server] -->|PDF Upload| B[S3 Bucket\nintake-forms/]
-    B -->|S3 Event| C[Lambda\nintake-start]
-    C -->|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
-    D -->|Job Complete| E[SNS Topic\ntextract-jobs]
-    E -->|Notification| F[Lambda\nintake-process]
-    F -->|GetDocumentAnalysis\npaginated| D
-    F -->|Structured Record| G[DynamoDB\nintake-extractions]
-    F -->|Flagged Fields| H[Review Queue\n→ Recipe 1.6]
+ A[Scanner / Fax Server] -->|PDF Upload| B[S3 Bucket\nintake-forms/]
+ B -->|S3 Event| C[Lambda\nintake-start]
+ C -->|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
+ D -->|Job Complete| E[SNS Topic\ntextract-jobs]
+ E -->|Notification| F[Lambda\nintake-process]
+ F -->|GetDocumentAnalysis\npaginated| D
+ F -->|Structured Record| G[DynamoDB\nintake-extractions]
+ F -->|Flagged Fields| H[Review Queue\n→ Recipe 1.6]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style G fill:#9ff,stroke:#333
-    style E fill:#ffa,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style G fill:#9ff,stroke:#333
+ style E fill:#ffa,stroke:#333
 ```
 
 ### Prerequisites
@@ -81,209 +81,209 @@ flowchart LR
 
 ```pseudocode
 FUNCTION submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn):
-    // Submit the multi-page intake form to Textract for async analysis.
-    // Unlike Recipe 1.1's single-image synchronous call, this returns immediately
-    // with a job ID. The results aren't ready yet; they'll arrive via SNS.
+ // Submit the multi-page intake form to Textract for async analysis.
+ // Unlike Recipe 1.1's single-image synchronous call, this returns immediately
+ // with a job ID. The results aren't ready yet; they'll arrive via SNS.
 
-    response = call Textract.StartDocumentAnalysis with:
-        document_location = S3 object at bucket/key   // the PDF or TIFF intake form
-        feature_types     = ["FORMS", "TABLES"]       // FORMS: key-value pairs and checkboxes
-                                                      // TABLES: row/column structured grids
-        notification_channel = {
-            sns_topic_arn: sns_topic_arn,             // where to publish when done
-            role_arn: textract_role_arn               // role Textract assumes to publish to SNS
-        }                                             // (Textract needs its own role; it can't use yours)
+ response = call Textract.StartDocumentAnalysis with:
+ document_location = S3 object at bucket/key // the PDF or TIFF intake form
+ feature_types = ["FORMS", "TABLES"] // FORMS: key-value pairs and checkboxes
+ // TABLES: row/column structured grids
+ notification_channel = {
+ sns_topic_arn: sns_topic_arn, // where to publish when done
+ role_arn: textract_role_arn // role Textract assumes to publish to SNS
+ } // (Textract needs its own role; it can't use yours)
 
-    job_id = response.JobId
+ job_id = response.JobId
 
-    // Save job context to the tracking table so intake-process Lambda
-    // can look up the original document when the SNS notification arrives.
-    write to database table "textract-jobs":
-        job_id      = job_id
-        bucket      = bucket
-        key         = key                 // path to the original form PDF in S3
-        submitted   = current UTC timestamp
-        status      = "PENDING"
+ // Save job context to the tracking table so intake-process Lambda
+ // can look up the original document when the SNS notification arrives.
+ write to database table "textract-jobs":
+ job_id = job_id
+ bucket = bucket
+ key = key // path to the original form PDF in S3
+ submitted = current UTC timestamp
+ status = "PENDING"
 
-    RETURN job_id
+ RETURN job_id
 ```
 
 **Step 2: Receive the completion signal and retrieve all result pages.** When Textract finishes, it publishes a message to your SNS topic. That message triggers the second Lambda with the job ID embedded in the notification payload. The Lambda's first job is to retrieve all the extracted blocks from Textract. This is where pagination matters. A five-page intake form generates hundreds of blocks: every detected word, every key-value pair, every table cell, every checkbox. Textract paginates the results, returning up to 1,000 blocks per API call with a `NextToken` when there are more. You have to loop through all pages before processing begins. If you stop at the first page, you'll have a partial document and you won't know it. The loop below is unglamorous but required.
 
 ```pseudocode
 FUNCTION retrieve_all_blocks(job_id):
-    // Pull all extracted blocks from Textract, following pagination until complete.
-    // Textract may return results across multiple response pages; we must collect them all.
-    all_blocks = empty list
-    next_token = null        // null means "start from the beginning"
+ // Pull all extracted blocks from Textract, following pagination until complete.
+ // Textract may return results across multiple response pages; we must collect them all.
+ all_blocks = empty list
+ next_token = null // null means "start from the beginning"
 
-    LOOP:
-        // Build the API call parameters. Include NextToken only if we have one.
-        params = { job_id: job_id }
-        IF next_token is not null:
-            params.next_token = next_token
+ LOOP:
+ // Build the API call parameters. Include NextToken only if we have one.
+ params = { job_id: job_id }
+ IF next_token is not null:
+ params.next_token = next_token
 
-        response = call Textract.GetDocumentAnalysis with params
+ response = call Textract.GetDocumentAnalysis with params
 
-        // Append this page's blocks to our running collection.
-        append all response.Blocks to all_blocks
+ // Append this page's blocks to our running collection.
+ append all response.Blocks to all_blocks
 
-        // Check whether there's another page of results.
-        next_token = response.NextToken   // null if this was the last page
-        IF next_token is null:
-            BREAK    // we have everything; stop looping
+ // Check whether there's another page of results.
+ next_token = response.NextToken // null if this was the last page
+ IF next_token is null:
+ BREAK // we have everything; stop looping
 
-    // Build a lookup index: block ID -> block data.
-    // Nearly every parsing operation below needs to follow links between blocks by ID,
-    // so an O(1) lookup is much better than scanning the list each time.
-    block_map = build map of block.Id -> block for all blocks in all_blocks
+ // Build a lookup index: block ID -> block data.
+ // Nearly every parsing operation below needs to follow links between blocks by ID,
+ // so an O(1) lookup is much better than scanning the list each time.
+ block_map = build map of block.Id -> block for all blocks in all_blocks
 
-    RETURN all_blocks, block_map
+ RETURN all_blocks, block_map
 ```
 
 **Step 3: Parse key-value pairs.** This step is nearly identical to Recipe 1.1's key-value parsing. Textract uses the same KEY_VALUE_SET block structure for multi-page documents as it does for single-page images. The parser walks the block list, finds blocks marked as KEY entities, follows the VALUE relationship link to the paired value block, and assembles the text from the child word blocks. The one new element here is that some value blocks will contain a SELECTION_ELEMENT child rather than text: that's a checkbox. We detect those here and hand them off to a separate structure rather than trying to stringify them. The output is two maps: one of text key-value pairs with confidence scores, and one of checkbox key-to-selection-status pairs. If this looks familiar from Recipe 1.1, it should. The field normalization step downstream is the same too.
 
 ```pseudocode
 FUNCTION parse_forms(all_blocks, block_map):
-    text_key_values = empty map      // label -> { value text, confidence }
-    checkbox_fields = empty map      // label -> true/false (selected/not selected)
+ text_key_values = empty map // label -> { value text, confidence }
+ checkbox_fields = empty map // label -> true/false (selected/not selected)
 
-    FOR each block in all_blocks:
+ FOR each block in all_blocks:
 
-        // Only process KEY blocks: the label side of each field pair.
-        IF block.BlockType is not "KEY_VALUE_SET":
-            CONTINUE
-        IF "KEY" is not in block.EntityTypes:
-            CONTINUE
+ // Only process KEY blocks: the label side of each field pair.
+ IF block.BlockType is not "KEY_VALUE_SET":
+ CONTINUE
+ IF "KEY" is not in block.EntityTypes:
+ CONTINUE
 
-        // Assemble the label text from this key block's child word blocks.
-        key_text = concatenate text from CHILD relationships of block using block_map
+ // Assemble the label text from this key block's child word blocks.
+ key_text = concatenate text from CHILD relationships of block using block_map
 
-        // Follow the VALUE relationship to find the paired value block.
-        value_block = follow block's VALUE relationship using block_map
-        IF value_block is null:
-            CONTINUE   // orphan key with no paired value; skip it
+ // Follow the VALUE relationship to find the paired value block.
+ value_block = follow block's VALUE relationship using block_map
+ IF value_block is null:
+ CONTINUE // orphan key with no paired value; skip it
 
-        // Check whether the value contains a SELECTION_ELEMENT (checkbox or radio button).
-        selection_child = find child of value_block with BlockType "SELECTION_ELEMENT"
+ // Check whether the value contains a SELECTION_ELEMENT (checkbox or radio button).
+ selection_child = find child of value_block with BlockType "SELECTION_ELEMENT"
 
-        IF selection_child exists:
-            // This is a checkbox field. Record its checked/unchecked state.
-            // SelectionStatus will be "SELECTED" or "NOT_SELECTED".
-            // Note: for DynamoDB storage, you may want to keep the string value
-            // rather than converting to boolean, since booleans lose the original
-            // Textract status and make flagged-field reporting less descriptive.
-            checkbox_fields[key_text] = (selection_child.SelectionStatus == "SELECTED")
+ IF selection_child exists:
+ // This is a checkbox field. Record its checked/unchecked state.
+ // SelectionStatus will be "SELECTED" or "NOT_SELECTED".
+ // Note: for DynamoDB storage, you may want to keep the string value
+ // rather than converting to boolean, since booleans lose the original
+ // Textract status and make flagged-field reporting less descriptive.
+ checkbox_fields[key_text] = (selection_child.SelectionStatus == "SELECTED")
 
-        ELSE:
-            // This is a text field. Assemble the value text.
-            value_text = concatenate text from CHILD relationships of value_block using block_map
-            confidence = minimum of (block.Confidence, value_block.Confidence)
-            text_key_values[key_text] = { value: value_text, confidence: confidence }
+ ELSE:
+ // This is a text field. Assemble the value text.
+ value_text = concatenate text from CHILD relationships of value_block using block_map
+ confidence = minimum of (block.Confidence, value_block.Confidence)
+ text_key_values[key_text] = { value: value_text, confidence: confidence }
 
-    RETURN text_key_values, checkbox_fields
+ RETURN text_key_values, checkbox_fields
 ```
 
 **Step 4: Parse tables.** This is the step that doesn't exist in Recipe 1.1. Tables require a fundamentally different parsing approach because the structure is two-dimensional: you need row index and column index, not just label and value. Textract represents a table as a hierarchy: a TABLE block contains CELL blocks. Each CELL has `RowIndex` and `ColumnIndex` attributes that tell you exactly where in the grid it lives. Inside each CELL are WORD blocks for the cell text. The parser builds a nested map (row -> column -> text) and then converts it to a list of lists. The first row of most tables contains column headers (think: "Medication", "Dosage", "Frequency"). Preserving those headers is important for interpreting the data rows that follow. A medication row without knowing what column means "Dosage" is useless.
 
 ```pseudocode
 FUNCTION parse_tables(all_blocks, block_map):
-    tables = empty list    // list of tables; each table is a list of rows
+ tables = empty list // list of tables; each table is a list of rows
 
-    FOR each block in all_blocks:
-        IF block.BlockType is not "TABLE":
-            CONTINUE
+ FOR each block in all_blocks:
+ IF block.BlockType is not "TABLE":
+ CONTINUE
 
-        // Build a nested map: row_index -> column_index -> cell_text
-        // We'll convert this to a list of lists once we know the dimensions.
-        grid = empty map
+ // Build a nested map: row_index -> column_index -> cell_text
+ // We'll convert this to a list of lists once we know the dimensions.
+ grid = empty map
 
-        // Walk the TABLE block's CHILD relationships to find all CELL blocks.
-        FOR each cell_id in block's CHILD relationship IDs:
-            cell = block_map[cell_id]
-            IF cell.BlockType is not "CELL":
-                CONTINUE
+ // Walk the TABLE block's CHILD relationships to find all CELL blocks.
+ FOR each cell_id in block's CHILD relationship IDs:
+ cell = block_map[cell_id]
+ IF cell.BlockType is not "CELL":
+ CONTINUE
 
-            row = cell.RowIndex      // 1-indexed row position in the table
-            col = cell.ColumnIndex   // 1-indexed column position in the table
+ row = cell.RowIndex // 1-indexed row position in the table
+ col = cell.ColumnIndex // 1-indexed column position in the table
 
-            // Assemble cell text from the CELL's WORD children.
-            // Some cells are empty (the patient left a row blank); empty string is correct.
-            cell_text = concatenate text from WORD children of cell using block_map
-            grid[row][col] = cell_text
+ // Assemble cell text from the CELL's WORD children.
+ // Some cells are empty (the patient left a row blank); empty string is correct.
+ cell_text = concatenate text from WORD children of cell using block_map
+ grid[row][col] = cell_text
 
-        // Convert the nested map to a list of lists for clean output.
-        // A 3-row, 4-column medication table becomes:
-        //   [["Medication", "Dosage", "Frequency", "Prescribing Physician"],
-        //    ["Metformin", "500mg", "Twice daily", "Dr. Chen"],
-        //    ["Lisinopril", "10mg", "Once daily", "Dr. Chen"]]
-        IF grid is not empty:
-            max_row = maximum row index in grid
-            max_col = maximum column index across all rows in grid
-            table_rows = []
-            FOR r from 1 to max_row:
-                row_data = []
-                FOR c from 1 to max_col:
-                    // Use empty string for cells that were left blank.
-                    append grid[r][c] (or empty string if absent) to row_data
-                append row_data to table_rows
-            append table_rows to tables
+ // Convert the nested map to a list of lists for clean output.
+ // A 3-row, 4-column medication table becomes:
+ // [["Medication", "Dosage", "Frequency", "Prescribing Physician"],
+ // ["Metformin", "500mg", "Twice daily", "Dr. Chen"],
+ // ["Lisinopril", "10mg", "Once daily", "Dr. Chen"]]
+ IF grid is not empty:
+ max_row = maximum row index in grid
+ max_col = maximum column index across all rows in grid
+ table_rows = []
+ FOR r from 1 to max_row:
+ row_data = []
+ FOR c from 1 to max_col:
+ // Use empty string for cells that were left blank.
+ append grid[r][c] (or empty string if absent) to row_data
+ append row_data to table_rows
+ append table_rows to tables
 
-    RETURN tables
+ RETURN tables
 ```
 
 **Step 5: Normalize fields and apply confidence gating.** The same normalization logic from Recipe 1.1 applies here. Raw key labels ("First Name:", "FIRST NAME", "Patient First Name") all need to collapse to a canonical `first_name`. The field map for intake forms is larger than for insurance cards, covering demographics, insurance, and the medical history section. The confidence gating is the same: anything below 90% gets flagged for human review rather than written directly to the record. Handwritten fields will disproportionately populate the flagged set, which is expected. The confidence threshold for an intake form needs to be calibrated a bit more conservatively than for an insurance card, because the cost of a wrong medication name or a wrong allergy is higher than the cost of a wrong group number.
 
 ```json
 {
-  "first_name":    ["first name", "patient first name", "fname", "given name"],
-  "last_name":     ["last name", "patient last name", "lname", "family name", "surname"],
-  "date_of_birth": ["date of birth", "dob", "birth date", "birthdate"],
-  "ssn":           ["social security number", "ssn", "social security #"],
-  "phone":         ["phone", "phone number", "home phone", "cell phone", "telephone"],
-  "address":       ["address", "home address", "street address", "mailing address"],
-  "member_id":     ["member id", "mem id", "member #", "subscriber id", "id number"],
-  "group_number":  ["group #", "group number", "group", "grp #"],
-  "payer_name":    ["insurance company", "plan name", "payer", "carrier", "insurance"]
+ "first_name": ["first name", "patient first name", "fname", "given name"],
+ "last_name": ["last name", "patient last name", "lname", "family name", "surname"],
+ "date_of_birth": ["date of birth", "dob", "birth date", "birthdate"],
+ "ssn": ["social security number", "ssn", "social security #"],
+ "phone": ["phone", "phone number", "home phone", "cell phone", "telephone"],
+ "address": ["address", "home address", "street address", "mailing address"],
+ "member_id": ["member id", "mem id", "member #", "subscriber id", "id number"],
+ "group_number": ["group #", "group number", "group", "grp #"],
+ "payer_name": ["insurance company", "plan name", "payer", "carrier", "insurance"]
 }
 ```
 
 ```pseudocode
-CONFIDENCE_THRESHOLD = 90.0   // below this, route to human review rather than auto-accept
+CONFIDENCE_THRESHOLD = 90.0 // below this, route to human review rather than auto-accept
 
 FUNCTION normalize_and_gate(raw_kv, checkbox_fields, tables):
-    // Normalize text field names to canonical labels (same logic as Recipe 1.1).
-    normalized = normalize_fields(raw_kv)      // see Recipe 1.1 for the full implementation
+ // Normalize text field names to canonical labels (same logic as Recipe 1.1).
+ normalized = normalize_fields(raw_kv) // see Recipe 1.1 for the full implementation
 
-    // Split normalized text fields into clean (high-confidence) and flagged (needs review).
-    clean_fields = empty map
-    flagged      = empty list
+ // Split normalized text fields into clean (high-confidence) and flagged (needs review).
+ clean_fields = empty map
+ flagged = empty list
 
-    FOR each canonical_name, data in normalized:
-        IF data.confidence >= CONFIDENCE_THRESHOLD:
-            clean_fields[canonical_name] = data.value
-        ELSE:
-            append to flagged: {
-                field:           canonical_name,
-                extracted_value: data.value,
-                confidence:      data.confidence
-            }
+ FOR each canonical_name, data in normalized:
+ IF data.confidence >= CONFIDENCE_THRESHOLD:
+ clean_fields[canonical_name] = data.value
+ ELSE:
+ append to flagged: {
+ field: canonical_name,
+ extracted_value: data.value,
+ confidence: data.confidence
+ }
 
-    // Checkboxes don't carry confidence scores the same way text fields do.
-    // Selection element detection is high-accuracy for clearly printed checkboxes.
-    // Flag any checkbox that Textract's own confidence falls below threshold.
-    clean_checkboxes = empty map
-    FOR each label, selection_data in checkbox_fields:
-        IF selection_data.confidence >= CONFIDENCE_THRESHOLD:
-            clean_checkboxes[label] = selection_data.selected
-        ELSE:
-            append to flagged: {
-                field:           label,
-                extracted_value: selection_data.selected,
-                confidence:      selection_data.confidence
-            }
+ // Checkboxes don't carry confidence scores the same way text fields do.
+ // Selection element detection is high-accuracy for clearly printed checkboxes.
+ // Flag any checkbox that Textract's own confidence falls below threshold.
+ clean_checkboxes = empty map
+ FOR each label, selection_data in checkbox_fields:
+ IF selection_data.confidence >= CONFIDENCE_THRESHOLD:
+ clean_checkboxes[label] = selection_data.selected
+ ELSE:
+ append to flagged: {
+ field: label,
+ extracted_value: selection_data.selected,
+ confidence: selection_data.confidence
+ }
 
-    RETURN clean_fields, clean_checkboxes, tables, flagged
+ RETURN clean_fields, clean_checkboxes, tables, flagged
 ```
 
 > **Human Review Infrastructure**
@@ -294,47 +294,47 @@ FUNCTION normalize_and_gate(raw_kv, checkbox_fields, tables):
 
 ```pseudocode
 FUNCTION assemble_and_store(document_key, page_count, clean_fields, clean_checkboxes, tables, flagged):
-    // Construct the full structured intake record.
-    record = {
-        document_key:   document_key,                              // S3 path of the source PDF
-        extracted_at:   current UTC timestamp (ISO 8601),          // audit trail timestamp
-        page_count:     page_count,                                // pages Textract processed
-        needs_review:   (length of flagged > 0),                   // true if any field is uncertain
+ // Construct the full structured intake record.
+ record = {
+ document_key: document_key, // S3 path of the source PDF
+ extracted_at: current UTC timestamp (ISO 8601), // audit trail timestamp
+ page_count: page_count, // pages Textract processed
+ needs_review: (length of flagged > 0), // true if any field is uncertain
 
-        demographics: {
-            first_name:     clean_fields.get("first_name"),
-            last_name:      clean_fields.get("last_name"),
-            date_of_birth:  clean_fields.get("date_of_birth"),
-            ssn_last4:      last 4 characters of clean_fields.get("ssn", ""),  // last 4 only; never store full SSN
-            address:        clean_fields.get("address"),
-            phone:          clean_fields.get("phone"),
-        },
+ demographics: {
+ first_name: clean_fields.get("first_name"),
+ last_name: clean_fields.get("last_name"),
+ date_of_birth: clean_fields.get("date_of_birth"),
+ ssn_last4: last 4 characters of clean_fields.get("ssn", ""), // last 4 only; never store full SSN
+ address: clean_fields.get("address"),
+ phone: clean_fields.get("phone"),
+ },
 
-        insurance: {
-            member_id:     clean_fields.get("member_id"),
-            group_number:  clean_fields.get("group_number"),
-            payer_name:    clean_fields.get("payer_name"),
-        },
+ insurance: {
+ member_id: clean_fields.get("member_id"),
+ group_number: clean_fields.get("group_number"),
+ payer_name: clean_fields.get("payer_name"),
+ },
 
-        medical_history: {
-            // Checkboxes become booleans: "Diabetes" -> true, "Heart Disease" -> false, etc.
-            conditions: clean_checkboxes,
-        },
+ medical_history: {
+ // Checkboxes become booleans: "Diabetes" -> true, "Heart Disease" -> false, etc.
+ conditions: clean_checkboxes,
+ },
 
-        // Tables come back as lists of rows. First table is usually the medication list;
-        // second is usually allergies. The exact order depends on form layout.
-        medications: tables[0] if tables has at least 1 element else [],
-        allergies:   tables[1] if tables has at least 2 elements else [],
+ // Tables come back as lists of rows. First table is usually the medication list;
+ // second is usually allergies. The exact order depends on form layout.
+ medications: tables[0] if tables has at least 1 element else [],
+ allergies: tables[1] if tables has at least 2 elements else [],
 
-        // Low-confidence fields go here for the review queue.
-        // These will NOT be in the fields above; they're held pending human confirmation.
-        flagged_fields: flagged,
-    }
+ // Low-confidence fields go here for the review queue.
+ // These will NOT be in the fields above; they're held pending human confirmation.
+ flagged_fields: flagged,
+ }
 
-    // Write the record to the database.
-    write record to database table "intake-extractions"
+ // Write the record to the database.
+ write record to database table "intake-extractions"
 
-    RETURN record
+ RETURN record
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.02-python-example). It walks through each step with inline comments, including the async coordination pattern, and notes on what you'd need to change for a real deployment.
@@ -345,49 +345,49 @@ FUNCTION assemble_and_store(document_key, page_count, clean_fields, clean_checkb
 
 ```json
 {
-  "document_key": "intake-forms/2026/03/01/patient-00291.pdf",
-  "extracted_at": "2026-03-01T14:38:22Z",
-  "page_count": 3,
-  "needs_review": true,
-  "demographics": {
-    "first_name": "Maria",
-    "last_name": "Rodriguez",
-    "date_of_birth": "04/15/1978",
-    "ssn_last4": "4829",
-    "address": "1234 Elm Street, Louisville, KY 40202",
-    "phone": "(502) 555-0147"
-  },
-  "insurance": {
-    "member_id": "HUM8294710",
-    "group_number": "72015",
-    "payer_name": "Humana"
-  },
-  "medical_history": {
-    "conditions": {
-      "Diabetes": true,
-      "Hypertension": true,
-      "Heart Disease": false,
-      "Cancer": false,
-      "Asthma": true
-    }
-  },
-  "medications": [
-    ["Metformin", "500mg", "Twice daily", "Dr. Chen"],
-    ["Lisinopril", "10mg", "Once daily", "Dr. Chen"],
-    ["Albuterol", "90mcg", "As needed", "Dr. Patel"]
-  ],
-  "allergies": [
-    ["Penicillin", "Rash, hives"],
-    ["Sulfa drugs", "Anaphylaxis"]
-  ],
-  "flagged_fields": [
-    {
-      "field": "phone",
-      "extracted_value": "(502) 555-O147",
-      "confidence": 78.2,
-      "note": "possible O/0 confusion in final digit"
-    }
-  ]
+ "document_key": "intake-forms/2026/03/01/patient-00291.pdf",
+ "extracted_at": "2026-03-01T14:38:22Z",
+ "page_count": 3,
+ "needs_review": true,
+ "demographics": {
+ "first_name": "Maria",
+ "last_name": "Rodriguez",
+ "date_of_birth": "04/15/1978",
+ "ssn_last4": "4829",
+ "address": "1234 Elm Street, Louisville, KY 40202",
+ "phone": "(502) 555-0147"
+ },
+ "insurance": {
+ "member_id": "HUM8294710",
+ "group_number": "72015",
+ "payer_name": "Humana"
+ },
+ "medical_history": {
+ "conditions": {
+ "Diabetes": true,
+ "Hypertension": true,
+ "Heart Disease": false,
+ "Cancer": false,
+ "Asthma": true
+ }
+ },
+ "medications": [
+ ["Metformin", "500mg", "Twice daily", "Dr. Chen"],
+ ["Lisinopril", "10mg", "Once daily", "Dr. Chen"],
+ ["Albuterol", "90mcg", "As needed", "Dr. Patel"]
+ ],
+ "allergies": [
+ ["Penicillin", "Rash, hives"],
+ ["Sulfa drugs", "Anaphylaxis"]
+ ],
+ "flagged_fields": [
+ {
+ "field": "phone",
+ "extracted_value": "(502) 555-O147",
+ "confidence": 78.2,
+ "note": "possible O/0 confusion in final digit"
+ }
+ ]
 }
 ```
 

@@ -24,19 +24,19 @@
 
 ```mermaid
 flowchart TD
-    A[📷 Fundus Camera] -->|DICOM/JPEG Upload| B[S3 Bucket<br/>retinal-images/]
-    B -->|S3 Event| C[Step Functions<br/>Screening Workflow]
-    C -->|Step 1| D[Lambda<br/>Image Quality Check]
-    D -->|Pass| E[SageMaker Endpoint<br/>DR Classification Model]
-    D -->|Fail| F[SNS Notification<br/>Recapture Required]
-    E -->|Prediction| G[Lambda<br/>Clinical Decision Logic]
-    G -->|Store| H[DynamoDB<br/>screening-results]
-    G -->|Refer| I[SNS Notification<br/>Ophthalmology Referral]
-    G -->|No Refer| J[Patient Portal<br/>Normal Result Letter]
+ A[Fundus Camera] -->|DICOM/JPEG Upload| B[S3 Bucket<br/>retinal-images/]
+ B -->|S3 Event| C[Step Functions<br/>Screening Workflow]
+ C -->|Step 1| D[Lambda<br/>Image Quality Check]
+ D -->|Pass| E[SageMaker Endpoint<br/>DR Classification Model]
+ D -->|Fail| F[SNS Notification<br/>Recapture Required]
+ E -->|Prediction| G[Lambda<br/>Clinical Decision Logic]
+ G -->|Store| H[DynamoDB<br/>screening-results]
+ G -->|Refer| I[SNS Notification<br/>Ophthalmology Referral]
+ G -->|No Refer| J[Patient Portal<br/>Normal Result Letter]
 
-    style B fill:#f9f,stroke:#333
-    style E fill:#ff9,stroke:#333
-    style H fill:#9ff,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style E fill:#ff9,stroke:#333
+ style H fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
@@ -73,67 +73,67 @@ flowchart TD
 
 ```pseudocode
 FUNCTION assess_image_quality(bucket, image_key):
-    // Download the fundus image from storage for quality analysis.
-    image = download from S3 bucket at image_key
+ // Download the fundus image from storage for quality analysis.
+ image = download from S3 bucket at image_key
 
-    // Check 1: Field of view. The image must capture the macula and optic disc.
-    // A partial image (patient blinked, camera misaligned) is ungradable.
-    field_of_view_score = calculate_fov_coverage(image)
+ // Check 1: Field of view. The image must capture the macula and optic disc.
+ // A partial image (patient blinked, camera misaligned) is ungradable.
+ field_of_view_score = calculate_fov_coverage(image)
 
-    // Check 2: Focus/sharpness. Blurry images hide microaneurysms and fine detail.
-    // Use Laplacian variance or similar edge-detection metric.
-    sharpness_score = calculate_sharpness(image)
+ // Check 2: Focus/sharpness. Blurry images hide microaneurysms and fine detail.
+ // Use Laplacian variance or similar edge-detection metric.
+ sharpness_score = calculate_sharpness(image)
 
-    // Check 3: Illumination. Under/overexposed images obscure pathology.
-    // Check histogram distribution for adequate dynamic range.
-    illumination_score = calculate_illumination_uniformity(image)
+ // Check 3: Illumination. Under/overexposed images obscure pathology.
+ // Check histogram distribution for adequate dynamic range.
+ illumination_score = calculate_illumination_uniformity(image)
 
-    // Check 4: Artifacts. Dust, eyelashes, reflections can mimic or hide lesions.
-    artifact_score = detect_artifacts(image)
+ // Check 4: Artifacts. Dust, eyelashes, reflections can mimic or hide lesions.
+ artifact_score = detect_artifacts(image)
 
-    // Combine scores. All must pass minimum thresholds.
-    overall_quality = minimum(field_of_view_score, sharpness_score,
-                             illumination_score, artifact_score)
+ // Combine scores. All must pass minimum thresholds.
+ overall_quality = minimum(field_of_view_score, sharpness_score,
+ illumination_score, artifact_score)
 
-    IF overall_quality < QUALITY_THRESHOLD:
-        RETURN { gradable: false, reason: identify_worst_factor(scores),
-                 recommendation: "Recapture required" }
-    ELSE:
-        RETURN { gradable: true, quality_score: overall_quality }
+ IF overall_quality < QUALITY_THRESHOLD:
+ RETURN { gradable: false, reason: identify_worst_factor(scores),
+ recommendation: "Recapture required" }
+ ELSE:
+ RETURN { gradable: true, quality_score: overall_quality }
 ```
 
 **Step 2: Model inference.** The core classification step. The fundus image is sent to the deep learning model, which outputs a severity grade and confidence scores. Most production systems output probabilities for each ICDR level rather than a single hard classification. This allows downstream logic to apply different thresholds for different clinical contexts (a screening program in a resource-limited setting might accept a lower confidence threshold for "no referral" than a well-resourced urban clinic). The model also outputs a DME probability separately, because macular edema requires referral regardless of retinopathy severity.
 
 ```pseudocode
 FUNCTION classify_retinal_image(bucket, image_key):
-    // Load and preprocess the image to match model training specifications.
-    // Typical preprocessing: resize to model input dimensions (e.g., 512x512 or 1024x1024),
-    // normalize pixel values, apply any augmentation used during training.
-    image_tensor = preprocess_for_model(bucket, image_key)
+ // Load and preprocess the image to match model training specifications.
+ // Typical preprocessing: resize to model input dimensions (e.g., 512x512 or 1024x1024),
+ // normalize pixel values, apply any augmentation used during training.
+ image_tensor = preprocess_for_model(bucket, image_key)
 
-    // Invoke the SageMaker endpoint hosting the DR classification model.
-    // The endpoint runs GPU inference and returns within 2-5 seconds typically.
-    response = call SageMaker endpoint "dr-screening-model" with:
-        payload = image_tensor
-        content_type = "application/x-image"
+ // Invoke the SageMaker endpoint hosting the DR classification model.
+ // The endpoint runs GPU inference and returns within 2-5 seconds typically.
+ response = call SageMaker endpoint "dr-screening-model" with:
+ payload = image_tensor
+ content_type = "application/x-image"
 
-    // Parse the model output: probability distribution over ICDR severity levels
-    // plus a separate DME probability.
-    predictions = parse_response(response)
+ // Parse the model output: probability distribution over ICDR severity levels
+ // plus a separate DME probability.
+ predictions = parse_response(response)
 
-    // predictions structure:
-    // {
-    //   "no_dr_probability": 0.02,
-    //   "mild_npdr_probability": 0.05,
-    //   "moderate_npdr_probability": 0.78,
-    //   "severe_npdr_probability": 0.12,
-    //   "pdr_probability": 0.03,
-    //   "dme_probability": 0.15,
-    //   "model_version": "v2.3.1",
-    //   "inference_time_ms": 3200
-    // }
+ // predictions structure:
+ // {
+ // "no_dr_probability": 0.02,
+ // "mild_npdr_probability": 0.05,
+ // "moderate_npdr_probability": 0.78,
+ // "severe_npdr_probability": 0.12,
+ // "pdr_probability": 0.03,
+ // "dme_probability": 0.15,
+ // "model_version": "v2.3.1",
+ // "inference_time_ms": 3200
+ // }
 
-    RETURN predictions
+ RETURN predictions
 ```
 
 **Step 3: Clinical decision logic.** This is where model output becomes a clinical action. The mapping from probabilities to decisions is not trivial. You need to handle: (a) the primary DR severity grade, (b) DME detection, (c) confidence thresholds below which the system should defer to human review rather than making an autonomous call, and (d) the specific referral urgency (routine vs. urgent). The thresholds here are configurable and should be validated against your specific patient population and clinical workflow. A screening program's operating point is a tradeoff between sensitivity (catching all disease) and specificity (not overwhelming ophthalmology with false referrals).
@@ -141,109 +141,109 @@ FUNCTION classify_retinal_image(bucket, image_key):
 ```pseudocode
 // Thresholds calibrated during clinical validation. These are examples;
 // your validated thresholds will differ based on your population and clinical context.
-REFERABLE_THRESHOLD = 0.80      // probability of moderate+ DR to trigger referral
-DME_THRESHOLD = 0.70            // probability of DME to trigger referral
-CONFIDENCE_THRESHOLD = 0.60     // below this, defer to human review (model is uncertain)
-URGENT_THRESHOLD = 0.70         // probability of severe/PDR to trigger urgent referral
+REFERABLE_THRESHOLD = 0.80 // probability of moderate+ DR to trigger referral
+DME_THRESHOLD = 0.70 // probability of DME to trigger referral
+CONFIDENCE_THRESHOLD = 0.60 // below this, defer to human review (model is uncertain)
+URGENT_THRESHOLD = 0.70 // probability of severe/PDR to trigger urgent referral
 
 FUNCTION apply_clinical_decision(predictions):
-    // Calculate the probability of referable DR (moderate NPDR or worse).
-    referable_probability = predictions.moderate_npdr_probability
-                          + predictions.severe_npdr_probability
-                          + predictions.pdr_probability
+ // Calculate the probability of referable DR (moderate NPDR or worse).
+ referable_probability = predictions.moderate_npdr_probability
+ + predictions.severe_npdr_probability
+ + predictions.pdr_probability
 
-    // Calculate urgency: severe NPDR or PDR requires expedited referral.
-    urgent_probability = predictions.severe_npdr_probability
-                       + predictions.pdr_probability
+ // Calculate urgency: severe NPDR or PDR requires expedited referral.
+ urgent_probability = predictions.severe_npdr_probability
+ + predictions.pdr_probability
 
-    // Determine the highest-probability severity grade for the record.
-    severity_grade = grade_with_highest_probability(predictions)
+ // Determine the highest-probability severity grade for the record.
+ severity_grade = grade_with_highest_probability(predictions)
 
-    // Decision logic with confidence gating.
-    IF max_probability(predictions) < CONFIDENCE_THRESHOLD:
-        // Model is not confident enough for autonomous decision.
-        // Route to human grader (ophthalmologist or trained reader).
-        decision = "HUMAN_REVIEW_REQUIRED"
-        urgency = "routine"
+ // Decision logic with confidence gating.
+ IF max_probability(predictions) < CONFIDENCE_THRESHOLD:
+ // Model is not confident enough for autonomous decision.
+ // Route to human grader (ophthalmologist or trained reader).
+ decision = "HUMAN_REVIEW_REQUIRED"
+ urgency = "routine"
 
-    ELSE IF urgent_probability >= URGENT_THRESHOLD:
-        // High probability of sight-threatening disease. Urgent referral.
-        decision = "URGENT_REFERRAL"
-        urgency = "urgent"
+ ELSE IF urgent_probability >= URGENT_THRESHOLD:
+ // High probability of sight-threatening disease. Urgent referral.
+ decision = "URGENT_REFERRAL"
+ urgency = "urgent"
 
-    ELSE IF referable_probability >= REFERABLE_THRESHOLD:
-        // Referable DR detected. Routine ophthalmology referral.
-        decision = "ROUTINE_REFERRAL"
-        urgency = "routine"
+ ELSE IF referable_probability >= REFERABLE_THRESHOLD:
+ // Referable DR detected. Routine ophthalmology referral.
+ decision = "ROUTINE_REFERRAL"
+ urgency = "routine"
 
-    ELSE IF predictions.dme_probability >= DME_THRESHOLD:
-        // DME detected independent of DR severity. Requires referral.
-        decision = "ROUTINE_REFERRAL"
-        urgency = "routine"
-        severity_grade = severity_grade + " with DME"
+ ELSE IF predictions.dme_probability >= DME_THRESHOLD:
+ // DME detected independent of DR severity. Requires referral.
+ decision = "ROUTINE_REFERRAL"
+ urgency = "routine"
+ severity_grade = severity_grade + " with DME"
 
-    ELSE:
-        // No referable disease detected. Safe to screen again in 12 months.
-        decision = "NO_REFERRAL"
-        urgency = "none"
+ ELSE:
+ // No referable disease detected. Safe to screen again in 12 months.
+ decision = "NO_REFERRAL"
+ urgency = "none"
 
-    RETURN {
-        decision: decision,
-        urgency: urgency,
-        severity_grade: severity_grade,
-        referable_probability: referable_probability,
-        dme_probability: predictions.dme_probability,
-        model_version: predictions.model_version
-    }
+ RETURN {
+ decision: decision,
+ urgency: urgency,
+ severity_grade: severity_grade,
+ referable_probability: referable_probability,
+ dme_probability: predictions.dme_probability,
+ model_version: predictions.model_version
+ }
 ```
 
 **Step 4: Store results and trigger actions.** Every screening event gets a complete audit record: the image reference, model version, raw predictions, clinical decision, and timestamp. This is non-negotiable for regulatory compliance (FDA post-market surveillance requires traceability from image to decision). If the decision is a referral, the system triggers a notification to the ordering provider and (optionally) initiates an ophthalmology scheduling workflow. If the decision requires human review, it enters a reading queue for a qualified grader.
 
 ```pseudocode
 FUNCTION store_and_act(patient_id, image_key, quality_result, predictions, decision):
-    // Build the complete screening record for audit and clinical use.
-    screening_record = {
-        screening_id: generate_unique_id(),
-        patient_id: patient_id,
-        image_key: image_key,
-        screening_date: current UTC timestamp (ISO 8601),
-        quality_score: quality_result.quality_score,
-        severity_grade: decision.severity_grade,
-        referable_prob: decision.referable_probability,
-        dme_probability: decision.dme_probability,
-        clinical_decision: decision.decision,
-        urgency: decision.urgency,
-        model_version: decision.model_version,
-        raw_predictions: predictions,    // full probability vector for audit
-        status: "COMPLETE"
-    }
+ // Build the complete screening record for audit and clinical use.
+ screening_record = {
+ screening_id: generate_unique_id(),
+ patient_id: patient_id,
+ image_key: image_key,
+ screening_date: current UTC timestamp (ISO 8601),
+ quality_score: quality_result.quality_score,
+ severity_grade: decision.severity_grade,
+ referable_prob: decision.referable_probability,
+ dme_probability: decision.dme_probability,
+ clinical_decision: decision.decision,
+ urgency: decision.urgency,
+ model_version: decision.model_version,
+ raw_predictions: predictions, // full probability vector for audit
+ status: "COMPLETE"
+ }
 
-    // Write to DynamoDB. This is the system of record for screening results.
-    write screening_record to DynamoDB table "screening-results"
-        with partition key = patient_id
-        and sort key = screening_date
+ // Write to DynamoDB. This is the system of record for screening results.
+ write screening_record to DynamoDB table "screening-results"
+ with partition key = patient_id
+ and sort key = screening_date
 
-    // Trigger appropriate downstream action based on clinical decision.
-    IF decision.decision == "URGENT_REFERRAL":
-        publish to SNS topic "urgent-referrals":
-            patient_id, severity_grade, urgency, screening_id
-        // Also flag in EHR integration queue for immediate provider notification.
+ // Trigger appropriate downstream action based on clinical decision.
+ IF decision.decision == "URGENT_REFERRAL":
+ publish to SNS topic "urgent-referrals":
+ patient_id, severity_grade, urgency, screening_id
+ // Also flag in EHR integration queue for immediate provider notification.
 
-    ELSE IF decision.decision == "ROUTINE_REFERRAL":
-        publish to SNS topic "routine-referrals":
-            patient_id, severity_grade, screening_id
+ ELSE IF decision.decision == "ROUTINE_REFERRAL":
+ publish to SNS topic "routine-referrals":
+ patient_id, severity_grade, screening_id
 
-    ELSE IF decision.decision == "HUMAN_REVIEW_REQUIRED":
-        // Add to reading queue for qualified human grader.
-        write to DynamoDB table "reading-queue":
-            screening_id, image_key, predictions, priority = "standard"
+ ELSE IF decision.decision == "HUMAN_REVIEW_REQUIRED":
+ // Add to reading queue for qualified human grader.
+ write to DynamoDB table "reading-queue":
+ screening_id, image_key, predictions, priority = "standard"
 
-    ELSE:
-        // No referral needed. Generate patient-friendly result notification.
-        publish to SNS topic "normal-results":
-            patient_id, screening_id, next_screening_date = today + 12 months
+ ELSE:
+ // No referral needed. Generate patient-friendly result notification.
+ publish to SNS topic "normal-results":
+ patient_id, screening_id, next_screening_date = today + 12 months
 
-    RETURN screening_record
+ RETURN screening_record
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.06-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -254,18 +254,18 @@ FUNCTION store_and_act(patient_id, image_key, quality_result, predictions, decis
 
 ```json
 {
-  "screening_id": "scr-2026-0531-00847",
-  "patient_id": "pat-00293847",
-  "image_key": "retinal-images/2026/05/31/pat-00293847-OS.jpg",
-  "screening_date": "2026-05-31T14:22:08Z",
-  "quality_score": 0.92,
-  "severity_grade": "Moderate NPDR",
-  "referable_prob": 0.87,
-  "dme_probability": 0.08,
-  "clinical_decision": "ROUTINE_REFERRAL",
-  "urgency": "routine",
-  "model_version": "v2.3.1",
-  "status": "COMPLETE"
+ "screening_id": "scr-2026-0531-00847",
+ "patient_id": "pat-00293847",
+ "image_key": "retinal-images/2026/05/31/pat-00293847-OS.jpg",
+ "screening_date": "2026-05-31T14:22:08Z",
+ "quality_score": 0.92,
+ "severity_grade": "Moderate NPDR",
+ "referable_prob": 0.87,
+ "dme_probability": 0.08,
+ "clinical_decision": "ROUTINE_REFERRAL",
+ "urgency": "routine",
+ "model_version": "v2.3.1",
+ "status": "COMPLETE"
 }
 ```
 

@@ -1,6 +1,6 @@
 # Recipe 1.4 Architecture and Implementation: Prior Authorization Document Processing
 
-*Companion to [Recipe 1.4: Prior Authorization Document Processing 🔶](chapter01.04-prior-auth-document-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.4: Prior Authorization Document Processing ](chapter01.04-prior-auth-document-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -24,34 +24,34 @@
 
 ```mermaid
 flowchart TB
-    A[📠 Fax Server / Provider Portal] -->|Multi-page PDF| B[S3 Bucket\nprior-auth-inbox/]
-    B -->|S3 Event| C[Lambda\npa-start]
-    C -->|StartDocumentAnalysis\nFORMS + TABLES + LAYOUT| D[Amazon Textract]
-    D -->|SNS Completion| E[SNS Topic\ntextract-jobs]
-    E -->|Trigger| F[Lambda\npa-retrieve]
-    F -->|Textract output → S3\nStart state machine| G[Step Functions\npa-pipeline]
+ A[Fax Server / Provider Portal] -->|Multi-page PDF| B[S3 Bucket\nprior-auth-inbox/]
+ B -->|S3 Event| C[Lambda\npa-start]
+ C -->|StartDocumentAnalysis\nFORMS + TABLES + LAYOUT| D[Amazon Textract]
+ D -->|SNS Completion| E[SNS Topic\ntextract-jobs]
+ E -->|Trigger| F[Lambda\npa-retrieve]
+ F -->|Textract output → S3\nStart state machine| G[Step Functions\npa-pipeline]
 
-    G --> H{Bedrock Classify\nNova Lite per page\ntemp=0}
-    H -->|cover_sheet| I[Lambda\npa-extract-cover\nTextract FORMS]
-    H -->|clinical_note\nphysician_letter\nimaging_report| J[Lambda\npa-extract-clinical\nBedrock Sonnet]
-    H -->|other| K[Pass-through\nraw text only]
+ G --> H{Bedrock Classify\nNova Lite per page\ntemp=0}
+ H -->|cover_sheet| I[Lambda\npa-extract-cover\nTextract FORMS]
+ H -->|clinical_note\nphysician_letter\nimaging_report| J[Lambda\npa-extract-clinical\nBedrock Sonnet]
+ H -->|other| K[Pass-through\nraw text only]
 
-    J -->|LLM-extracted\nclinical concepts| L[Comprehend Medical\nInferICD10CM\nCode Validation]
-    L --> M[Lambda\npa-assembler]
-    I --> M
-    K --> M
+ J -->|LLM-extracted\nclinical concepts| L[Comprehend Medical\nInferICD10CM\nCode Validation]
+ L --> M[Lambda\npa-assembler]
+ I --> M
+ K --> M
 
-    M -->|Structured PA record| N[DynamoDB\nprior-auth-records]
-    M -->|Low-confidence pages| O[Review Queue\n→ Recipe 1.6]
-    M -->|Trigger| P[→ Recipe 2.4\nClinical Criteria Matching]
+ M -->|Structured PA record| N[DynamoDB\nprior-auth-records]
+ M -->|Low-confidence pages| O[Review Queue\n→ Recipe 1.6]
+ M -->|Trigger| P[→ Recipe 2.4\nClinical Criteria Matching]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style H fill:#e8d5f5,stroke:#6b46c1
-    style J fill:#e8d5f5,stroke:#6b46c1
-    style L fill:#f96,stroke:#333
-    style N fill:#9ff,stroke:#333
-    style G fill:#adf,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style H fill:#e8d5f5,stroke:#6b46c1
+ style J fill:#e8d5f5,stroke:#6b46c1
+ style L fill:#f96,stroke:#333
+ style N fill:#9ff,stroke:#333
+ style G fill:#adf,stroke:#333
 ```
 
 ### Prerequisites
@@ -104,56 +104,56 @@ The one structural change from Recipe 1.2: `pa-retrieve` writes the raw Textract
 
 ```pseudocode
 FUNCTION retrieve_and_handoff(textract_job_id, document_key, state_machine_arn):
-    // Retrieve all Textract result pages (same paginated call as Recipe 1.2)
-    all_blocks = retrieve_all_textract_blocks(textract_job_id)
+ // Retrieve all Textract result pages (same paginated call as Recipe 1.2)
+ all_blocks = retrieve_all_textract_blocks(textract_job_id)
 
-    // Write the raw block list to S3 for downstream steps to consume.
-    // Use the job ID as part of the key so results don't collide across submissions.
-    textract_output_key = "textract-outputs/" + textract_job_id + "/blocks.json"
-    write all_blocks to S3 at textract_output_key
+ // Write the raw block list to S3 for downstream steps to consume.
+ // Use the job ID as part of the key so results don't collide across submissions.
+ textract_output_key = "textract-outputs/" + textract_job_id + "/blocks.json"
+ write all_blocks to S3 at textract_output_key
 
-    // Start the Step Functions state machine.
-    // Pass S3 references, not raw blocks.
-    // Step Functions input payloads have a 256 KB limit; large documents easily exceed it.
-    start Step Functions execution at state_machine_arn with input:
-        document_key         = document_key           // original PA submission PDF
-        textract_output_key  = textract_output_key    // where the Textract blocks live
-        textract_job_id      = textract_job_id        // for audit trail
+ // Start the Step Functions state machine.
+ // Pass S3 references, not raw blocks.
+ // Step Functions input payloads have a 256 KB limit; large documents easily exceed it.
+ start Step Functions execution at state_machine_arn with input:
+ document_key = document_key // original PA submission PDF
+ textract_output_key = textract_output_key // where the Textract blocks live
+ textract_job_id = textract_job_id // for audit trail
 ```
 
 **Step 3: Group Textract blocks by page.** Read the S3 Textract output, group blocks by page number, extract full page text from LINE blocks, and flag which structural features each page has (form fields, tables, layout elements). These structural signals feed into the LLM classification prompt as metadata.
 
 ```pseudocode
 FUNCTION group_blocks_by_page(all_blocks):
-    pages = empty map  // page_number -> { blocks, text, has_tables, has_forms, layout_blocks }
+ pages = empty map // page_number -> { blocks, text, has_tables, has_forms, layout_blocks }
 
-    FOR each block in all_blocks:
-        page_num = block.Page  // Textract page numbers are 1-indexed
+ FOR each block in all_blocks:
+ page_num = block.Page // Textract page numbers are 1-indexed
 
-        IF page_num not in pages:
-            pages[page_num] = {
-                blocks:        empty list,
-                text:          empty string,
-                has_tables:    false,
-                has_forms:     false,
-                layout_blocks: empty list
-            }
+ IF page_num not in pages:
+ pages[page_num] = {
+ blocks: empty list,
+ text: empty string,
+ has_tables: false,
+ has_forms: false,
+ layout_blocks: empty list
+ }
 
-        pages[page_num].blocks.append(block)
+ pages[page_num].blocks.append(block)
 
-        IF block.BlockType == "LINE":
-            pages[page_num].text += block.Text + "\n"
+ IF block.BlockType == "LINE":
+ pages[page_num].text += block.Text + "\n"
 
-        IF block.BlockType == "TABLE":
-            pages[page_num].has_tables = true
+ IF block.BlockType == "TABLE":
+ pages[page_num].has_tables = true
 
-        IF block.BlockType == "KEY_VALUE_SET":
-            pages[page_num].has_forms = true
+ IF block.BlockType == "KEY_VALUE_SET":
+ pages[page_num].has_forms = true
 
-        IF block.BlockType starts with "LAYOUT_":
-            pages[page_num].layout_blocks.append(block)
+ IF block.BlockType starts with "LAYOUT_":
+ pages[page_num].layout_blocks.append(block)
 
-    RETURN pages
+ RETURN pages
 ```
 
 **Step 4: Classify each page with a foundation model.** This is where the pipeline changes substantially. Instead of scoring keyword matches, we send the page text and its structural metadata to a foundation model via the Converse API.
@@ -177,23 +177,23 @@ page you are reading from a prior authorization submission.
 
 Return ONLY a valid JSON object with these fields:
 {
-  "page_type": "<one of: cover_sheet, clinical_note, physician_letter, lab_results,
-                imaging_report, other>",
-  "confidence": <0.0 to 1.0>,
-  "reasoning": "<one sentence explaining your classification>"
+ "page_type": "<one of: cover_sheet, clinical_note, physician_letter, lab_results,
+ imaging_report, other>",
+ "confidence": <0.0 to 1.0>,
+ "reasoning": "<one sentence explaining your classification>"
 }
 
 Document types:
 - cover_sheet: administrative form with fields like member ID, provider NPI,
-  CPT code, date of service. Usually has checkboxes and form fields.
+ CPT code, date of service. Usually has checkboxes and form fields.
 - clinical_note: physician office note with sections like History of Present
-  Illness, Assessment, Plan. Written by a treating clinician.
+ Illness, Assessment, Plan. Written by a treating clinician.
 - physician_letter: letter written by a physician explaining medical necessity,
-  treatment history, or requesting authorization for a specific procedure.
+ treatment history, or requesting authorization for a specific procedure.
 - lab_results: laboratory test results page with test names, numeric values,
-  units, and reference ranges. Usually presented as a table.
+ units, and reference ranges. Usually presented as a table.
 - imaging_report: radiology or other imaging report with sections like Findings,
-  Impression, and Technique. Written by a radiologist.
+ Impression, and Technique. Written by a radiologist.
 - other: anything that does not clearly fit the above categories.
 
 Be conservative with confidence. Only return 0.9 or higher if the classification
@@ -201,100 +201,100 @@ is unambiguous. Return 0.7-0.89 for likely classifications. Below 0.7 for uncert
 """
 
 FUNCTION classify_page_with_llm(page_text, has_tables, has_forms, model_id):
-    // Sanitize OCR text before passing to LLM. External documents (provider submissions)
-    // are untrusted input. Strip control characters, null bytes, and anomalous Unicode
-    // sequences that could be used for prompt injection.
-    sanitized_text = strip_control_characters(page_text)
-    sanitized_text = remove_null_bytes(sanitized_text)
+ // Sanitize OCR text before passing to LLM. External documents (provider submissions)
+ // are untrusted input. Strip control characters, null bytes, and anomalous Unicode
+ // sequences that could be used for prompt injection.
+ sanitized_text = strip_control_characters(page_text)
+ sanitized_text = remove_null_bytes(sanitized_text)
 
-    // Build the user message: page text plus structural metadata.
-    // The structural context helps the model on ambiguous pages where
-    // text alone doesn't clearly signal the document type.
-    structural_context = ""
-    IF has_forms:
-        structural_context += "This page contains form fields (key-value pairs). "
-    IF has_tables:
-        structural_context += "This page contains one or more tables. "
-    IF not has_forms and not has_tables:
-        structural_context += "This page is primarily flowing text with no form fields or tables. "
+ // Build the user message: page text plus structural metadata.
+ // The structural context helps the model on ambiguous pages where
+ // text alone doesn't clearly signal the document type.
+ structural_context = ""
+ IF has_forms:
+ structural_context += "This page contains form fields (key-value pairs). "
+ IF has_tables:
+ structural_context += "This page contains one or more tables. "
+ IF not has_forms and not has_tables:
+ structural_context += "This page is primarily flowing text with no form fields or tables. "
 
-    user_message = structural_context + "\n\nPage text:\n" + sanitized_text
+ user_message = structural_context + "\n\nPage text:\n" + sanitized_text
 
-    // Call the Bedrock Converse API.
-    // maxTokens=256 is more than sufficient for a JSON classification response.
-    response = call Bedrock Converse API with:
-        modelId         = model_id  // e.g., "us.amazon.nova-lite-v1:0"
-        system          = [{ text: CLASSIFICATION_SYSTEM_PROMPT }]
-        messages        = [{ role: "user", content: [{ text: user_message }] }]
-        inferenceConfig = { maxTokens: 256, temperature: 0 }
+ // Call the Bedrock Converse API.
+ // maxTokens=256 is more than sufficient for a JSON classification response.
+ response = call Bedrock Converse API with:
+ modelId = model_id // e.g., "us.amazon.nova-lite-v1:0"
+ system = [{ text: CLASSIFICATION_SYSTEM_PROMPT }]
+ messages = [{ role: "user", content: [{ text: user_message }] }]
+ inferenceConfig = { maxTokens: 256, temperature: 0 }
 
-    // Parse the JSON response from the model's text output.
-    response_text = response.output.message.content[0].text
-    result        = parse JSON from response_text
+ // Parse the JSON response from the model's text output.
+ response_text = response.output.message.content[0].text
+ result = parse JSON from response_text
 
-    RETURN {
-        page_type:  result.page_type,
-        confidence: result.confidence,
-        reasoning:  result.reasoning
-    }
+ RETURN {
+ page_type: result.page_type,
+ confidence: result.confidence,
+ reasoning: result.reasoning
+ }
 
 FUNCTION classify_all_pages(pages, classification_model_id):
-    classifications = empty map
+ classifications = empty map
 
-    FOR each page_num, page_data in pages:
-        result = classify_page_with_llm(
-            page_data.text,
-            page_data.has_tables,
-            page_data.has_forms,
-            classification_model_id
-        )
-        classifications[page_num] = result
-        // Log both the classification and the model's reasoning for the audit trail.
-        // When reviewers question a routing decision, this log is what they look at.
-        log: "Page " + page_num + " → " + result.page_type +
-             " (confidence " + result.confidence + "): " + result.reasoning
+ FOR each page_num, page_data in pages:
+ result = classify_page_with_llm(
+ page_data.text,
+ page_data.has_tables,
+ page_data.has_forms,
+ classification_model_id
+ )
+ classifications[page_num] = result
+ // Log both the classification and the model's reasoning for the audit trail.
+ // When reviewers question a routing decision, this log is what they look at.
+ log: "Page " + page_num + " → " + result.page_type +
+ " (confidence " + result.confidence + "): " + result.reasoning
 
-    RETURN classifications
+ RETURN classifications
 ```
 
 **Step 5: Fan out to two extraction paths.** Based on the classification from Step 4, each page routes to one of two extraction functions. Cover sheets go to the Textract forms extractor. Everything else with narrative content goes to the Bedrock clinical extractor. Pages classified as "other" or below a confidence threshold go to a pass-through that preserves their raw text and flags them for human review.
 
 ```pseudocode
 EXTRACTION_ROUTER = {
-    "cover_sheet":      extract_cover_sheet,    // Textract FORMS-based extraction
-    "clinical_note":    extract_clinical_page,  // Bedrock Sonnet reasoning
-    "physician_letter": extract_clinical_page,  // same Bedrock extractor
-    "imaging_report":   extract_clinical_page,  // same Bedrock extractor
-    "lab_results":      extract_lab_page,       // table parsing from Textract TABLES blocks
-    "other":            extract_other_page      // raw text only; flag for review
+ "cover_sheet": extract_cover_sheet, // Textract FORMS-based extraction
+ "clinical_note": extract_clinical_page, // Bedrock Sonnet reasoning
+ "physician_letter": extract_clinical_page, // same Bedrock extractor
+ "imaging_report": extract_clinical_page, // same Bedrock extractor
+ "lab_results": extract_lab_page, // table parsing from Textract TABLES blocks
+ "other": extract_other_page // raw text only; flag for review
 }
 
 FUNCTION route_and_extract(page_num, classification, page_data, block_map,
-                           clinical_model_id):
-    // Low-confidence classifications go straight to review rather than extraction.
-    // The threshold here (0.6) is intentionally permissive because
-    // even a rough classification is better than none for routing.
-    // Pages below this are genuinely ambiguous and humans should decide.
-    IF classification.confidence < 0.6:
-        RETURN {
-            page_num:   page_num,
-            page_type:  "uncertain",
-            confidence: classification.confidence * 100,
-            data:       { raw_text: page_data.text },
-            flagged:    ["low_classification_confidence"]
-        }
+ clinical_model_id):
+ // Low-confidence classifications go straight to review rather than extraction.
+ // The threshold here (0.6) is intentionally permissive because
+ // even a rough classification is better than none for routing.
+ // Pages below this are genuinely ambiguous and humans should decide.
+ IF classification.confidence < 0.6:
+ RETURN {
+ page_num: page_num,
+ page_type: "uncertain",
+ confidence: classification.confidence * 100,
+ data: { raw_text: page_data.text },
+ flagged: ["low_classification_confidence"]
+ }
 
-    page_type = classification.page_type
-    extractor = EXTRACTION_ROUTER[page_type]
-    result    = extractor(page_data, block_map, clinical_model_id)
+ page_type = classification.page_type
+ extractor = EXTRACTION_ROUTER[page_type]
+ result = extractor(page_data, block_map, clinical_model_id)
 
-    RETURN {
-        page_num:   page_num,
-        page_type:  page_type,
-        confidence: result.confidence,
-        data:       result.data,
-        flagged:    result.flagged
-    }
+ RETURN {
+ page_num: page_num,
+ page_type: page_type,
+ confidence: result.confidence,
+ data: result.data,
+ flagged: result.flagged
+ }
 ```
 
 The **cover sheet extractor** is unchanged from the original recipe. It uses Textract key-value pairs and a FIELD_MAP to normalize label variants to canonical field names. See Recipe 1.1 for the full implementation. The point stands: Textract is the right tool for structured form extraction, and changing tools here would add cost and complexity for zero improvement.
@@ -305,35 +305,35 @@ The **cover sheet extractor** is unchanged from the original recipe. It uses Tex
 // The LLM handles template variability in classification; the field map still
 // handles variability in cover sheet field labels for known variants.
 PA_COVER_FIELD_MAP = {
-    "member_name":         ["member name", "patient name", "subscriber name", "insured name"],
-    "member_id":           ["member id", "subscriber id", "member #", "id number"],
-    "member_dob":          ["date of birth", "dob", "member dob", "patient dob"],
-    "requesting_provider": ["requesting provider", "ordering physician", "rendering provider",
-                            "treating physician", "provider name"],
-    "provider_npi":        ["npi", "provider npi", "npi number", "national provider"],
-    "requesting_facility": ["facility", "practice name", "clinic name", "hospital"],
-    "requested_cpt":       ["cpt code", "procedure code", "procedure", "service code",
-                            "requested procedure", "service requested code"],
-    "diagnosis_code":      ["diagnosis code", "icd-10", "icd code", "dx", "icd-10-cm",
-                            "dx indication", "diagnosis indication"],
-    "date_of_service":     ["date of service", "dos", "requested date", "service date"],
-    "urgency":             ["urgency", "urgent", "priority", "expedited", "stat"]
+ "member_name": ["member name", "patient name", "subscriber name", "insured name"],
+ "member_id": ["member id", "subscriber id", "member #", "id number"],
+ "member_dob": ["date of birth", "dob", "member dob", "patient dob"],
+ "requesting_provider": ["requesting provider", "ordering physician", "rendering provider",
+ "treating physician", "provider name"],
+ "provider_npi": ["npi", "provider npi", "npi number", "national provider"],
+ "requesting_facility": ["facility", "practice name", "clinic name", "hospital"],
+ "requested_cpt": ["cpt code", "procedure code", "procedure", "service code",
+ "requested procedure", "service requested code"],
+ "diagnosis_code": ["diagnosis code", "icd-10", "icd code", "dx", "icd-10-cm",
+ "dx indication", "diagnosis indication"],
+ "date_of_service": ["date of service", "dos", "requested date", "service date"],
+ "urgency": ["urgency", "urgent", "priority", "expedited", "stat"]
 }
 
 FUNCTION extract_cover_sheet(page_data, block_map, _model_id):
-    // Parse key-value pairs using Textract blocks (same as Recipe 1.1 Step 2)
-    raw_kv     = parse_key_value_pairs(page_data.blocks, block_map)
-    normalized = normalize_fields(raw_kv, PA_COVER_FIELD_MAP)
-    clean_fields, flagged_fields = flag_low_confidence(normalized, threshold=85.0)
-    avg_confidence = average of confidence scores for all fields in normalized
+ // Parse key-value pairs using Textract blocks (same as Recipe 1.1 Step 2)
+ raw_kv = parse_key_value_pairs(page_data.blocks, block_map)
+ normalized = normalize_fields(raw_kv, PA_COVER_FIELD_MAP)
+ clean_fields, flagged_fields = flag_low_confidence(normalized, threshold=85.0)
+ avg_confidence = average of confidence scores for all fields in normalized
 
-    RETURN {
-        confidence: avg_confidence,
-        data:       clean_fields,
-        flagged:    flagged_fields
-    }
-    // Full implementations of parse_key_value_pairs, normalize_fields,
-    // and flag_low_confidence are in Recipe 1.1.
+ RETURN {
+ confidence: avg_confidence,
+ data: clean_fields,
+ flagged: flagged_fields
+ }
+ // Full implementations of parse_key_value_pairs, normalize_fields,
+ // and flag_low_confidence are in Recipe 1.1.
 ```
 
 The **clinical page extractor** is where the architecture changes most significantly. Instead of routing page text through Comprehend Medical's entity extraction APIs, a single Bedrock Converse call extracts all clinically relevant information in one shot. The model reads the page as a clinician would: understanding context, recognizing the significance of failed prior treatments, extracting the physician's reasoning, identifying the relevant diagnosis with its clinical basis.
@@ -352,17 +352,17 @@ authorization request.
 
 Return ONLY a valid JSON object with this structure:
 {
-  "diagnosis_text": "<the primary diagnosis or diagnoses as written in this document>",
-  "conditions": ["<list of medical conditions, diseases, diagnoses mentioned>"],
-  "medications": ["<list of medications with dosages if present>"],
-  "procedures": ["<list of procedures, treatments, or tests mentioned>"],
-  "medical_necessity_evidence": "<free text: evidence supporting medical necessity,
-    including clinical findings, severity indicators, and impact on function>",
-  "failed_treatments": ["<list of prior treatments that were tried and failed or
-    were insufficient, with duration if mentioned>"],
-  "supporting_findings": "<relevant clinical findings, test results, or
-    imaging findings mentioned in this document>",
-  "confidence": <0.0 to 1.0, your confidence in the extraction completeness>
+ "diagnosis_text": "<the primary diagnosis or diagnoses as written in this document>",
+ "conditions": ["<list of medical conditions, diseases, diagnoses mentioned>"],
+ "medications": ["<list of medications with dosages if present>"],
+ "procedures": ["<list of procedures, treatments, or tests mentioned>"],
+ "medical_necessity_evidence": "<free text: evidence supporting medical necessity,
+ including clinical findings, severity indicators, and impact on function>",
+ "failed_treatments": ["<list of prior treatments that were tried and failed or
+ were insufficient, with duration if mentioned>"],
+ "supporting_findings": "<relevant clinical findings, test results, or
+ imaging findings mentioned in this document>",
+ "confidence": <0.0 to 1.0, your confidence in the extraction completeness>
 }
 
 Extract only what is explicitly stated in the document. Do not infer or add information
@@ -370,256 +370,256 @@ not present in the text. If a field has no relevant content, use an empty list o
 empty string. The medical_necessity_evidence and failed_treatments fields are the
 most important for prior authorization decisions. Be thorough on those.
 """
-``` 
+```
 
 ```pseudocode
 FUNCTION extract_clinical_page(page_data, block_map, clinical_model_id):
-    page_text = page_data.text
+ page_text = page_data.text
 
-    // Call Bedrock Converse with the clinical extraction prompt.
-    // maxTokens=1024 because clinical notes can be dense; classification needed 256.
-    // Temperature=0 for consistency; extraction should be as deterministic as possible.
-    response = call Bedrock Converse API with:
-        modelId         = clinical_model_id  // e.g., "us.anthropic.claude-sonnet-4-6-v1:0"
-        system          = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
-        messages        = [{
-            role:    "user",
-            content: [{ text: "Extract clinical information from this document page:\n\n" + page_text }]
-        }]
-        inferenceConfig = { maxTokens: 1024, temperature: 0 }
+ // Call Bedrock Converse with the clinical extraction prompt.
+ // maxTokens=1024 because clinical notes can be dense; classification needed 256.
+ // Temperature=0 for consistency; extraction should be as deterministic as possible.
+ response = call Bedrock Converse API with:
+ modelId = clinical_model_id // e.g., "us.anthropic.claude-sonnet-4-6-v1:0"
+ system = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
+ messages = [{
+ role: "user",
+ content: [{ text: "Extract clinical information from this document page:\n\n" + page_text }]
+ }]
+ inferenceConfig = { maxTokens: 1024, temperature: 0 }
 
-    response_text  = response.output.message.content[0].text
-    llm_extraction = parse JSON from response_text
+ response_text = response.output.message.content[0].text
+ llm_extraction = parse JSON from response_text
 
-    // Use Comprehend Medical InferICD10CM to validate and map the LLM-extracted
-    // diagnosis text to high-confidence ICD-10 codes with confidence scores.
-    // This is the code validation step: LLM extracts the concept, Comprehend maps the code.
-    // We do this because LLMs can produce inconsistent code strings across runs;
-    // Comprehend Medical is purpose-built for reliable, high-confidence code lookup.
-    icd10_accepted = empty list
-    icd10_flagged  = empty list
+ // Use Comprehend Medical InferICD10CM to validate and map the LLM-extracted
+ // diagnosis text to high-confidence ICD-10 codes with confidence scores.
+ // This is the code validation step: LLM extracts the concept, Comprehend maps the code.
+ // We do this because LLMs can produce inconsistent code strings across runs;
+ // Comprehend Medical is purpose-built for reliable, high-confidence code lookup.
+ icd10_accepted = empty list
+ icd10_flagged = empty list
 
-    IF llm_extraction.diagnosis_text is not empty:
-        icd10_accepted, icd10_flagged = infer_icd10_codes(llm_extraction.diagnosis_text)
-        // See Recipe 1.3 for the full implementation of infer_icd10_codes.
-        // It calls Comprehend Medical InferICD10CM and filters by confidence threshold.
+ IF llm_extraction.diagnosis_text is not empty:
+ icd10_accepted, icd10_flagged = infer_icd10_codes(llm_extraction.diagnosis_text)
+ // See Recipe 1.3 for the full implementation of infer_icd10_codes.
+ // It calls Comprehend Medical InferICD10CM and filters by confidence threshold.
 
-    // Page confidence: use the LLM's self-reported extraction confidence,
-    // but cap it by the underlying Textract OCR quality.
-    // Bad OCR input leads to incomplete LLM extraction even if the model is confident.
-    textract_avg_confidence = average LINE block confidence for this page / 100.0
-    effective_confidence    = minimum(llm_extraction.confidence, textract_avg_confidence) * 100
+ // Page confidence: use the LLM's self-reported extraction confidence,
+ // but cap it by the underlying Textract OCR quality.
+ // Bad OCR input leads to incomplete LLM extraction even if the model is confident.
+ textract_avg_confidence = average LINE block confidence for this page / 100.0
+ effective_confidence = minimum(llm_extraction.confidence, textract_avg_confidence) * 100
 
-    RETURN {
-        confidence: effective_confidence,
-        data: {
-            diagnosis_text:             llm_extraction.diagnosis_text,
-            conditions:                 llm_extraction.conditions,
-            medications:                llm_extraction.medications,
-            procedures:                 llm_extraction.procedures,
-            medical_necessity_evidence: llm_extraction.medical_necessity_evidence,
-            failed_treatments:          llm_extraction.failed_treatments,
-            supporting_findings:        llm_extraction.supporting_findings,
-            icd10_codes:                icd10_accepted
-        },
-        flagged: {
-            icd10_uncertain: icd10_flagged  // low-confidence code inferences for review
-        }
-    }
+ RETURN {
+ confidence: effective_confidence,
+ data: {
+ diagnosis_text: llm_extraction.diagnosis_text,
+ conditions: llm_extraction.conditions,
+ medications: llm_extraction.medications,
+ procedures: llm_extraction.procedures,
+ medical_necessity_evidence: llm_extraction.medical_necessity_evidence,
+ failed_treatments: llm_extraction.failed_treatments,
+ supporting_findings: llm_extraction.supporting_findings,
+ icd10_codes: icd10_accepted
+ },
+ flagged: {
+ icd10_uncertain: icd10_flagged // low-confidence code inferences for review
+ }
+ }
 ```
 
 The **lab results extractor** is unchanged. Lab results pages are structured tables, and Textract is exactly the right tool for them. The Bedrock LLM adds nothing here that Textract doesn't already provide better and cheaper. This is the "right tool for the job" principle in practice: just because you can send a lab results table to an LLM doesn't mean you should.
 
 ```pseudocode
 LAB_COLUMN_MAP = {
-    "test_name":       ["test", "test name", "analyte", "component", "description"],
-    "result":          ["result", "value", "result value", "your result"],
-    "units":           ["units", "unit"],
-    "reference_range": ["reference range", "normal range", "reference interval",
-                        "normal values", "expected range"],
-    "flag":            ["flag", "abnormal flag", "indicator", "h/l"]
+ "test_name": ["test", "test name", "analyte", "component", "description"],
+ "result": ["result", "value", "result value", "your result"],
+ "units": ["units", "unit"],
+ "reference_range": ["reference range", "normal range", "reference interval",
+ "normal values", "expected range"],
+ "flag": ["flag", "abnormal flag", "indicator", "h/l"]
 }
 
 FUNCTION extract_lab_page(page_data, block_map, _model_id):
-    tables     = parse_tables_from_blocks(page_data.blocks, block_map)
-    lab_values = empty list
+ tables = parse_tables_from_blocks(page_data.blocks, block_map)
+ lab_values = empty list
 
-    FOR each table in tables:
-        IF table has fewer than 2 rows:
-            CONTINUE  // Header-only or empty table; skip it
+ FOR each table in tables:
+ IF table has fewer than 2 rows:
+ CONTINUE // Header-only or empty table; skip it
 
-        headers     = table[0]
-        col_mapping = normalize_lab_columns(headers, LAB_COLUMN_MAP)
+ headers = table[0]
+ col_mapping = normalize_lab_columns(headers, LAB_COLUMN_MAP)
 
-        FOR each row in table[1:]:
-            lab_entry = empty map
-            FOR each col_index, canonical_name in col_mapping:
-                IF col_index < length of row:
-                    lab_entry[canonical_name] = trim(row[col_index])
+ FOR each row in table[1:]:
+ lab_entry = empty map
+ FOR each col_index, canonical_name in col_mapping:
+ IF col_index < length of row:
+ lab_entry[canonical_name] = trim(row[col_index])
 
-            IF "test_name" in lab_entry AND "result" in lab_entry:
-                lab_values.append(lab_entry)
+ IF "test_name" in lab_entry AND "result" in lab_entry:
+ lab_values.append(lab_entry)
 
-    RETURN {
-        confidence: average Textract confidence for TABLE cells on this page,
-        data:       { lab_values: lab_values },
-        flagged:    []
-    }
+ RETURN {
+ confidence: average Textract confidence for TABLE cells on this page,
+ data: { lab_values: lab_values },
+ flagged: []
+ }
 ```
 
 **Step 6: Assemble the structured prior auth record.** The assembler receives extraction results from all pages and merges them into a single coherent record. The structure is similar to the original recipe, with one meaningful addition: `medical_necessity_evidence` and `failed_treatments` are now first-class fields. These are the fields that matter most for the clinical criteria matching step downstream.
 
 ```pseudocode
 FUNCTION assemble_prior_auth_record(document_key, page_count, page_extractions):
-    record = {
-        document_key:         document_key,
-        extracted_at:         current UTC timestamp (ISO 8601),
-        page_count:           page_count,
-        needs_review:         false,
-        page_classifications: empty map,
+ record = {
+ document_key: document_key,
+ extracted_at: current UTC timestamp (ISO 8601),
+ page_count: page_count,
+ needs_review: false,
+ page_classifications: empty map,
 
-        // Administrative data (from the cover sheet via Textract forms extraction)
-        demographics: {
-            member_name:  null,
-            member_id:    null,
-            member_dob:   null
-        },
-        requested_service: {
-            cpt_code:         null,
-            procedure:        null,
-            date_of_service:  null,
-            urgency:          "routine"
-        },
-        requesting_provider: {
-            name:      null,
-            npi:       null,
-            facility:  null
-        },
+ // Administrative data (from the cover sheet via Textract forms extraction)
+ demographics: {
+ member_name: null,
+ member_id: null,
+ member_dob: null
+ },
+ requested_service: {
+ cpt_code: null,
+ procedure: null,
+ date_of_service: null,
+ urgency: "routine"
+ },
+ requesting_provider: {
+ name: null,
+ npi: null,
+ facility: null
+ },
 
-        // Clinical evidence (from LLM extraction of narrative pages)
-        // These fields drive the downstream clinical criteria matching in Recipe 2.4.
-        clinical_evidence: {
-            icd10_codes:                empty list,   // deduplicated; highest confidence per code
-            conditions:                 empty list,
-            medications:                empty list,
-            procedures:                 empty list,
-            medical_necessity_evidence: empty string, // LLM-extracted narrative evidence
-            failed_treatments:          empty list,   // documented prior treatment failures
-            supporting_findings:        empty string, // LLM-extracted clinical findings
-            lab_values:                 empty list
-        },
+ // Clinical evidence (from LLM extraction of narrative pages)
+ // These fields drive the downstream clinical criteria matching in Recipe 2.4.
+ clinical_evidence: {
+ icd10_codes: empty list, // deduplicated; highest confidence per code
+ conditions: empty list,
+ medications: empty list,
+ procedures: empty list,
+ medical_necessity_evidence: empty string, // LLM-extracted narrative evidence
+ failed_treatments: empty list, // documented prior treatment failures
+ supporting_findings: empty string, // LLM-extracted clinical findings
+ lab_values: empty list
+ },
 
-        page_confidence: empty map,
-        flagged_pages:   empty list,
-        flagged_fields:  empty map
-    }
+ page_confidence: empty map,
+ flagged_pages: empty list,
+ flagged_fields: empty map
+ }
 
-    seen_icd10_codes = empty map   // code → entry (keep highest confidence)
-    seen_conditions  = empty set
-    seen_medications = empty set
-    seen_procedures  = empty set
+ seen_icd10_codes = empty map // code → entry (keep highest confidence)
+ seen_conditions = empty set
+ seen_medications = empty set
+ seen_procedures = empty set
 
-    FOR each page_num, extraction in page_extractions:
-        page_type  = extraction.page_type
-        confidence = extraction.confidence
+ FOR each page_num, extraction in page_extractions:
+ page_type = extraction.page_type
+ confidence = extraction.confidence
 
-        record.page_classifications[page_num] = page_type
-        record.page_confidence[page_num]      = round(confidence, 1)
+ record.page_classifications[page_num] = page_type
+ record.page_confidence[page_num] = round(confidence, 1)
 
-        IF confidence < 75.0:
-            record.flagged_pages.append(page_num)
-            record.needs_review = true
+ IF confidence < 75.0:
+ record.flagged_pages.append(page_num)
+ record.needs_review = true
 
-        IF extraction.flagged is not empty:
-            record.flagged_fields[page_num] = extraction.flagged
-            record.needs_review = true
+ IF extraction.flagged is not empty:
+ record.flagged_fields[page_num] = extraction.flagged
+ record.needs_review = true
 
-        IF page_type == "cover_sheet":
-            data = extraction.data
-            IF record.demographics.member_name is null:
-                record.demographics.member_name = data.get("member_name")
-                record.demographics.member_id   = data.get("member_id")
-                record.demographics.member_dob  = data.get("member_dob")
-            IF record.requested_service.cpt_code is null:
-                record.requested_service.cpt_code        = data.get("requested_cpt")
-                record.requested_service.date_of_service  = data.get("date_of_service")
-                IF data.get("urgency") contains "urgent" or "stat":
-                    record.requested_service.urgency = "urgent"
-            IF record.requesting_provider.npi is null:
-                record.requesting_provider.name     = data.get("requesting_provider")
-                record.requesting_provider.npi      = data.get("provider_npi")
-                record.requesting_provider.facility = data.get("requesting_facility")
+ IF page_type == "cover_sheet":
+ data = extraction.data
+ IF record.demographics.member_name is null:
+ record.demographics.member_name = data.get("member_name")
+ record.demographics.member_id = data.get("member_id")
+ record.demographics.member_dob = data.get("member_dob")
+ IF record.requested_service.cpt_code is null:
+ record.requested_service.cpt_code = data.get("requested_cpt")
+ record.requested_service.date_of_service = data.get("date_of_service")
+ IF data.get("urgency") contains "urgent" or "stat":
+ record.requested_service.urgency = "urgent"
+ IF record.requesting_provider.npi is null:
+ record.requesting_provider.name = data.get("requesting_provider")
+ record.requesting_provider.npi = data.get("provider_npi")
+ record.requesting_provider.facility = data.get("requesting_facility")
 
-        ELSE IF page_type in ("clinical_note", "physician_letter", "imaging_report"):
-            data = extraction.data
+ ELSE IF page_type in ("clinical_note", "physician_letter", "imaging_report"):
+ data = extraction.data
 
-            // Deduplicate ICD-10 codes: keep highest confidence per code
-            FOR each code_entry in data.icd10_codes:
-                code = code_entry.icd10_code
-                IF code not in seen_icd10_codes OR
-                   code_entry.confidence > seen_icd10_codes[code].confidence:
-                    seen_icd10_codes[code] = code_entry
+ // Deduplicate ICD-10 codes: keep highest confidence per code
+ FOR each code_entry in data.icd10_codes:
+ code = code_entry.icd10_code
+ IF code not in seen_icd10_codes OR
+ code_entry.confidence > seen_icd10_codes[code].confidence:
+ seen_icd10_codes[code] = code_entry
 
-            // Deduplicate clinical entities by normalized text
-            FOR each item in data.conditions:
-                normalized = lowercase(trim(item))
-                IF normalized not in seen_conditions:
-                    seen_conditions.add(normalized)
-                    record.clinical_evidence.conditions.append(item)
+ // Deduplicate clinical entities by normalized text
+ FOR each item in data.conditions:
+ normalized = lowercase(trim(item))
+ IF normalized not in seen_conditions:
+ seen_conditions.add(normalized)
+ record.clinical_evidence.conditions.append(item)
 
-            FOR each item in data.medications:
-                normalized = lowercase(trim(item))
-                IF normalized not in seen_medications:
-                    seen_medications.add(normalized)
-                    record.clinical_evidence.medications.append(item)
+ FOR each item in data.medications:
+ normalized = lowercase(trim(item))
+ IF normalized not in seen_medications:
+ seen_medications.add(normalized)
+ record.clinical_evidence.medications.append(item)
 
-            FOR each item in data.procedures:
-                normalized = lowercase(trim(item))
-                IF normalized not in seen_procedures:
-                    seen_procedures.add(normalized)
-                    record.clinical_evidence.procedures.append(item)
+ FOR each item in data.procedures:
+ normalized = lowercase(trim(item))
+ IF normalized not in seen_procedures:
+ seen_procedures.add(normalized)
+ record.clinical_evidence.procedures.append(item)
 
-            // Accumulate failed treatments; different pages may document different episodes
-            FOR each treatment in data.failed_treatments:
-                IF treatment not in record.clinical_evidence.failed_treatments:
-                    record.clinical_evidence.failed_treatments.append(treatment)
+ // Accumulate failed treatments; different pages may document different episodes
+ FOR each treatment in data.failed_treatments:
+ IF treatment not in record.clinical_evidence.failed_treatments:
+ record.clinical_evidence.failed_treatments.append(treatment)
 
-            // Medical necessity evidence: concatenate across pages.
-            // Each clinical page may add a different angle on why this procedure is necessary.
-            IF data.medical_necessity_evidence is not empty:
-                IF record.clinical_evidence.medical_necessity_evidence is empty:
-                    record.clinical_evidence.medical_necessity_evidence =
-                        data.medical_necessity_evidence
-                ELSE:
-                    record.clinical_evidence.medical_necessity_evidence +=
-                        "\n\n" + data.medical_necessity_evidence
+ // Medical necessity evidence: concatenate across pages.
+ // Each clinical page may add a different angle on why this procedure is necessary.
+ IF data.medical_necessity_evidence is not empty:
+ IF record.clinical_evidence.medical_necessity_evidence is empty:
+ record.clinical_evidence.medical_necessity_evidence =
+ data.medical_necessity_evidence
+ ELSE:
+ record.clinical_evidence.medical_necessity_evidence +=
+ "\n\n" + data.medical_necessity_evidence
 
-            IF data.supporting_findings is not empty:
-                IF record.clinical_evidence.supporting_findings is empty:
-                    record.clinical_evidence.supporting_findings = data.supporting_findings
-                ELSE:
-                    record.clinical_evidence.supporting_findings +=
-                        "\n\n" + data.supporting_findings
+ IF data.supporting_findings is not empty:
+ IF record.clinical_evidence.supporting_findings is empty:
+ record.clinical_evidence.supporting_findings = data.supporting_findings
+ ELSE:
+ record.clinical_evidence.supporting_findings +=
+ "\n\n" + data.supporting_findings
 
-        ELSE IF page_type == "lab_results":
-            record.clinical_evidence.lab_values.extend(extraction.data.lab_values)
+ ELSE IF page_type == "lab_results":
+ record.clinical_evidence.lab_values.extend(extraction.data.lab_values)
 
-    record.clinical_evidence.icd10_codes = list of values in seen_icd10_codes,
-                                           sorted by confidence descending
+ record.clinical_evidence.icd10_codes = list of values in seen_icd10_codes,
+ sorted by confidence descending
 
-    IF record.demographics.member_id is null OR record.requested_service.cpt_code is null:
-        record.needs_review = true
+ IF record.demographics.member_id is null OR record.requested_service.cpt_code is null:
+ record.needs_review = true
 
-    RETURN record
+ RETURN record
 
 FUNCTION store_prior_auth_record(record):
-    write record to DynamoDB table "prior-auth-records" with:
-        primary key = record.document_key
+ write record to DynamoDB table "prior-auth-records" with:
+ primary key = record.document_key
 
-    IF NOT record.needs_review:
-        publish to event bus:
-            event_type   = "prior_auth_extracted"
-            document_key = record.document_key
+ IF NOT record.needs_review:
+ publish to event bus:
+ event_type = "prior_auth_extracted"
+ document_key = record.document_key
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -630,88 +630,88 @@ FUNCTION store_prior_auth_record(record):
 
 ```json
 {
-  "document_key": "prior-auth-inbox/2026/03/01/fax-00847.pdf",
-  "extracted_at": "2026-03-01T15:22:08Z",
-  "page_count": 12,
-  "needs_review": false,
-  "page_classifications": {
-    "1": "cover_sheet",
-    "2": "cover_sheet",
-    "3": "clinical_note",
-    "4": "clinical_note",
-    "5": "clinical_note",
-    "6": "lab_results",
-    "7": "lab_results",
-    "8": "imaging_report",
-    "9": "imaging_report",
-    "10": "physician_letter",
-    "11": "other",
-    "12": "other"
-  },
-  "demographics": {
-    "member_name": "Robert Thompson",
-    "member_id": "UHC4829100",
-    "member_dob": "03/14/1962"
-  },
-  "requested_service": {
-    "cpt_code": "27447",
-    "procedure": "Total Knee Arthroplasty",
-    "date_of_service": "04/15/2026",
-    "urgency": "routine"
-  },
-  "requesting_provider": {
-    "name": "Dr. Amanda Liu",
-    "npi": "1982374650",
-    "facility": "Riverside Orthopedic Surgery Center"
-  },
-  "clinical_evidence": {
-    "icd10_codes": [
-      {
-        "text": "severe osteoarthritis right knee with bone-on-bone contact",
-        "icd10_code": "M17.11",
-        "description": "Primary osteoarthritis, right knee",
-        "confidence": 0.961
-      },
-      {
-        "text": "chronic knee pain",
-        "icd10_code": "G89.29",
-        "description": "Other chronic pain",
-        "confidence": 0.874
-      }
-    ],
-    "conditions": [
-      "severe osteoarthritis, right knee",
-      "chronic knee pain",
-      "functional limitation with ambulation"
-    ],
-    "medications": [
-      "naproxen 500mg twice daily",
-      "cortisone injection (right knee, x3 over 18 months)"
-    ],
-    "procedures": [
-      "physical therapy (12 weeks)",
-      "MRI right knee",
-      "weight loss program"
-    ],
-    "medical_necessity_evidence": "Patient presents with severe tricompartmental osteoarthritis of the right knee with bone-on-bone contact confirmed on MRI. Functional assessment demonstrates inability to ambulate more than one block without significant pain (VAS 8/10). Patient has failed 6 months of conservative management including NSAIDs, physical therapy, and intra-articular corticosteroid injections. Clinical findings and imaging support surgical intervention as medically necessary.",
-    "failed_treatments": [
-      "NSAIDs (naproxen 500mg BID for 8 months): inadequate pain relief",
-      "Physical therapy (12 weeks): temporary improvement, no sustained benefit",
-      "Cortisone injections x3 over 18 months: diminishing response, last injection provided less than 4 weeks of relief"
-    ],
-    "supporting_findings": "MRI right knee (2026-01-15): Severe tricompartmental osteoarthritis with near-complete loss of joint space. Bone-on-bone contact medial compartment. Subchondral cyst formation. X-ray (standing AP): Kellgren-Lawrence grade IV changes.",
-    "lab_values": [
-      { "test_name": "ESR", "result": "28", "units": "mm/hr", "reference_range": "0-20", "flag": "H" },
-      { "test_name": "CRP", "result": "1.8", "units": "mg/dL", "reference_range": "0-0.5", "flag": "H" }
-    ]
-  },
-  "page_confidence": {
-    "1": 96.2, "2": 94.8, "3": 91.4, "4": 88.7, "5": 90.1,
-    "6": 97.3, "7": 96.9, "8": 93.2, "9": 92.7, "10": 87.4,
-    "11": 78.1, "12": 75.6
-  },
-  "flagged_pages": [],
-  "flagged_fields": {}
+ "document_key": "prior-auth-inbox/2026/03/01/fax-00847.pdf",
+ "extracted_at": "2026-03-01T15:22:08Z",
+ "page_count": 12,
+ "needs_review": false,
+ "page_classifications": {
+ "1": "cover_sheet",
+ "2": "cover_sheet",
+ "3": "clinical_note",
+ "4": "clinical_note",
+ "5": "clinical_note",
+ "6": "lab_results",
+ "7": "lab_results",
+ "8": "imaging_report",
+ "9": "imaging_report",
+ "10": "physician_letter",
+ "11": "other",
+ "12": "other"
+ },
+ "demographics": {
+ "member_name": "Robert Thompson",
+ "member_id": "UHC4829100",
+ "member_dob": "03/14/1962"
+ },
+ "requested_service": {
+ "cpt_code": "27447",
+ "procedure": "Total Knee Arthroplasty",
+ "date_of_service": "04/15/2026",
+ "urgency": "routine"
+ },
+ "requesting_provider": {
+ "name": "Dr. Amanda Liu",
+ "npi": "1982374650",
+ "facility": "Riverside Orthopedic Surgery Center"
+ },
+ "clinical_evidence": {
+ "icd10_codes": [
+ {
+ "text": "severe osteoarthritis right knee with bone-on-bone contact",
+ "icd10_code": "M17.11",
+ "description": "Primary osteoarthritis, right knee",
+ "confidence": 0.961
+ },
+ {
+ "text": "chronic knee pain",
+ "icd10_code": "G89.29",
+ "description": "Other chronic pain",
+ "confidence": 0.874
+ }
+ ],
+ "conditions": [
+ "severe osteoarthritis, right knee",
+ "chronic knee pain",
+ "functional limitation with ambulation"
+ ],
+ "medications": [
+ "naproxen 500mg twice daily",
+ "cortisone injection (right knee, x3 over 18 months)"
+ ],
+ "procedures": [
+ "physical therapy (12 weeks)",
+ "MRI right knee",
+ "weight loss program"
+ ],
+ "medical_necessity_evidence": "Patient presents with severe tricompartmental osteoarthritis of the right knee with bone-on-bone contact confirmed on MRI. Functional assessment demonstrates inability to ambulate more than one block without significant pain (VAS 8/10). Patient has failed 6 months of conservative management including NSAIDs, physical therapy, and intra-articular corticosteroid injections. Clinical findings and imaging support surgical intervention as medically necessary.",
+ "failed_treatments": [
+ "NSAIDs (naproxen 500mg BID for 8 months): inadequate pain relief",
+ "Physical therapy (12 weeks): temporary improvement, no sustained benefit",
+ "Cortisone injections x3 over 18 months: diminishing response, last injection provided less than 4 weeks of relief"
+ ],
+ "supporting_findings": "MRI right knee (2026-01-15): Severe tricompartmental osteoarthritis with near-complete loss of joint space. Bone-on-bone contact medial compartment. Subchondral cyst formation. X-ray (standing AP): Kellgren-Lawrence grade IV changes.",
+ "lab_values": [
+ { "test_name": "ESR", "result": "28", "units": "mm/hr", "reference_range": "0-20", "flag": "H" },
+ { "test_name": "CRP", "result": "1.8", "units": "mg/dL", "reference_range": "0-0.5", "flag": "H" }
+ ]
+ },
+ "page_confidence": {
+ "1": 96.2, "2": 94.8, "3": 91.4, "4": 88.7, "5": 90.1,
+ "6": 97.3, "7": 96.9, "8": 93.2, "9": 92.7, "10": 87.4,
+ "11": 78.1, "12": 75.6
+ },
+ "flagged_pages": [],
+ "flagged_fields": {}
 }
 ```
 
@@ -737,7 +737,7 @@ Notice what the LLM extraction produces that the previous keyword classifier plu
 
 ## Why This Isn't Production-Ready
 
-> **⚠️ Regulatory Caution: Clinical Review Requirements**
+> ** Regulatory Caution: Clinical Review Requirements**
 >
 > This pipeline produces structured data that *supports* clinical review decisions; it does not replace the clinical review requirement. The CMS Interoperability and Prior Authorization Final Rule (CMS-0057-F) requires that prior authorization decisions be based on appropriate clinical review. A pipeline where LLM-extracted `medical_necessity_evidence` feeds an automated criteria-matching engine does not by itself satisfy this requirement.
 >

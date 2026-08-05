@@ -48,207 +48,207 @@
 
 ```mermaid
 flowchart LR
-    subgraph Channels
-      WEB[Web Chat]
-      APP[Institution App]
-      SMS[SMS via Pinpoint/Connect]
-      VOICE[Voice via Connect]
-      PUSH[Push via Pinpoint]
-    end
+ subgraph Channels
+ WEB[Web Chat]
+ APP[Institution App]
+ SMS[SMS via Pinpoint/Connect]
+ VOICE[Voice via Connect]
+ PUSH[Push via Pinpoint]
+ end
 
-    subgraph Edge
-      WAF[AWS WAF]
-      APIGW[API Gateway]
-    end
+ subgraph Edge
+ WAF[AWS WAF]
+ APIGW[API Gateway]
+ end
 
-    subgraph Engagement_Layer
-      L_SCHED[Lambda<br/>engagement scheduler]
-      SFN[Step Functions<br/>engagement workflows]
-      L_NOTIFY[Lambda<br/>notification dispatch]
-      EB_ENG[EventBridge<br/>engagement events]
-    end
+ subgraph Engagement_Layer
+ L_SCHED[Lambda<br/>engagement scheduler]
+ SFN[Step Functions<br/>engagement workflows]
+ L_NOTIFY[Lambda<br/>notification dispatch]
+ EB_ENG[EventBridge<br/>engagement events]
+ end
 
-    subgraph Biometric_Layer
-      L_BIO_INGEST[Lambda<br/>biometric ingestion]
-      L_BIO_THRESHOLD[Lambda<br/>threshold evaluation]
-      VENDOR[Vendor APIs<br/>CGM, BP, scale, etc.]
-    end
+ subgraph Biometric_Layer
+ L_BIO_INGEST[Lambda<br/>biometric ingestion]
+ L_BIO_THRESHOLD[Lambda<br/>threshold evaluation]
+ VENDOR[Vendor APIs<br/>CGM, BP, scale, etc.]
+ end
 
-    subgraph Conversation_Core
-      L_CHAT[Lambda<br/>chat handler]
-      L_INPUT[Lambda<br/>input screening<br/>+ continuous emergency]
-      L_OUTPUT[Lambda<br/>output screening<br/>+ citation verify]
-      L_HANDOFF[Lambda<br/>escalation routing]
-      L_IDENTITY[Lambda<br/>identity + longitudinal<br/>context loading]
-    end
+ subgraph Conversation_Core
+ L_CHAT[Lambda<br/>chat handler]
+ L_INPUT[Lambda<br/>input screening<br/>+ continuous emergency]
+ L_OUTPUT[Lambda<br/>output screening<br/>+ citation verify]
+ L_HANDOFF[Lambda<br/>escalation routing]
+ L_IDENTITY[Lambda<br/>identity + longitudinal<br/>context loading]
+ end
 
-    subgraph LLM_and_Agent
-      AGENT[Bedrock Agents]
-      BEDROCK[Bedrock<br/>LLM generation]
-      KB_GUIDE[Bedrock Knowledge Bases<br/>clinical guidelines]
-      KB_EDU[Bedrock Knowledge Bases<br/>patient education]
-      KB_HIST[Bedrock Knowledge Bases<br/>conversation history]
-      GUARDRAILS[Bedrock Guardrails]
-      OS[OpenSearch Serverless]
-    end
+ subgraph LLM_and_Agent
+ AGENT[Bedrock Agents]
+ BEDROCK[Bedrock<br/>LLM generation]
+ KB_GUIDE[Bedrock Knowledge Bases<br/>clinical guidelines]
+ KB_EDU[Bedrock Knowledge Bases<br/>patient education]
+ KB_HIST[Bedrock Knowledge Bases<br/>conversation history]
+ GUARDRAILS[Bedrock Guardrails]
+ OS[OpenSearch Serverless]
+ end
 
-    subgraph Coaching_Tools
-      L_CARE_PLAN[Lambda<br/>care_plan_retrieve]
-      L_BIO_RET[Lambda<br/>biometric_data_retrieve]
-      L_CONV_HIST[Lambda<br/>conversation_history_retrieve]
-      L_PREFS[Lambda<br/>patient_preferences_retrieve]
-      L_GUIDE[Lambda<br/>clinical_guideline_retrieve]
-      L_RULE[Lambda<br/>clinical_rule_compute]
-      L_EDU[Lambda<br/>education_content_retrieve]
-      L_ESC[Lambda<br/>escalation_propose]
-      L_ALERT[Lambda<br/>care_team_alert_propose]
-      L_FOLLOW[Lambda<br/>follow_up_schedule]
-      L_DISCLOSE[Lambda<br/>disclosure_record]
-      L_STAGE[Lambda<br/>behavior_change_stage_update]
-    end
+ subgraph Coaching_Tools
+ L_CARE_PLAN[Lambda<br/>care_plan_retrieve]
+ L_BIO_RET[Lambda<br/>biometric_data_retrieve]
+ L_CONV_HIST[Lambda<br/>conversation_history_retrieve]
+ L_PREFS[Lambda<br/>patient_preferences_retrieve]
+ L_GUIDE[Lambda<br/>clinical_guideline_retrieve]
+ L_RULE[Lambda<br/>clinical_rule_compute]
+ L_EDU[Lambda<br/>education_content_retrieve]
+ L_ESC[Lambda<br/>escalation_propose]
+ L_ALERT[Lambda<br/>care_team_alert_propose]
+ L_FOLLOW[Lambda<br/>follow_up_schedule]
+ L_DISCLOSE[Lambda<br/>disclosure_record]
+ L_STAGE[Lambda<br/>behavior_change_stage_update]
+ end
 
-    subgraph External_Integrations
-      EHR[(EHR / FHIR)]
-      HEALTHLAKE[(AWS HealthLake)]
-      CARE_TEAM[(Care team<br/>workflows)]
-      TRIAGE[(Triage<br/>recipe 11.6)]
-      MH_PATH[(Mental health<br/>recipe 11.8)]
-      PHARMACY[(Pharmacy)]
-      NAV[(Care navigation)]
-    end
+ subgraph External_Integrations
+ EHR[(EHR / FHIR)]
+ HEALTHLAKE[(AWS HealthLake)]
+ CARE_TEAM[(Care team<br/>workflows)]
+ TRIAGE[(Triage<br/>recipe 11.6)]
+ MH_PATH[(Mental health<br/>recipe 11.8)]
+ PHARMACY[(Pharmacy)]
+ NAV[(Care navigation)]
+ end
 
-    subgraph State_and_Audit
-      DDB_LONG[(DynamoDB<br/>longitudinal store)]
-      DDB_SESS[(DynamoDB<br/>conversation state)]
-      DDB_META[(DynamoDB<br/>conversation metadata)]
-      DDB_TOOL[(DynamoDB<br/>tool-call ledger)]
-      DDB_DECISION[(DynamoDB<br/>coaching-decision<br/>record journal)]
-      DDB_SCHED[(DynamoDB<br/>engagement schedule)]
-      DDB_BIO[(DynamoDB<br/>biometric event store)]
-      DDB_ALERT[(DynamoDB<br/>care-team alerts)]
-      DDB_OUTCOME[(DynamoDB<br/>outcome correlation)]
-      S3_GUIDE[(S3<br/>guideline corpus)]
-      S3_EDU[(S3<br/>education library)]
-      S3_AUDIT[(S3<br/>audit archive)]
-      S3_DECISION[(S3<br/>decision-record<br/>journal)]
-      S3_BIO[(S3<br/>biometric archive)]
-    end
+ subgraph State_and_Audit
+ DDB_LONG[(DynamoDB<br/>longitudinal store)]
+ DDB_SESS[(DynamoDB<br/>conversation state)]
+ DDB_META[(DynamoDB<br/>conversation metadata)]
+ DDB_TOOL[(DynamoDB<br/>tool-call ledger)]
+ DDB_DECISION[(DynamoDB<br/>coaching-decision<br/>record journal)]
+ DDB_SCHED[(DynamoDB<br/>engagement schedule)]
+ DDB_BIO[(DynamoDB<br/>biometric event store)]
+ DDB_ALERT[(DynamoDB<br/>care-team alerts)]
+ DDB_OUTCOME[(DynamoDB<br/>outcome correlation)]
+ S3_GUIDE[(S3<br/>guideline corpus)]
+ S3_EDU[(S3<br/>education library)]
+ S3_AUDIT[(S3<br/>audit archive)]
+ S3_DECISION[(S3<br/>decision-record<br/>journal)]
+ S3_BIO[(S3<br/>biometric archive)]
+ end
 
-    subgraph Reporting_and_Analytics
-      L_REPORT[Lambda<br/>care-team reporting]
-      L_OUTCOME[Lambda<br/>outcome correlation]
-      EB[EventBridge]
-      KIN[Kinesis Firehose]
-      ATH[Athena]
-      QS[QuickSight]
-      CW[CloudWatch]
-      CT[CloudTrail]
-    end
+ subgraph Reporting_and_Analytics
+ L_REPORT[Lambda<br/>care-team reporting]
+ L_OUTCOME[Lambda<br/>outcome correlation]
+ EB[EventBridge]
+ KIN[Kinesis Firehose]
+ ATH[Athena]
+ QS[QuickSight]
+ CW[CloudWatch]
+ CT[CloudTrail]
+ end
 
-    subgraph Secrets_and_Keys
-      SM_SEC[(Secrets Manager)]
-      KMS[(AWS KMS)]
-    end
+ subgraph Secrets_and_Keys
+ SM_SEC[(Secrets Manager)]
+ KMS[(AWS KMS)]
+ end
 
-    WEB --> WAF
-    APP --> WAF
-    SMS --> APIGW
-    VOICE --> APIGW
-    WAF --> APIGW
-    APIGW --> L_CHAT
+ WEB --> WAF
+ APP --> WAF
+ SMS --> APIGW
+ VOICE --> APIGW
+ WAF --> APIGW
+ APIGW --> L_CHAT
 
-    SFN --> L_NOTIFY
-    L_NOTIFY --> PUSH
-    L_NOTIFY --> SMS
-    L_SCHED --> SFN
+ SFN --> L_NOTIFY
+ L_NOTIFY --> PUSH
+ L_NOTIFY --> SMS
+ L_SCHED --> SFN
 
-    VENDOR --> L_BIO_INGEST
-    L_BIO_INGEST --> L_BIO_THRESHOLD
-    L_BIO_THRESHOLD --> EB_ENG
-    L_BIO_THRESHOLD --> DDB_BIO
-    EB_ENG --> L_SCHED
+ VENDOR --> L_BIO_INGEST
+ L_BIO_INGEST --> L_BIO_THRESHOLD
+ L_BIO_THRESHOLD --> EB_ENG
+ L_BIO_THRESHOLD --> DDB_BIO
+ EB_ENG --> L_SCHED
 
-    L_CHAT --> L_INPUT
-    L_CHAT --> L_IDENTITY
-    L_CHAT --> AGENT
-    AGENT --> BEDROCK
-    AGENT --> KB_GUIDE
-    AGENT --> KB_EDU
-    AGENT --> KB_HIST
-    KB_GUIDE --> OS
-    KB_EDU --> OS
-    KB_HIST --> OS
-    AGENT --> GUARDRAILS
-    AGENT --> L_CARE_PLAN
-    AGENT --> L_BIO_RET
-    AGENT --> L_CONV_HIST
-    AGENT --> L_PREFS
-    AGENT --> L_GUIDE
-    AGENT --> L_RULE
-    AGENT --> L_EDU
-    AGENT --> L_ESC
-    AGENT --> L_ALERT
-    AGENT --> L_FOLLOW
-    AGENT --> L_DISCLOSE
-    AGENT --> L_STAGE
-    L_CARE_PLAN --> EHR
-    L_CARE_PLAN --> HEALTHLAKE
-    L_CHAT --> L_OUTPUT
-    L_OUTPUT --> L_HANDOFF
-    L_HANDOFF --> CARE_TEAM
-    L_HANDOFF --> TRIAGE
-    L_HANDOFF --> MH_PATH
-    L_HANDOFF --> PHARMACY
-    L_HANDOFF --> NAV
-    L_CHAT --> DDB_SESS
-    L_CHAT --> DDB_META
-    L_CHAT --> DDB_LONG
-    AGENT --> DDB_TOOL
-    L_OUTPUT --> DDB_DECISION
-    L_OUTPUT --> S3_DECISION
-    L_OUTCOME --> DDB_OUTCOME
-    L_REPORT --> CARE_TEAM
-    L_CHAT --> EB
-    EB --> KIN
-    KIN --> S3_AUDIT
-    S3_AUDIT --> ATH
-    S3_DECISION --> ATH
-    ATH --> QS
-    L_CHAT --> CW
-    APIGW --> CT
-    L_CARE_PLAN --> SM_SEC
-    KMS --> S3_AUDIT
-    KMS --> S3_DECISION
-    KMS --> S3_GUIDE
-    KMS --> S3_EDU
-    KMS --> S3_BIO
-    KMS --> DDB_LONG
-    KMS --> DDB_SESS
-    KMS --> DDB_META
-    KMS --> DDB_TOOL
-    KMS --> DDB_DECISION
-    KMS --> DDB_SCHED
-    KMS --> DDB_BIO
-    KMS --> DDB_ALERT
-    KMS --> DDB_OUTCOME
-    KMS --> SM_SEC
+ L_CHAT --> L_INPUT
+ L_CHAT --> L_IDENTITY
+ L_CHAT --> AGENT
+ AGENT --> BEDROCK
+ AGENT --> KB_GUIDE
+ AGENT --> KB_EDU
+ AGENT --> KB_HIST
+ KB_GUIDE --> OS
+ KB_EDU --> OS
+ KB_HIST --> OS
+ AGENT --> GUARDRAILS
+ AGENT --> L_CARE_PLAN
+ AGENT --> L_BIO_RET
+ AGENT --> L_CONV_HIST
+ AGENT --> L_PREFS
+ AGENT --> L_GUIDE
+ AGENT --> L_RULE
+ AGENT --> L_EDU
+ AGENT --> L_ESC
+ AGENT --> L_ALERT
+ AGENT --> L_FOLLOW
+ AGENT --> L_DISCLOSE
+ AGENT --> L_STAGE
+ L_CARE_PLAN --> EHR
+ L_CARE_PLAN --> HEALTHLAKE
+ L_CHAT --> L_OUTPUT
+ L_OUTPUT --> L_HANDOFF
+ L_HANDOFF --> CARE_TEAM
+ L_HANDOFF --> TRIAGE
+ L_HANDOFF --> MH_PATH
+ L_HANDOFF --> PHARMACY
+ L_HANDOFF --> NAV
+ L_CHAT --> DDB_SESS
+ L_CHAT --> DDB_META
+ L_CHAT --> DDB_LONG
+ AGENT --> DDB_TOOL
+ L_OUTPUT --> DDB_DECISION
+ L_OUTPUT --> S3_DECISION
+ L_OUTCOME --> DDB_OUTCOME
+ L_REPORT --> CARE_TEAM
+ L_CHAT --> EB
+ EB --> KIN
+ KIN --> S3_AUDIT
+ S3_AUDIT --> ATH
+ S3_DECISION --> ATH
+ ATH --> QS
+ L_CHAT --> CW
+ APIGW --> CT
+ L_CARE_PLAN --> SM_SEC
+ KMS --> S3_AUDIT
+ KMS --> S3_DECISION
+ KMS --> S3_GUIDE
+ KMS --> S3_EDU
+ KMS --> S3_BIO
+ KMS --> DDB_LONG
+ KMS --> DDB_SESS
+ KMS --> DDB_META
+ KMS --> DDB_TOOL
+ KMS --> DDB_DECISION
+ KMS --> DDB_SCHED
+ KMS --> DDB_BIO
+ KMS --> DDB_ALERT
+ KMS --> DDB_OUTCOME
+ KMS --> SM_SEC
 
-    style AGENT fill:#fcf,stroke:#333
-    style BEDROCK fill:#fcf,stroke:#333
-    style KB_GUIDE fill:#fcf,stroke:#333
-    style KB_EDU fill:#fcf,stroke:#333
-    style KB_HIST fill:#fcf,stroke:#333
-    style GUARDRAILS fill:#fcf,stroke:#333
-    style L_INPUT fill:#fcc,stroke:#900,stroke-width:3px
-    style L_OUTPUT fill:#fcc,stroke:#900,stroke-width:3px
-    style L_HANDOFF fill:#fcc,stroke:#900,stroke-width:3px
-    style EHR fill:#ccf,stroke:#333
-    style HEALTHLAKE fill:#ccf,stroke:#333
-    style CARE_TEAM fill:#ccf,stroke:#333
-    style TRIAGE fill:#ccf,stroke:#333
-    style DDB_LONG fill:#9ff,stroke:#333,stroke-width:3px
-    style DDB_DECISION fill:#9ff,stroke:#333
-    style S3_DECISION fill:#cfc,stroke:#333
+ style AGENT fill:#fcf,stroke:#333
+ style BEDROCK fill:#fcf,stroke:#333
+ style KB_GUIDE fill:#fcf,stroke:#333
+ style KB_EDU fill:#fcf,stroke:#333
+ style KB_HIST fill:#fcf,stroke:#333
+ style GUARDRAILS fill:#fcf,stroke:#333
+ style L_INPUT fill:#fcc,stroke:#900,stroke-width:3px
+ style L_OUTPUT fill:#fcc,stroke:#900,stroke-width:3px
+ style L_HANDOFF fill:#fcc,stroke:#900,stroke-width:3px
+ style EHR fill:#ccf,stroke:#333
+ style HEALTHLAKE fill:#ccf,stroke:#333
+ style CARE_TEAM fill:#ccf,stroke:#333
+ style TRIAGE fill:#ccf,stroke:#333
+ style DDB_LONG fill:#9ff,stroke:#333,stroke-width:3px
+ style DDB_DECISION fill:#9ff,stroke:#333
+ style S3_DECISION fill:#cfc,stroke:#333
 ```
 
 ### Prerequisites
@@ -258,12 +258,12 @@ flowchart LR
 | **AWS Services** | Amazon Bedrock (Agents, Knowledge Bases, Guardrails, foundation model with strong tool-use, embedding model), Amazon OpenSearch Serverless, AWS HealthLake, AWS Lambda, AWS Step Functions, Amazon API Gateway, AWS WAF, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon Pinpoint or Amazon SNS, Amazon Connect (where SMS or voice channel is used), Amazon QuickSight (dashboards). Optionally: AWS IoT Core (institution-distributed connected devices), Amazon SageMaker (custom behavior-change-stage classifier or other ML hosting). |
 | **External Inputs** | EHR or FHIR-native chart-context (Patient, Condition, MedicationStatement, AllergyIntolerance, Encounter, Observation, CarePlan, Goal resources). Clinical-guideline corpus per chronic condition (institutionally curated and version-controlled, drawing from authoritative sources: ADA standards for diabetes, ACC/AHA for hypertension and heart failure, GINA for asthma, GOLD for COPD, KDIGO for CKD, APA for depression, others as relevant). Patient-education content library (institutionally reviewed and version-controlled, multilingual and multi-reading-level). Care-plan templates per condition (institutionally signed off by clinical-specialty leadership, version-controlled, instantiated per patient with patient-specific values and signed by the patient's clinical team). Biometric-device integrations (vendor APIs for CGM, BP cuff, scale, peak flow meter, pulse oximeter, smartwatch, others as relevant). Pharmacy adherence data (prescription fill records for outcome correlation against medication adherence). Care-team workflow integration (alert delivery to PCP, specialist, care manager). Triage workflow integration (recipe 11.6) for acute-symptom escalation. Mental-health pathway integration (recipe 11.8) for behavioral-health escalation. Care-navigation integration for social-determinants concerns. Outcome-correlation data pipeline pulling subsequent encounter records, lab results, prescription fills, and patient-reported outcomes. Mandatory-reporting workflow integration for disclosures triggering statutory obligations. |
 | **IAM Permissions** | Per-Lambda least-privilege roles. The chart-context and care-plan-retrieve Lambdas have read access to the EHR or HealthLake. The biometric-data-retrieve Lambda has read access to the biometric data store. The longitudinal-disclosure-record Lambda has write access to the longitudinal store. The care-team-alert Lambda has write access to the care-team alert queue. The clinical-rule Lambdas have no external-system access (pure compute). None of the coach's Lambdas have write access to the clinical record except for institutionally-approved coaching-event records (e.g., FHIR Communication resources for the conversation log; FHIR Observation resources for patient-reported data where the institution permits coach-originated observations). Resource-based policies pin invoking principals to the production agent and API Gateway stage ARNs. |
-| **BAA and Compliance** | AWS BAA signed. Verify all services in scope are HIPAA-eligible at build time. The coach is patient-facing PHI; the audit and retention story must satisfy HIPAA Privacy and Security Rules plus state-specific medical-record retention rules and any FDA SaMD post-market obligations. The clinical-guideline corpus may have specific licensing restrictions for content drawn from specialty societies; the legal team reviews. The institutional regulatory team reviews the FDA-strategy positioning before launch and on each material scope change. The institutional malpractice insurer is part of the policy review. State-specific regulations on AI-mediated patient communication, on telehealth, and on remote patient monitoring may apply.  |
+| **BAA and Compliance** | AWS BAA signed. Verify all services in scope are HIPAA-eligible at build time. The coach is patient-facing PHI; the audit and retention story must satisfy HIPAA Privacy and Security Rules plus state-specific medical-record retention rules and any FDA SaMD post-market obligations. The clinical-guideline corpus may have specific licensing restrictions for content drawn from specialty societies; the legal team reviews. The institutional regulatory team reviews the FDA-strategy positioning before launch and on each material scope change. The institutional malpractice insurer is part of the policy review. State-specific regulations on AI-mediated patient communication, on telehealth, and on remote patient monitoring may apply. |
 | **Encryption** | Care-plan store, longitudinal store, biometric data store, conversation archive, coaching-decision-record journal, clinical-guideline corpus, patient-education corpus: SSE-KMS with customer-managed keys. S3 archives: Object Lock in compliance mode for the retention window, lifecycle to S3 Glacier Deep Archive after 90 days. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all integrations with external systems. Different KMS key per data class for blast-radius containment, with the longitudinal store and the coaching-decision-record journal having separate keys reflecting their distinct retention and access patterns. |
 | **VPC** | Production: tool Lambdas that call EHR, biometric-vendor APIs, care-team workflows, pharmacy systems, and care-navigation systems run in VPC with controlled egress. PrivateLink to vendor-hosted endpoints where supported; tightly-scoped NAT path with allow-list otherwise. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, OpenSearch Serverless, HealthLake, Step Functions, Pinpoint, and SageMaker (where used). The patient-facing edge is public; the back-office traffic is private. |
 | **CloudTrail** | Enabled with data events on all sensitive S3 buckets (audit-archive, coaching-decision-record-journal, biometric-data archive, guideline corpus, education library) and DynamoDB tables (longitudinal store, coaching-decision-record journal, etc.), Secrets Manager secrets, and customer-managed KMS keys. Bedrock and Bedrock Agents invocations logged with metadata. Lambda invocations logged. API Gateway access logs enabled. Step Functions execution logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to Glacier Deep Archive after 90 days. Audit retention sized to the longer of HIPAA's six-year minimum, state medical-record retention rules, and FDA SaMD post-market obligations where applicable. |
 | **Sample Data** | Synthetic patient profiles stratified by chronic condition, by combination of conditions, by age cohort, by sex, by language, by socioeconomic context, by behavior-change stage, by engagement profile (high engagement, low engagement, attrition risk). Synthetic care plans covering the institution's full condition catalog. Synthetic biometric-data streams covering normal patterns, threshold-crossing patterns, concerning trends, and noisy/erroneous data. Synthetic conversation histories covering long-running engagement, attrition patterns, sensitive disclosures, escalation triggers, behavior-change-stage transitions, and life-event-driven adherence disruption. Validated patient-education content reviewed by the institution's patient-education committee and clinical leadership. Validated translations of all patient-facing content reviewed by the institution's language-services team and clinical leadership. Test EHR, biometric-vendor, care-team-workflow, and care-navigation systems with synthetic data. |
-| **Cost Estimate** | At a mid-sized health system or payer scale (50,000 active coached members across multiple chronic conditions; average 2-4 conversational engagements per week per active member; average 3-8 turns per engagement; average 1,500 tokens of prompt and 350 tokens of response per turn for the orchestration model plus tool-call overhead): Bedrock LLM invocations typically $3-8 per active member per month for a Sonnet-class orchestration model, totaling approximately $1.8M-4.8M per year. Bedrock Agents and Knowledge Bases hosting plus the OpenSearch Serverless retrieval indices typically $50,000-200,000 per year. Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Step Functions total approximately $100,000-400,000 per year combined. AWS HealthLake (when used as the FHIR chart-context source) typically $50,000-200,000 per year depending on data volume and resource count. Pinpoint or SNS for proactive engagement notification typically $20,000-80,000 per year depending on channel mix. Connect (when SMS or voice channel is used) typically $30,000-150,000 per year. SageMaker (when used for hosted classifier) typically $20,000-80,000 per year. Total AWS infrastructure typically $2.0M-5.9M per year at this scale (approximately $3-12 per active member per month, dominated by LLM invocation volume). The infrastructure cost is small relative to the cost of even a few avoided hospitalizations per year (a single avoided heart-failure admission, diabetic-ketoacidosis admission, or COPD-exacerbation admission has typical institutional cost in the tens of thousands of dollars).  |
+| **Cost Estimate** | At a mid-sized health system or payer scale (50,000 active coached members across multiple chronic conditions; average 2-4 conversational engagements per week per active member; average 3-8 turns per engagement; average 1,500 tokens of prompt and 350 tokens of response per turn for the orchestration model plus tool-call overhead): Bedrock LLM invocations typically $3-8 per active member per month for a Sonnet-class orchestration model, totaling approximately $1.8M-4.8M per year. Bedrock Agents and Knowledge Bases hosting plus the OpenSearch Serverless retrieval indices typically $50,000-200,000 per year. Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Step Functions total approximately $100,000-400,000 per year combined. AWS HealthLake (when used as the FHIR chart-context source) typically $50,000-200,000 per year depending on data volume and resource count. Pinpoint or SNS for proactive engagement notification typically $20,000-80,000 per year depending on channel mix. Connect (when SMS or voice channel is used) typically $30,000-150,000 per year. SageMaker (when used for hosted classifier) typically $20,000-80,000 per year. Total AWS infrastructure typically $2.0M-5.9M per year at this scale (approximately $3-12 per active member per month, dominated by LLM invocation volume). The infrastructure cost is small relative to the cost of even a few avoided hospitalizations per year (a single avoided heart-failure admission, diabetic-ketoacidosis admission, or COPD-exacerbation admission has typical institutional cost in the tens of thousands of dollars). |
 
 ### Ingredients
 
@@ -304,881 +304,881 @@ flowchart LR
 
 ```pseudocode
 ON enroll_patient(patient_id, primary_condition,
-                  secondary_conditions,
-                  clinical_team_signoff):
-    // Step 1A: select care-plan template.
-    template = care_plan_template_registry.select({
-        primary_condition: primary_condition,
-        secondary_conditions: secondary_conditions,
-        institution_id: INSTITUTION_ID
-    })
+ secondary_conditions,
+ clinical_team_signoff):
+ // Step 1A: select care-plan template.
+ template = care_plan_template_registry.select({
+ primary_condition: primary_condition,
+ secondary_conditions: secondary_conditions,
+ institution_id: INSTITUTION_ID
+ })
 
-    // Step 1B: instantiate care plan with
-    // patient-specific values.
-    care_plan = instantiate_care_plan(
-        template: template,
-        patient_id: patient_id,
-        patient_chart_context: load_chart_context(
-            patient_id: patient_id),
-        clinical_team_inputs:
-            clinical_team_signoff.inputs)
+ // Step 1B: instantiate care plan with
+ // patient-specific values.
+ care_plan = instantiate_care_plan(
+ template: template,
+ patient_id: patient_id,
+ patient_chart_context: load_chart_context(
+ patient_id: patient_id),
+ clinical_team_inputs:
+ clinical_team_signoff.inputs)
 
-    care_plan.id = generate_care_plan_id()
-    care_plan.version = "v1.0"
-    care_plan.signed_by =
-        clinical_team_signoff.signing_clinicians
-    care_plan.signed_at = now()
-    care_plan.effective_date = now()
-    care_plan.next_review_date =
-        now() + 365_DAYS
+ care_plan.id = generate_care_plan_id()
+ care_plan.version = "v1.0"
+ care_plan.signed_by =
+ clinical_team_signoff.signing_clinicians
+ care_plan.signed_at = now()
+ care_plan.effective_date = now()
+ care_plan.next_review_date =
+ now() + 365_DAYS
 
-    care_plan_store.write(care_plan)
+ care_plan_store.write(care_plan)
 
-    // Step 1C: present care plan to patient for
-    // review and consent.
-    consent = present_care_plan_for_consent(
-        patient_id: patient_id,
-        care_plan: care_plan)
+ // Step 1C: present care plan to patient for
+ // review and consent.
+ consent = present_care_plan_for_consent(
+ patient_id: patient_id,
+ care_plan: care_plan)
 
-    IF NOT consent.granted:
-        return { action: "enrollment_declined" }
+ IF NOT consent.granted:
+ return { action: "enrollment_declined" }
 
-    // Step 1D: initialize longitudinal store.
-    longitudinal_store = {
-        patient_id: patient_id,
-        active_care_plans: [care_plan.id],
-        primary_condition: primary_condition,
-        secondary_conditions: secondary_conditions,
-        behavior_change_stage_per_goal:
-            initialize_behavior_change_stages(
-                care_plan: care_plan,
-                patient_chart_context:
-                    load_chart_context(
-                        patient_id: patient_id)),
-        patient_preferences: {
-            preferred_channels:
-                consent.preferred_channels,
-            quiet_hours: consent.quiet_hours,
-            language: consent.language,
-            preferred_name: consent.preferred_name,
-            engagement_intensity_preference:
-                consent.engagement_intensity
-        },
-        biometric_data_baseline: {},
-        adherence_pattern_baseline: {},
-        life_context_disclosures: [],
-        outcome_tracking_baseline:
-            extract_outcome_tracking_baseline(
-                patient_id: patient_id,
-                care_plan: care_plan),
-        enrolled_at: now(),
-        active: true
-    }
+ // Step 1D: initialize longitudinal store.
+ longitudinal_store = {
+ patient_id: patient_id,
+ active_care_plans: [care_plan.id],
+ primary_condition: primary_condition,
+ secondary_conditions: secondary_conditions,
+ behavior_change_stage_per_goal:
+ initialize_behavior_change_stages(
+ care_plan: care_plan,
+ patient_chart_context:
+ load_chart_context(
+ patient_id: patient_id)),
+ patient_preferences: {
+ preferred_channels:
+ consent.preferred_channels,
+ quiet_hours: consent.quiet_hours,
+ language: consent.language,
+ preferred_name: consent.preferred_name,
+ engagement_intensity_preference:
+ consent.engagement_intensity
+ },
+ biometric_data_baseline: {},
+ adherence_pattern_baseline: {},
+ life_context_disclosures: [],
+ outcome_tracking_baseline:
+ extract_outcome_tracking_baseline(
+ patient_id: patient_id,
+ care_plan: care_plan),
+ enrolled_at: now(),
+ active: true
+ }
 
-    longitudinal_store_table.write(longitudinal_store)
+ longitudinal_store_table.write(longitudinal_store)
 
-    // Step 1E: schedule initial onboarding
-    // engagement.
-    engagement_scheduler.schedule({
-        patient_id: patient_id,
-        engagement_type: "onboarding_introduction",
-        delivery_target: now() + 24_HOURS,
-        priority: "high"
-    })
+ // Step 1E: schedule initial onboarding
+ // engagement.
+ engagement_scheduler.schedule({
+ patient_id: patient_id,
+ engagement_type: "onboarding_introduction",
+ delivery_target: now() + 24_HOURS,
+ priority: "high"
+ })
 
-    EventBridge.PutEvents([{
-        source: "chronic_coach",
-        detail_type: "patient_enrolled",
-        detail: {
-            patient_id: patient_id,
-            care_plan_id: care_plan.id,
-            primary_condition: primary_condition
-        }
-    }])
+ EventBridge.PutEvents([{
+ source: "chronic_coach",
+ detail_type: "patient_enrolled",
+ detail: {
+ patient_id: patient_id,
+ care_plan_id: care_plan.id,
+ primary_condition: primary_condition
+ }
+ }])
 
-    return {
-        action: "enrolled",
-        care_plan_id: care_plan.id
-    }
+ return {
+ action: "enrolled",
+ care_plan_id: care_plan.id
+ }
 ```
 
 **Step 2: Ingest biometric data and evaluate against care-plan thresholds.** Connected devices feed the coach. Each reading is validated, stored, and evaluated against thresholds specified in the patient's care plan. Threshold-crossing events trigger engagement (or escalation, depending on severity). The thresholds are not chosen by the LLM; they are clinical-care-plan inputs signed by the patient's clinical team. Skip this and the coach is missing one of its highest-value inputs (the data the patient is generating between visits).
 
 ```pseudocode
 ON biometric_data_received(patient_id, device_type,
-                           reading, reading_timestamp):
-    // Step 2A: validate the reading.
-    validation = validate_biometric_reading({
-        device_type: device_type,
-        reading: reading,
-        patient_id: patient_id
-    })
+ reading, reading_timestamp):
+ // Step 2A: validate the reading.
+ validation = validate_biometric_reading({
+ device_type: device_type,
+ reading: reading,
+ patient_id: patient_id
+ })
 
-    IF NOT validation.valid:
-        log_invalid_reading(
-            patient_id: patient_id,
-            device_type: device_type,
-            reading: reading,
-            reason: validation.reason)
-        return { action: "invalid_reading_discarded" }
+ IF NOT validation.valid:
+ log_invalid_reading(
+ patient_id: patient_id,
+ device_type: device_type,
+ reading: reading,
+ reason: validation.reason)
+ return { action: "invalid_reading_discarded" }
 
-    // Step 2B: store the reading.
-    biometric_event_store.write({
-        patient_id: patient_id,
-        device_type: device_type,
-        reading: reading,
-        reading_timestamp: reading_timestamp,
-        ingested_at: now()
-    })
+ // Step 2B: store the reading.
+ biometric_event_store.write({
+ patient_id: patient_id,
+ device_type: device_type,
+ reading: reading,
+ reading_timestamp: reading_timestamp,
+ ingested_at: now()
+ })
 
-    // Step 2C: load patient's care plan for
-    // threshold evaluation.
-    care_plan = care_plan_store.read_active(
-        patient_id: patient_id)
+ // Step 2C: load patient's care plan for
+ // threshold evaluation.
+ care_plan = care_plan_store.read_active(
+ patient_id: patient_id)
 
-    thresholds = care_plan.biometric_thresholds_for(
-        device_type: device_type)
+ thresholds = care_plan.biometric_thresholds_for(
+ device_type: device_type)
 
-    // Step 2D: evaluate single-reading thresholds.
-    single_reading_event = evaluate_single_reading(
-        reading: reading,
-        thresholds: thresholds.single_reading)
+ // Step 2D: evaluate single-reading thresholds.
+ single_reading_event = evaluate_single_reading(
+ reading: reading,
+ thresholds: thresholds.single_reading)
 
-    // Step 2E: evaluate trend thresholds (recent
-    // readings).
-    recent_readings = biometric_event_store
-        .recent_for_patient(
-            patient_id: patient_id,
-            device_type: device_type,
-            window:
-                thresholds.trend_evaluation_window)
+ // Step 2E: evaluate trend thresholds (recent
+ // readings).
+ recent_readings = biometric_event_store
+ .recent_for_patient(
+ patient_id: patient_id,
+ device_type: device_type,
+ window:
+ thresholds.trend_evaluation_window)
 
-    trend_event = evaluate_trend(
-        recent_readings: recent_readings,
-        thresholds: thresholds.trend)
+ trend_event = evaluate_trend(
+ recent_readings: recent_readings,
+ thresholds: thresholds.trend)
 
-    // Step 2F: evaluate pattern thresholds.
-    pattern_event = evaluate_pattern(
-        recent_readings: recent_readings,
-        thresholds: thresholds.pattern)
+ // Step 2F: evaluate pattern thresholds.
+ pattern_event = evaluate_pattern(
+ recent_readings: recent_readings,
+ thresholds: thresholds.pattern)
 
-    // Step 2G: dispatch events.
-    FOR event IN [single_reading_event,
-                  trend_event,
-                  pattern_event]:
-        IF event.severity == "engagement":
-            engagement_scheduler.schedule({
-                patient_id: patient_id,
-                engagement_type:
-                    "biometric_followup",
-                trigger_event: event,
-                delivery_target:
-                    next_engagement_window(
-                        patient_id: patient_id,
-                        priority: event.priority),
-                priority: event.priority
-            })
+ // Step 2G: dispatch events.
+ FOR event IN [single_reading_event,
+ trend_event,
+ pattern_event]:
+ IF event.severity == "engagement":
+ engagement_scheduler.schedule({
+ patient_id: patient_id,
+ engagement_type:
+ "biometric_followup",
+ trigger_event: event,
+ delivery_target:
+ next_engagement_window(
+ patient_id: patient_id,
+ priority: event.priority),
+ priority: event.priority
+ })
 
-        ELSE IF event.severity == "escalation":
-            escalation_propose_tool.invoke({
-                patient_id: patient_id,
-                trigger_reason:
-                    "biometric_threshold_crossed",
-                trigger_event: event,
-                care_plan_reference:
-                    care_plan.id
-            })
+ ELSE IF event.severity == "escalation":
+ escalation_propose_tool.invoke({
+ patient_id: patient_id,
+ trigger_reason:
+ "biometric_threshold_crossed",
+ trigger_event: event,
+ care_plan_reference:
+ care_plan.id
+ })
 
-        EventBridge.PutEvents([{
-            source: "chronic_coach",
-            detail_type: "biometric_threshold_crossed",
-            detail: {
-                patient_id: patient_id,
-                device_type: device_type,
-                event_type: event.type,
-                severity: event.severity
-            }
-        }])
+ EventBridge.PutEvents([{
+ source: "chronic_coach",
+ detail_type: "biometric_threshold_crossed",
+ detail: {
+ patient_id: patient_id,
+ device_type: device_type,
+ event_type: event.type,
+ severity: event.severity
+ }
+ }])
 
-    return { action: "biometric_data_processed" }
+ return { action: "biometric_data_processed" }
 ```
 
 **Step 3: Schedule and deliver proactive engagement.** The engagement scheduler runs as a Step Functions workflow respecting the patient's preferences (channels, quiet hours, opt-outs), the institution's engagement policy (maximum frequency, fatigue mitigation), and the care plan's prescribed cadence. Each scheduled engagement composes a personalized message via the LLM grounded in the patient's longitudinal context, runs through output safety, and delivers via the preferred channel. Skip this and the coach is purely reactive, which limits its value to the patients who would have engaged unprompted (a small fraction of the broad chronic-disease majority).
 
 ```pseudocode
 ON scheduled_engagement_due(scheduled_engagement):
-    patient_id = scheduled_engagement.patient_id
+ patient_id = scheduled_engagement.patient_id
 
-    // Step 3A: load longitudinal store.
-    longitudinal = longitudinal_store_table.read(
-        patient_id: patient_id)
+ // Step 3A: load longitudinal store.
+ longitudinal = longitudinal_store_table.read(
+ patient_id: patient_id)
 
-    IF NOT longitudinal.active:
-        return { action: "patient_inactive_skip" }
+ IF NOT longitudinal.active:
+ return { action: "patient_inactive_skip" }
 
-    // Step 3B: enforce engagement policy.
-    policy_check = enforce_engagement_policy({
-        patient_id: patient_id,
-        scheduled_engagement: scheduled_engagement,
-        patient_preferences:
-            longitudinal.patient_preferences,
-        recent_engagement_history:
-            engagement_history_table.recent(
-                patient_id: patient_id,
-                window: 7_DAYS)
-    })
+ // Step 3B: enforce engagement policy.
+ policy_check = enforce_engagement_policy({
+ patient_id: patient_id,
+ scheduled_engagement: scheduled_engagement,
+ patient_preferences:
+ longitudinal.patient_preferences,
+ recent_engagement_history:
+ engagement_history_table.recent(
+ patient_id: patient_id,
+ window: 7_DAYS)
+ })
 
-    IF policy_check.action == "skip_quiet_hours":
-        engagement_scheduler.reschedule({
-            scheduled_engagement: scheduled_engagement,
-            new_target:
-                next_non_quiet_window(
-                    patient_id: patient_id)
-        })
-        return { action: "rescheduled_quiet_hours" }
+ IF policy_check.action == "skip_quiet_hours":
+ engagement_scheduler.reschedule({
+ scheduled_engagement: scheduled_engagement,
+ new_target:
+ next_non_quiet_window(
+ patient_id: patient_id)
+ })
+ return { action: "rescheduled_quiet_hours" }
 
-    IF policy_check.action == "skip_fatigue":
-        engagement_scheduler.cancel({
-            scheduled_engagement: scheduled_engagement,
-            reason: "engagement_fatigue_mitigation"
-        })
-        return { action: "cancelled_fatigue" }
+ IF policy_check.action == "skip_fatigue":
+ engagement_scheduler.cancel({
+ scheduled_engagement: scheduled_engagement,
+ reason: "engagement_fatigue_mitigation"
+ })
+ return { action: "cancelled_fatigue" }
 
-    IF policy_check.action == "skip_topic_optout":
-        engagement_scheduler.cancel({
-            scheduled_engagement: scheduled_engagement,
-            reason: "topic_optout"
-        })
-        return { action: "cancelled_topic_optout" }
+ IF policy_check.action == "skip_topic_optout":
+ engagement_scheduler.cancel({
+ scheduled_engagement: scheduled_engagement,
+ reason: "topic_optout"
+ })
+ return { action: "cancelled_topic_optout" }
 
-    // Step 3C: compose engagement message.
-    care_plan = care_plan_store.read_active(
-        patient_id: patient_id)
+ // Step 3C: compose engagement message.
+ care_plan = care_plan_store.read_active(
+ patient_id: patient_id)
 
-    recent_biometric = biometric_event_store
-        .recent_for_patient(
-            patient_id: patient_id,
-            window:
-                scheduled_engagement
-                    .biometric_window)
+ recent_biometric = biometric_event_store
+ .recent_for_patient(
+ patient_id: patient_id,
+ window:
+ scheduled_engagement
+ .biometric_window)
 
-    recent_conversation =
-        conversation_history_retrieve_tool.invoke({
-            patient_id: patient_id,
-            window: 14_DAYS,
-            max_turns: 30
-        })
+ recent_conversation =
+ conversation_history_retrieve_tool.invoke({
+ patient_id: patient_id,
+ window: 14_DAYS,
+ max_turns: 30
+ })
 
-    composed = compose_engagement_message({
-        scheduled_engagement: scheduled_engagement,
-        care_plan: care_plan,
-        longitudinal_store: longitudinal,
-        recent_biometric: recent_biometric,
-        recent_conversation: recent_conversation,
-        behavior_change_stage:
-            longitudinal
-                .behavior_change_stage_per_goal,
-        language:
-            longitudinal.patient_preferences
-                .language,
-        preferred_name:
-            longitudinal.patient_preferences
-                .preferred_name
-    })
+ composed = compose_engagement_message({
+ scheduled_engagement: scheduled_engagement,
+ care_plan: care_plan,
+ longitudinal_store: longitudinal,
+ recent_biometric: recent_biometric,
+ recent_conversation: recent_conversation,
+ behavior_change_stage:
+ longitudinal
+ .behavior_change_stage_per_goal,
+ language:
+ longitudinal.patient_preferences
+ .language,
+ preferred_name:
+ longitudinal.patient_preferences
+ .preferred_name
+ })
 
-    // Step 3D: output safety screening.
-    safety_check = screen_output(
-        response: composed.message,
-        session_context: {
-            patient_id: patient_id,
-            care_plan_id: care_plan.id,
-            engagement_type:
-                scheduled_engagement
-                    .engagement_type
-        })
+ // Step 3D: output safety screening.
+ safety_check = screen_output(
+ response: composed.message,
+ session_context: {
+ patient_id: patient_id,
+ care_plan_id: care_plan.id,
+ engagement_type:
+ scheduled_engagement
+ .engagement_type
+ })
 
-    IF safety_check.action != "deliver":
-        log_engagement_screening_failure(
-            patient_id: patient_id,
-            scheduled_engagement: scheduled_engagement,
-            safety_check: safety_check)
-        return { action: "screening_failed" }
+ IF safety_check.action != "deliver":
+ log_engagement_screening_failure(
+ patient_id: patient_id,
+ scheduled_engagement: scheduled_engagement,
+ safety_check: safety_check)
+ return { action: "screening_failed" }
 
-    // Step 3E: deliver engagement.
-    delivered = deliver_engagement({
-        patient_id: patient_id,
-        message: composed.message,
-        channel:
-            longitudinal.patient_preferences
-                .preferred_channels[0],
-        engagement_id:
-            scheduled_engagement.id,
-        scheduled_engagement_type:
-            scheduled_engagement.engagement_type
-    })
+ // Step 3E: deliver engagement.
+ delivered = deliver_engagement({
+ patient_id: patient_id,
+ message: composed.message,
+ channel:
+ longitudinal.patient_preferences
+ .preferred_channels[0],
+ engagement_id:
+ scheduled_engagement.id,
+ scheduled_engagement_type:
+ scheduled_engagement.engagement_type
+ })
 
-    // Step 3F: log engagement event.
-    engagement_history_table.write({
-        patient_id: patient_id,
-        engagement_id:
-            scheduled_engagement.id,
-        engagement_type:
-            scheduled_engagement.engagement_type,
-        composed_message_summary:
-            composed.summary,
-        delivered_at: now(),
-        channel: delivered.channel,
-        delivery_status: delivered.status
-    })
+ // Step 3F: log engagement event.
+ engagement_history_table.write({
+ patient_id: patient_id,
+ engagement_id:
+ scheduled_engagement.id,
+ engagement_type:
+ scheduled_engagement.engagement_type,
+ composed_message_summary:
+ composed.summary,
+ delivered_at: now(),
+ channel: delivered.channel,
+ delivery_status: delivered.status
+ })
 
-    EventBridge.PutEvents([{
-        source: "chronic_coach",
-        detail_type: "engagement_delivered",
-        detail: {
-            patient_id: patient_id,
-            engagement_id:
-                scheduled_engagement.id,
-            engagement_type:
-                scheduled_engagement.engagement_type
-        }
-    }])
+ EventBridge.PutEvents([{
+ source: "chronic_coach",
+ detail_type: "engagement_delivered",
+ detail: {
+ patient_id: patient_id,
+ engagement_id:
+ scheduled_engagement.id,
+ engagement_type:
+ scheduled_engagement.engagement_type
+ }
+ }])
 
-    return { action: "engagement_delivered" }
+ return { action: "engagement_delivered" }
 ```
 
 **Step 4: Handle patient-initiated or patient-responding conversation with longitudinal-context loading.** The coach loads the full longitudinal context (care plan, recent biometric data, recent conversation history, patient preferences, behavior-change-stage estimates, recent life-context disclosures) before generating any response. The longitudinal context is the architectural primitive that makes the coach a coach rather than a chatbot. Skip this and every conversation starts from scratch, which destroys the relationship the coach is supposed to maintain.
 
 ```pseudocode
 ON receive_message(channel, channel_session_id,
-                  user_message, auth_context):
-    // Step 4A: identify or create the conversation
-    // session.
-    session = conversation_state_table.get_or_create({
-        channel: channel,
-        channel_session_id: channel_session_id,
-        auth_context: auth_context
-    })
+ user_message, auth_context):
+ // Step 4A: identify or create the conversation
+ // session.
+ session = conversation_state_table.get_or_create({
+ channel: channel,
+ channel_session_id: channel_session_id,
+ auth_context: auth_context
+ })
 
-    patient_id = session.verified_patient_id
+ patient_id = session.verified_patient_id
 
-    // Step 4B: persist the user's message.
-    conversation_metadata_table.append_turn(
-        session_id: session.id,
-        turn: {
-            speaker: "user",
-            text: user_message,
-            timestamp: now()
-        })
+ // Step 4B: persist the user's message.
+ conversation_metadata_table.append_turn(
+ session_id: session.id,
+ turn: {
+ speaker: "user",
+ text: user_message,
+ timestamp: now()
+ })
 
-    // Step 4C: input safety screening with
-    // continuous emergency detection.
-    screening_result = screen_input(
-        session_id: session.id,
-        user_message: user_message,
-        domain: "chronic_disease_coaching")
+ // Step 4C: input safety screening with
+ // continuous emergency detection.
+ screening_result = screen_input(
+ session_id: session.id,
+ user_message: user_message,
+ domain: "chronic_disease_coaching")
 
-    IF screening_result.action == "block":
-        return handle_block(
-            session_id: session.id,
-            screening_result: screening_result)
+ IF screening_result.action == "block":
+ return handle_block(
+ session_id: session.id,
+ screening_result: screening_result)
 
-    // Step 4D: continuous emergency screening.
-    emergency_check = emergency_screen_tool.invoke({
-        user_message: user_message,
-        recent_turns: conversation_metadata_table
-            .recent_turns(session.id, k: 6),
-        chart_context_summary:
-            session.chart_context_summary,
-        active_conditions:
-            session.active_conditions
-    })
+ // Step 4D: continuous emergency screening.
+ emergency_check = emergency_screen_tool.invoke({
+ user_message: user_message,
+ recent_turns: conversation_metadata_table
+ .recent_turns(session.id, k: 6),
+ chart_context_summary:
+ session.chart_context_summary,
+ active_conditions:
+ session.active_conditions
+ })
 
-    IF emergency_check.emergency_detected:
-        return handle_emergency_routing(
-            session_id: session.id,
-            emergency_category:
-                emergency_check.category,
-            urgency: emergency_check.urgency)
-        // Routes to triage workflow (recipe 11.6),
-        // 911, 988, or institutional crisis line
-        // as appropriate.
+ IF emergency_check.emergency_detected:
+ return handle_emergency_routing(
+ session_id: session.id,
+ emergency_category:
+ emergency_check.category,
+ urgency: emergency_check.urgency)
+ // Routes to triage workflow (recipe 11.6),
+ // 911, 988, or institutional crisis line
+ // as appropriate.
 
-    // Step 4E: sensitive-disclosure detection.
-    disclosure_check = sensitive_disclosure_screen({
-        user_message: user_message,
-        recent_turns: conversation_metadata_table
-            .recent_turns(session.id, k: 6),
-        active_conditions:
-            session.active_conditions
-    })
+ // Step 4E: sensitive-disclosure detection.
+ disclosure_check = sensitive_disclosure_screen({
+ user_message: user_message,
+ recent_turns: conversation_metadata_table
+ .recent_turns(session.id, k: 6),
+ active_conditions:
+ session.active_conditions
+ })
 
-    IF disclosure_check.disclosure_detected:
-        handle_sensitive_disclosure(
-            session_id: session.id,
-            disclosure: disclosure_check)
-        // Continues conversation but flags for
-        // appropriate routing (mandatory reporter
-        // for some categories; care navigation for
-        // others; mental-health pathway for crisis).
+ IF disclosure_check.disclosure_detected:
+ handle_sensitive_disclosure(
+ session_id: session.id,
+ disclosure: disclosure_check)
+ // Continues conversation but flags for
+ // appropriate routing (mandatory reporter
+ // for some categories; care navigation for
+ // others; mental-health pathway for crisis).
 
-    // Step 4F: load longitudinal context.
-    longitudinal = longitudinal_store_table.read(
-        patient_id: patient_id)
-    care_plan = care_plan_store.read_active(
-        patient_id: patient_id)
-    recent_biometric = biometric_event_store
-        .recent_for_patient(
-            patient_id: patient_id,
-            window: 30_DAYS)
-    recent_conversation =
-        conversation_history_retrieve_tool.invoke({
-            patient_id: patient_id,
-            window: 90_DAYS,
-            max_turns: 50
-        })
-    long_term_summary =
-        longitudinal_summary_table.read(
-            patient_id: patient_id)
-    open_followups =
-        followup_table.open_for_patient(
-            patient_id: patient_id)
+ // Step 4F: load longitudinal context.
+ longitudinal = longitudinal_store_table.read(
+ patient_id: patient_id)
+ care_plan = care_plan_store.read_active(
+ patient_id: patient_id)
+ recent_biometric = biometric_event_store
+ .recent_for_patient(
+ patient_id: patient_id,
+ window: 30_DAYS)
+ recent_conversation =
+ conversation_history_retrieve_tool.invoke({
+ patient_id: patient_id,
+ window: 90_DAYS,
+ max_turns: 50
+ })
+ long_term_summary =
+ longitudinal_summary_table.read(
+ patient_id: patient_id)
+ open_followups =
+ followup_table.open_for_patient(
+ patient_id: patient_id)
 
-    session.longitudinal_context = {
-        longitudinal: longitudinal,
-        care_plan: care_plan,
-        recent_biometric: recent_biometric,
-        recent_conversation: recent_conversation,
-        long_term_summary: long_term_summary,
-        open_followups: open_followups
-    }
+ session.longitudinal_context = {
+ longitudinal: longitudinal,
+ care_plan: care_plan,
+ recent_biometric: recent_biometric,
+ recent_conversation: recent_conversation,
+ long_term_summary: long_term_summary,
+ open_followups: open_followups
+ }
 
-    // Return loaded context. The orchestrator invokes
-    // handle_conversation exactly once.
-    return {
-        session_id: session.id,
-        patient_id: patient_id,
-        longitudinal_context:
-            session.longitudinal_context
-    }
+ // Return loaded context. The orchestrator invokes
+ // handle_conversation exactly once.
+ return {
+ session_id: session.id,
+ patient_id: patient_id,
+ longitudinal_context:
+ session.longitudinal_context
+ }
 ```
 
 **Step 5: Generate the response with care-plan-grounded reasoning and behavior-change-stage adaptation.** The LLM operates as a Bedrock Agent with the coaching tool surface. The system prompt includes the patient's behavior-change stage per goal, the patient's stated preferences, the active care plan, and the relevant clinical guidelines. Tool calls retrieve specific care-plan elements, biometric data, conversation history, education content, and clinical-guideline references as needed. The tone, pacing, and content are adapted to the patient's behavior-change stage. Skip the stage adaptation and the coach is appropriate for some patients and counter-productive for others.
 
 ```pseudocode
 FUNCTION handle_conversation(session_id, patient_id,
-                             user_message,
-                             longitudinal_context):
+ user_message,
+ longitudinal_context):
 
-    // Step 5A: assemble system prompt.
-    system_prompt = compose_coaching_system_prompt({
-        coach_persona:
-            INSTITUTION_COACH_PERSONA,
-        active_care_plan: longitudinal_context
-            .care_plan,
-        active_conditions: longitudinal_context
-            .longitudinal
-            .primary_condition,
-        secondary_conditions: longitudinal_context
-            .longitudinal
-            .secondary_conditions,
-        behavior_change_stage_per_goal:
-            longitudinal_context
-                .longitudinal
-                .behavior_change_stage_per_goal,
-        patient_preferences:
-            longitudinal_context
-                .longitudinal
-                .patient_preferences,
-        long_term_summary: longitudinal_context
-            .long_term_summary,
-        open_followups: longitudinal_context
-            .open_followups,
-        regulatory_position:
-            INSTITUTION_REGULATORY_POSITION,
-        scope_boundaries:
-            COACH_SCOPE_BOUNDARIES,
-        language:
-            longitudinal_context
-                .longitudinal
-                .patient_preferences
-                .language
-    })
+ // Step 5A: assemble system prompt.
+ system_prompt = compose_coaching_system_prompt({
+ coach_persona:
+ INSTITUTION_COACH_PERSONA,
+ active_care_plan: longitudinal_context
+ .care_plan,
+ active_conditions: longitudinal_context
+ .longitudinal
+ .primary_condition,
+ secondary_conditions: longitudinal_context
+ .longitudinal
+ .secondary_conditions,
+ behavior_change_stage_per_goal:
+ longitudinal_context
+ .longitudinal
+ .behavior_change_stage_per_goal,
+ patient_preferences:
+ longitudinal_context
+ .longitudinal
+ .patient_preferences,
+ long_term_summary: longitudinal_context
+ .long_term_summary,
+ open_followups: longitudinal_context
+ .open_followups,
+ regulatory_position:
+ INSTITUTION_REGULATORY_POSITION,
+ scope_boundaries:
+ COACH_SCOPE_BOUNDARIES,
+ language:
+ longitudinal_context
+ .longitudinal
+ .patient_preferences
+ .language
+ })
 
-    // Step 5B: invoke Bedrock Agent.
-    agent_response = bedrock_agents_invoke({
-        agent_id: COACH_AGENT_ID,
-        agent_alias_id: COACH_AGENT_ALIAS_ID,
-        session_id: session_id,
-        input_text: user_message,
-        system_prompt: system_prompt,
-        recent_conversation: longitudinal_context
-            .recent_conversation,
-        recent_biometric: longitudinal_context
-            .recent_biometric
-    })
+ // Step 5B: invoke Bedrock Agent.
+ agent_response = bedrock_agents_invoke({
+ agent_id: COACH_AGENT_ID,
+ agent_alias_id: COACH_AGENT_ALIAS_ID,
+ session_id: session_id,
+ input_text: user_message,
+ system_prompt: system_prompt,
+ recent_conversation: longitudinal_context
+ .recent_conversation,
+ recent_biometric: longitudinal_context
+ .recent_biometric
+ })
 
-    // Step 5C: audit tool calls.
-    FOR tool_call IN agent_response.tool_calls:
-        audit_tool_call(
-            session_id: session_id,
-            tool: tool_call.tool_name,
-            arguments: tool_call.arguments,
-            result_summary:
-                summarize_for_audit(
-                    tool_call.result))
+ // Step 5C: audit tool calls.
+ FOR tool_call IN agent_response.tool_calls:
+ audit_tool_call(
+ session_id: session_id,
+ tool: tool_call.tool_name,
+ arguments: tool_call.arguments,
+ result_summary:
+ summarize_for_audit(
+ tool_call.result))
 
-    // Step 5D: capture citations.
-    citations = extract_citations(agent_response)
+ // Step 5D: capture citations.
+ citations = extract_citations(agent_response)
 
-    // Step 5E: behavior-change-stage update.
-    stage_signal = evaluate_behavior_change_signals({
-        user_message: user_message,
-        recent_conversation: longitudinal_context
-            .recent_conversation,
-        current_stages: longitudinal_context
-            .longitudinal
-            .behavior_change_stage_per_goal
-    })
+ // Step 5E: behavior-change-stage update.
+ stage_signal = evaluate_behavior_change_signals({
+ user_message: user_message,
+ recent_conversation: longitudinal_context
+ .recent_conversation,
+ current_stages: longitudinal_context
+ .longitudinal
+ .behavior_change_stage_per_goal
+ })
 
-    IF stage_signal.update_warranted:
-        behavior_change_stage_update_tool.invoke({
-            patient_id: session.verified_patient_id,
-            goal_id: stage_signal.goal_id,
-            new_stage: stage_signal.new_stage,
-            evidence: stage_signal.evidence
-        })
+ IF stage_signal.update_warranted:
+ behavior_change_stage_update_tool.invoke({
+ patient_id: session.verified_patient_id,
+ goal_id: stage_signal.goal_id,
+ new_stage: stage_signal.new_stage,
+ evidence: stage_signal.evidence
+ })
 
-    return {
-        action: "response_generated",
-        response_text: agent_response.response_text,
-        citations: citations,
-        tool_calls: agent_response.tool_calls
-    }
+ return {
+ action: "response_generated",
+ response_text: agent_response.response_text,
+ citations: citations,
+ tool_calls: agent_response.tool_calls
+ }
 ```
 
 **Step 6: Run output safety screening with citation grounding, scope verification, and behavior-change-stage tone check.** Every recommendation must trace to a cited care-plan element, clinical guideline, or institutional patient-education content. Scope verification rejects responses that attempt diagnosis, off-care-plan treatment recommendation, or new-condition guidance. The tone check verifies that the response is appropriate for the patient's behavior-change stage. Skip this and the coach occasionally produces ungrounded, off-scope, or stage-inappropriate responses.
 
 ```pseudocode
 FUNCTION screen_coach_output(session_id, response,
-                             citations, tool_calls):
-    // Step 6A: standard output safety primitives.
-    standard_check = standard_output_screen.evaluate(
-        response: response,
-        session_context:
-            session_context_for(session_id))
+ citations, tool_calls):
+ // Step 6A: standard output safety primitives.
+ standard_check = standard_output_screen.evaluate(
+ response: response,
+ session_context:
+ session_context_for(session_id))
 
-    IF standard_check.action != "deliver":
-        return standard_check
+ IF standard_check.action != "deliver":
+ return standard_check
 
-    // Step 6B: scope checks specific to coaching.
-    scope_violation = detect_coaching_scope_violations(
-        response: response)
-    // Categories:
-    // - off_care_plan_treatment_recommendation
-    // - drug_prescription_attempted
-    // - new_condition_diagnosis_attempted
-    // - care_team_role_assumption
-    // - clinical_judgment_beyond_scope
+ // Step 6B: scope checks specific to coaching.
+ scope_violation = detect_coaching_scope_violations(
+ response: response)
+ // Categories:
+ // - off_care_plan_treatment_recommendation
+ // - drug_prescription_attempted
+ // - new_condition_diagnosis_attempted
+ // - care_team_role_assumption
+ // - clinical_judgment_beyond_scope
 
-    IF scope_violation:
-        return {
-            action: "replace_with_safe_response",
-            replacement:
-                COACH_OUT_OF_SCOPE_TEMPLATE,
-            violation: scope_violation.category
-        }
+ IF scope_violation:
+ return {
+ action: "replace_with_safe_response",
+ replacement:
+ COACH_OUT_OF_SCOPE_TEMPLATE,
+ violation: scope_violation.category
+ }
 
-    // Step 6C: citation verification.
-    session = conversation_state_table.get(session_id)
-    care_plan_id =
-        session.longitudinal_context.care_plan.id
+ // Step 6C: citation verification.
+ session = conversation_state_table.get(session_id)
+ care_plan_id =
+ session.longitudinal_context.care_plan.id
 
-    citation_check = verify_coaching_citations(
-        response: response,
-        citations: citations,
-        care_plan_id: care_plan_id,
-        cited_guidelines: citations.guidelines,
-        cited_education: citations.education_content)
+ citation_check = verify_coaching_citations(
+ response: response,
+ citations: citations,
+ care_plan_id: care_plan_id,
+ cited_guidelines: citations.guidelines,
+ cited_education: citations.education_content)
 
-    IF citation_check.has_ungrounded_assertions:
-        return {
-            action: "regenerate_with_grounding",
-            ungrounded_assertions:
-                citation_check
-                    .ungrounded_assertions
-        }
+ IF citation_check.has_ungrounded_assertions:
+ return {
+ action: "regenerate_with_grounding",
+ ungrounded_assertions:
+ citation_check
+ .ungrounded_assertions
+ }
 
-    // Step 6D: behavior-change-stage tone check.
-    stages = session.longitudinal_context
-        .longitudinal
-        .behavior_change_stage_per_goal
+ // Step 6D: behavior-change-stage tone check.
+ stages = session.longitudinal_context
+ .longitudinal
+ .behavior_change_stage_per_goal
 
-    stage_check = verify_stage_appropriate_tone({
-        response: response,
-        relevant_stages: stages,
-        language: session.language
-    })
+ stage_check = verify_stage_appropriate_tone({
+ response: response,
+ relevant_stages: stages,
+ language: session.language
+ })
 
-    IF NOT stage_check.appropriate:
-        return {
-            action: "regenerate_with_stage_adaptation",
-            stage_guidance: stage_check.guidance
-        }
+ IF NOT stage_check.appropriate:
+ return {
+ action: "regenerate_with_stage_adaptation",
+ stage_guidance: stage_check.guidance
+ }
 
-    // Step 6E: care-plan-deviation check.
-    deviation_check = check_care_plan_deviation({
-        response: response,
-        care_plan: session.longitudinal_context
-            .care_plan
-    })
+ // Step 6E: care-plan-deviation check.
+ deviation_check = check_care_plan_deviation({
+ response: response,
+ care_plan: session.longitudinal_context
+ .care_plan
+ })
 
-    IF deviation_check.deviation_detected:
-        return {
-            action: "escalate_to_care_team",
-            reason: "response_would_deviate_from_plan",
-            deviation: deviation_check.details
-        }
+ IF deviation_check.deviation_detected:
+ return {
+ action: "escalate_to_care_team",
+ reason: "response_would_deviate_from_plan",
+ deviation: deviation_check.details
+ }
 
-    // Step 6F: persona-and-tone check.
-    persona_check =
-        persona_and_tone_evaluator.evaluate(
-            response: response,
-            coach_persona:
-                INSTITUTION_COACH_PERSONA,
-            language: session.language)
+ // Step 6F: persona-and-tone check.
+ persona_check =
+ persona_and_tone_evaluator.evaluate(
+ response: response,
+ coach_persona:
+ INSTITUTION_COACH_PERSONA,
+ language: session.language)
 
-    IF persona_check.action != "acceptable":
-        return {
-            action: "regenerate_with_persona_correction",
-            persona_guidance:
-                persona_check.guidance
-        }
+ IF persona_check.action != "acceptable":
+ return {
+ action: "regenerate_with_persona_correction",
+ persona_guidance:
+ persona_check.guidance
+ }
 
-    return {
-        action: "deliver",
-        response: response
-    }
+ return {
+ action: "deliver",
+ response: response
+ }
 ```
 
 **Step 7: Persist the durable coaching-decision record and longitudinal updates.** The conversation log captures the dialog. The coaching-decision-record journal captures, separately, every coaching decision (escalation events, biometric-threshold events, behavior-change-stage updates, care-plan-deviation events, recommendation-with-citation events) with version stamps. The longitudinal store is updated with any new disclosures, preference changes, or context the conversation revealed. Skip this and the audit story is intact only at the conversation level, which is enough for some reviews and not enough for clinical-quality and outcome-correlation ones.
 
 ```pseudocode
 FUNCTION persist_coaching_artifacts(session_id,
-                                     response,
-                                     citations,
-                                     tool_calls,
-                                     longitudinal_updates):
-    session = conversation_state_table.get(session_id)
-    patient_id = session.verified_patient_id
+ response,
+ citations,
+ tool_calls,
+ longitudinal_updates):
+ session = conversation_state_table.get(session_id)
+ patient_id = session.verified_patient_id
 
-    // Step 7A: append turn to conversation log.
-    conversation_metadata_table.append_turn(
-        session_id: session_id,
-        turn: {
-            speaker: "coach",
-            text: response.text,
-            citations: citations,
-            tool_calls_summary:
-                summarize_tool_calls(tool_calls),
-            timestamp: now()
-        })
+ // Step 7A: append turn to conversation log.
+ conversation_metadata_table.append_turn(
+ session_id: session_id,
+ turn: {
+ speaker: "coach",
+ text: response.text,
+ citations: citations,
+ tool_calls_summary:
+ summarize_tool_calls(tool_calls),
+ timestamp: now()
+ })
 
-    // Step 7B: write coaching-decision record(s).
-    FOR decision IN extract_coaching_decisions(
-            response: response,
-            citations: citations,
-            tool_calls: tool_calls):
-        decision_record = {
-            decision_id: generate_decision_id(),
-            session_id: session_id,
-            patient_id: patient_id,
-            decision_type: decision.type,
-                // recommendation_made
-                // care_plan_deviation_flagged
-                // behavior_change_stage_updated
-                // biometric_followup_initiated
-                // education_content_delivered
-                // escalation_proposed
-                // life_context_recorded
-            decision_payload: decision.payload,
-            citations: decision.citations,
-            active_care_plan_id: session
-                .longitudinal_context
-                .care_plan.id,
-            active_care_plan_version: session
-                .longitudinal_context
-                .care_plan.version,
-            active_model_id: session.model_id,
-            active_prompt_version:
-                session.prompt_version,
-            active_agent_version:
-                session.agent_version,
-            timestamp: now()
-        }
+ // Step 7B: write coaching-decision record(s).
+ FOR decision IN extract_coaching_decisions(
+ response: response,
+ citations: citations,
+ tool_calls: tool_calls):
+ decision_record = {
+ decision_id: generate_decision_id(),
+ session_id: session_id,
+ patient_id: patient_id,
+ decision_type: decision.type,
+ // recommendation_made
+ // care_plan_deviation_flagged
+ // behavior_change_stage_updated
+ // biometric_followup_initiated
+ // education_content_delivered
+ // escalation_proposed
+ // life_context_recorded
+ decision_payload: decision.payload,
+ citations: decision.citations,
+ active_care_plan_id: session
+ .longitudinal_context
+ .care_plan.id,
+ active_care_plan_version: session
+ .longitudinal_context
+ .care_plan.version,
+ active_model_id: session.model_id,
+ active_prompt_version:
+ session.prompt_version,
+ active_agent_version:
+ session.agent_version,
+ timestamp: now()
+ }
 
-        coaching_decision_record_journal.write(
-            decision_record)
+ coaching_decision_record_journal.write(
+ decision_record)
 
-        EventBridge.PutEvents([{
-            source: "chronic_coach",
-            detail_type: "coaching_decision_recorded",
-            detail: {
-                decision_id:
-                    decision_record.decision_id,
-                decision_type:
-                    decision_record.decision_type,
-                patient_id: patient_id,
-                care_plan_id:
-                    decision_record
-                        .active_care_plan_id
-            }
-        }])
+ EventBridge.PutEvents([{
+ source: "chronic_coach",
+ detail_type: "coaching_decision_recorded",
+ detail: {
+ decision_id:
+ decision_record.decision_id,
+ decision_type:
+ decision_record.decision_type,
+ patient_id: patient_id,
+ care_plan_id:
+ decision_record
+ .active_care_plan_id
+ }
+ }])
 
-    // Step 7C: update longitudinal store with any
-    // new disclosures, preference changes,
-    // behavior-change-stage updates.
-    IF longitudinal_updates.has_updates:
-        longitudinal_store_table.update({
-            patient_id: patient_id,
-            updates: longitudinal_updates
-        })
+ // Step 7C: update longitudinal store with any
+ // new disclosures, preference changes,
+ // behavior-change-stage updates.
+ IF longitudinal_updates.has_updates:
+ longitudinal_store_table.update({
+ patient_id: patient_id,
+ updates: longitudinal_updates
+ })
 
-        FOR disclosure IN
-                longitudinal_updates.life_context_disclosures:
-            EventBridge.PutEvents([{
-                source: "chronic_coach",
-                detail_type: "life_context_recorded",
-                detail: {
-                    patient_id: patient_id,
-                    disclosure_category:
-                        disclosure.category
-                }
-            }])
+ FOR disclosure IN
+ longitudinal_updates.life_context_disclosures:
+ EventBridge.PutEvents([{
+ source: "chronic_coach",
+ detail_type: "life_context_recorded",
+ detail: {
+ patient_id: patient_id,
+ disclosure_category:
+ disclosure.category
+ }
+ }])
 
-    // Step 7D: schedule any follow-up engagements.
-    FOR followup IN extract_followups(
-            response: response,
-            tool_calls: tool_calls):
-        engagement_scheduler.schedule({
-            patient_id: patient_id,
-            engagement_type:
-                followup.engagement_type,
-            delivery_target: followup.target,
-            priority: followup.priority,
-            context: followup.context
-        })
+ // Step 7D: schedule any follow-up engagements.
+ FOR followup IN extract_followups(
+ response: response,
+ tool_calls: tool_calls):
+ engagement_scheduler.schedule({
+ patient_id: patient_id,
+ engagement_type:
+ followup.engagement_type,
+ delivery_target: followup.target,
+ priority: followup.priority,
+ context: followup.context
+ })
 
-    return { action: "artifacts_persisted" }
+ return { action: "artifacts_persisted" }
 ```
 
 **Step 8: Generate care-team reports and run outcome correlation.** Real-time alerts flow to the care team for escalation events. Weekly digests summarize each patient's engagement, biometric trends, and key disclosures for the care team's review. Monthly summaries capture longitudinal trends. The outcome-correlation pipeline pulls subsequent encounter records, lab results, prescription fills, and patient-reported outcomes, calculates per-cohort and per-condition outcome metrics, and feeds signals back to the care-plan-template revision process. Skip this and the coach operates without care-team trust and without measurable outcome accountability.
 
 ```pseudocode
 FUNCTION generate_care_team_reports():
-    // Step 8A: real-time alerts.
-    new_alerts = care_team_alert_queue.poll_new()
+ // Step 8A: real-time alerts.
+ new_alerts = care_team_alert_queue.poll_new()
 
-    FOR alert IN new_alerts:
-        deliver_alert_to_care_team({
-            alert: alert,
-            target_clinician:
-                resolve_target_clinician(
-                    patient_id: alert.patient_id,
-                    alert_type: alert.type),
-            channel: care_team_alert_channel_for(
-                alert: alert)
-        })
+ FOR alert IN new_alerts:
+ deliver_alert_to_care_team({
+ alert: alert,
+ target_clinician:
+ resolve_target_clinician(
+ patient_id: alert.patient_id,
+ alert_type: alert.type),
+ channel: care_team_alert_channel_for(
+ alert: alert)
+ })
 
-        EventBridge.PutEvents([{
-            source: "chronic_coach",
-            detail_type:
-                "care_team_alert_delivered",
-            detail: {
-                alert_id: alert.id,
-                patient_id: alert.patient_id,
-                alert_type: alert.type
-            }
-        }])
+ EventBridge.PutEvents([{
+ source: "chronic_coach",
+ detail_type:
+ "care_team_alert_delivered",
+ detail: {
+ alert_id: alert.id,
+ patient_id: alert.patient_id,
+ alert_type: alert.type
+ }
+ }])
 
-    // Step 8B: weekly digests (run as scheduled
-    // workflow per institution cadence).
-    FOR patient IN active_coached_patients():
-        digest = compose_weekly_digest({
-            patient_id: patient.id,
-            window: 7_DAYS
-        })
+ // Step 8B: weekly digests (run as scheduled
+ // workflow per institution cadence).
+ FOR patient IN active_coached_patients():
+ digest = compose_weekly_digest({
+ patient_id: patient.id,
+ window: 7_DAYS
+ })
 
-        deliver_digest_to_care_team({
-            digest: digest,
-            target_clinicians:
-                resolve_target_clinicians_for_patient(
-                    patient_id: patient.id),
-            delivery_channel:
-                care_team_digest_channel_for(
-                    patient: patient)
-        })
+ deliver_digest_to_care_team({
+ digest: digest,
+ target_clinicians:
+ resolve_target_clinicians_for_patient(
+ patient_id: patient.id),
+ delivery_channel:
+ care_team_digest_channel_for(
+ patient: patient)
+ })
 
-    // Step 8C: monthly summaries.
-    // (same pattern as weekly digests, longer
-    // window, deeper analysis)
+ // Step 8C: monthly summaries.
+ // (same pattern as weekly digests, longer
+ // window, deeper analysis)
 
-    // Step 8D: outcome correlation.
-    FOR pending_record IN
-            outcome_correlation_pending_table
-                .ready_for_correlation():
-        encounters = pull_subsequent_encounters({
-            patient_id: pending_record.patient_id,
-            window_start:
-                pending_record.window_start,
-            window_end: now()
-        })
+ // Step 8D: outcome correlation.
+ FOR pending_record IN
+ outcome_correlation_pending_table
+ .ready_for_correlation():
+ encounters = pull_subsequent_encounters({
+ patient_id: pending_record.patient_id,
+ window_start:
+ pending_record.window_start,
+ window_end: now()
+ })
 
-        labs = pull_subsequent_labs({
-            patient_id: pending_record.patient_id,
-            window_start:
-                pending_record.window_start,
-            window_end: now()
-        })
+ labs = pull_subsequent_labs({
+ patient_id: pending_record.patient_id,
+ window_start:
+ pending_record.window_start,
+ window_end: now()
+ })
 
-        prescription_fills =
-            pull_prescription_fills({
-                patient_id: pending_record.patient_id,
-                window_start:
-                    pending_record.window_start,
-                window_end: now()
-            })
+ prescription_fills =
+ pull_prescription_fills({
+ patient_id: pending_record.patient_id,
+ window_start:
+ pending_record.window_start,
+ window_end: now()
+ })
 
-        patient_reported_outcomes =
-            pull_patient_reported_outcomes({
-                patient_id: pending_record.patient_id,
-                window_start:
-                    pending_record.window_start,
-                window_end: now()
-            })
+ patient_reported_outcomes =
+ pull_patient_reported_outcomes({
+ patient_id: pending_record.patient_id,
+ window_start:
+ pending_record.window_start,
+ window_end: now()
+ })
 
-        correlation = correlate_outcomes({
-            pending_record: pending_record,
-            encounters: encounters,
-            labs: labs,
-            prescription_fills: prescription_fills,
-            patient_reported_outcomes:
-                patient_reported_outcomes
-        })
+ correlation = correlate_outcomes({
+ pending_record: pending_record,
+ encounters: encounters,
+ labs: labs,
+ prescription_fills: prescription_fills,
+ patient_reported_outcomes:
+ patient_reported_outcomes
+ })
 
-        outcome_correlation_table.write(correlation)
+ outcome_correlation_table.write(correlation)
 
-        EventBridge.PutEvents([{
-            source: "chronic_coach",
-            detail_type:
-                "outcome_correlation_completed",
-            detail: {
-                patient_id:
-                    pending_record.patient_id,
-                correlation_id: correlation.id
-            }
-        }])
+ EventBridge.PutEvents([{
+ source: "chronic_coach",
+ detail_type:
+ "outcome_correlation_completed",
+ detail: {
+ patient_id:
+ pending_record.patient_id,
+ correlation_id: correlation.id
+ }
+ }])
 
-    return { action: "reports_generated" }
+ return { action: "reports_generated" }
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter11.07-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -1190,150 +1190,150 @@ FUNCTION generate_care_team_reports():
 **Sample conversation (illustrative, abbreviated, mid-relationship):**
 
 ```text
-Coach:   Hi Maria, just checking in. I noticed
-         your fasting glucose readings have been
-         a bit higher this week (averaging around
-         165, up from your usual 130-140). Anything
-         going on? No judgment, just curious if
-         something feels different.
+Coach: Hi Maria, just checking in. I noticed
+ your fasting glucose readings have been
+ a bit higher this week (averaging around
+ 165, up from your usual 130-140). Anything
+ going on? No judgment, just curious if
+ something feels different.
 
 Patient: hi. yeah my mom is visiting from out of
-         town and she's been doing all the cooking.
-         she makes really heavy food. its been hard
-         to keep up with the meal stuff we talked
-         about.
+ town and she's been doing all the cooking.
+ she makes really heavy food. its been hard
+ to keep up with the meal stuff we talked
+ about.
 
-Coach:   Got it, that makes sense. Family visits
-         are usually wonderful and also throw
-         routines off. How long is she staying?
+Coach: Got it, that makes sense. Family visits
+ are usually wonderful and also throw
+ routines off. How long is she staying?
 
 Patient: another two weeks.
 
-Coach:   Two weeks is meaningful. A few thoughts,
-         and tell me what feels realistic. We don't
-         have to get back to your usual eating
-         pattern this week. We can just try to keep
-         the readings from going much higher than
-         they are right now. Some things that often
-         help during visits like this:
+Coach: Two weeks is meaningful. A few thoughts,
+ and tell me what feels realistic. We don't
+ have to get back to your usual eating
+ pattern this week. We can just try to keep
+ the readings from going much higher than
+ they are right now. Some things that often
+ help during visits like this:
 
-         - Asking your mom if she'd be open to using
-           the lower-sugar version of one or two
-           dishes she's making
-         - Eating your usual breakfast on your own
-           before she's up, since that's the meal
-           that affects fasting glucose the most
-         - Walking after dinner with her, which can
-           bring evening readings down and is also
-           just nice time together
+ - Asking your mom if she'd be open to using
+ the lower-sugar version of one or two
+ dishes she's making
+ - Eating your usual breakfast on your own
+ before she's up, since that's the meal
+ that affects fasting glucose the most
+ - Walking after dinner with her, which can
+ bring evening readings down and is also
+ just nice time together
 
-         You don't have to do all of these. What
-         feels like it could fit?
+ You don't have to do all of these. What
+ feels like it could fit?
 
 Patient: i could do the morning thing. she sleeps
-         late.
+ late.
 
-Coach:   Perfect. Let's try that for a few days
-         and see what happens with the fasting
-         readings. Your usual breakfast is the
-         oatmeal with the berries, right?
+Coach: Perfect. Let's try that for a few days
+ and see what happens with the fasting
+ readings. Your usual breakfast is the
+ oatmeal with the berries, right?
 
 Patient: yes
 
-Coach:   Sounds good. I'll check in with you at
-         the end of the week to see how it's going.
-         If your readings start coming back down
-         that's great. If they don't, no problem,
-         we'll figure something else out together.
+Coach: Sounds good. I'll check in with you at
+ the end of the week to see how it's going.
+ If your readings start coming back down
+ that's great. If they don't, no problem,
+ we'll figure something else out together.
 
-         One more thing, and this is just for my
-         awareness so I don't bother you with stuff
-         that doesn't apply. Are you taking your
-         metformin as usual through all of this?
+ One more thing, and this is just for my
+ awareness so I don't bother you with stuff
+ that doesn't apply. Are you taking your
+ metformin as usual through all of this?
 
 Patient: yes ive been good about that
 
-Coach:   Great, that helps a lot. Talk to you
-         Friday. Enjoy time with your mom.
+Coach: Great, that helps a lot. Talk to you
+ Friday. Enjoy time with your mom.
 
-Patient: thanks 🙂
+Patient: thanks
 ```
 
 **Sample weekly care-team digest (illustrative):**
 
 ```json
 {
-  "patient_id": "patient-internal-id-redacted",
-  "preferred_name": "Maria",
-  "primary_condition": "type_2_diabetes",
-  "secondary_conditions": [
-    "hypertension",
-    "dyslipidemia"
-  ],
-  "report_window": {
-    "start": "2026-04-19",
-    "end": "2026-04-25"
-  },
-  "engagement_summary": {
-    "scheduled_engagements": 4,
-    "delivered_engagements": 4,
-    "patient_responded_engagements": 4,
-    "patient_initiated_conversations": 1,
-    "total_turns": 23,
-    "engagement_quality_signals": [
-      "consistent_response_within_24h",
-      "voluntary_disclosure_of_context"
-    ]
-  },
-  "biometric_trends": {
-    "fasting_glucose": {
-      "average": 162,
-      "median": 165,
-      "trend": "increased_from_baseline",
-      "baseline": 138,
-      "readings_count": 6,
-      "concern_level": "moderate"
-    },
-    "blood_pressure_systolic": {
-      "average": 132,
-      "trend": "stable",
-      "readings_count": 3,
-      "concern_level": "low"
-    },
-    "weight": {
-      "trend": "stable",
-      "readings_count": 4,
-      "concern_level": "low"
-    }
-  },
-  "key_disclosures": [
-    {
-      "category": "life_context",
-      "summary": "Mother visiting for two weeks; mother is doing the cooking; meal-pattern disruption.",
-      "behavior_change_relevance": "preparation_to_action_regression_risk"
-    }
-  ],
-  "behavior_change_stage_updates": [
-    {
-      "goal": "fasting_glucose_under_130",
-      "previous_stage": "action",
-      "current_stage": "action",
-      "trend": "stable",
-      "evidence": "engaged in problem-solving when challenge surfaced"
-    }
-  ],
-  "open_followups": [
-    {
-      "followup_type": "morning_breakfast_routine_check",
-      "scheduled_for": "2026-04-29"
-    }
-  ],
-  "escalations_during_window": [],
-  "recommended_care_team_action": "no_action_needed",
-  "summary_for_clinician": "Maria is engaged and self-regulating well. Mother's visit is causing meal-pattern disruption that has elevated fasting glucose to ~160 range. Patient has agreed to maintain morning breakfast routine independently. Coach will follow up Friday. Recommend no clinical action this week; revisit at next scheduled visit if trend persists after mother's visit ends.",
-  "active_care_plan_version_at_window":
-    "diabetes-coaching-care-plan-v3.2",
-  "report_generated_at": "2026-04-26T00:15:00Z"
+ "patient_id": "patient-internal-id-redacted",
+ "preferred_name": "Maria",
+ "primary_condition": "type_2_diabetes",
+ "secondary_conditions": [
+ "hypertension",
+ "dyslipidemia"
+ ],
+ "report_window": {
+ "start": "2026-04-19",
+ "end": "2026-04-25"
+ },
+ "engagement_summary": {
+ "scheduled_engagements": 4,
+ "delivered_engagements": 4,
+ "patient_responded_engagements": 4,
+ "patient_initiated_conversations": 1,
+ "total_turns": 23,
+ "engagement_quality_signals": [
+ "consistent_response_within_24h",
+ "voluntary_disclosure_of_context"
+ ]
+ },
+ "biometric_trends": {
+ "fasting_glucose": {
+ "average": 162,
+ "median": 165,
+ "trend": "increased_from_baseline",
+ "baseline": 138,
+ "readings_count": 6,
+ "concern_level": "moderate"
+ },
+ "blood_pressure_systolic": {
+ "average": 132,
+ "trend": "stable",
+ "readings_count": 3,
+ "concern_level": "low"
+ },
+ "weight": {
+ "trend": "stable",
+ "readings_count": 4,
+ "concern_level": "low"
+ }
+ },
+ "key_disclosures": [
+ {
+ "category": "life_context",
+ "summary": "Mother visiting for two weeks; mother is doing the cooking; meal-pattern disruption.",
+ "behavior_change_relevance": "preparation_to_action_regression_risk"
+ }
+ ],
+ "behavior_change_stage_updates": [
+ {
+ "goal": "fasting_glucose_under_130",
+ "previous_stage": "action",
+ "current_stage": "action",
+ "trend": "stable",
+ "evidence": "engaged in problem-solving when challenge surfaced"
+ }
+ ],
+ "open_followups": [
+ {
+ "followup_type": "morning_breakfast_routine_check",
+ "scheduled_for": "2026-04-29"
+ }
+ ],
+ "escalations_during_window": [],
+ "recommended_care_team_action": "no_action_needed",
+ "summary_for_clinician": "Maria is engaged and self-regulating well. Mother's visit is causing meal-pattern disruption that has elevated fasting glucose to ~160 range. Patient has agreed to maintain morning breakfast routine independently. Coach will follow up Friday. Recommend no clinical action this week; revisit at next scheduled visit if trend persists after mother's visit ends.",
+ "active_care_plan_version_at_window":
+ "diabetes-coaching-care-plan-v3.2",
+ "report_generated_at": "2026-04-26T00:15:00Z"
 }
 ```
 

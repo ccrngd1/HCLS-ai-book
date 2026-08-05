@@ -24,19 +24,19 @@
 
 ```mermaid
 flowchart LR
-    A[📋 Survey Platform\nPatient Portal\nCall Transcripts] -->|Ingest| B[S3 Bucket\nfeedback-raw/]
-    B -->|S3 Event| C[Lambda\nphi-detection]
-    C -->|Comprehend Medical\nDetectPHI| D[S3\nfeedback-redacted/]
-    D -->|S3 Event| E[Lambda\nsentiment-analyzer]
-    E -->|Comprehend\nDetectSentiment| F[Lambda\naspect-extractor]
-    F -->|Custom Classifier| G[DynamoDB\nsentiment-results]
-    G -->|Query| H[QuickSight\nDashboards]
-    G -->|Trend Detection| I[EventBridge\nAlerts]
+ A[Survey Platform\nPatient Portal\nCall Transcripts] -->|Ingest| B[S3 Bucket\nfeedback-raw/]
+ B -->|S3 Event| C[Lambda\nphi-detection]
+ C -->|Comprehend Medical\nDetectPHI| D[S3\nfeedback-redacted/]
+ D -->|S3 Event| E[Lambda\nsentiment-analyzer]
+ E -->|Comprehend\nDetectSentiment| F[Lambda\naspect-extractor]
+ F -->|Custom Classifier| G[DynamoDB\nsentiment-results]
+ G -->|Query| H[QuickSight\nDashboards]
+ G -->|Trend Detection| I[EventBridge\nAlerts]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#f9f,stroke:#333
-    style G fill:#9ff,stroke:#333
-    style H fill:#ff9,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#f9f,stroke:#333
+ style G fill:#9ff,stroke:#333
+ style H fill:#ff9,stroke:#333
 ```
 
 ## Prerequisites
@@ -81,52 +81,52 @@ flowchart LR
 
 ```pseudocode
 FUNCTION detect_and_redact_phi(feedback_text):
-    // Call the medical NLP service to identify any PHI in the text.
-    // PHI includes: names, dates, phone numbers, medical record numbers,
-    // and any other individually identifiable health information.
-    phi_entities = call ComprehendMedical.DetectPHI with:
-        text = feedback_text
+ // Call the medical NLP service to identify any PHI in the text.
+ // PHI includes: names, dates, phone numbers, medical record numbers,
+ // and any other individually identifiable health information.
+ phi_entities = call ComprehendMedical.DetectPHI with:
+ text = feedback_text
 
-    // Build the redacted version by replacing each detected entity with a placeholder.
-    // We preserve the entity type so downstream analysis knows a provider was mentioned
-    // even though we've removed the actual name.
-    redacted_text = feedback_text
-    FOR each entity in phi_entities (sorted by offset, descending):
-        // Replace from back to front so character offsets remain valid.
-        // Example: "Dr. Smith was kind" becomes "[PROVIDER_NAME] was kind"
-        redacted_text = replace characters at entity.BeginOffset..entity.EndOffset
-                        with "[" + entity.Type + "]"
+ // Build the redacted version by replacing each detected entity with a placeholder.
+ // We preserve the entity type so downstream analysis knows a provider was mentioned
+ // even though we've removed the actual name.
+ redacted_text = feedback_text
+ FOR each entity in phi_entities (sorted by offset, descending):
+ // Replace from back to front so character offsets remain valid.
+ // Example: "Dr. Smith was kind" becomes "[PROVIDER_NAME] was kind"
+ redacted_text = replace characters at entity.BeginOffset..entity.EndOffset
+ with "[" + entity.Type + "]"
 
-    RETURN {
-        redacted_text: redacted_text,      // safe for downstream analytics
-        phi_detected: length(phi_entities) > 0,  // flag for audit
-        entity_count: length(phi_entities)
-    }
+ RETURN {
+ redacted_text: redacted_text, // safe for downstream analytics
+ phi_detected: length(phi_entities) > 0, // flag for audit
+ entity_count: length(phi_entities)
+ }
 ```
 
 **Step 2: Sentiment analysis.** The redacted text goes to the sentiment analysis service. This returns an overall sentiment label (POSITIVE, NEGATIVE, NEUTRAL, MIXED) along with confidence scores for each category. The confidence distribution is often more informative than the top label. A comment scored 60% negative and 35% positive is qualitatively different from one scored 95% negative. The MIXED category is especially important in healthcare feedback, where patients commonly express both gratitude and frustration in the same response. Store the full score distribution, not just the winning label.
 
 ```pseudocode
 FUNCTION analyze_sentiment(redacted_text):
-    // Call the sentiment detection service.
-    // Input must be under 5,000 bytes (UTF-8). Patient feedback typically fits easily.
-    // For longer texts (call transcripts), split into paragraphs and analyze each.
-    response = call Comprehend.DetectSentiment with:
-        text          = redacted_text
-        language_code = "en"    // detect language first for multilingual populations
+ // Call the sentiment detection service.
+ // Input must be under 5,000 bytes (UTF-8). Patient feedback typically fits easily.
+ // For longer texts (call transcripts), split into paragraphs and analyze each.
+ response = call Comprehend.DetectSentiment with:
+ text = redacted_text
+ language_code = "en" // detect language first for multilingual populations
 
-    // Extract the full score distribution, not just the top label.
-    // A 55% negative / 40% positive split tells a different story than 95% negative.
-    RETURN {
-        sentiment: response.Sentiment,           // "POSITIVE", "NEGATIVE", "NEUTRAL", "MIXED"
-        scores: {
-            positive: response.SentimentScore.Positive,
-            negative: response.SentimentScore.Negative,
-            neutral: response.SentimentScore.Neutral,
-            mixed: response.SentimentScore.Mixed
-        },
-        confidence: maximum of all four scores    // how decisive the classification is
-    }
+ // Extract the full score distribution, not just the top label.
+ // A 55% negative / 40% positive split tells a different story than 95% negative.
+ RETURN {
+ sentiment: response.Sentiment, // "POSITIVE", "NEGATIVE", "NEUTRAL", "MIXED"
+ scores: {
+ positive: response.SentimentScore.Positive,
+ negative: response.SentimentScore.Negative,
+ neutral: response.SentimentScore.Neutral,
+ mixed: response.SentimentScore.Mixed
+ },
+ confidence: maximum of all four scores // how decisive the classification is
+ }
 ```
 
 **Step 3: Aspect extraction.** This is where generic sentiment becomes actionable intelligence. The system classifies which aspect(s) of the healthcare experience are mentioned in each piece of feedback. A custom classifier trained on your labeled data maps text segments to your aspect taxonomy. For each detected aspect, the system also captures the sentiment directed specifically at that aspect. One comment might yield: `{wait_time: NEGATIVE, provider_quality: POSITIVE, facility: NEUTRAL}`. That's three distinct operational signals from one piece of text.
@@ -135,94 +135,94 @@ FUNCTION analyze_sentiment(redacted_text):
 // The aspect taxonomy reflects what patient experience teams actually care about.
 // This should be configured, not hardcoded. Add/remove aspects as your organization evolves.
 ASPECT_TAXONOMY = [
-    "wait_time",              // scheduling delays, in-office wait
-    "provider_communication", // bedside manner, explanations, listening
-    "staff_interaction",      // nursing, front desk, technicians
-    "facility_environment",   // cleanliness, comfort, noise, parking
-    "billing_insurance",      // charges, statements, coverage confusion
-    "care_coordination",      // referrals, follow-up, transitions
-    "pain_management",        // pain control, medication responsiveness
-    "discharge_process",      // instructions, timing, readiness
-    "access_convenience",     // hours, location, telehealth availability
-    "overall_experience"      // general impressions not tied to specific aspect
+ "wait_time", // scheduling delays, in-office wait
+ "provider_communication", // bedside manner, explanations, listening
+ "staff_interaction", // nursing, front desk, technicians
+ "facility_environment", // cleanliness, comfort, noise, parking
+ "billing_insurance", // charges, statements, coverage confusion
+ "care_coordination", // referrals, follow-up, transitions
+ "pain_management", // pain control, medication responsiveness
+ "discharge_process", // instructions, timing, readiness
+ "access_convenience", // hours, location, telehealth availability
+ "overall_experience" // general impressions not tied to specific aspect
 ]
 
 FUNCTION extract_aspects(redacted_text, document_sentiment):
-    // Split text into sentences for finer-grained analysis.
-    // A single feedback item often covers multiple aspects across sentences.
-    // NOTE: Use a proper sentence tokenizer (like spaCy's sentencizer or NLTK's
-    // Punkt) that handles abbreviations (Dr., dept., etc.). Simple period-splitting
-    // will break on these. For very short feedback (< 2 sentences), classify the
-    // entire text as one unit rather than splitting.
-    sentences = split_into_sentences(redacted_text)
+ // Split text into sentences for finer-grained analysis.
+ // A single feedback item often covers multiple aspects across sentences.
+ // NOTE: Use a proper sentence tokenizer (like spaCy's sentencizer or NLTK's
+ // Punkt) that handles abbreviations (Dr., dept., etc.). Simple period-splitting
+ // will break on these. For very short feedback (< 2 sentences), classify the
+ // entire text as one unit rather than splitting.
+ sentences = split_into_sentences(redacted_text)
 
-    aspect_results = empty list
+ aspect_results = empty list
 
-    FOR each sentence in sentences:
-        // Classify which aspect this sentence is about.
-        // Uses a custom classifier trained on labeled healthcare feedback.
-        aspect_response = call Comprehend.ClassifyDocument with:
-            text             = sentence
-            endpoint_arn     = ASPECT_CLASSIFIER_ENDPOINT
+ FOR each sentence in sentences:
+ // Classify which aspect this sentence is about.
+ // Uses a custom classifier trained on labeled healthcare feedback.
+ aspect_response = call Comprehend.ClassifyDocument with:
+ text = sentence
+ endpoint_arn = ASPECT_CLASSIFIER_ENDPOINT
 
-        // Get the top aspect prediction with confidence.
-        top_aspect     = aspect_response.Classes[0].Name
-        aspect_conf    = aspect_response.Classes[0].Score
+ // Get the top aspect prediction with confidence.
+ top_aspect = aspect_response.Classes[0].Name
+ aspect_conf = aspect_response.Classes[0].Score
 
-        // Only accept aspect classification if confidence is above threshold.
-        // Low-confidence aspect assignments add noise to dashboards.
-        IF aspect_conf >= 0.6:
-            // Get sentence-level sentiment for this specific aspect mention.
-            sentence_sentiment = call Comprehend.DetectSentiment with:
-                text          = sentence
-                language_code = "en"
+ // Only accept aspect classification if confidence is above threshold.
+ // Low-confidence aspect assignments add noise to dashboards.
+ IF aspect_conf >= 0.6:
+ // Get sentence-level sentiment for this specific aspect mention.
+ sentence_sentiment = call Comprehend.DetectSentiment with:
+ text = sentence
+ language_code = "en"
 
-            append to aspect_results: {
-                aspect: top_aspect,
-                sentiment: sentence_sentiment.Sentiment,
-                confidence: aspect_conf,
-                text: sentence   // keep the source text for drill-down
-            }
+ append to aspect_results: {
+ aspect: top_aspect,
+ sentiment: sentence_sentiment.Sentiment,
+ confidence: aspect_conf,
+ text: sentence // keep the source text for drill-down
+ }
 
-    RETURN aspect_results
+ RETURN aspect_results
 ```
 
 **Step 4: Result assembly and storage.** The final step combines all analysis outputs into a single record and writes it to the database. Each record links back to the source feedback item and includes the full analysis: document-level sentiment, aspect-level sentiments, metadata about the source channel and department, and processing timestamps. The table design supports the queries that dashboards need: filter by date range, department, sentiment, or aspect. The `needs_attention` flag routes significantly negative items to immediate human review rather than waiting for monthly reports.
 
 ```pseudocode
 FUNCTION store_analysis_result(source_metadata, sentiment, aspects):
-    // Determine if this item needs immediate human attention.
-    // Threshold: overall negative sentiment with high confidence,
-    // or any critical aspect (safety, pain) with negative sentiment.
-    needs_attention = (
-        sentiment.sentiment == "NEGATIVE" AND sentiment.confidence >= 0.85
-    ) OR any aspect in aspects where (
-        aspect.aspect in ["pain_management", "care_coordination"]
-        AND aspect.sentiment == "NEGATIVE"
-    )
+ // Determine if this item needs immediate human attention.
+ // Threshold: overall negative sentiment with high confidence,
+ // or any critical aspect (safety, pain) with negative sentiment.
+ needs_attention = (
+ sentiment.sentiment == "NEGATIVE" AND sentiment.confidence >= 0.85
+ ) OR any aspect in aspects where (
+ aspect.aspect in ["pain_management", "care_coordination"]
+ AND aspect.sentiment == "NEGATIVE"
+ )
 
-    // Write the complete analysis record.
-    write record to database table "sentiment-results":
-        feedback_id       = source_metadata.id                    // links to original feedback
-        source_channel    = source_metadata.channel               // "survey", "portal", "review", "call"
-        department        = source_metadata.department            // for departmental filtering
-        facility          = source_metadata.facility              // for multi-site systems
-        analysis_date     = current UTC timestamp (ISO 8601)
-        document_sentiment = sentiment                            // full score distribution
-        aspects           = aspects                               // list of aspect-sentiment pairs
-        needs_attention   = needs_attention                       // routes to review queue
-        feedback_date     = source_metadata.submitted_date        // when patient submitted
+ // Write the complete analysis record.
+ write record to database table "sentiment-results":
+ feedback_id = source_metadata.id // links to original feedback
+ source_channel = source_metadata.channel // "survey", "portal", "review", "call"
+ department = source_metadata.department // for departmental filtering
+ facility = source_metadata.facility // for multi-site systems
+ analysis_date = current UTC timestamp (ISO 8601)
+ document_sentiment = sentiment // full score distribution
+ aspects = aspects // list of aspect-sentiment pairs
+ needs_attention = needs_attention // routes to review queue
+ feedback_date = source_metadata.submitted_date // when patient submitted
 
-    // If needs_attention, also emit an event for real-time alerting.
-    // IMPORTANT: Do not include feedback text in the event payload. The alert
-    // routes to external systems (Slack, PagerDuty) that may not be BAA-covered.
-    // Include only the feedback_id so reviewers can look up the full text through
-    // the authorized dashboard.
-    IF needs_attention:
-        emit event to EventBridge:
-            source     = "patient-sentiment-pipeline"
-            detail_type = "NegativeSentimentAlert"
-            detail     = { feedback_id, department, facility, top_negative_aspect }
+ // If needs_attention, also emit an event for real-time alerting.
+ // IMPORTANT: Do not include feedback text in the event payload. The alert
+ // routes to external systems (Slack, PagerDuty) that may not be BAA-covered.
+ // Include only the feedback_id so reviewers can look up the full text through
+ // the authorized dashboard.
+ IF needs_attention:
+ emit event to EventBridge:
+ source = "patient-sentiment-pipeline"
+ detail_type = "NegativeSentimentAlert"
+ detail = { feedback_id, department, facility, top_negative_aspect }
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter08.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -235,49 +235,49 @@ Input: "The doctor was very thorough and explained everything clearly. But I wai
 
 ```json
 {
-  "feedback_id": "survey-2026-03-15-00847",
-  "source_channel": "post_visit_survey",
-  "department": "internal_medicine",
-  "facility": "main_campus",
-  "analysis_date": "2026-03-16T02:15:33Z",
-  "document_sentiment": {
-    "sentiment": "MIXED",
-    "scores": {
-      "positive": 0.32,
-      "negative": 0.41,
-      "neutral": 0.08,
-      "mixed": 0.19
-    },
-    "confidence": 0.41
-  },
-  "aspects": [
-    {
-      "aspect": "provider_communication",
-      "sentiment": "POSITIVE",
-      "confidence": 0.91,
-      "text": "The doctor was very thorough and explained everything clearly."
-    },
-    {
-      "aspect": "wait_time",
-      "sentiment": "NEGATIVE",
-      "confidence": 0.88,
-      "text": "But I waited 45 minutes past my appointment time."
-    },
-    {
-      "aspect": "facility_environment",
-      "sentiment": "NEGATIVE",
-      "confidence": 0.72,
-      "text": "The waiting room was freezing."
-    },
-    {
-      "aspect": "billing_insurance",
-      "sentiment": "NEGATIVE",
-      "confidence": 0.85,
-      "text": "Billing sent me a surprise charge three weeks later."
-    }
-  ],
-  "needs_attention": false,
-  "feedback_date": "2026-03-15T14:30:00Z"
+ "feedback_id": "survey-2026-03-15-00847",
+ "source_channel": "post_visit_survey",
+ "department": "internal_medicine",
+ "facility": "main_campus",
+ "analysis_date": "2026-03-16T02:15:33Z",
+ "document_sentiment": {
+ "sentiment": "MIXED",
+ "scores": {
+ "positive": 0.32,
+ "negative": 0.41,
+ "neutral": 0.08,
+ "mixed": 0.19
+ },
+ "confidence": 0.41
+ },
+ "aspects": [
+ {
+ "aspect": "provider_communication",
+ "sentiment": "POSITIVE",
+ "confidence": 0.91,
+ "text": "The doctor was very thorough and explained everything clearly."
+ },
+ {
+ "aspect": "wait_time",
+ "sentiment": "NEGATIVE",
+ "confidence": 0.88,
+ "text": "But I waited 45 minutes past my appointment time."
+ },
+ {
+ "aspect": "facility_environment",
+ "sentiment": "NEGATIVE",
+ "confidence": 0.72,
+ "text": "The waiting room was freezing."
+ },
+ {
+ "aspect": "billing_insurance",
+ "sentiment": "NEGATIVE",
+ "confidence": 0.85,
+ "text": "Billing sent me a surprise charge three weeks later."
+ }
+ ],
+ "needs_attention": false,
+ "feedback_date": "2026-03-15T14:30:00Z"
 }
 ```
 

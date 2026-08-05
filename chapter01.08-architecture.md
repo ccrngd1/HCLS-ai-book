@@ -1,6 +1,6 @@
 # Recipe 1.8 Architecture and Implementation: Explanation of Benefits Processing
 
-*Companion to [Recipe 1.8: Explanation of Benefits Processing 🔶](chapter01.08-eob-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.8: Explanation of Benefits Processing ](chapter01.08-eob-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -24,25 +24,25 @@
 
 ```mermaid
 flowchart LR
-    A[📠 Fax / Portal / COB Feed] -->|EOB PDF| B[S3 Bucket\neobs-inbox/]
-    B -->|S3 Event| C[Lambda\neob-start]
-    C -->|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
-    C -->|Store job context| G
-    D -->|Job Complete| E[SNS Topic\ntextract-jobs]
-    E -->|Notification| F[Lambda\neob-process]
-    F -->|GetDocumentAnalysis\npaginated| D
-    F -->|Known payer?| F
-    F -->|Static profile\nhigh-volume payers| F
-    F -->|Bedrock Converse API\nschema mapping| H[Amazon Bedrock\nNova Pro / Haiku 4.5]
-    H -->|Canonical field mapping| F
-    F -->|Rule-based financial\nvalidation| F
-    F -->|Valid record| G[DynamoDB\neob-records]
-    F -->|Flagged record| I[SQS Queue\neob-review]
+ A[Fax / Portal / COB Feed] -->|EOB PDF| B[S3 Bucket\neobs-inbox/]
+ B -->|S3 Event| C[Lambda\neob-start]
+ C -->|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
+ C -->|Store job context| G
+ D -->|Job Complete| E[SNS Topic\ntextract-jobs]
+ E -->|Notification| F[Lambda\neob-process]
+ F -->|GetDocumentAnalysis\npaginated| D
+ F -->|Known payer?| F
+ F -->|Static profile\nhigh-volume payers| F
+ F -->|Bedrock Converse API\nschema mapping| H[Amazon Bedrock\nNova Pro / Haiku 4.5]
+ H -->|Canonical field mapping| F
+ F -->|Rule-based financial\nvalidation| F
+ F -->|Valid record| G[DynamoDB\neob-records]
+ F -->|Flagged record| I[SQS Queue\neob-review]
 
-    style D fill:#ff9,stroke:#333
-    style H fill:#9cf,stroke:#333
-    style G fill:#9ff,stroke:#333
-    style I fill:#ffa,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style H fill:#9cf,stroke:#333
+ style G fill:#9ff,stroke:#333
+ style I fill:#ffa,stroke:#333
 ```
 
 ### Prerequisites
@@ -83,131 +83,131 @@ flowchart LR
 
 ```pseudocode
 FUNCTION submit_eob_extraction(bucket, key, sns_topic_arn, textract_role_arn):
-    // Submit the EOB PDF to Textract for async analysis.
-    // FORMS extracts claim header fields (claim number, member name, etc.)
-    // TABLES extracts the line item grid (one row per service, with dollar amounts)
-    // Both in one job: Textract bills per page, not per feature type.
+ // Submit the EOB PDF to Textract for async analysis.
+ // FORMS extracts claim header fields (claim number, member name, etc.)
+ // TABLES extracts the line item grid (one row per service, with dollar amounts)
+ // Both in one job: Textract bills per page, not per feature type.
 
-    response = call Textract.StartDocumentAnalysis with:
-        document_location = S3 object at bucket/key
-        feature_types     = ["FORMS", "TABLES"]
-        notification_channel = {
-            sns_topic_arn: sns_topic_arn,
-            role_arn: textract_role_arn    // Textract needs its own role to publish to SNS
-        }
+ response = call Textract.StartDocumentAnalysis with:
+ document_location = S3 object at bucket/key
+ feature_types = ["FORMS", "TABLES"]
+ notification_channel = {
+ sns_topic_arn: sns_topic_arn,
+ role_arn: textract_role_arn // Textract needs its own role to publish to SNS
+ }
 
-    job_id = response.JobId
+ job_id = response.JobId
 
-    // Parse the S3 prefix to extract a payer hint, if available.
-    // e.g., "eobs-inbox/unitedhealthcare/2026/03/..." → payer_hint = "unitedhealthcare"
-    // This is optional: if your intake pipeline doesn't use per-payer prefixes,
-    // payer_hint will be None and all documents will route through Bedrock.
-    // See "Adaptive Mapping" above for header keyword detection as an alternative.
-    payer_hint = extract_payer_from_prefix(key)   // null if prefix has no payer segment
+ // Parse the S3 prefix to extract a payer hint, if available.
+ // e.g., "eobs-inbox/unitedhealthcare/2026/03/..." → payer_hint = "unitedhealthcare"
+ // This is optional: if your intake pipeline doesn't use per-payer prefixes,
+ // payer_hint will be None and all documents will route through Bedrock.
+ // See "Adaptive Mapping" above for header keyword detection as an alternative.
+ payer_hint = extract_payer_from_prefix(key) // null if prefix has no payer segment
 
-    write to DynamoDB table "textract-jobs":
-        job_id    = job_id
-        bucket    = bucket
-        key       = key
-        submitted = current UTC timestamp
-        status    = "PENDING"
-        payer_hint = payer_hint    // null is fine here
+ write to DynamoDB table "textract-jobs":
+ job_id = job_id
+ bucket = bucket
+ key = key
+ submitted = current UTC timestamp
+ status = "PENDING"
+ payer_hint = payer_hint // null is fine here
 
-    RETURN job_id
+ RETURN job_id
 ```
 
 **Step 2: Retrieve all result pages.** When Textract finishes, the SNS notification triggers eob-process Lambda. Paginate through all result pages via `GetDocumentAnalysis`. This is identical to Recipe 1.2: a multi-page EOB can produce hundreds of blocks, and Textract returns at most 1,000 per API call. Stop early and you have an incomplete document.
 
 ```pseudocode
 FUNCTION retrieve_all_blocks(job_id):
-    all_blocks = empty list
-    next_token = null
+ all_blocks = empty list
+ next_token = null
 
-    LOOP:
-        params = { job_id: job_id }
-        IF next_token is not null:
-            params.next_token = next_token
+ LOOP:
+ params = { job_id: job_id }
+ IF next_token is not null:
+ params.next_token = next_token
 
-        response = call Textract.GetDocumentAnalysis with params
+ response = call Textract.GetDocumentAnalysis with params
 
-        IF response.JobStatus is "FAILED":
-            log the failure reason from response.StatusMessage
-            // Do NOT log block content here; blocks may contain PHI
-            RAISE an exception indicating Textract failure
-            // Move the document to failed-documents/ prefix for ops investigation
+ IF response.JobStatus is "FAILED":
+ log the failure reason from response.StatusMessage
+ // Do NOT log block content here; blocks may contain PHI
+ RAISE an exception indicating Textract failure
+ // Move the document to failed-documents/ prefix for ops investigation
 
-        append response.Blocks to all_blocks
-        next_token = response.NextToken
-        IF next_token is null:
-            BREAK
+ append response.Blocks to all_blocks
+ next_token = response.NextToken
+ IF next_token is null:
+ BREAK
 
-    block_map = { block.Id: block for block in all_blocks }
-    RETURN all_blocks, block_map
+ block_map = { block.Id: block for block in all_blocks }
+ RETURN all_blocks, block_map
 ```
 
 **Step 3: Extract raw header fields and raw table data.** Before schema mapping, we need the raw extracted data: key-value pairs from the document header, and the table grid (row index, column index, cell text) from the line item section. Both come out of the same Textract response.
 
 ```pseudocode
 FUNCTION extract_raw_content(all_blocks, block_map):
-    // --- Header: KEY_VALUE_SET blocks from FORMS extraction ---
-    raw_header = {}    // label text -> { value: text, confidence: float }
+ // --- Header: KEY_VALUE_SET blocks from FORMS extraction ---
+ raw_header = {} // label text -> { value: text, confidence: float }
 
-    FOR each block in all_blocks:
-        IF block.BlockType != "KEY_VALUE_SET" OR "KEY" not in block.EntityTypes:
-            CONTINUE
-        key_text = concatenate text from CHILD relationships of block using block_map
-        value_block = follow VALUE relationship from block using block_map
-        IF value_block is null: CONTINUE
-        value_text = concatenate text from CHILD relationships of value_block using block_map
-        confidence = min(block.Confidence, value_block.Confidence)
-        raw_header[key_text.strip()] = { value: value_text.strip(), confidence: confidence }
+ FOR each block in all_blocks:
+ IF block.BlockType != "KEY_VALUE_SET" OR "KEY" not in block.EntityTypes:
+ CONTINUE
+ key_text = concatenate text from CHILD relationships of block using block_map
+ value_block = follow VALUE relationship from block using block_map
+ IF value_block is null: CONTINUE
+ value_text = concatenate text from CHILD relationships of value_block using block_map
+ confidence = min(block.Confidence, value_block.Confidence)
+ raw_header[key_text.strip()] = { value: value_text.strip(), confidence: confidence }
 
-    // --- Tables: TABLE and CELL blocks from TABLES extraction ---
-    raw_tables = []    // list of { headers: [str], rows: [[str]], avg_confidence: float }
+ // --- Tables: TABLE and CELL blocks from TABLES extraction ---
+ raw_tables = [] // list of { headers: [str], rows: [[str]], avg_confidence: float }
 
-    FOR each block in all_blocks:
-        IF block.BlockType != "TABLE": CONTINUE
+ FOR each block in all_blocks:
+ IF block.BlockType != "TABLE": CONTINUE
 
-        // Reconstruct the grid from CELL blocks.
-        // Check for merged cells (ColumnSpan > 1) before mapping headers to columns.
-        grid = {}        // row_index -> col_index -> { text: str, confidence: float }
-        all_confidences = []
+ // Reconstruct the grid from CELL blocks.
+ // Check for merged cells (ColumnSpan > 1) before mapping headers to columns.
+ grid = {} // row_index -> col_index -> { text: str, confidence: float }
+ all_confidences = []
 
-        FOR each cell_id in CHILD relationships of block:
-            cell = block_map[cell_id]
-            IF cell.BlockType != "CELL": CONTINUE
-            r = cell.RowIndex
-            c = cell.ColumnIndex
-            // If a cell spans multiple columns, expand it before indexing.
-            // Merged headers shift all subsequent column alignments if not handled.
-            IF cell.ColumnSpan > 1:
-                cell_text = concatenate CHILD word text from cell using block_map
-                FOR col_offset from 0 to cell.ColumnSpan - 1:
-                    grid[r][c + col_offset] = { text: cell_text, confidence: cell.Confidence }
-            ELSE:
-                cell_text = concatenate CHILD word text from cell using block_map
-                grid[r][c] = { text: cell_text, confidence: cell.Confidence }
-                all_confidences.append(cell.Confidence)
+ FOR each cell_id in CHILD relationships of block:
+ cell = block_map[cell_id]
+ IF cell.BlockType != "CELL": CONTINUE
+ r = cell.RowIndex
+ c = cell.ColumnIndex
+ // If a cell spans multiple columns, expand it before indexing.
+ // Merged headers shift all subsequent column alignments if not handled.
+ IF cell.ColumnSpan > 1:
+ cell_text = concatenate CHILD word text from cell using block_map
+ FOR col_offset from 0 to cell.ColumnSpan - 1:
+ grid[r][c + col_offset] = { text: cell_text, confidence: cell.Confidence }
+ ELSE:
+ cell_text = concatenate CHILD word text from cell using block_map
+ grid[r][c] = { text: cell_text, confidence: cell.Confidence }
+ all_confidences.append(cell.Confidence)
 
-        IF grid is empty OR max_row(grid) < 2: CONTINUE
+ IF grid is empty OR max_row(grid) < 2: CONTINUE
 
-        // Row 1 is the header row. Collect header labels.
-        num_cols = max column index in grid[1]
-        headers = [ grid[1][c].text.strip() for c in 1 to num_cols ]
+ // Row 1 is the header row. Collect header labels.
+ num_cols = max column index in grid[1]
+ headers = [grid[1][c].text.strip() for c in 1 to num_cols ]
 
-        // Rows 2 through max_row are data rows.
-        rows = []
-        FOR r from 2 to max_row(grid):
-            row = [ grid[r].get(c, {text: ""}).text.strip() for c in 1 to num_cols ]
-            rows.append(row)
+ // Rows 2 through max_row are data rows.
+ rows = []
+ FOR r from 2 to max_row(grid):
+ row = [grid[r].get(c, {text: ""}).text.strip() for c in 1 to num_cols ]
+ rows.append(row)
 
-        avg_confidence = average of all_confidences if all_confidences else 0.0
-        raw_tables.append({ headers: headers, rows: rows, avg_confidence: avg_confidence })
+ avg_confidence = average of all_confidences if all_confidences else 0.0
+ raw_tables.append({ headers: headers, rows: rows, avg_confidence: avg_confidence })
 
-    RETURN raw_header, raw_tables
+ RETURN raw_header, raw_tables
 ```
 
-**Step 4: Map the extracted data to the canonical EOB schema.** This is the step that replaced the static profile library for all but the highest-volume payers. We check whether the payer falls into our short-list of explicitly-profiled payers. If it does, we apply the static profile dictionary directly: it's cheaper, faster, and completely deterministic. If it doesn't, we send the raw extracted column headers to Bedrock and ask the LLM to map them. 
+**Step 4: Map the extracted data to the canonical EOB schema.** This is the step that replaced the static profile library for all but the highest-volume payers. We check whether the payer falls into our short-list of explicitly-profiled payers. If it does, we apply the static profile dictionary directly: it's cheaper, faster, and completely deterministic. If it doesn't, we send the raw extracted column headers to Bedrock and ask the LLM to map them.
 
 ```pseudocode
 // High-volume payer profiles: maintain these for your top 10-20 payers by volume.
@@ -215,193 +215,193 @@ FUNCTION extract_raw_content(all_blocks, block_map):
 // These are the same profiles as the original Recipe 1.8, but a much shorter list.
 // The LLM handles everything else.
 HIGH_VOLUME_PROFILES = {
-    "unitedhealthcare": {
-        table_headers: {
-            "date of service":           "date_of_service",
-            "procedure code":            "procedure_code",
-            "what your provider billed": "billed_amount",
-            "network discount":          "adjustment",
-            "what your plan paid":       "plan_paid",
-            // [EDITOR: review fix: P1 #3 UHC allowed_amount: added "plan allowed" mapping.
-            // Three of four financial validation rules silently skipped for UHC without
-            // allowed_amount. UHC EOBs commonly include a "Plan Allowed" or "Allowed Amount"
-            // column. Add the matching label for your specific UHC template here.
-            // If your UHC documents do not include an explicit allowed column, derive it:
-            // allowed = billed - adjustment (see validate_eob_financials notes below).]
-            "plan allowed":              "allowed_amount",
-            "allowed amount":            "allowed_amount",
-            "what you owe":              "member_responsibility",
-            "deductible":                "deductible_applied",
-            "copayment":                 "copay",
-            "coinsurance":               "coinsurance",
-            "service":                   "service_description",
-        },
-        kv_fields: {
-            "claim #":        "claim_number",
-            "claim number":   "claim_number",
-            "member":         "member_name",
-            "member id":      "member_id",
-            "group number":   "group_number",
-            "provider":       "provider_name",
-        }
-    },
-    "medicare": {
-        table_headers: {
-            "service date":           "date_of_service",
-            "services provided":      "service_description",
-            "amount charged":         "billed_amount",
-            "medicare approved":      "allowed_amount",
-            "medicare paid provider": "plan_paid",
-            "you may be billed":      "member_responsibility",
-            "non-covered amount":     "non_covered",
-        },
-        kv_fields: {
-            "claim number":                  "claim_number",
-            "patient name":                  "member_name",
-            "health insurance claim number": "member_id",
-            "hicn":                          "member_id",
-            "medicare id":                   "member_id",
-        }
-    }
-    // Add other high-volume payers here as needed.
-    // Everything else routes through Bedrock automatically.
+ "unitedhealthcare": {
+ table_headers: {
+ "date of service": "date_of_service",
+ "procedure code": "procedure_code",
+ "what your provider billed": "billed_amount",
+ "network discount": "adjustment",
+ "what your plan paid": "plan_paid",
+ // [EDITOR: review fix: P1 #3 UHC allowed_amount: added "plan allowed" mapping.
+ // Three of four financial validation rules silently skipped for UHC without
+ // allowed_amount. UHC EOBs commonly include a "Plan Allowed" or "Allowed Amount"
+ // column. Add the matching label for your specific UHC template here.
+ // If your UHC documents do not include an explicit allowed column, derive it:
+ // allowed = billed - adjustment (see validate_eob_financials notes below).]
+ "plan allowed": "allowed_amount",
+ "allowed amount": "allowed_amount",
+ "what you owe": "member_responsibility",
+ "deductible": "deductible_applied",
+ "copayment": "copay",
+ "coinsurance": "coinsurance",
+ "service": "service_description",
+ },
+ kv_fields: {
+ "claim #": "claim_number",
+ "claim number": "claim_number",
+ "member": "member_name",
+ "member id": "member_id",
+ "group number": "group_number",
+ "provider": "provider_name",
+ }
+ },
+ "medicare": {
+ table_headers: {
+ "service date": "date_of_service",
+ "services provided": "service_description",
+ "amount charged": "billed_amount",
+ "medicare approved": "allowed_amount",
+ "medicare paid provider": "plan_paid",
+ "you may be billed": "member_responsibility",
+ "non-covered amount": "non_covered",
+ },
+ kv_fields: {
+ "claim number": "claim_number",
+ "patient name": "member_name",
+ "health insurance claim number": "member_id",
+ "hicn": "member_id",
+ "medicare id": "member_id",
+ }
+ }
+ // Add other high-volume payers here as needed.
+ // Everything else routes through Bedrock automatically.
 }
 
 // Canonical EOB schema: the fields we want in the output.
 // Send this to the LLM so it understands what it's mapping to.
 CANONICAL_SCHEMA = {
-    table_fields: {
-        "date_of_service":      "The date the medical service was provided",
-        "procedure_code":       "CPT or HCPCS billing code for the service",
-        "service_description":  "Description of the service or procedure",
-        "billed_amount":        "Dollar amount submitted by the provider (before any adjustments)",
-        "allowed_amount":       "Contractual allowed amount (after network discount)",
-        "adjustment":           "Dollar amount of network discount or contractual adjustment",
-        "plan_paid":            "Dollar amount paid by the insurance plan",
-        "member_responsibility":"Dollar amount the member owes (deductible + copay + coinsurance)",
-        "deductible_applied":   "Portion of member responsibility applied to deductible",
-        "copay":                "Fixed copayment amount",
-        "coinsurance":          "Percentage-based member cost share",
-        "non_covered":          "Amount for non-covered services",
-    },
-    header_fields: {
-        "claim_number":    "Unique claim identifier",
-        "member_name":     "Name of the insured member",
-        "member_id":       "Member's insurance ID number",
-        "group_number":    "Group or plan number",
-        "provider_name":   "Name of the treating provider",
-        "service_period":  "Date or date range of the service period",
-    }
+ table_fields: {
+ "date_of_service": "The date the medical service was provided",
+ "procedure_code": "CPT or HCPCS billing code for the service",
+ "service_description": "Description of the service or procedure",
+ "billed_amount": "Dollar amount submitted by the provider (before any adjustments)",
+ "allowed_amount": "Contractual allowed amount (after network discount)",
+ "adjustment": "Dollar amount of network discount or contractual adjustment",
+ "plan_paid": "Dollar amount paid by the insurance plan",
+ "member_responsibility":"Dollar amount the member owes (deductible + copay + coinsurance)",
+ "deductible_applied": "Portion of member responsibility applied to deductible",
+ "copay": "Fixed copayment amount",
+ "coinsurance": "Percentage-based member cost share",
+ "non_covered": "Amount for non-covered services",
+ },
+ header_fields: {
+ "claim_number": "Unique claim identifier",
+ "member_name": "Name of the insured member",
+ "member_id": "Member's insurance ID number",
+ "group_number": "Group or plan number",
+ "provider_name": "Name of the treating provider",
+ "service_period": "Date or date range of the service period",
+ }
 }
 
 FUNCTION map_to_canonical_schema(raw_header, raw_tables, document_key, payer_hint):
-    // [EDITOR: review fix: P1 #5 idempotency check: check DynamoDB before any expensive
-    // LLM call. SNS delivers at least once; a Lambda retry would otherwise re-invoke
-    // Bedrock needlessly and potentially double-write the record.
-    // This aligns the pseudocode with the guidance in "Why This Isn't Production-Ready."]
-    existing = get_item from DynamoDB "eob-records" where partition_key = document_key
-    IF existing item found AND existing.financial_validation.status == "valid":
-        RAISE AlreadyProcessedError so caller can return the existing record
-        // Caller should return existing record without reprocessing
+ // [EDITOR: review fix: P1 #5 idempotency check: check DynamoDB before any expensive
+ // LLM call. SNS delivers at least once; a Lambda retry would otherwise re-invoke
+ // Bedrock needlessly and potentially double-write the record.
+ // This aligns the pseudocode with the guidance in "Why This Isn't Production-Ready."]
+ existing = get_item from DynamoDB "eob-records" where partition_key = document_key
+ IF existing item found AND existing.financial_validation.status == "valid":
+ RAISE AlreadyProcessedError so caller can return the existing record
+ // Caller should return existing record without reprocessing
 
-    // Step 1: Check if this is a high-volume payer with a static profile.
-    // payer_hint comes from the S3 prefix if your pipeline uses per-payer prefixes.
-    // See "Adaptive Mapping" for header keyword detection if S3 prefixes aren't available.
-    IF payer_hint is not null:
-        payer_id = normalize_payer_id(payer_hint)    // lowercase, strip whitespace
-        IF payer_id is in HIGH_VOLUME_PROFILES:
-            profile = HIGH_VOLUME_PROFILES[payer_id]
-            // Apply the static profile mapping and return immediately.
-            // This skips the Bedrock call entirely for these payers.
-            RETURN apply_static_profile(raw_header, raw_tables, profile), "static_profile"
+ // Step 1: Check if this is a high-volume payer with a static profile.
+ // payer_hint comes from the S3 prefix if your pipeline uses per-payer prefixes.
+ // See "Adaptive Mapping" for header keyword detection if S3 prefixes aren't available.
+ IF payer_hint is not null:
+ payer_id = normalize_payer_id(payer_hint) // lowercase, strip whitespace
+ IF payer_id is in HIGH_VOLUME_PROFILES:
+ profile = HIGH_VOLUME_PROFILES[payer_id]
+ // Apply the static profile mapping and return immediately.
+ // This skips the Bedrock call entirely for these payers.
+ RETURN apply_static_profile(raw_header, raw_tables, profile), "static_profile"
 
-    // Step 2: No static profile. Send to Bedrock for schema mapping.
-    // The LLM receives the raw column headers, a sample of cell values to infer
-    // semantics, and the canonical schema with field descriptions.
-    RETURN map_with_llm(raw_header, raw_tables), "bedrock_mapping"
+ // Step 2: No static profile. Send to Bedrock for schema mapping.
+ // The LLM receives the raw column headers, a sample of cell values to infer
+ // semantics, and the canonical schema with field descriptions.
+ RETURN map_with_llm(raw_header, raw_tables), "bedrock_mapping"
 
 FUNCTION map_with_llm(raw_header, raw_tables):
-    // Build the prompt payload.
-    // We send column headers and a sample of values (first 2 data rows) so the LLM
-    // can infer semantics from both the label and the content.
-    // Note: sample rows contain PHI (dates, dollar amounts, procedure codes).
-    // Transmission to Bedrock is covered by the BAA; AWS does not retain this data.
-    // Header labels (not values) are sent for the key-value section because label
-    // semantics are sufficient for header field mapping; header values are PHI
-    // and do not add inference value.
-    table_samples = []
-    FOR each table in raw_tables:
-        sample = {
-            headers: sanitize(table.headers),
-            sample_rows: sanitize(table.rows[:2])    // first two rows for inference context
-        }
-        table_samples.append(sample)
+ // Build the prompt payload.
+ // We send column headers and a sample of values (first 2 data rows) so the LLM
+ // can infer semantics from both the label and the content.
+ // Note: sample rows contain PHI (dates, dollar amounts, procedure codes).
+ // Transmission to Bedrock is covered by the BAA; AWS does not retain this data.
+ // Header labels (not values) are sent for the key-value section because label
+ // semantics are sufficient for header field mapping; header values are PHI
+ // and do not add inference value.
+ table_samples = []
+ FOR each table in raw_tables:
+ sample = {
+ headers: sanitize(table.headers),
+ sample_rows: sanitize(table.rows[:2]) // first two rows for inference context
+ }
+ table_samples.append(sample)
 
-    // Build the prompt. Keep it structured and unambiguous.
-    // Do not include full document text; only the structural data needed for mapping.
-    // This minimizes both token cost and the chance of sensitive content in the prompt.
-    user_prompt = format as JSON:
-        {
-            task: "Map the extracted EOB table column headers and form field labels
-                   to the canonical field names in the provided schema.
-                   Return a JSON object with two keys:
-                   'table_mapping': maps each extracted column header to a canonical
-                   field name (or null if no match).
-                   'header_mapping': maps each extracted form field label to a canonical
-                   field name (or null if no match).
-                   Use only the canonical field names from the schema.
-                   Return only valid JSON. No explanation, no markdown.",
-            extracted_tables:  table_samples,
-            extracted_header:  list of keys from raw_header,
-            canonical_schema:  CANONICAL_SCHEMA
-        }
+ // Build the prompt. Keep it structured and unambiguous.
+ // Do not include full document text; only the structural data needed for mapping.
+ // This minimizes both token cost and the chance of sensitive content in the prompt.
+ user_prompt = format as JSON:
+ {
+ task: "Map the extracted EOB table column headers and form field labels
+ to the canonical field names in the provided schema.
+ Return a JSON object with two keys:
+ 'table_mapping': maps each extracted column header to a canonical
+ field name (or null if no match).
+ 'header_mapping': maps each extracted form field label to a canonical
+ field name (or null if no match).
+ Use only the canonical field names from the schema.
+ Return only valid JSON. No explanation, no markdown.",
+ extracted_tables: table_samples,
+ extracted_header: list of keys from raw_header,
+ canonical_schema: CANONICAL_SCHEMA
+ }
 
-    // Call Bedrock. Use temperature=0 for deterministic output.
-    // Nova Pro or Haiku 4.5: sufficient capability for this structured task.
-    response = call Bedrock.Converse with:
-        model_id     = "us.amazon.nova-pro-v1:0"    // or us.anthropic.claude-haiku-4-5-v1:0
-        system       = [{ text: "You are a healthcare data normalization assistant.
-                                 Return only valid JSON. Never include PHI in your response." }]
-        messages     = [{ role: "user", content: [{ text: user_prompt }] }]
-        inference_config = { max_tokens: 1024, temperature: 0 }
+ // Call Bedrock. Use temperature=0 for deterministic output.
+ // Nova Pro or Haiku 4.5: sufficient capability for this structured task.
+ response = call Bedrock.Converse with:
+ model_id = "us.amazon.nova-pro-v1:0" // or us.anthropic.claude-haiku-4-5-v1:0
+ system = [{ text: "You are a healthcare data normalization assistant.
+ Return only valid JSON. Never include PHI in your response." }]
+ messages = [{ role: "user", content: [{ text: user_prompt }] }]
+ inference_config = { max_tokens: 1024, temperature: 0 }
 
-    // Parse the response. If the JSON is malformed, retry once with an explicit reminder.
-    response_text = extract text from response.output.message.content
-    TRY:
-        mapping = parse JSON from response_text
-    CATCH JSON parse error:
-        // Retry once with an explicit JSON-only reminder appended to the prompt.
-        response = call Bedrock.Converse with same parameters
-                   but user_prompt appended with:
-                   "\n\nYou MUST return only valid JSON. No markdown, no explanation."
-        response_text = extract text from response.output.message.content
-        mapping = parse JSON from response_text
-        // If this still fails, raise an exception and route the document to review.
+ // Parse the response. If the JSON is malformed, retry once with an explicit reminder.
+ response_text = extract text from response.output.message.content
+ TRY:
+ mapping = parse JSON from response_text
+ CATCH JSON parse error:
+ // Retry once with an explicit JSON-only reminder appended to the prompt.
+ response = call Bedrock.Converse with same parameters
+ but user_prompt appended with:
+ "\n\nYou MUST return only valid JSON. No markdown, no explanation."
+ response_text = extract text from response.output.message.content
+ mapping = parse JSON from response_text
+ // If this still fails, raise an exception and route the document to review.
 
-    // Validate structure: required keys must be present.
-    IF "table_mapping" not in mapping OR "header_mapping" not in mapping:
-        RAISE ValueError("Bedrock mapping response missing required keys")
+ // Validate structure: required keys must be present.
+ IF "table_mapping" not in mapping OR "header_mapping" not in mapping:
+ RAISE ValueError("Bedrock mapping response missing required keys")
 
-    // [EDITOR: review fix: P1 #6 canonical field name validation: filter Bedrock output
-    // values against the known canonical set before returning. An off-canonical value
-    // (e.g., "billed_amount_override" or "total_paid" instead of "plan_paid") would
-    // otherwise write an unknown field name into the DynamoDB record and silently bypass
-    // financial validation. Treating non-canonical values as None (unmapped) enforces
-    // the schema boundary between the LLM step and all downstream steps.
-    // This also limits the blast radius of prompt injection via crafted column headers.]
-    VALID_TABLE_FIELDS  = set of keys from CANONICAL_SCHEMA.table_fields
-    VALID_HEADER_FIELDS = set of keys from CANONICAL_SCHEMA.header_fields
+ // [EDITOR: review fix: P1 #6 canonical field name validation: filter Bedrock output
+ // values against the known canonical set before returning. An off-canonical value
+ // (e.g., "billed_amount_override" or "total_paid" instead of "plan_paid") would
+ // otherwise write an unknown field name into the DynamoDB record and silently bypass
+ // financial validation. Treating non-canonical values as None (unmapped) enforces
+ // the schema boundary between the LLM step and all downstream steps.
+ // This also limits the blast radius of prompt injection via crafted column headers.]
+ VALID_TABLE_FIELDS = set of keys from CANONICAL_SCHEMA.table_fields
+ VALID_HEADER_FIELDS = set of keys from CANONICAL_SCHEMA.header_fields
 
-    mapping.table_mapping = {
-        k: (v if v in VALID_TABLE_FIELDS else null)
-        for k, v in mapping.table_mapping
-    }
-    mapping.header_mapping = {
-        k: (v if v in VALID_HEADER_FIELDS else null)
-        for k, v in mapping.header_mapping
-    }
+ mapping.table_mapping = {
+ k: (v if v in VALID_TABLE_FIELDS else null)
+ for k, v in mapping.table_mapping
+ }
+ mapping.header_mapping = {
+ k: (v if v in VALID_HEADER_FIELDS else null)
+ for k, v in mapping.header_mapping
+ }
 
-    RETURN mapping
+ RETURN mapping
 
 // [EDITOR: review fix: P0 #2 _apply_static_profile processes all tables: changed the
 // inner loop from raw_tables[0].headers to iterate all elements of raw_tables.
@@ -409,87 +409,87 @@ FUNCTION map_with_llm(raw_header, raw_tables):
 // all line item data on the static profile path. This is the "reliable" path for your
 // highest-volume payers: it must process every table Textract returns, not just the first.]
 FUNCTION apply_static_profile(raw_header, raw_tables, profile):
-    // Map table column headers across ALL extracted tables.
-    // EOBs commonly produce multiple Textract TABLE blocks: a summary section on page 1
-    // and a line item grid on page 2. Both must be mapped for financial validation to work.
-    table_mapping = {}
-    FOR each table in raw_tables:    // iterate all tables, not just raw_tables[0]
-        FOR each header in table.headers:
-            canonical = profile.table_headers.get(header.strip().lowercase())
-            table_mapping[header] = canonical    // null if not in profile
+ // Map table column headers across ALL extracted tables.
+ // EOBs commonly produce multiple Textract TABLE blocks: a summary section on page 1
+ // and a line item grid on page 2. Both must be mapped for financial validation to work.
+ table_mapping = {}
+ FOR each table in raw_tables: // iterate all tables, not just raw_tables[0]
+ FOR each header in table.headers:
+ canonical = profile.table_headers.get(header.strip().lowercase())
+ table_mapping[header] = canonical // null if not in profile
 
-    // Map key-value header labels.
-    header_mapping = {}
-    FOR each label in raw_header.keys():
-        canonical = profile.kv_fields.get(label.strip().lowercase())
-        header_mapping[label] = canonical
+ // Map key-value header labels.
+ header_mapping = {}
+ FOR each label in raw_header.keys():
+ canonical = profile.kv_fields.get(label.strip().lowercase())
+ header_mapping[label] = canonical
 
-    RETURN { table_mapping: table_mapping, header_mapping: header_mapping }
+ RETURN { table_mapping: table_mapping, header_mapping: header_mapping }
 ```
 
 **Step 5: Assemble the canonical line items.** Apply the schema mapping (from whichever path produced it) to the raw extracted data. This step is purely structural: walk the rows, rename the columns, strip whitespace.
 
 ```pseudocode
 FUNCTION assemble_line_items(raw_header, raw_tables, mapping):
-    // Apply header mapping to the form fields.
-    header_fields = {}
-    FOR each raw_label, data in raw_header:
-        canonical = mapping.header_mapping.get(raw_label)
-        IF canonical is not null:
-            header_fields[canonical] = data.value
+ // Apply header mapping to the form fields.
+ header_fields = {}
+ FOR each raw_label, data in raw_header:
+ canonical = mapping.header_mapping.get(raw_label)
+ IF canonical is not null:
+ header_fields[canonical] = data.value
 
-    // Apply table mapping to the line items.
-    line_items = []
-    FOR each table in raw_tables:
-        num_cols = length of table.headers
-        canonical_headers = [mapping.table_mapping.get(h) for h in table.headers]
-        // Keep unmapped columns under their original label; don't silently discard.
-        canonical_headers = [ c if c is not null else table.headers[i]
-                               for i, c in enumerate(canonical_headers) ]
+ // Apply table mapping to the line items.
+ line_items = []
+ FOR each table in raw_tables:
+ num_cols = length of table.headers
+ canonical_headers = [mapping.table_mapping.get(h) for h in table.headers]
+ // Keep unmapped columns under their original label; don't silently discard.
+ canonical_headers = [c if c is not null else table.headers[i]
+ for i, c in enumerate(canonical_headers) ]
 
-        FOR each row in table.rows:
-            item = {}
-            FOR col_index, canonical_name in enumerate(canonical_headers):
-                item[canonical_name] = row[col_index] if col_index < len(row) else ""
-            line_items.append(item)
+ FOR each row in table.rows:
+ item = {}
+ FOR col_index, canonical_name in enumerate(canonical_headers):
+ item[canonical_name] = row[col_index] if col_index < len(row) else ""
+ line_items.append(item)
 
-    RETURN header_fields, line_items
+ RETURN header_fields, line_items
 ```
 
 **Step 5a: Minimum coverage check.** Before financial validation runs, verify that the mapping produced at least the core financial fields. This is the enforcement point for the LLM-to-validation trust boundary.
 
 ```pseudocode
 FUNCTION check_mapping_coverage(line_items, mapping_path):
-    // If there are no line items at all, the document is incomplete.
-    IF len(line_items) == 0:
-        RETURN false, "no_line_items"
+ // If there are no line items at all, the document is incomplete.
+ IF len(line_items) == 0:
+ RETURN false, "no_line_items"
 
-    // Require at least billed_amount and plan_paid to be present
-    // in at least one line item. These are the minimum fields needed
-    // for meaningful financial validation.
-    has_billed   = any(item.get("billed_amount") for item in line_items)
-    has_plan_paid = any(item.get("plan_paid") for item in line_items)
+ // Require at least billed_amount and plan_paid to be present
+ // in at least one line item. These are the minimum fields needed
+ // for meaningful financial validation.
+ has_billed = any(item.get("billed_amount") for item in line_items)
+ has_plan_paid = any(item.get("plan_paid") for item in line_items)
 
-    IF not has_billed OR not has_plan_paid:
-        RETURN false, "required_fields_missing"
+ IF not has_billed OR not has_plan_paid:
+ RETURN false, "required_fields_missing"
 
-    RETURN true, null
+ RETURN true, null
 
 // In the main pipeline, between assemble_line_items and validate_eob_financials:
 coverage_ok, coverage_reason = check_mapping_coverage(line_items, mapping_path)
 IF not coverage_ok:
-    // Route to manual review. Do not run financial validation.
-    // A record with no financial fields cannot be validated; "valid" would be a lie.
-    record = assemble_and_route(
-        document_key,
-        payer_hint,
-        header_fields,
-        line_items,
-        validation_errors = [],
-        mapping_path = "mapping_incomplete",
-        coverage_reason = coverage_reason
-    )
-    RETURN record
+ // Route to manual review. Do not run financial validation.
+ // A record with no financial fields cannot be validated; "valid" would be a lie.
+ record = assemble_and_route(
+ document_key,
+ payer_hint,
+ header_fields,
+ line_items,
+ validation_errors = [],
+ mapping_path = "mapping_incomplete",
+ coverage_reason = coverage_reason
+ )
+ RETURN record
 
 // Only reach validate_eob_financials if minimum coverage is confirmed.
 validation_errors = validate_eob_financials(header_fields, line_items)
@@ -499,129 +499,129 @@ validation_errors = validate_eob_financials(header_fields, line_items)
 
 ```pseudocode
 FUNCTION parse_currency(text):
-    IF text is null or text.strip() is empty: RETURN null
-    cleaned = remove "$", "," from text.strip()
-    IF cleaned matches a number pattern: RETURN float(cleaned)
-    RETURN null
+ IF text is null or text.strip() is empty: RETURN null
+ cleaned = remove "$", "," from text.strip()
+ IF cleaned matches a number pattern: RETURN float(cleaned)
+ RETURN null
 
 FUNCTION validate_eob_financials(header_fields, line_items):
-    errors = []
+ errors = []
 
-    FOR each index, item in enumerate(line_items):
-        row_num = index + 1    // 1-indexed for human-readable error messages
+ FOR each index, item in enumerate(line_items):
+ row_num = index + 1 // 1-indexed for human-readable error messages
 
-        billed  = parse_currency(item.get("billed_amount"))
-        allowed = parse_currency(item.get("allowed_amount"))
-        paid    = parse_currency(item.get("plan_paid"))
-        member  = parse_currency(item.get("member_responsibility"))
+ billed = parse_currency(item.get("billed_amount"))
+ allowed = parse_currency(item.get("allowed_amount"))
+ paid = parse_currency(item.get("plan_paid"))
+ member = parse_currency(item.get("member_responsibility"))
 
-        // Rule 1: Billed must be >= allowed.
-        IF billed is not null AND allowed is not null:
-            IF billed < allowed - 0.01:
-                errors.append({
-                    row:    row_num,
-                    rule:   "allowed_exceeds_billed",
-                    detail: f"Allowed > Billed on line {row_num}"
-                    // Note: do not include extracted dollar values in error detail
-                    // if this record will be logged outside PHI-protected storage.
-                })
+ // Rule 1: Billed must be >= allowed.
+ IF billed is not null AND allowed is not null:
+ IF billed < allowed - 0.01:
+ errors.append({
+ row: row_num,
+ rule: "allowed_exceeds_billed",
+ detail: f"Allowed > Billed on line {row_num}"
+ // Note: do not include extracted dollar values in error detail
+ // if this record will be logged outside PHI-protected storage.
+ })
 
-        // Rule 2: Allowed must be >= plan paid.
-        IF allowed is not null AND paid is not null:
-            IF paid > allowed + 0.01:
-                errors.append({
-                    row: row_num, rule: "paid_exceeds_allowed",
-                    detail: f"Paid > Allowed on line {row_num}"
-                })
+ // Rule 2: Allowed must be >= plan paid.
+ IF allowed is not null AND paid is not null:
+ IF paid > allowed + 0.01:
+ errors.append({
+ row: row_num, rule: "paid_exceeds_allowed",
+ detail: f"Paid > Allowed on line {row_num}"
+ })
 
-        // Rule 3: Member responsibility approximates allowed minus plan paid.
-        // $0.05 tolerance for rounding. Tighten this if COB math requires exactness.
-        IF allowed is not null AND paid is not null AND member is not null:
-            expected = round(allowed - paid, 2)
-            IF abs(member - expected) > 0.05:
-                errors.append({
-                    row: row_num, rule: "member_resp_mismatch",
-                    detail: f"Member responsibility does not reconcile on line {row_num}"
-                })
+ // Rule 3: Member responsibility approximates allowed minus plan paid.
+ // $0.05 tolerance for rounding. Tighten this if COB math requires exactness.
+ IF allowed is not null AND paid is not null AND member is not null:
+ expected = round(allowed - paid, 2)
+ IF abs(member - expected) > 0.05:
+ errors.append({
+ row: row_num, rule: "member_resp_mismatch",
+ detail: f"Member responsibility does not reconcile on line {row_num}"
+ })
 
-    // Rule 4: Line item payments should sum to header total, if present.
-    header_total = parse_currency(header_fields.get("plan_paid"))
-    IF header_total is not null:
-        line_total = sum of parse_currency(item.get("plan_paid", "0") or "0")
-                     for each item
-        IF abs(line_total - header_total) > 0.10:
-            errors.append({
-                row: "header", rule: "line_total_mismatch",
-                detail: "Line items do not sum to header total"
-            })
+ // Rule 4: Line item payments should sum to header total, if present.
+ header_total = parse_currency(header_fields.get("plan_paid"))
+ IF header_total is not null:
+ line_total = sum of parse_currency(item.get("plan_paid", "0") or "0")
+ for each item
+ IF abs(line_total - header_total) > 0.10:
+ errors.append({
+ row: "header", rule: "line_total_mismatch",
+ detail: "Line items do not sum to header total"
+ })
 
-    RETURN errors
+ RETURN errors
 ```
 
 **Step 7: Assemble and route.** Combine everything into a canonical EOB record. Store both the mapping metadata (which path was used: static profile or Bedrock) and the validation output alongside the record. Valid records go directly to DynamoDB. Flagged records go to both DynamoDB and SQS.
 
 ```pseudocode
 FUNCTION assemble_and_route(
-        document_key, payer_hint, header_fields, line_items,
-        validation_errors, mapping_path, coverage_reason=null):
+ document_key, payer_hint, header_fields, line_items,
+ validation_errors, mapping_path, coverage_reason=null):
 
-    record = {
-        document_key:   document_key,
-        extracted_at:   current UTC timestamp (ISO 8601),
-        payer_hint:     payer_hint,      // from S3 prefix
-        mapping_path:   mapping_path,    // "static_profile", "bedrock_mapping",
-                                         // or "mapping_incomplete"
+ record = {
+ document_key: document_key,
+ extracted_at: current UTC timestamp (ISO 8601),
+ payer_hint: payer_hint, // from S3 prefix
+ mapping_path: mapping_path, // "static_profile", "bedrock_mapping",
+ // or "mapping_incomplete"
 
-        header: {
-            claim_number:  header_fields.get("claim_number"),
-            member_name:   header_fields.get("member_name"),
-            member_id:     header_fields.get("member_id"),
-            group_number:  header_fields.get("group_number"),
-            provider_name: header_fields.get("provider_name"),
-            service_period: header_fields.get("service_period"),
-        },
+ header: {
+ claim_number: header_fields.get("claim_number"),
+ member_name: header_fields.get("member_name"),
+ member_id: header_fields.get("member_id"),
+ group_number: header_fields.get("group_number"),
+ provider_name: header_fields.get("provider_name"),
+ service_period: header_fields.get("service_period"),
+ },
 
-        line_items: line_items,
+ line_items: line_items,
 
-        financial_validation: {
-            errors:       validation_errors,
-            // [EDITOR: review fix: P0 #1 status for incomplete mapping:
-            // mapping_incomplete routes to review without running validation.
-            // mapping_failed routes to review when Bedrock call itself failed.
-            // Both are distinct from "flagged" (validation ran and found errors).]
-            status:       "mapping_incomplete" if mapping_path == "mapping_incomplete"
-                          else "valid" if len(validation_errors) == 0
-                          else "flagged",
-            validated_at: current UTC timestamp
-        }
-    }
+ financial_validation: {
+ errors: validation_errors,
+ // [EDITOR: review fix: P0 #1 status for incomplete mapping:
+ // mapping_incomplete routes to review without running validation.
+ // mapping_failed routes to review when Bedrock call itself failed.
+ // Both are distinct from "flagged" (validation ran and found errors).]
+ status: "mapping_incomplete" if mapping_path == "mapping_incomplete"
+ else "valid" if len(validation_errors) == 0
+ else "flagged",
+ validated_at: current UTC timestamp
+ }
+ }
 
-    // Write every record to DynamoDB: valid, flagged, and mapping_incomplete.
-    // Note: idempotency check was already performed before the Bedrock call
-    // in map_to_canonical_schema. At this point we know this is a new record.
-    write record to DynamoDB "eob-records"
+ // Write every record to DynamoDB: valid, flagged, and mapping_incomplete.
+ // Note: idempotency check was already performed before the Bedrock call
+ // in map_to_canonical_schema. At this point we know this is a new record.
+ write record to DynamoDB "eob-records"
 
-    // Send flagged records to the review queue.
-    // mapping_incomplete: Bedrock or static profile did not produce required fields.
-    // mapping_failed: Bedrock call itself failed.
-    // Both require manual review before financial data can be trusted.
-    needs_review = (len(validation_errors) > 0
-                    OR mapping_path == "mapping_failed"
-                    OR mapping_path == "mapping_incomplete")
-    IF needs_review:
-        reason = "financial_validation_failed" if validation_errors else "schema_mapping_failed"
-        send to SQS "eob-review":
-            document_key:      document_key,
-            payer_hint:        payer_hint,
-            claim_number:      record.header.claim_number,
-            validation_errors: validation_errors,
-            mapping_path:      mapping_path,
-            reason:            reason
+ // Send flagged records to the review queue.
+ // mapping_incomplete: Bedrock or static profile did not produce required fields.
+ // mapping_failed: Bedrock call itself failed.
+ // Both require manual review before financial data can be trusted.
+ needs_review = (len(validation_errors) > 0
+ OR mapping_path == "mapping_failed"
+ OR mapping_path == "mapping_incomplete")
+ IF needs_review:
+ reason = "financial_validation_failed" if validation_errors else "schema_mapping_failed"
+ send to SQS "eob-review":
+ document_key: document_key,
+ payer_hint: payer_hint,
+ claim_number: record.header.claim_number,
+ validation_errors: validation_errors,
+ mapping_path: mapping_path,
+ reason: reason
 
-    RETURN record
+ RETURN record
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.08-python-example.md). It walks through each step with inline comments and notes on what you'd change for a real deployment, including retry configuration for Bedrock throttling, the DynamoDB Decimal gotcha, and how to wire up the high-volume profile shortcut. 
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.08-python-example.md). It walks through each step with inline comments and notes on what you'd change for a real deployment, including retry configuration for Bedrock throttling, the DynamoDB Decimal gotcha, and how to wire up the high-volume profile shortcut.
 
 ---
 
@@ -663,12 +663,12 @@ A few gaps in the pseudocode above that will cause real problems.
 
 ```pseudocode
 IF payer_hint is null:
-    header_text = join(raw_header.keys()).lowercase()
-    IF "unitedhealthcare" in header_text OR "united health" in header_text:
-        payer_hint = "unitedhealthcare"
-    ELSE IF "medicare" in header_text OR "medicare summary" in header_text:
-        payer_hint = "medicare"
-    // Add other known payers as needed.
+ header_text = join(raw_header.keys()).lowercase()
+ IF "unitedhealthcare" in header_text OR "united health" in header_text:
+ payer_hint = "unitedhealthcare"
+ ELSE IF "medicare" in header_text OR "medicare summary" in header_text:
+ payer_hint = "medicare"
+ // Add other known payers as needed.
 ```
 
 This is a simple string scan on the header label keys (not values). It runs before the Bedrock call and costs nothing. Extend the keyword list as you add profiles.
@@ -707,7 +707,7 @@ This is a simple string scan on the header label keys (not values). It runs befo
 **AWS Solutions and Blogs:**
 - [Building an End-to-End Intelligent Document Processing Solution Using AWS](https://aws.amazon.com/blogs/machine-learning/building-an-end-to-end-intelligent-document-processing-solution-using-aws/): Comprehensive walkthrough of multi-stage IDP pipelines with Textract and generative AI
 
---- 
+---
 
 ---
 

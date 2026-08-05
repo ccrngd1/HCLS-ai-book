@@ -22,18 +22,18 @@
 
 ```mermaid
 flowchart LR
-    A[📄 Formulary Files\nCMS format] -->|Upload| B[S3 Bucket\nformulary-inbox/]
-    B -->|S3 Event| C[Lambda\nformulary-parser]
-    C -->|Bulk Load| D[Amazon Neptune\nProperty Graph]
-    
-    E[🏥 EHR / Prescriber Tool] -->|REST/GraphQL| F[API Gateway\nor AppSync]
-    F -->|Check Cache| G[ElastiCache\nRedis]
-    G -->|Cache Miss| H[Lambda\ngraph-query-resolver]
-    H -->|openCypher| D
-    H -->|Populate Cache| G
+ A[Formulary Files\nCMS format] -->|Upload| B[S3 Bucket\nformulary-inbox/]
+ B -->|S3 Event| C[Lambda\nformulary-parser]
+ C -->|Bulk Load| D[Amazon Neptune\nProperty Graph]
 
-    style D fill:#9f9,stroke:#333
-    style G fill:#ff9,stroke:#333
+ E[EHR / Prescriber Tool] -->|REST/GraphQL| F[API Gateway\nor AppSync]
+ F -->|Check Cache| G[ElastiCache\nRedis]
+ G -->|Cache Miss| H[Lambda\ngraph-query-resolver]
+ H -->|openCypher| D
+ H -->|Populate Cache| G
+
+ style D fill:#9f9,stroke:#333
+ style G fill:#ff9,stroke:#333
 ```
 
 ### Prerequisites
@@ -70,90 +70,90 @@ flowchart LR
 
 ```pseudocode
 FUNCTION parse_formulary_file(bucket, key):
-    // Read the raw formulary file from storage.
-    // CMS Part D files are pipe-delimited text with a header row.
-    raw_data = read file from S3 at bucket/key
-    
-    // Parse into rows. Each row represents one drug-plan-tier combination.
-    rows = parse_delimited(raw_data, delimiter="|", has_header=true)
-    
-    // Accumulators for graph entities
-    vertices = empty list   // nodes to create or update
-    edges = empty list      // relationships to create or update
-    
-    FOR each row in rows:
-        // Create or update the Drug vertex
-        drug_id = row["RXNORM_CUI"] or row["NDC"]
-        append to vertices: {
-            id: drug_id,
-            label: "Drug",
-            properties: {
-                name: row["DRUG_NAME"],
-                dosage_form: row["DOSAGE_FORM"],
-                strength: row["STRENGTH"],
-                rxnorm_cui: row["RXNORM_CUI"]
-            }
-        }
-        
-        // Create the TherapeuticClass vertex (if not already seen)
-        class_id = row["THERAPEUTIC_CLASS_CODE"]
-        append to vertices: {
-            id: class_id,
-            label: "TherapeuticClass",
-            properties: {
-                name: row["THERAPEUTIC_CLASS_NAME"],
-                classification_system: "AHFS"  // or USP, depending on plan
-            }
-        }
-        
-        // Edge: Drug belongs to TherapeuticClass
-        append to edges: {
-            from: drug_id,
-            to: class_id,
-            type: "BELONGS_TO_CLASS",
-            properties: { effective_date: row["EFFECTIVE_DATE"] }
-        }
-        
-        // Edge: Drug has tier assignment under this plan
-        append to edges: {
-            from: drug_id,
-            to: row["PLAN_ID"],
-            type: "COVERED_UNDER",
-            properties: {
-                tier: row["TIER_LEVEL"],
-                effective_date: row["EFFECTIVE_DATE"],
-                termination_date: row["TERMINATION_DATE"]
-            }
-        }
-        
-        // If restriction codes present, create restriction edges
-        IF row["PRIOR_AUTH_FLAG"] == "Y":
-            append to edges: {
-                from: drug_id,
-                to: "PA_" + row["PLAN_ID"] + "_" + drug_id,
-                type: "HAS_RESTRICTION",
-                properties: { restriction_type: "PRIOR_AUTH", plan_id: row["PLAN_ID"] }
-            }
-        
-        IF row["STEP_THERAPY_FLAG"] == "Y":
-            append to edges: {
-                from: drug_id,
-                to: "ST_" + row["PLAN_ID"] + "_" + drug_id,
-                type: "HAS_RESTRICTION",
-                properties: { restriction_type: "STEP_THERAPY", plan_id: row["PLAN_ID"] }
-            }
-        
-        // If alternatives are listed, create therapeutic alternative edges
-        IF row["ALTERNATIVE_DRUGS"] is not empty:
-            FOR each alt_drug_id in split(row["ALTERNATIVE_DRUGS"], ","):
-                append to edges: {
-                    from: drug_id,
-                    to: trim(alt_drug_id),
-                    type: "THERAPEUTIC_ALTERNATIVE",
-                    properties: { plan_id: row["PLAN_ID"], source: "formulary_file" }
-                }
-    
-    RETURN vertices, edges
+ // Read the raw formulary file from storage.
+ // CMS Part D files are pipe-delimited text with a header row.
+ raw_data = read file from S3 at bucket/key
+
+ // Parse into rows. Each row represents one drug-plan-tier combination.
+ rows = parse_delimited(raw_data, delimiter="|", has_header=true)
+
+ // Accumulators for graph entities
+ vertices = empty list // nodes to create or update
+ edges = empty list // relationships to create or update
+
+ FOR each row in rows:
+ // Create or update the Drug vertex
+ drug_id = row["RXNORM_CUI"] or row["NDC"]
+ append to vertices: {
+ id: drug_id,
+ label: "Drug",
+ properties: {
+ name: row["DRUG_NAME"],
+ dosage_form: row["DOSAGE_FORM"],
+ strength: row["STRENGTH"],
+ rxnorm_cui: row["RXNORM_CUI"]
+ }
+ }
+
+ // Create the TherapeuticClass vertex (if not already seen)
+ class_id = row["THERAPEUTIC_CLASS_CODE"]
+ append to vertices: {
+ id: class_id,
+ label: "TherapeuticClass",
+ properties: {
+ name: row["THERAPEUTIC_CLASS_NAME"],
+ classification_system: "AHFS" // or USP, depending on plan
+ }
+ }
+
+ // Edge: Drug belongs to TherapeuticClass
+ append to edges: {
+ from: drug_id,
+ to: class_id,
+ type: "BELONGS_TO_CLASS",
+ properties: { effective_date: row["EFFECTIVE_DATE"] }
+ }
+
+ // Edge: Drug has tier assignment under this plan
+ append to edges: {
+ from: drug_id,
+ to: row["PLAN_ID"],
+ type: "COVERED_UNDER",
+ properties: {
+ tier: row["TIER_LEVEL"],
+ effective_date: row["EFFECTIVE_DATE"],
+ termination_date: row["TERMINATION_DATE"]
+ }
+ }
+
+ // If restriction codes present, create restriction edges
+ IF row["PRIOR_AUTH_FLAG"] == "Y":
+ append to edges: {
+ from: drug_id,
+ to: "PA_" + row["PLAN_ID"] + "_" + drug_id,
+ type: "HAS_RESTRICTION",
+ properties: { restriction_type: "PRIOR_AUTH", plan_id: row["PLAN_ID"] }
+ }
+
+ IF row["STEP_THERAPY_FLAG"] == "Y":
+ append to edges: {
+ from: drug_id,
+ to: "ST_" + row["PLAN_ID"] + "_" + drug_id,
+ type: "HAS_RESTRICTION",
+ properties: { restriction_type: "STEP_THERAPY", plan_id: row["PLAN_ID"] }
+ }
+
+ // If alternatives are listed, create therapeutic alternative edges
+ IF row["ALTERNATIVE_DRUGS"] is not empty:
+ FOR each alt_drug_id in split(row["ALTERNATIVE_DRUGS"], ","):
+ append to edges: {
+ from: drug_id,
+ to: trim(alt_drug_id),
+ type: "THERAPEUTIC_ALTERNATIVE",
+ properties: { plan_id: row["PLAN_ID"], source: "formulary_file" }
+ }
+
+ RETURN vertices, edges
 ```
 
 **Step 2: Load graph data into Neptune.** Take the parsed vertices and edges and load them into the graph database. Neptune supports bulk loading via its loader API (for initial loads) and individual upserts via openCypher MERGE statements (for incremental updates). The key decision: on a quarterly full formulary refresh, do you drop and rebuild, or do you merge? Merging preserves any enrichment you've added (like manually curated alternative relationships), but it's slower and risks stale data if a drug is removed from the formulary. The pragmatic approach: use a versioned subgraph per formulary effective date, and point queries at the current version. Skip this step and your parsed data sits in Lambda's memory doing nothing.
@@ -162,104 +162,104 @@ FUNCTION parse_formulary_file(bucket, key):
 
 ```pseudocode
 FUNCTION load_graph(vertices, edges, neptune_endpoint):
-    // For bulk initial load, use Neptune's bulk loader with a CSV staging file.
-    // For incremental updates, use openCypher MERGE to upsert.
-    
-    // Connect to Neptune's openCypher endpoint
-    connection = connect_to(neptune_endpoint, port=8182, protocol="bolt")
-    
-    // Upsert vertices: create if new, update properties if existing
-    FOR each vertex in vertices:
-        execute openCypher on connection:
-            MERGE (n:{vertex.label} {id: vertex.id})
-            SET n += vertex.properties
-            // MERGE ensures we don't create duplicates.
-            // SET += updates properties without removing existing ones.
-    
-    // Upsert edges: create if the relationship doesn't exist yet
-    FOR each edge in edges:
-        execute openCypher on connection:
-            MATCH (a {id: edge.from})
-            MATCH (b {id: edge.to})
-            MERGE (a)-[r:{edge.type}]->(b)
-            SET r += edge.properties
-            // MERGE on the relationship prevents duplicate edges.
-            // Properties like effective_date get updated if the edge already exists.
-    
-    // Log load statistics for monitoring
-    log("Loaded {count(vertices)} vertices, {count(edges)} edges")
-    
-    RETURN { vertices_loaded: count(vertices), edges_loaded: count(edges) }
+ // For bulk initial load, use Neptune's bulk loader with a CSV staging file.
+ // For incremental updates, use openCypher MERGE to upsert.
+
+ // Connect to Neptune's openCypher endpoint
+ connection = connect_to(neptune_endpoint, port=8182, protocol="bolt")
+
+ // Upsert vertices: create if new, update properties if existing
+ FOR each vertex in vertices:
+ execute openCypher on connection:
+ MERGE (n:{vertex.label} {id: vertex.id})
+ SET n += vertex.properties
+ // MERGE ensures we don't create duplicates.
+ // SET += updates properties without removing existing ones.
+
+ // Upsert edges: create if the relationship doesn't exist yet
+ FOR each edge in edges:
+ execute openCypher on connection:
+ MATCH (a {id: edge.from})
+ MATCH (b {id: edge.to})
+ MERGE (a)-[r:{edge.type}]->(b)
+ SET r += edge.properties
+ // MERGE on the relationship prevents duplicate edges.
+ // Properties like effective_date get updated if the edge already exists.
+
+ // Log load statistics for monitoring
+ log("Loaded {count(vertices)} vertices, {count(edges)} edges")
+
+ RETURN { vertices_loaded: count(vertices), edges_loaded: count(edges) }
 ```
 
 **Step 3: Query for therapeutic alternatives.** This is the core value of the graph: answering "what can my patient take instead?" in a single traversal. The query starts at the prescribed drug, finds its therapeutic class, then finds all other drugs in that class that are covered under the patient's plan, sorted by tier (cheapest first). It also checks for restrictions so the prescriber knows upfront if an alternative requires prior auth or step therapy. Without the graph, this query would be a multi-table JOIN with subqueries. With the graph, it's a pattern match.
 
 ```pseudocode
 FUNCTION find_alternatives(drug_id, plan_id, neptune_endpoint):
-    // The prescriber's question: "What's cheaper and covered for this patient?"
-    // We traverse: prescribed drug -> therapeutic class -> other drugs in class -> 
-    //             filter by plan coverage -> sort by tier
-    
-    connection = connect_to(neptune_endpoint, port=8182, protocol="bolt")
-    
-    // Note: parameterized queries ($drug_id, $plan_id) prevent graph query injection.
-    // Never build openCypher queries via string concatenation with user input.
-    query = """
-        // Start at the prescribed drug
-        MATCH (prescribed:Drug {id: $drug_id})
-        
-        // Find its therapeutic class
-        -[:BELONGS_TO_CLASS]->(class:TherapeuticClass)
-        
-        // Find other drugs in the same class
-        <-[:BELONGS_TO_CLASS]-(alternative:Drug)
-        
-        // That are covered under the patient's plan
-        -[coverage:COVERED_UNDER]->(plan:Plan {id: $plan_id})
-        
-        // Don't return the drug they already prescribed
-        WHERE alternative.id <> $drug_id
-        
-        // Check for restrictions on each alternative
-        OPTIONAL MATCH (alternative)-[restriction:HAS_RESTRICTION]->()
-        WHERE restriction.plan_id = $plan_id
-        
-        // Return alternatives sorted by tier (cheapest first)
-        RETURN alternative.name AS drug_name,
-               alternative.id AS drug_id,
-               alternative.strength AS strength,
-               coverage.tier AS tier,
-               collect(DISTINCT restriction.restriction_type) AS restrictions
-        ORDER BY coverage.tier ASC, alternative.name ASC
-    """
-    
-    results = execute(connection, query, parameters={drug_id: drug_id, plan_id: plan_id})
-    
-    RETURN results
+ // The prescriber's question: "What's cheaper and covered for this patient?"
+ // We traverse: prescribed drug -> therapeutic class -> other drugs in class ->
+ // filter by plan coverage -> sort by tier
+
+ connection = connect_to(neptune_endpoint, port=8182, protocol="bolt")
+
+ // Note: parameterized queries ($drug_id, $plan_id) prevent graph query injection.
+ // Never build openCypher queries via string concatenation with user input.
+ query = """
+ // Start at the prescribed drug
+ MATCH (prescribed:Drug {id: $drug_id})
+
+ // Find its therapeutic class
+ -[:BELONGS_TO_CLASS]->(class:TherapeuticClass)
+
+ // Find other drugs in the same class
+ <-[:BELONGS_TO_CLASS]-(alternative:Drug)
+
+ // That are covered under the patient's plan
+ -[coverage:COVERED_UNDER]->(plan:Plan {id: $plan_id})
+
+ // Don't return the drug they already prescribed
+ WHERE alternative.id <> $drug_id
+
+ // Check for restrictions on each alternative
+ OPTIONAL MATCH (alternative)-[restriction:HAS_RESTRICTION]->()
+ WHERE restriction.plan_id = $plan_id
+
+ // Return alternatives sorted by tier (cheapest first)
+ RETURN alternative.name AS drug_name,
+ alternative.id AS drug_id,
+ alternative.strength AS strength,
+ coverage.tier AS tier,
+ collect(DISTINCT restriction.restriction_type) AS restrictions
+ ORDER BY coverage.tier ASC, alternative.name ASC
+ """
+
+ results = execute(connection, query, parameters={drug_id: drug_id, plan_id: plan_id})
+
+ RETURN results
 ```
 
 **Step 4: Cache results for repeated queries.** The same drug-plan combinations get queried repeatedly. Atorvastatin under Blue Cross PPO Plan 1234 might get looked up hundreds of times a day across a health system. Caching these results in Redis avoids hitting Neptune for every request. The cache key combines drug ID and plan ID. Cache TTL aligns with formulary update frequency: set it to 24 hours during normal periods, and flush explicitly when you load new formulary data. Skip caching and your Neptune cluster will be oversized (and over-budget) to handle the query volume.
 
 ```pseudocode
 FUNCTION get_alternatives_cached(drug_id, plan_id, redis_client, neptune_endpoint):
-    // Build a deterministic cache key from the query parameters
-    cache_key = "alternatives:" + drug_id + ":" + plan_id
-    
-    // Check Redis first
-    cached_result = redis_client.get(cache_key)
-    
-    IF cached_result is not null:
-        // Cache hit. Return immediately without touching Neptune.
-        RETURN deserialize(cached_result)
-    
-    // Cache miss. Query the graph.
-    result = find_alternatives(drug_id, plan_id, neptune_endpoint)
-    
-    // Store in cache with 24-hour TTL.
-    // Formulary data changes at most daily (quarterly full refresh, occasional mid-quarter amendments).
-    redis_client.set(cache_key, serialize(result), ttl=86400)
-    
-    RETURN result
+ // Build a deterministic cache key from the query parameters
+ cache_key = "alternatives:" + drug_id + ":" + plan_id
+
+ // Check Redis first
+ cached_result = redis_client.get(cache_key)
+
+ IF cached_result is not null:
+ // Cache hit. Return immediately without touching Neptune.
+ RETURN deserialize(cached_result)
+
+ // Cache miss. Query the graph.
+ result = find_alternatives(drug_id, plan_id, neptune_endpoint)
+
+ // Store in cache with 24-hour TTL.
+ // Formulary data changes at most daily (quarterly full refresh, occasional mid-quarter amendments).
+ redis_client.set(cache_key, serialize(result), ttl=86400)
+
+ RETURN result
 ```
 
 **Redis security posture.** The cache layer introduces its own security surface. Three things to get right: (1) Enable authentication. For ElastiCache for Redis 7.0+, use IAM-based access control (the Lambda execution role gets `elasticache:Connect` permission, and the Redis user is mapped to an IAM identity). For older versions, configure a Redis AUTH token stored in Secrets Manager and rotated periodically. (2) Require TLS in-transit for all Lambda-to-Redis connections. Set `TransitEncryptionEnabled=true` on the replication group and configure the Redis client with `ssl=True`. (3) Be thoughtful about cache key design and PHI implications. Cache keys in this recipe use the pattern `alternatives:{drug_id}:{plan_id}`. If `plan_id` is a member-specific plan identifier, the cache key set effectively logs which medications are being looked up for which members. That's an access pattern record of medication inquiries, which may constitute PHI depending on your privacy counsel's interpretation. Where possible, use plan-type identifiers (like "Commercial-PPO-Tier1") rather than member-specific plan IDs in cache keys. If your architecture requires member-specific plan IDs for correctness (because tier assignments vary by individual), document the PHI implications, ensure the ElastiCache cluster is covered under your BAA, and apply the same access logging and retention policies you'd apply to any PHI data store.
@@ -268,49 +268,49 @@ FUNCTION get_alternatives_cached(drug_id, plan_id, redis_client, neptune_endpoin
 
 ```pseudocode
 FUNCTION handle_formulary_query(request):
-    // Extract and validate parameters from the API request.
-    // Validate format before querying: drug_id should match RxNorm CUI or NDC pattern,
-    // plan_id should match expected plan identifier format.
-    drug_id = request.params["drug_id"]       // RxNorm CUI or NDC
-    plan_id = request.params["plan_id"]       // patient's benefit plan identifier
-    
-    IF NOT valid_drug_id_format(drug_id) OR NOT valid_plan_id_format(plan_id):
-        RETURN { status: "INVALID_INPUT", message: "Malformed drug_id or plan_id." }
-    
-    // First, check the tier of the prescribed drug itself
-    prescribed_tier = get_drug_tier(drug_id, plan_id)
-    
-    IF prescribed_tier is null:
-        // Drug not on formulary at all
-        RETURN {
-            status: "NOT_COVERED",
-            prescribed_drug: drug_id,
-            message: "This drug is not on the formulary for this plan.",
-            alternatives: get_alternatives_cached(drug_id, plan_id, redis, neptune)
-        }
-    
-    // Get alternatives
-    alternatives = get_alternatives_cached(drug_id, plan_id, redis, neptune)
-    
-    // Check if any alternative has a better (lower) tier
-    better_alternatives = filter(alternatives, WHERE tier < prescribed_tier)
-    
-    IF better_alternatives is empty:
-        // The prescribed drug is already the best option
-        RETURN {
-            status: "PREFERRED",
-            prescribed_drug: drug_id,
-            tier: prescribed_tier,
-            message: "This is the preferred option in its therapeutic class."
-        }
-    ELSE:
-        RETURN {
-            status: "ALTERNATIVES_AVAILABLE",
-            prescribed_drug: drug_id,
-            prescribed_tier: prescribed_tier,
-            alternatives: better_alternatives,
-            message: "Lower-cost alternatives are available."
-        }
+ // Extract and validate parameters from the API request.
+ // Validate format before querying: drug_id should match RxNorm CUI or NDC pattern,
+ // plan_id should match expected plan identifier format.
+ drug_id = request.params["drug_id"] // RxNorm CUI or NDC
+ plan_id = request.params["plan_id"] // patient's benefit plan identifier
+
+ IF NOT valid_drug_id_format(drug_id) OR NOT valid_plan_id_format(plan_id):
+ RETURN { status: "INVALID_INPUT", message: "Malformed drug_id or plan_id." }
+
+ // First, check the tier of the prescribed drug itself
+ prescribed_tier = get_drug_tier(drug_id, plan_id)
+
+ IF prescribed_tier is null:
+ // Drug not on formulary at all
+ RETURN {
+ status: "NOT_COVERED",
+ prescribed_drug: drug_id,
+ message: "This drug is not on the formulary for this plan.",
+ alternatives: get_alternatives_cached(drug_id, plan_id, redis, neptune)
+ }
+
+ // Get alternatives
+ alternatives = get_alternatives_cached(drug_id, plan_id, redis, neptune)
+
+ // Check if any alternative has a better (lower) tier
+ better_alternatives = filter(alternatives, WHERE tier < prescribed_tier)
+
+ IF better_alternatives is empty:
+ // The prescribed drug is already the best option
+ RETURN {
+ status: "PREFERRED",
+ prescribed_drug: drug_id,
+ tier: prescribed_tier,
+ message: "This is the preferred option in its therapeutic class."
+ }
+ ELSE:
+ RETURN {
+ status: "ALTERNATIVES_AVAILABLE",
+ prescribed_drug: drug_id,
+ prescribed_tier: prescribed_tier,
+ alternatives: better_alternatives,
+ message: "Lower-cost alternatives are available."
+ }
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune openCypher endpoint, check out the [Python Example](chapter13.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -321,33 +321,33 @@ FUNCTION handle_formulary_query(request):
 
 ```json
 {
-  "status": "ALTERNATIVES_AVAILABLE",
-  "prescribed_drug": "RX_83367",
-  "prescribed_tier": 3,
-  "alternatives": [
-    {
-      "drug_name": "Rosuvastatin 20mg",
-      "drug_id": "RX_301542",
-      "strength": "20mg",
-      "tier": 1,
-      "restrictions": []
-    },
-    {
-      "drug_name": "Simvastatin 40mg",
-      "drug_id": "RX_36567",
-      "strength": "40mg",
-      "tier": 1,
-      "restrictions": []
-    },
-    {
-      "drug_name": "Pravastatin 40mg",
-      "drug_id": "RX_42463",
-      "strength": "40mg",
-      "tier": 2,
-      "restrictions": []
-    }
-  ],
-  "message": "Lower-cost alternatives are available."
+ "status": "ALTERNATIVES_AVAILABLE",
+ "prescribed_drug": "RX_83367",
+ "prescribed_tier": 3,
+ "alternatives": [
+ {
+ "drug_name": "Rosuvastatin 20mg",
+ "drug_id": "RX_301542",
+ "strength": "20mg",
+ "tier": 1,
+ "restrictions": []
+ },
+ {
+ "drug_name": "Simvastatin 40mg",
+ "drug_id": "RX_36567",
+ "strength": "40mg",
+ "tier": 1,
+ "restrictions": []
+ },
+ {
+ "drug_name": "Pravastatin 40mg",
+ "drug_id": "RX_42463",
+ "strength": "40mg",
+ "tier": 2,
+ "restrictions": []
+ }
+ ],
+ "message": "Lower-cost alternatives are available."
 }
 ```
 

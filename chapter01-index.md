@@ -52,78 +52,78 @@ Before diving into these recipes, make sure you have:
 How the 10 recipes relate to each other and where PHI flows between them:
 
 ```
-                            Chapter 1: Document Intelligence
-                            ================================
+ Chapter 1: Document Intelligence
+ ================================
 
-    SIMPLE                     MODERATE                        COMPLEX
-    (Textract core)            (+ LLM reasoning)               (multi-stage pipelines)
+ SIMPLE MODERATE COMPLEX
+ (Textract core) (+ LLM reasoning) (multi-stage pipelines)
 
-    ┌─────────────┐
-    │  1.1 Ins.   │─ confidence gating ─┐
-    │  Card Scan  │                     │
-    └─────────────┘                     │
-    ┌─────────────┐                     │    ┌──────────────────┐
-    │  1.2 Patient│─ confidence gating ─┼───>│  1.6 Handwritten │
-    │  Intake     │  (async Textract)   │    │  Notes (A2I      │
-    └─────────────┘                     │    │  human review)   │
-    ┌─────────────┐                     │    └──────────────────┘
-    │  1.3 Lab    │─ Comprehend Medical ┘              │
-    │  Requisition│  (ICD-10 codes)          ┌─────────┘
-    └─────────────┘                          │  (shared patterns)
-           │                                 v
-           │ (code validation        ┌──────────────────┐
-           │  pattern reused)        │  1.4 Prior Auth  │──> Ch.2 Clinical
-           │                         │  (LLM + tiering) │    Criteria
-           └────────────────────────>└──────────────────┘
-                                             │
-    ┌─────────────┐                          │ (fan-out pattern)
-    │  1.7 Rx     │                          v
-    │  Label OCR  │              ┌──────────────────────┐
-    │  (RxNorm)   │              │  1.5 Claims          │──> Ch.3 Claims
-    └─────────────┘              │  Attachment (boundary │    Adjudication
-           │                     │  detect + matching)   │
-           │                     └──────────────────────┘
-           │
-           │ (medication         ┌──────────────────┐
-           │  reconciliation)    │  1.8 EOB         │──> Ch.4 Payment
-           └────────────────────>│  Processing      │    Integrity
-                                 │  (payer profiles)│
-                                 └──────────────────┘
-                                 ┌──────────────────┐
-                                 │  1.9 Med Records │──> Ch.5 Member
-                                 │  Request (HIPAA  │    Access
-                                 │  auth validation)│
-                                 └──────────────────┘
-                                 ┌──────────────────────┐
-                                 │  1.10 Chart Migration │
-                                 │  (batch inference,    │──> HealthLake
-                                 │  FHIR R4, capstone)   │
-                                 └──────────────────────┘
+ ┌─────────────┐
+ │ 1.1 Ins. │─ confidence gating ─┐
+ │ Card Scan │ │
+ └─────────────┘ │
+ ┌─────────────┐ │ ┌──────────────────┐
+ │ 1.2 Patient│─ confidence gating ─┼───>│ 1.6 Handwritten │
+ │ Intake │ (async Textract) │ │ Notes (A2I │
+ └─────────────┘ │ │ human review) │
+ ┌─────────────┐ │ └──────────────────┘
+ │ 1.3 Lab │─ Comprehend Medical ┘ │
+ │ Requisition│ (ICD-10 codes) ┌─────────┘
+ └─────────────┘ │ (shared patterns)
+ │ v
+ │ (code validation ┌──────────────────┐
+ │ pattern reused) │ 1.4 Prior Auth │──> Ch.2 Clinical
+ │ │ (LLM + tiering) │ Criteria
+ └────────────────────────>└──────────────────┘
+ │
+ ┌─────────────┐ │ (fan-out pattern)
+ │ 1.7 Rx │ v
+ │ Label OCR │ ┌──────────────────────┐
+ │ (RxNorm) │ │ 1.5 Claims │──> Ch.3 Claims
+ └─────────────┘ │ Attachment (boundary │ Adjudication
+ │ │ detect + matching) │
+ │ └──────────────────────┘
+ │
+ │ (medication ┌──────────────────┐
+ │ reconciliation) │ 1.8 EOB │──> Ch.4 Payment
+ └────────────────────>│ Processing │ Integrity
+ │ (payer profiles)│
+ └──────────────────┘
+ ┌──────────────────┐
+ │ 1.9 Med Records │──> Ch.5 Member
+ │ Request (HIPAA │ Access
+ │ auth validation)│
+ └──────────────────┘
+ ┌──────────────────────┐
+ │ 1.10 Chart Migration │
+ │ (batch inference, │──> HealthLake
+ │ FHIR R4, capstone) │
+ └──────────────────────┘
 
-    Shared infrastructure across all recipes:
-    S3 (SSE-KMS) + DynamoDB + CloudTrail + VPC endpoints + Lambda
+ Shared infrastructure across all recipes:
+ S3 (SSE-KMS) + DynamoDB + CloudTrail + VPC endpoints + Lambda
 
-    Technology progression:
-    Textract only ──> + Comprehend Medical ──> + Bedrock LLM ──> + Vision models
-       (1.1-1.2)         (1.3, 1.7)              (1.4-1.5)        (1.6, 1.10)
+ Technology progression:
+ Textract only ──> + Comprehend Medical ──> + Bedrock LLM ──> + Vision models
+ (1.1-1.2) (1.3, 1.7) (1.4-1.5) (1.6, 1.10)
 ```
 
 Each recipe's "Related Recipes" section identifies specific dependencies. Recipes 1.1 and 1.2 establish foundational patterns (confidence gating, async processing, HIPAA infrastructure) that every subsequent recipe builds on.
 
 ## Recipes
 
-| # | Recipe | Complexity | Phase |
-|---|--------|------------|-------|
-| 1.1 | [Insurance Card Scanning](chapter01.01-insurance-card-scanning) | Simple | ⭐ MVP |
-| 1.2 | [Patient Intake Form Digitization](chapter01.02-patient-intake-digitization) | Simple | ⭐ MVP |
-| 1.3 | [Lab Requisition Form Extraction](chapter01.03-lab-requisition-extraction) | Moderate | 🔶 Phase 2 |
-| 1.4 | [Prior Authorization Document Processing](chapter01.04-prior-auth-document-processing) | Moderate | ⭐ MVP |
-| 1.5 | [Claims Attachment Processing](chapter01.05-claims-attachment-processing) | Complex | 🔶 Phase 2 |
-| 1.6 | [Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) | Complex | 🔷 Phase 3 |
-| 1.7 | [Prescription Label OCR](chapter01.07-prescription-label-ocr) | Simple | 🔶 Phase 2 |
-| 1.8 | [EOB Processing](chapter01.08-eob-processing) | Moderate | 🔶 Phase 2 |
-| 1.9 | [Medical Records Request Extraction](chapter01.09-medical-records-request-extraction) | Moderate | 🔶 Phase 2 |
-| 1.10 | [Historical Chart Migration](chapter01.10-historical-chart-migration) | Complex | 🔷 Phase 3 |
+| # | Recipe | Effort |
+|---|--------|--------|
+| 1.1 | [Insurance Card Scanning](chapter01.01-insurance-card-scanning) | 1 of 5 |
+| 1.2 | [Patient Intake Form Digitization](chapter01.02-patient-intake-digitization) | 1 of 5 |
+| 1.3 | [Lab Requisition Form Extraction](chapter01.03-lab-requisition-extraction) | 3 of 5 |
+| 1.4 | [Prior Authorization Document Processing](chapter01.04-prior-auth-document-processing) | 3 of 5 |
+| 1.5 | [Claims Attachment Processing](chapter01.05-claims-attachment-processing) | 5 of 5 |
+| 1.6 | [Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) | 5 of 5 |
+| 1.7 | [Prescription Label OCR](chapter01.07-prescription-label-ocr) | 1 of 5 |
+| 1.8 | [EOB Processing](chapter01.08-eob-processing) | 3 of 5 |
+| 1.9 | [Medical Records Request Extraction](chapter01.09-medical-records-request-extraction) | 3 of 5 |
+| 1.10 | [Historical Chart Migration](chapter01.10-historical-chart-migration) | 5 of 5 |
 
 **Reading order:** Recipes build on each other. Start with 1.1 — each successive recipe introduces new concepts while referencing patterns established earlier. If you're only here for one thing, Recipe 1.4 (Prior Auth) is the most common real-world ask and can be read after 1.1-1.2 for context.
 

@@ -1,6 +1,6 @@
 # Recipe 1.3 Architecture and Implementation: Lab Requisition Form Extraction
 
-*Companion to [Recipe 1.3: Lab Requisition Form Extraction 🔶](chapter01.03-lab-requisition-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.3: Lab Requisition Form Extraction ](chapter01.03-lab-requisition-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -25,25 +25,25 @@ The reason to use a managed service here rather than an open-source clinical NLP
 
 ```mermaid
 flowchart LR
-    A[📠 Fax Server] -->|PDF| B[S3 Bucket\nlab-reqs/]
-    B -->|S3 Event| C[Lambda\nlab-req-start]
-    C -->|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
-    D -->|SNS Completion| E[SNS Topic\ntextract-jobs]
-    E -->|Trigger| F[Lambda\nlab-req-process]
-    F -->|GetDocumentAnalysis\npaginated| D
-    F -->|Diagnosis text| G[Comprehend Medical\nInferICD10CM]
-    F -->|Clinical notes text| H[Comprehend Medical\nDetectEntitiesV2]
-    G -->|ICD-10 codes + scores| F
-    H -->|Clinical entities| F
-    F -->|Structured lab order| I[DynamoDB\nlab-orders]
-    F -->|Low-confidence fields| J[Review Queue\n→ Recipe 1.6]
+ A[Fax Server] -->|PDF| B[S3 Bucket\nlab-reqs/]
+ B -->|S3 Event| C[Lambda\nlab-req-start]
+ C -->|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
+ D -->|SNS Completion| E[SNS Topic\ntextract-jobs]
+ E -->|Trigger| F[Lambda\nlab-req-process]
+ F -->|GetDocumentAnalysis\npaginated| D
+ F -->|Diagnosis text| G[Comprehend Medical\nInferICD10CM]
+ F -->|Clinical notes text| H[Comprehend Medical\nDetectEntitiesV2]
+ G -->|ICD-10 codes + scores| F
+ H -->|Clinical entities| F
+ F -->|Structured lab order| I[DynamoDB\nlab-orders]
+ F -->|Low-confidence fields| J[Review Queue\n→ Recipe 1.6]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style G fill:#f96,stroke:#333
-    style H fill:#f96,stroke:#333
-    style I fill:#9ff,stroke:#333
-    style E fill:#ffa,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style G fill:#f96,stroke:#333
+ style H fill:#f96,stroke:#333
+ style I fill:#9ff,stroke:#333
+ style E fill:#ffa,stroke:#333
 ```
 
 ### Prerequisites
@@ -93,64 +93,64 @@ flowchart LR
 // This covers the most common panels and individual tests.
 // It requires ongoing maintenance as the lab's test catalog evolves.
 TEST_CPT_MAP = {
-    "cbc":                         "85025",    // complete blood count with differential
-    "cbc with diff":               "85025",
-    "cbc w/diff":                  "85025",
-    "complete blood count":        "85025",
-    "bmp":                         "80048",    // basic metabolic panel
-    "basic metabolic panel":       "80048",
-    "cmp":                         "80053",    // comprehensive metabolic panel
-    "comprehensive metabolic":     "80053",
-    "comprehensive metabolic panel": "80053",
-    "lipid panel":                 "80061",
-    "lipid profile":               "80061",
-    "cholesterol panel":           "80061",
-    "tsh":                         "84443",    // thyroid stimulating hormone
-    "thyroid stimulating hormone": "84443",
-    "hba1c":                       "83036",    // hemoglobin a1c
-    "hemoglobin a1c":              "83036",
-    "glycated hemoglobin":         "83036",
-    "ua":                          "81003",    // urinalysis
-    "urinalysis":                  "81003",
-    "psa":                         "84153",    // prostate specific antigen
-    "prostate specific antigen":   "84153",
-    "vitamin d":                   "82306",    // 25-hydroxyvitamin D
-    "25-oh vitamin d":             "82306",
-    "ferritin":                    "82728",
-    "b12":                         "82607",    // vitamin b12
-    "vitamin b12":                 "82607",
-    "folate":                      "82746",
-    "uric acid":                   "84550",
-    "crp":                         "86140",    // c-reactive protein
-    "c-reactive protein":          "86140",
-    "esr":                         "85651",    // erythrocyte sedimentation rate
-    "a1c":                         "83036",    // common abbreviation
+ "cbc": "85025", // complete blood count with differential
+ "cbc with diff": "85025",
+ "cbc w/diff": "85025",
+ "complete blood count": "85025",
+ "bmp": "80048", // basic metabolic panel
+ "basic metabolic panel": "80048",
+ "cmp": "80053", // comprehensive metabolic panel
+ "comprehensive metabolic": "80053",
+ "comprehensive metabolic panel": "80053",
+ "lipid panel": "80061",
+ "lipid profile": "80061",
+ "cholesterol panel": "80061",
+ "tsh": "84443", // thyroid stimulating hormone
+ "thyroid stimulating hormone": "84443",
+ "hba1c": "83036", // hemoglobin a1c
+ "hemoglobin a1c": "83036",
+ "glycated hemoglobin": "83036",
+ "ua": "81003", // urinalysis
+ "urinalysis": "81003",
+ "psa": "84153", // prostate specific antigen
+ "prostate specific antigen": "84153",
+ "vitamin d": "82306", // 25-hydroxyvitamin D
+ "25-oh vitamin d": "82306",
+ "ferritin": "82728",
+ "b12": "82607", // vitamin b12
+ "vitamin b12": "82607",
+ "folate": "82746",
+ "uric acid": "84550",
+ "crp": "86140", // c-reactive protein
+ "c-reactive protein": "86140",
+ "esr": "85651", // erythrocyte sedimentation rate
+ "a1c": "83036", // common abbreviation
 }
 
 FUNCTION parse_forms_and_checkboxes(all_blocks, block_map):
-    // Reuse the key-value parsing from Recipe 1.2.
-    // We're looking for the standard patient/provider fields.
-    text_key_values, checkbox_fields = parse_forms(all_blocks, block_map)
-    // See Recipe 1.2 for the full parse_forms implementation.
+ // Reuse the key-value parsing from Recipe 1.2.
+ // We're looking for the standard patient/provider fields.
+ text_key_values, checkbox_fields = parse_forms(all_blocks, block_map)
+ // See Recipe 1.2 for the full parse_forms implementation.
 
-    // For each checked test, look up the CPT code.
-    ordered_tests = empty list
+ // For each checked test, look up the CPT code.
+ ordered_tests = empty list
 
-    FOR each test_name, is_selected in checkbox_fields:
-        IF is_selected == True:
-            // Normalize: lowercase, strip whitespace, collapse multiple spaces.
-            normalized = lowercase(trim(test_name))
+ FOR each test_name, is_selected in checkbox_fields:
+ IF is_selected == True:
+ // Normalize: lowercase, strip whitespace, collapse multiple spaces.
+ normalized = lowercase(trim(test_name))
 
-            // Attempt CPT lookup on the normalized name.
-            cpt_code = TEST_CPT_MAP.get(normalized, null)
+ // Attempt CPT lookup on the normalized name.
+ cpt_code = TEST_CPT_MAP.get(normalized, null)
 
-            ordered_tests.append({
-                test_name:    trim(test_name),   // original label as it appears on the form
-                cpt_code:     cpt_code,           // null if not in our lookup table
-                cpt_mapped:   (cpt_code is not null)  // flag unmapped tests for manual review
-            })
+ ordered_tests.append({
+ test_name: trim(test_name), // original label as it appears on the form
+ cpt_code: cpt_code, // null if not in our lookup table
+ cpt_mapped: (cpt_code is not null) // flag unmapped tests for manual review
+ })
 
-    RETURN text_key_values, ordered_tests
+ RETURN text_key_values, ordered_tests
 ```
 
 **Step 4: Extract the diagnosis text.** The diagnosis field is the bridge between the structured extraction and the clinical NLP step. Lab requisitions have a dedicated area for diagnosis information, but it's filled with free text: sometimes formal diagnosis names, sometimes ICD-10 codes written directly, sometimes abbreviations, and sometimes a mix of all three. This step locates the diagnosis field(s) in the key-value output and extracts the raw text for NLP processing. The FIELD_MAP approach from Recipe 1.1 handles the common label variants. We also extract any clinical notes or "additional information" fields, which sometimes contain context that Comprehend Medical can use.
@@ -159,39 +159,39 @@ FUNCTION parse_forms_and_checkboxes(all_blocks, block_map):
 // Canonical field names for diagnosis-related content on lab requisitions.
 // Different requisition templates use different label text.
 DIAGNOSIS_LABELS = [
-    "diagnosis", "dx", "icd-10", "icd10", "icd codes",
-    "clinical diagnosis", "diagnosis code", "clinical indication",
-    "indication", "reason for test", "medical necessity"
+ "diagnosis", "dx", "icd-10", "icd10", "icd codes",
+ "clinical diagnosis", "diagnosis code", "clinical indication",
+ "indication", "reason for test", "medical necessity"
 ]
 
 NOTES_LABELS = [
-    "notes", "clinical notes", "additional information",
-    "comments", "special instructions", "clinical history"
+ "notes", "clinical notes", "additional information",
+ "comments", "special instructions", "clinical history"
 ]
 
 FUNCTION extract_clinical_text(text_key_values):
-    // Locate the diagnosis field among the extracted key-value pairs.
-    diagnosis_text = null
-    notes_text     = null
+ // Locate the diagnosis field among the extracted key-value pairs.
+ diagnosis_text = null
+ notes_text = null
 
-    FOR each raw_label, data in text_key_values:
-        normalized_label = lowercase(trim(raw_label))
+ FOR each raw_label, data in text_key_values:
+ normalized_label = lowercase(trim(raw_label))
 
-        IF any variant in DIAGNOSIS_LABELS matches normalized_label:
-            diagnosis_text = trim(data.value)
-            // Keep going; there might be multiple diagnosis fields (primary/secondary).
+ IF any variant in DIAGNOSIS_LABELS matches normalized_label:
+ diagnosis_text = trim(data.value)
+ // Keep going; there might be multiple diagnosis fields (primary/secondary).
 
-        IF any variant in NOTES_LABELS matches normalized_label:
-            notes_text = trim(data.value)
+ IF any variant in NOTES_LABELS matches normalized_label:
+ notes_text = trim(data.value)
 
-    // Combine for Comprehend Medical if notes contain clinical information.
-    // Limit total text to stay within Comprehend Medical's per-request character limit.
-    // InferICD10CM accepts up to 10,000 characters per request.
-    combined = join non-null of [diagnosis_text, notes_text] with ". "
-    IF length of combined > 9800:
-        combined = first 9800 characters of combined  // leave some margin
+ // Combine for Comprehend Medical if notes contain clinical information.
+ // Limit total text to stay within Comprehend Medical's per-request character limit.
+ // InferICD10CM accepts up to 10,000 characters per request.
+ combined = join non-null of [diagnosis_text, notes_text] with ". "
+ IF length of combined > 9800:
+ combined = first 9800 characters of combined // leave some margin
 
-    RETURN diagnosis_text, notes_text, combined
+ RETURN diagnosis_text, notes_text, combined
 ```
 
 **Step 5: Infer ICD-10 codes with Comprehend Medical.** This is the step that transforms raw diagnosis text into actionable clinical codes. We pass the extracted diagnosis text to Comprehend Medical's `InferICD10CM` API, which returns a list of ICD-10-CM code candidates ranked by confidence score. Each candidate includes the original text span that triggered it (the "evidence text"), the inferred code, the code description, and a confidence score from 0 to 1.
@@ -207,45 +207,45 @@ We take the highest-confidence code per entity (the first concept in the sorted 
 ICD10_CONFIDENCE_THRESHOLD = 0.70
 
 FUNCTION infer_icd10_codes(diagnosis_text):
-    IF diagnosis_text is null or empty:
-        RETURN empty list, empty list    // nothing to infer; normal for some forms
+ IF diagnosis_text is null or empty:
+ RETURN empty list, empty list // nothing to infer; normal for some forms
 
-    // Call Comprehend Medical's ICD-10-CM inference API.
-    // This API is specifically trained to map clinical language to ICD-10-CM codes.
-    response = call ComprehendMedical.InferICD10CM with:
-        text = diagnosis_text
+ // Call Comprehend Medical's ICD-10-CM inference API.
+ // This API is specifically trained to map clinical language to ICD-10-CM codes.
+ response = call ComprehendMedical.InferICD10CM with:
+ text = diagnosis_text
 
-    accepted = empty list    // codes we trust enough to use
-    flagged  = empty list    // codes below threshold, held for review
+ accepted = empty list // codes we trust enough to use
+ flagged = empty list // codes below threshold, held for review
 
-    FOR each entity in response.Entities:
-        // entity.Text is the span of text that triggered this entity (e.g., "Type 2 diabetes")
-        // entity.ICD10CMConcepts is a ranked list of candidate codes, highest confidence first
-        IF entity.ICD10CMConcepts is empty:
-            CONTINUE    // no code candidates; skip
+ FOR each entity in response.Entities:
+ // entity.Text is the span of text that triggered this entity (e.g., "Type 2 diabetes")
+ // entity.ICD10CMConcepts is a ranked list of candidate codes, highest confidence first
+ IF entity.ICD10CMConcepts is empty:
+ CONTINUE // no code candidates; skip
 
-        // Take the top-ranked (highest confidence) concept.
-        top_concept = entity.ICD10CMConcepts[0]
+ // Take the top-ranked (highest confidence) concept.
+ top_concept = entity.ICD10CMConcepts[0]
 
-        IF top_concept.Score >= ICD10_CONFIDENCE_THRESHOLD:
-            accepted.append({
-                evidence_text: entity.Text,            // what text triggered this entity
-                icd10_code:    top_concept.Code,       // the inferred ICD-10-CM code
-                description:   top_concept.Description, // human-readable description
-                confidence:    round(top_concept.Score, 3)
-            })
-        ELSE:
-            // Low-confidence inference: preserve for review but don't use automatically.
-            flagged.append({
-                evidence_text: entity.Text,
-                top_candidate: {
-                    icd10_code:  top_concept.Code,
-                    description: top_concept.Description,
-                    confidence:  round(top_concept.Score, 3)
-                }
-            })
+ IF top_concept.Score >= ICD10_CONFIDENCE_THRESHOLD:
+ accepted.append({
+ evidence_text: entity.Text, // what text triggered this entity
+ icd10_code: top_concept.Code, // the inferred ICD-10-CM code
+ description: top_concept.Description, // human-readable description
+ confidence: round(top_concept.Score, 3)
+ })
+ ELSE:
+ // Low-confidence inference: preserve for review but don't use automatically.
+ flagged.append({
+ evidence_text: entity.Text,
+ top_candidate: {
+ icd10_code: top_concept.Code,
+ description: top_concept.Description,
+ confidence: round(top_concept.Score, 3)
+ }
+ })
 
-    RETURN accepted, flagged
+ RETURN accepted, flagged
 ```
 
 **Step 6: Extract additional clinical entities.** The diagnosis text often contains more than just diagnosis names. It might mention the ordering physician, a relevant medication, or a procedure that contextualizes the order. `DetectEntitiesV2` gives us a broader view of the clinical content in any free-text field on the form. We're particularly interested in catching entities that might improve downstream processing: a medication name that contextualizes an HbA1c order, or a provider name that doesn't appear in the structured provider fields.
@@ -254,36 +254,36 @@ This step also helps catch clinical context that affects how the form should be 
 
 ```pseudocode
 FUNCTION detect_clinical_entities(text):
-    IF text is null or empty:
-        RETURN {}
+ IF text is null or empty:
+ RETURN {}
 
-    // Call Comprehend Medical's general entity extraction API.
-    // Returns entities across six categories: MEDICATION, MEDICAL_CONDITION,
-    // ANATOMY, TEST_TREATMENT_PROCEDURE, PROTECTED_HEALTH_INFORMATION, TIME_EXPRESSION.
-    response = call ComprehendMedical.DetectEntitiesV2 with:
-        text = text
+ // Call Comprehend Medical's general entity extraction API.
+ // Returns entities across six categories: MEDICATION, MEDICAL_CONDITION,
+ // ANATOMY, TEST_TREATMENT_PROCEDURE, PROTECTED_HEALTH_INFORMATION, TIME_EXPRESSION.
+ response = call ComprehendMedical.DetectEntitiesV2 with:
+ text = text
 
-    // Organize entities by category for easier downstream consumption.
-    entities_by_category = empty map
+ // Organize entities by category for easier downstream consumption.
+ entities_by_category = empty map
 
-    FOR each entity in response.Entities:
-        category = entity.Category   // e.g., "MEDICAL_CONDITION", "MEDICATION"
+ FOR each entity in response.Entities:
+ category = entity.Category // e.g., "MEDICAL_CONDITION", "MEDICATION"
 
-        entity_record = {
-            text:       entity.Text,                     // the original text span
-            type:       entity.Type,                     // more specific than category
-            confidence: round(entity.Score, 3),          // how sure Comprehend Medical is
-            // Traits: NEGATION, HYPOTHETICAL, PAST_HISTORY, PERTAINS_TO_FAMILY, SIGN, SYMPTOM.
-            // These modify how the entity should be interpreted.
-            traits:     [t.Name for t in entity.Traits if t.Score >= 0.75]
-        }
+ entity_record = {
+ text: entity.Text, // the original text span
+ type: entity.Type, // more specific than category
+ confidence: round(entity.Score, 3), // how sure Comprehend Medical is
+ // Traits: NEGATION, HYPOTHETICAL, PAST_HISTORY, PERTAINS_TO_FAMILY, SIGN, SYMPTOM.
+ // These modify how the entity should be interpreted.
+ traits: [t.Name for t in entity.Traits if t.Score >= 0.75]
+ }
 
-        IF category not in entities_by_category:
-            entities_by_category[category] = empty list
+ IF category not in entities_by_category:
+ entities_by_category[category] = empty list
 
-        entities_by_category[category].append(entity_record)
+ entities_by_category[category].append(entity_record)
 
-    RETURN entities_by_category
+ RETURN entities_by_category
 ```
 
 **Step 7: Medical necessity check.** With ordered tests (CPT codes) and inferred diagnoses (ICD-10 codes) both in hand, we can run a basic medical necessity cross-reference before the order goes anywhere. This is a simplified check against a static mapping table. It is not a replacement for the utilization management system. But catching an obvious gap at extraction time, before the order leaves the queue, is measurably cheaper than catching it after the claim is denied.
@@ -295,45 +295,45 @@ The mapping table encodes a simplified version of CMS LCD policies: for each dia
 // This is a starting point, not a comprehensive policy engine.
 // Real medical necessity validation requires a full LCD/NCD policy integration.
 MEDICAL_NECESSITY_MAP = {
-    "E11": ["83036", "80053", "80048", "82306"],  // Type 2 diabetes: HbA1c, CMP, BMP, Vit D
-    "E10": ["83036", "80053", "80048"],            // Type 1 diabetes
-    "E78": ["80061", "80053"],                     // Hyperlipidemia: lipid panel, CMP
-    "I10": ["80053", "80048"],                     // Hypertension: CMP, BMP
-    "I25": ["80061", "85025"],                     // Chronic ischemic heart disease
-    "N18": ["80053", "80048", "84520"],            // CKD: CMP, BMP, BUN
-    "K76": ["80076", "80053"],                     // Liver disease: hepatic function panel
-    "D50": ["85025", "82728", "82607"],            // Iron deficiency anemia: CBC, ferritin, B12
-    "Z00": ["85025", "80053", "81003", "80061"],   // Routine exam: CBC, CMP, UA, lipid panel
+ "E11": ["83036", "80053", "80048", "82306"], // Type 2 diabetes: HbA1c, CMP, BMP, Vit D
+ "E10": ["83036", "80053", "80048"], // Type 1 diabetes
+ "E78": ["80061", "80053"], // Hyperlipidemia: lipid panel, CMP
+ "I10": ["80053", "80048"], // Hypertension: CMP, BMP
+ "I25": ["80061", "85025"], // Chronic ischemic heart disease
+ "N18": ["80053", "80048", "84520"], // CKD: CMP, BMP, BUN
+ "K76": ["80076", "80053"], // Liver disease: hepatic function panel
+ "D50": ["85025", "82728", "82607"], // Iron deficiency anemia: CBC, ferritin, B12
+ "Z00": ["85025", "80053", "81003", "80061"], // Routine exam: CBC, CMP, UA, lipid panel
 }
 
 FUNCTION check_medical_necessity(icd10_codes, ordered_tests):
-    // Build a set of all CPT codes that any of our ICD-10 codes supports.
-    supported_cpts = empty set
+ // Build a set of all CPT codes that any of our ICD-10 codes supports.
+ supported_cpts = empty set
 
-    FOR each diagnosis in icd10_codes:
-        // Match on the first three characters of the ICD-10 code (the category prefix).
-        code_prefix = first 3 characters of diagnosis.icd10_code
-        cpts_for_code = MEDICAL_NECESSITY_MAP.get(code_prefix, empty list)
-        add all cpts_for_code to supported_cpts
+ FOR each diagnosis in icd10_codes:
+ // Match on the first three characters of the ICD-10 code (the category prefix).
+ code_prefix = first 3 characters of diagnosis.icd10_code
+ cpts_for_code = MEDICAL_NECESSITY_MAP.get(code_prefix, empty list)
+ add all cpts_for_code to supported_cpts
 
-    // Check each ordered test against the supported set.
-    flags = empty list
+ // Check each ordered test against the supported set.
+ flags = empty list
 
-    FOR each test in ordered_tests:
-        IF test.cpt_code is null:
-            CONTINUE   // can't check necessity for tests we couldn't map to a CPT code
+ FOR each test in ordered_tests:
+ IF test.cpt_code is null:
+ CONTINUE // can't check necessity for tests we couldn't map to a CPT code
 
-        IF test.cpt_code not in supported_cpts:
-            // This test doesn't match any of our diagnosis codes.
-            // Flag it for review. It may still be medically necessary;
-            // our mapping table is incomplete. Worth a human look.
-            flags.append({
-                test_name: test.test_name,
-                cpt_code:  test.cpt_code,
-                note:      "No supporting diagnosis found in extracted codes. Review for medical necessity."
-            })
+ IF test.cpt_code not in supported_cpts:
+ // This test doesn't match any of our diagnosis codes.
+ // Flag it for review. It may still be medically necessary;
+ // our mapping table is incomplete. Worth a human look.
+ flags.append({
+ test_name: test.test_name,
+ cpt_code: test.cpt_code,
+ note: "No supporting diagnosis found in extracted codes. Review for medical necessity."
+ })
 
-    RETURN flags
+ RETURN flags
 ```
 
 > **Human Review Infrastructure**
@@ -344,55 +344,55 @@ FUNCTION check_medical_necessity(icd10_codes, ordered_tests):
 
 ```pseudocode
 FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
-                             ordered_tests, icd10_accepted, icd10_flagged,
-                             clinical_entities, necessity_flags, text_flagged):
+ ordered_tests, icd10_accepted, icd10_flagged,
+ clinical_entities, necessity_flags, text_flagged):
 
-    // Build the structured lab order record.
-    record = {
-        document_key:        document_key,                          // S3 path of the source PDF
-        extracted_at:        current UTC timestamp (ISO 8601),      // audit trail
-        needs_review:        (
-            length of text_flagged > 0     // low-confidence OCR fields
-            OR length of icd10_flagged > 0  // low-confidence ICD-10 inferences
-            OR length of necessity_flags > 0  // medical necessity gaps
-        ),
+ // Build the structured lab order record.
+ record = {
+ document_key: document_key, // S3 path of the source PDF
+ extracted_at: current UTC timestamp (ISO 8601), // audit trail
+ needs_review: (
+ length of text_flagged > 0 // low-confidence OCR fields
+ OR length of icd10_flagged > 0 // low-confidence ICD-10 inferences
+ OR length of necessity_flags > 0 // medical necessity gaps
+ ),
 
-        patient: {
-            // Standard demographic fields from the key-value extraction.
-            name:          patient_fields.get("patient_name"),
-            date_of_birth: patient_fields.get("date_of_birth"),
-            member_id:     patient_fields.get("member_id"),
-            account_number: patient_fields.get("account_number"),
-        },
+ patient: {
+ // Standard demographic fields from the key-value extraction.
+ name: patient_fields.get("patient_name"),
+ date_of_birth: patient_fields.get("date_of_birth"),
+ member_id: patient_fields.get("member_id"),
+ account_number: patient_fields.get("account_number"),
+ },
 
-        ordering_provider: {
-            name: provider_fields.get("provider_name"),   // may also be populated from clinical entities
-            npi:  provider_fields.get("npi"),
-            practice: provider_fields.get("practice_name"),
-        },
+ ordering_provider: {
+ name: provider_fields.get("provider_name"), // may also be populated from clinical entities
+ npi: provider_fields.get("npi"),
+ practice: provider_fields.get("practice_name"),
+ },
 
-        ordered_tests: ordered_tests,    // list of { test_name, cpt_code, cpt_mapped }
+ ordered_tests: ordered_tests, // list of { test_name, cpt_code, cpt_mapped }
 
-        diagnoses: {
-            // High-confidence ICD-10 inferences: safe to use downstream.
-            accepted: icd10_accepted,    // list of { evidence_text, icd10_code, description, confidence }
-            // Low-confidence inferences: preserved for reviewer to confirm or replace.
-            flagged:  icd10_flagged,     // list of { evidence_text, top_candidate }
-        },
+ diagnoses: {
+ // High-confidence ICD-10 inferences: safe to use downstream.
+ accepted: icd10_accepted, // list of { evidence_text, icd10_code, description, confidence }
+ // Low-confidence inferences: preserved for reviewer to confirm or replace.
+ flagged: icd10_flagged, // list of { evidence_text, top_candidate }
+ },
 
-        clinical_entities: clinical_entities,   // entity map from DetectEntitiesV2
+ clinical_entities: clinical_entities, // entity map from DetectEntitiesV2
 
-        medical_necessity_flags: necessity_flags,  // tests without supporting diagnosis codes
+ medical_necessity_flags: necessity_flags, // tests without supporting diagnosis codes
 
-        // Low-confidence OCR fields (below Textract confidence threshold).
-        // These are distinct from ICD-10 inference flags.
-        flagged_fields: text_flagged,
-    }
+ // Low-confidence OCR fields (below Textract confidence threshold).
+ // These are distinct from ICD-10 inference flags.
+ flagged_fields: text_flagged,
+ }
 
-    // Write the record to the database.
-    write record to database table "lab-orders"
+ // Write the record to the database.
+ write record to database table "lab-orders"
 
-    RETURN record
+ RETURN record
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -403,59 +403,59 @@ FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
 
 ```json
 {
-  "document_key": "lab-reqs/2026/03/01/fax-00184.pdf",
-  "extracted_at": "2026-03-01T14:52:33Z",
-  "needs_review": true,
-  "patient": {
-    "name": "James Wilson",
-    "date_of_birth": "11/22/1965",
-    "member_id": "AET7291048",
-    "account_number": "LAB-00291"
-  },
-  "ordering_provider": {
-    "name": "Dr. Sarah Chen",
-    "npi": "1234567890",
-    "practice": "Riverside Internal Medicine"
-  },
-  "ordered_tests": [
-    { "test_name": "HbA1c", "cpt_code": "83036", "cpt_mapped": true },
-    { "test_name": "CMP", "cpt_code": "80053", "cpt_mapped": true },
-    { "test_name": "Lipid Panel", "cpt_code": "80061", "cpt_mapped": true }
-  ],
-  "diagnoses": {
-    "accepted": [
-      {
-        "evidence_text": "Type 2 diabetes mellitus",
-        "icd10_code": "E11.9",
-        "description": "Type 2 diabetes mellitus without complications",
-        "confidence": 0.946
-      },
-      {
-        "evidence_text": "hypertension",
-        "icd10_code": "I10",
-        "description": "Essential (primary) hypertension",
-        "confidence": 0.982
-      }
-    ],
-    "flagged": []
-  },
-  "clinical_entities": {
-    "MEDICAL_CONDITION": [
-      { "text": "Type 2 diabetes mellitus", "type": "DX_NAME", "confidence": 0.976, "traits": [] },
-      { "text": "hypertension", "type": "DX_NAME", "confidence": 0.991, "traits": [] }
-    ],
-    "TEST_TREATMENT_PROCEDURE": [
-      { "text": "HbA1c", "type": "TEST_NAME", "confidence": 0.887, "traits": [] }
-    ]
-  },
-  "medical_necessity_flags": [
-    {
-      "test_name": "Lipid Panel",
-      "cpt_code": "80061",
-      "note": "No supporting diagnosis found in extracted codes. Review for medical necessity."
-    }
-  ],
-  "flagged_fields": []
+ "document_key": "lab-reqs/2026/03/01/fax-00184.pdf",
+ "extracted_at": "2026-03-01T14:52:33Z",
+ "needs_review": true,
+ "patient": {
+ "name": "James Wilson",
+ "date_of_birth": "11/22/1965",
+ "member_id": "AET7291048",
+ "account_number": "LAB-00291"
+ },
+ "ordering_provider": {
+ "name": "Dr. Sarah Chen",
+ "npi": "1234567890",
+ "practice": "Riverside Internal Medicine"
+ },
+ "ordered_tests": [
+ { "test_name": "HbA1c", "cpt_code": "83036", "cpt_mapped": true },
+ { "test_name": "CMP", "cpt_code": "80053", "cpt_mapped": true },
+ { "test_name": "Lipid Panel", "cpt_code": "80061", "cpt_mapped": true }
+ ],
+ "diagnoses": {
+ "accepted": [
+ {
+ "evidence_text": "Type 2 diabetes mellitus",
+ "icd10_code": "E11.9",
+ "description": "Type 2 diabetes mellitus without complications",
+ "confidence": 0.946
+ },
+ {
+ "evidence_text": "hypertension",
+ "icd10_code": "I10",
+ "description": "Essential (primary) hypertension",
+ "confidence": 0.982
+ }
+ ],
+ "flagged": []
+ },
+ "clinical_entities": {
+ "MEDICAL_CONDITION": [
+ { "text": "Type 2 diabetes mellitus", "type": "DX_NAME", "confidence": 0.976, "traits": [] },
+ { "text": "hypertension", "type": "DX_NAME", "confidence": 0.991, "traits": [] }
+ ],
+ "TEST_TREATMENT_PROCEDURE": [
+ { "text": "HbA1c", "type": "TEST_NAME", "confidence": 0.887, "traits": [] }
+ ]
+ },
+ "medical_necessity_flags": [
+ {
+ "test_name": "Lipid Panel",
+ "cpt_code": "80061",
+ "note": "No supporting diagnosis found in extracted codes. Review for medical necessity."
+ }
+ ],
+ "flagged_fields": []
 }
 ```
 
@@ -530,7 +530,7 @@ The pseudocode and architecture above demonstrate the two-stage extraction patte
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing with generative AI for complex or ambiguous fields
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end industry blog post on combining both services for claims automation
 
---- 
+---
 
 ---
 

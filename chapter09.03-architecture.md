@@ -24,25 +24,25 @@
 
 ```mermaid
 flowchart TD
-    A[📱 Clinician Device] -->|Upload wound photo| B[API Gateway]
-    B --> C[Lambda: Orchestrator]
-    C -->|Strip EXIF metadata| C2[Lambda: Metadata Stripper]
-    C2 -->|Store cleaned image| D[S3: wound-images/]
-    C -->|Detect reference marker| E[Lambda: Marker Detection]
-    E -->|Scale factor| C
-    C -->|Segment wound| F[SageMaker Endpoint: U-Net]
-    F -->|Segmentation mask| C
-    C -->|Compute area, dimensions| G[Lambda: Measurement Calculator]
-    G -->|Structured results| C
-    C -->|Store measurement| H[DynamoDB: wound-measurements]
-    C -->|Return results| B
+ A[Clinician Device] -->|Upload wound photo| B[API Gateway]
+ B --> C[Lambda: Orchestrator]
+ C -->|Strip EXIF metadata| C2[Lambda: Metadata Stripper]
+ C2 -->|Store cleaned image| D[S3: wound-images/]
+ C -->|Detect reference marker| E[Lambda: Marker Detection]
+ E -->|Scale factor| C
+ C -->|Segment wound| F[SageMaker Endpoint: U-Net]
+ F -->|Segmentation mask| C
+ C -->|Compute area, dimensions| G[Lambda: Measurement Calculator]
+ G -->|Structured results| C
+ C -->|Store measurement| H[DynamoDB: wound-measurements]
+ C -->|Return results| B
 
-    I[CloudWatch] -.->|Monitor| C
-    I -.->|Monitor| F
+ I[CloudWatch] -.->|Monitor| C
+ I -.->|Monitor| F
 
-    style D fill:#f9f,stroke:#333
-    style F fill:#ff9,stroke:#333
-    style H fill:#9ff,stroke:#333
+ style D fill:#f9f,stroke:#333
+ style F fill:#ff9,stroke:#333
+ style H fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
@@ -80,32 +80,32 @@ If you skip this step, you'll waste inference costs on blurry photos, images wit
 
 ```text
 FUNCTION validate_wound_image(image_bytes, metadata):
-    // Check basic image properties
-    image = decode_image(image_bytes)
+ // Check basic image properties
+ image = decode_image(image_bytes)
 
-    IF image.width < 640 OR image.height < 640:
-        RETURN error("Image resolution too low for reliable measurement")
+ IF image.width < 640 OR image.height < 640:
+ RETURN error("Image resolution too low for reliable measurement")
 
-    IF image.file_size > 20_MB:
-        RETURN error("Image too large, compress before upload")
+ IF image.file_size > 20_MB:
+ RETURN error("Image too large, compress before upload")
 
-    // Check that required metadata is present
-    IF metadata.patient_id IS MISSING:
-        RETURN error("Patient ID required")
-    IF metadata.wound_location IS MISSING:
-        RETURN error("Wound anatomical location required")
+ // Check that required metadata is present
+ IF metadata.patient_id IS MISSING:
+ RETURN error("Patient ID required")
+ IF metadata.wound_location IS MISSING:
+ RETURN error("Wound anatomical location required")
 
-    // Strip EXIF metadata before storage
-    // Smartphone photos contain GPS (patient home address in home health),
-    // device serial numbers, and photographer info. Strip all of it.
-    stripped_image = strip_exif_metadata(image_bytes)
+ // Strip EXIF metadata before storage
+ // Smartphone photos contain GPS (patient home address in home health),
+ // device serial numbers, and photographer info. Strip all of it.
+ stripped_image = strip_exif_metadata(image_bytes)
 
-    // Store the cleaned image in S3 with application-level metadata
-    s3_key = "wound-images/{patient_id}/{wound_id}/{timestamp}.jpg"
-    upload_to_s3(bucket="wound-images", key=s3_key, body=stripped_image,
-                 metadata=metadata, encryption="aws:kms")
+ // Store the cleaned image in S3 with application-level metadata
+ s3_key = "wound-images/{patient_id}/{wound_id}/{timestamp}.jpg"
+ upload_to_s3(bucket="wound-images", key=s3_key, body=stripped_image,
+ metadata=metadata, encryption="aws:kms")
 
-    RETURN success(s3_key)
+ RETURN success(s3_key)
 ```
 
 #### Step 2: Detect the Reference Marker and Compute Scale
@@ -116,28 +116,28 @@ If you skip this step, your "measurements" are just pixel counts with no physica
 
 ```text
 FUNCTION detect_reference_marker(image):
-    // Look for the calibration marker (e.g., a circular sticker of known diameter)
-    // This could be a simple color/shape detection or a trained detector
+ // Look for the calibration marker (e.g., a circular sticker of known diameter)
+ // This could be a simple color/shape detection or a trained detector
 
-    // Approach: detect circular object of expected color (e.g., blue circle, 2.5cm diameter)
-    circles = detect_circles(image, color_range="blue",
-                            min_radius_px=20, max_radius_px=200)
+ // Approach: detect circular object of expected color (e.g., blue circle, 2.5cm diameter)
+ circles = detect_circles(image, color_range="blue",
+ min_radius_px=20, max_radius_px=200)
 
-    IF no circles found:
-        RETURN warning("No reference marker detected. Image flagged for manual review.")
+ IF no circles found:
+ RETURN warning("No reference marker detected. Image flagged for manual review.")
 
-    // Take the best candidate (highest confidence, most circular)
-    marker = circles[0]
+ // Take the best candidate (highest confidence, most circular)
+ marker = circles[0]
 
-    // Known marker diameter = 2.5 cm
-    // Measured marker diameter in pixels = marker.diameter_px
-    pixels_per_cm = marker.diameter_px / 2.5
+ // Known marker diameter = 2.5 cm
+ // Measured marker diameter in pixels = marker.diameter_px
+ pixels_per_cm = marker.diameter_px / 2.5
 
-    // Sanity check: reasonable range is 10-100 pixels per cm for typical photos
-    IF pixels_per_cm < 10 OR pixels_per_cm > 100:
-        RETURN warning("Scale factor outside expected range. Check marker positioning.")
+ // Sanity check: reasonable range is 10-100 pixels per cm for typical photos
+ IF pixels_per_cm < 10 OR pixels_per_cm > 100:
+ RETURN warning("Scale factor outside expected range. Check marker positioning.")
 
-    RETURN success(pixels_per_cm, marker.location)
+ RETURN success(pixels_per_cm, marker.location)
 ```
 
 #### Step 3: Segment the Wound
@@ -148,34 +148,34 @@ If you skip this step, you're back to manual tracing, which is what we're trying
 
 ```text
 FUNCTION segment_wound(image, sagemaker_endpoint):
-    // Preprocess: resize to model's expected input size, normalize pixel values
-    preprocessed = resize(image, target_size=(512, 512))
-    preprocessed = normalize_pixels(preprocessed, mean=[0.485, 0.456, 0.406],
-                                                   std=[0.229, 0.224, 0.225])
+ // Preprocess: resize to model's expected input size, normalize pixel values
+ preprocessed = resize(image, target_size=(512, 512))
+ preprocessed = normalize_pixels(preprocessed, mean=[0.485, 0.456, 0.406],
+ std=[0.229, 0.224, 0.225])
 
-    // Call SageMaker endpoint
-    response = invoke_sagemaker_endpoint(
-        endpoint_name=sagemaker_endpoint,
-        content_type="application/x-image",
-        body=preprocessed
-    )
+ // Call SageMaker endpoint
+ response = invoke_sagemaker_endpoint(
+ endpoint_name=sagemaker_endpoint,
+ content_type="application/x-image",
+ body=preprocessed
+ )
 
-    // Response is a probability mask (0.0 to 1.0 per pixel)
-    probability_mask = parse_response(response)
+ // Response is a probability mask (0.0 to 1.0 per pixel)
+ probability_mask = parse_response(response)
 
-    // Threshold to binary mask
-    binary_mask = probability_mask > 0.5
+ // Threshold to binary mask
+ binary_mask = probability_mask > 0.5
 
-    // Compute confidence: average probability of wound pixels
-    confidence = mean(probability_mask[binary_mask == True])
+ // Compute confidence: average probability of wound pixels
+ confidence = mean(probability_mask[binary_mask == True])
 
-    IF confidence < 0.7:
-        flag_for_review("Low segmentation confidence")
+ IF confidence < 0.7:
+ flag_for_review("Low segmentation confidence")
 
-    // Resize mask back to original image dimensions
-    final_mask = resize(binary_mask, target_size=image.dimensions)
+ // Resize mask back to original image dimensions
+ final_mask = resize(binary_mask, target_size=image.dimensions)
 
-    RETURN final_mask, confidence
+ RETURN final_mask, confidence
 ```
 
 #### Step 4: Compute Wound Measurements
@@ -186,34 +186,34 @@ If you skip this step, you have a segmentation mask but no numbers for the clini
 
 ```text
 FUNCTION compute_measurements(segmentation_mask, pixels_per_cm):
-    // Count wound pixels to get area
-    wound_pixel_count = count(segmentation_mask == True)
-    area_px = wound_pixel_count
-    area_cm2 = area_px / (pixels_per_cm * pixels_per_cm)
+ // Count wound pixels to get area
+ wound_pixel_count = count(segmentation_mask == True)
+ area_px = wound_pixel_count
+ area_cm2 = area_px / (pixels_per_cm * pixels_per_cm)
 
-    // Find wound boundary contour
-    contour = find_contour(segmentation_mask)
+ // Find wound boundary contour
+ contour = find_contour(segmentation_mask)
 
-    // Compute perimeter
-    perimeter_px = contour.length
-    perimeter_cm = perimeter_px / pixels_per_cm
+ // Compute perimeter
+ perimeter_px = contour.length
+ perimeter_cm = perimeter_px / pixels_per_cm
 
-    // Fit minimum bounding rectangle for length and width
-    bounding_rect = minimum_area_rectangle(contour)
-    length_cm = bounding_rect.long_side / pixels_per_cm
-    width_cm = bounding_rect.short_side / pixels_per_cm
+ // Fit minimum bounding rectangle for length and width
+ bounding_rect = minimum_area_rectangle(contour)
+ length_cm = bounding_rect.long_side / pixels_per_cm
+ width_cm = bounding_rect.short_side / pixels_per_cm
 
-    // Compute circularity (how round is the wound? 1.0 = perfect circle)
-    circularity = (4 * PI * area_px) / (perimeter_px * perimeter_px)
+ // Compute circularity (how round is the wound? 1.0 = perfect circle)
+ circularity = (4 * PI * area_px) / (perimeter_px * perimeter_px)
 
-    RETURN {
-        "area_cm2": round(area_cm2, 2),
-        "length_cm": round(length_cm, 2),
-        "width_cm": round(width_cm, 2),
-        "perimeter_cm": round(perimeter_cm, 2),
-        "circularity": round(circularity, 3),
-        "pixels_per_cm": pixels_per_cm
-    }
+ RETURN {
+ "area_cm2": round(area_cm2, 2),
+ "length_cm": round(length_cm, 2),
+ "width_cm": round(width_cm, 2),
+ "perimeter_cm": round(perimeter_cm, 2),
+ "circularity": round(circularity, 3),
+ "pixels_per_cm": pixels_per_cm
+ }
 ```
 
 #### Step 5: Store Measurement and Update Wound Timeline
@@ -226,51 +226,51 @@ The key design here: use `patient_id#wound_id` as the partition key and `timesta
 
 ```text
 FUNCTION store_measurement(patient_id, wound_id, measurements, metadata, image_key, mask_key):
-    record = {
-        "patient_wound_id": patient_id + "#" + wound_id,  // Partition key
-        "measurement_date": now(),                         // Sort key
-        "patient_id": patient_id,
-        "wound_id": wound_id,
-        "area_cm2": measurements.area_cm2,
-        "length_cm": measurements.length_cm,
-        "width_cm": measurements.width_cm,
-        "perimeter_cm": measurements.perimeter_cm,
-        "circularity": measurements.circularity,
-        "confidence": measurements.confidence,
-        "image_s3_key": image_key,
-        "mask_s3_key": mask_key,
-        "clinician_id": metadata.clinician_id,
-        "wound_location": metadata.wound_location,
-        "device_info": metadata.device_info,
-        "pixels_per_cm": measurements.pixels_per_cm
-    }
+ record = {
+ "patient_wound_id": patient_id + "#" + wound_id, // Partition key
+ "measurement_date": now(), // Sort key
+ "patient_id": patient_id,
+ "wound_id": wound_id,
+ "area_cm2": measurements.area_cm2,
+ "length_cm": measurements.length_cm,
+ "width_cm": measurements.width_cm,
+ "perimeter_cm": measurements.perimeter_cm,
+ "circularity": measurements.circularity,
+ "confidence": measurements.confidence,
+ "image_s3_key": image_key,
+ "mask_s3_key": mask_key,
+ "clinician_id": metadata.clinician_id,
+ "wound_location": metadata.wound_location,
+ "device_info": metadata.device_info,
+ "pixels_per_cm": measurements.pixels_per_cm
+ }
 
-    dynamodb.put_item(table="wound-measurements", item=record)
+ dynamodb.put_item(table="wound-measurements", item=record)
 
-    // Get previous measurement for this specific wound
-    previous = dynamodb.query(
-        table="wound-measurements",
-        partition_key=patient_id + "#" + wound_id,
-        scan_index_forward=False,  // Most recent first
-        limit=2                    // Current + previous
-    )
+ // Get previous measurement for this specific wound
+ previous = dynamodb.query(
+ table="wound-measurements",
+ partition_key=patient_id + "#" + wound_id,
+ scan_index_forward=False, // Most recent first
+ limit=2 // Current + previous
+ )
 
-    // Skip the one we just inserted, take the prior measurement
-    IF previous has at least 2 records:
-        prior = previous[1]
-        days_elapsed = (now() - prior.measurement_date).days
-        IF days_elapsed > 0:
-            area_change_pct = ((measurements.area_cm2 - prior.area_cm2)
-                              / prior.area_cm2) * 100
-            healing_rate_cm2_per_day = (prior.area_cm2 - measurements.area_cm2)
-                                      / days_elapsed
+ // Skip the one we just inserted, take the prior measurement
+ IF previous has at least 2 records:
+ prior = previous[1]
+ days_elapsed = (now() - prior.measurement_date).days
+ IF days_elapsed > 0:
+ area_change_pct = ((measurements.area_cm2 - prior.area_cm2)
+ / prior.area_cm2) * 100
+ healing_rate_cm2_per_day = (prior.area_cm2 - measurements.area_cm2)
+ / days_elapsed
 
-            // Alert if wound is growing
-            IF area_change_pct > 10:
-                send_alert("Wound {wound_id} for patient {patient_id} "
-                          "has increased {area_change_pct}% since last measurement")
+ // Alert if wound is growing
+ IF area_change_pct > 10:
+ send_alert("Wound {wound_id} for patient {patient_id} "
+ "has increased {area_change_pct}% since last measurement")
 
-    RETURN record
+ RETURN record
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -281,30 +281,30 @@ Sample output from a successful wound measurement:
 
 ```json
 {
-  "measurement_id": "meas_20260531_143022_abc123",
-  "patient_id": "PAT-98234",
-  "wound_id": "WND-003-sacral",
-  "measurement_date": "2026-05-31T14:30:22Z",
-  "measurements": {
-    "area_cm2": 4.73,
-    "length_cm": 3.21,
-    "width_cm": 1.89,
-    "perimeter_cm": 8.94,
-    "circularity": 0.744
-  },
-  "confidence": 0.89,
-  "scale_factor_px_per_cm": 42.3,
-  "marker_detected": true,
-  "healing_trajectory": {
-    "previous_area_cm2": 5.12,
-    "area_change_pct": -7.6,
-    "days_since_last": 7,
-    "healing_rate_cm2_per_day": 0.056,
-    "projected_closure_days": 84
-  },
-  "flags": [],
-  "image_s3_key": "wound-images/PAT-98234/WND-003-sacral/20260531T143022.jpg",
-  "mask_s3_key": "wound-masks/PAT-98234/WND-003-sacral/20260531T143022.png"
+ "measurement_id": "meas_20260531_143022_abc123",
+ "patient_id": "PAT-98234",
+ "wound_id": "WND-003-sacral",
+ "measurement_date": "2026-05-31T14:30:22Z",
+ "measurements": {
+ "area_cm2": 4.73,
+ "length_cm": 3.21,
+ "width_cm": 1.89,
+ "perimeter_cm": 8.94,
+ "circularity": 0.744
+ },
+ "confidence": 0.89,
+ "scale_factor_px_per_cm": 42.3,
+ "marker_detected": true,
+ "healing_trajectory": {
+ "previous_area_cm2": 5.12,
+ "area_change_pct": -7.6,
+ "days_since_last": 7,
+ "healing_rate_cm2_per_day": 0.056,
+ "projected_closure_days": 84
+ },
+ "flags": [],
+ "image_s3_key": "wound-images/PAT-98234/WND-003-sacral/20260531T143022.jpg",
+ "mask_s3_key": "wound-masks/PAT-98234/WND-003-sacral/20260531T143022.png"
 }
 ```
 

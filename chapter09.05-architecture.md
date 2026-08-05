@@ -38,23 +38,23 @@ The system must never block a study from being read because the AI is down. If t
 
 ```mermaid
 flowchart TD
-    A[🏥 Imaging Modality\nCR/DX] -->|DICOM Send| B[DICOM Router\nOn-Prem or Cloud]
-    B -->|New CXR Study| C[S3 Bucket\ndicom-inbox/]
-    C -->|S3 Event| D[Lambda\nstudy-router]
-    D -->|Filter: Chest X-Ray| E[Lambda\npreprocessor]
-    E -->|Normalized Image| F[SageMaker Endpoint\nCXR Triage Model]
-    F -->|Finding Probabilities| G[Lambda\npriority-scorer]
-    G -->|Store Result| H[DynamoDB\ntriage-results]
-    G -->|Priority Update| I[HL7/DICOM\nWorklist Update]
-    I -->|Reorder Queue| J[📋 Radiologist\nWorklist]
+ A[Imaging Modality\nCR/DX] -->|DICOM Send| B[DICOM Router\nOn-Prem or Cloud]
+ B -->|New CXR Study| C[S3 Bucket\ndicom-inbox/]
+ C -->|S3 Event| D[Lambda\nstudy-router]
+ D -->|Filter: Chest X-Ray| E[Lambda\npreprocessor]
+ E -->|Normalized Image| F[SageMaker Endpoint\nCXR Triage Model]
+ F -->|Finding Probabilities| G[Lambda\npriority-scorer]
+ G -->|Store Result| H[DynamoDB\ntriage-results]
+ G -->|Priority Update| I[HL7/DICOM\nWorklist Update]
+ I -->|Reorder Queue| J[Radiologist\nWorklist]
 
-    K[CloudWatch] -.->|Monitor| F
-    K -.->|Alarm| L[SNS Alert\nModel Drift]
+ K[CloudWatch] -.->|Monitor| F
+ K -.->|Alarm| L[SNS Alert\nModel Drift]
 
-    style C fill:#f9f,stroke:#333
-    style F fill:#ff9,stroke:#333
-    style H fill:#9ff,stroke:#333
-    style J fill:#9f9,stroke:#333
+ style C fill:#f9f,stroke:#333
+ style F fill:#ff9,stroke:#333
+ style H fill:#9ff,stroke:#333
+ style J fill:#9f9,stroke:#333
 ```
 
 **How DICOM data gets from on-premises to S3.** The architecture diagram starts at the S3 bucket, but in practice your imaging equipment is on-premises and the DICOM data needs a secure path to the cloud. Three common approaches:
@@ -106,86 +106,86 @@ For any approach, ensure that DICOM data is encrypted in transit (TLS 1.2+) and 
 
 ```pseudocode
 FUNCTION route_study(bucket, key):
-    // Read DICOM metadata from the file header (not the pixel data, just the tags).
-    // DICOM files contain structured metadata describing the study, patient, and acquisition.
-    metadata = read DICOM tags from S3 object at bucket/key
+ // Read DICOM metadata from the file header (not the pixel data, just the tags).
+ // DICOM files contain structured metadata describing the study, patient, and acquisition.
+ metadata = read DICOM tags from S3 object at bucket/key
 
-    // Check if this study is a chest X-ray based on standard DICOM tags.
-    // Modality "CR" = Computed Radiography, "DX" = Digital Radiography (both are X-ray types).
-    // BodyPartExamined tells us what anatomy was imaged.
-    IF metadata.Modality in ["CR", "DX"]
-       AND metadata.BodyPartExamined == "CHEST":
+ // Check if this study is a chest X-ray based on standard DICOM tags.
+ // Modality "CR" = Computed Radiography, "DX" = Digital Radiography (both are X-ray types).
+ // BodyPartExamined tells us what anatomy was imaged.
+ IF metadata.Modality in ["CR", "DX"]
+ AND metadata.BodyPartExamined == "CHEST":
 
-        // This is a chest X-ray. Send it to the preprocessing pipeline.
-        trigger_preprocessing(bucket, key, metadata)
+ // This is a chest X-ray. Send it to the preprocessing pipeline.
+ trigger_preprocessing(bucket, key, metadata)
 
-    ELSE:
-        // Not a chest X-ray. Log it and move on. No inference needed.
-        log("Skipping non-chest study: " + key)
+ ELSE:
+ // Not a chest X-ray. Log it and move on. No inference needed.
+ log("Skipping non-chest study: " + key)
 ```
 
 **Step 2: Preprocess the DICOM image for model input.** Raw DICOM pixel data is not ready for a neural network. DICOM images can be 12-bit or 16-bit, have varying dimensions, use different photometric interpretations (some are inverted: white = air, black = bone), and may include burned-in annotations or borders. This step extracts the pixel array, normalizes intensity values to the range the model expects, resizes to the model's input dimensions, and handles photometric inversion. The preprocessing must exactly replicate what was done during model training. Even small differences (different resize interpolation, different normalization range) can degrade accuracy significantly. This is one of the most common deployment failures in medical imaging AI.
 
 ```pseudocode
 FUNCTION preprocess_for_inference(bucket, key):
-    // Load the full DICOM file including pixel data.
-    dicom_file = load DICOM from S3 at bucket/key
+ // Load the full DICOM file including pixel data.
+ dicom_file = load DICOM from S3 at bucket/key
 
-    // Extract the raw pixel array. This is typically a 2D array of integers.
-    // Values might range from 0 to 4095 (12-bit) or 0 to 65535 (16-bit).
-    pixel_array = dicom_file.pixel_array
+ // Extract the raw pixel array. This is typically a 2D array of integers.
+ // Values might range from 0 to 4095 (12-bit) or 0 to 65535 (16-bit).
+ pixel_array = dicom_file.pixel_array
 
-    // Handle photometric interpretation.
-    // "MONOCHROME1" means high values = dark (inverted from what models expect).
-    // Most models are trained with "MONOCHROME2" convention (high values = bright).
-    IF dicom_file.PhotometricInterpretation == "MONOCHROME1":
-        pixel_array = invert(pixel_array)  // flip so high values = bright
+ // Handle photometric interpretation.
+ // "MONOCHROME1" means high values = dark (inverted from what models expect).
+ // Most models are trained with "MONOCHROME2" convention (high values = bright).
+ IF dicom_file.PhotometricInterpretation == "MONOCHROME1":
+ pixel_array = invert(pixel_array) // flip so high values = bright
 
-    // Apply windowing if window center/width are specified.
-    // Windowing maps the full dynamic range to a clinically relevant subset.
-    // This mimics what the radiologist sees on their display.
-    IF dicom_file has WindowCenter AND WindowWidth:
-        pixel_array = apply_window(pixel_array,
-                                   center = dicom_file.WindowCenter,
-                                   width  = dicom_file.WindowWidth)
+ // Apply windowing if window center/width are specified.
+ // Windowing maps the full dynamic range to a clinically relevant subset.
+ // This mimics what the radiologist sees on their display.
+ IF dicom_file has WindowCenter AND WindowWidth:
+ pixel_array = apply_window(pixel_array,
+ center = dicom_file.WindowCenter,
+ width = dicom_file.WindowWidth)
 
-    // Normalize pixel values to [0, 1] range.
-    // Neural networks expect inputs in a consistent, small numeric range.
-    pixel_array = normalize_to_0_1(pixel_array)
+ // Normalize pixel values to [0, 1] range.
+ // Neural networks expect inputs in a consistent, small numeric range.
+ pixel_array = normalize_to_0_1(pixel_array)
 
-    // Resize to model's expected input dimensions (e.g., 224x224 or 512x512).
-    // Use the same interpolation method used during training (typically bilinear).
-    pixel_array = resize(pixel_array, target_size = MODEL_INPUT_SIZE,
-                         interpolation = "bilinear")
+ // Resize to model's expected input dimensions (e.g., 224x224 or 512x512).
+ // Use the same interpolation method used during training (typically bilinear).
+ pixel_array = resize(pixel_array, target_size = MODEL_INPUT_SIZE,
+ interpolation = "bilinear")
 
-    // Return the preprocessed image ready for inference.
-    RETURN pixel_array
+ // Return the preprocessed image ready for inference.
+ RETURN pixel_array
 ```
 
 **Step 3: Run inference on the triage model.** The preprocessed image is sent to the SageMaker endpoint hosting the trained model. The model returns a probability score for each finding category it was trained to detect. For a triage use case, the critical findings are typically: pneumothorax, large pleural effusion, cardiomegaly, pulmonary edema, and mass/nodule. The inference call should complete in under 5 seconds. If it takes longer, the triage value diminishes (the radiologist might have already opened the study). Monitor latency closely.
 
 ```pseudocode
 FUNCTION run_inference(preprocessed_image, study_id):
-    // Serialize the preprocessed image into the format the endpoint expects.
-    // Most SageMaker endpoints accept numpy arrays serialized as bytes or JSON.
-    payload = serialize_image(preprocessed_image)
+ // Serialize the preprocessed image into the format the endpoint expects.
+ // Most SageMaker endpoints accept numpy arrays serialized as bytes or JSON.
+ payload = serialize_image(preprocessed_image)
 
-    // Call the SageMaker real-time inference endpoint.
-    // The endpoint name identifies which model version to use.
-    // ContentType tells SageMaker how to deserialize the input.
-    response = call SageMaker.InvokeEndpoint with:
-        EndpointName = "cxr-triage-model-v2"
-        ContentType  = "application/x-npy"    // numpy array format
-        Body         = payload
+ // Call the SageMaker real-time inference endpoint.
+ // The endpoint name identifies which model version to use.
+ // ContentType tells SageMaker how to deserialize the input.
+ response = call SageMaker.InvokeEndpoint with:
+ EndpointName = "cxr-triage-model-v2"
+ ContentType = "application/x-npy" // numpy array format
+ Body = payload
 
-    // Parse the response: a dictionary of finding names to probability scores.
-    // Example: {"pneumothorax": 0.92, "pleural_effusion": 0.15, "cardiomegaly": 0.03, ...}
-    predictions = deserialize(response.Body)
+ // Parse the response: a dictionary of finding names to probability scores.
+ // Example: {"pneumothorax": 0.92, "pleural_effusion": 0.15, "cardiomegaly": 0.03, ...}
+ predictions = deserialize(response.Body)
 
-    // Log the raw predictions for audit and monitoring.
-    log_inference_result(study_id, predictions)
+ // Log the raw predictions for audit and monitoring.
+ log_inference_result(study_id, predictions)
 
-    RETURN predictions
+ RETURN predictions
 ```
 
 **Step 4: Calculate priority score and determine triage action.** Raw probability scores need to be converted into a clinical priority decision. This step applies finding-specific thresholds (pneumothorax has a lower threshold than cardiomegaly because it's more time-sensitive) and assigns a composite priority level. The priority levels map to worklist behavior: CRITICAL means interrupt the radiologist now, URGENT means move to top of queue, ROUTINE means normal ordering. The thresholds are the most important tunable parameters in the system. Set them too low and you flood the radiologist with false alarms (alert fatigue kills clinical AI adoption faster than anything). Set them too high and you miss the findings that matter. Calibrate on your institution's data with radiologist input.
@@ -195,107 +195,107 @@ FUNCTION run_inference(preprocessed_image, study_id):
 // Lower threshold = more sensitive (fewer misses, more false alarms).
 // These values are examples; real thresholds require clinical validation.
 FINDING_THRESHOLDS = {
-    "pneumothorax":      0.60,   // life-threatening; err on the side of alerting
-    "tension_pneumo":    0.50,   // immediately life-threatening; very low threshold
-    "large_effusion":    0.70,   // clinically significant but less emergent
-    "pulmonary_edema":   0.70,   // urgent but not immediately life-threatening
-    "mass_or_nodule":    0.75,   // important but not time-critical in minutes
-    "cardiomegaly":      0.80    // relevant but rarely emergent
+ "pneumothorax": 0.60, // life-threatening; err on the side of alerting
+ "tension_pneumo": 0.50, // immediately life-threatening; very low threshold
+ "large_effusion": 0.70, // clinically significant but less emergent
+ "pulmonary_edema": 0.70, // urgent but not immediately life-threatening
+ "mass_or_nodule": 0.75, // important but not time-critical in minutes
+ "cardiomegaly": 0.80 // relevant but rarely emergent
 }
 
 // Clinical severity weights for composite scoring.
 SEVERITY_WEIGHTS = {
-    "tension_pneumo":    10,
-    "pneumothorax":       8,
-    "large_effusion":     6,
-    "pulmonary_edema":    6,
-    "mass_or_nodule":     4,
-    "cardiomegaly":       2
+ "tension_pneumo": 10,
+ "pneumothorax": 8,
+ "large_effusion": 6,
+ "pulmonary_edema": 6,
+ "mass_or_nodule": 4,
+ "cardiomegaly": 2
 }
 
 FUNCTION calculate_priority(predictions):
-    triggered_findings = empty list
-    composite_score    = 0
+ triggered_findings = empty list
+ composite_score = 0
 
-    FOR each finding, probability in predictions:
-        IF finding in FINDING_THRESHOLDS:
-            IF probability >= FINDING_THRESHOLDS[finding]:
-                // This finding exceeds its threshold. Flag it.
-                append to triggered_findings: {
-                    finding:     finding,
-                    probability: probability,
-                    severity:    SEVERITY_WEIGHTS[finding]
-                }
-                // Add weighted contribution to composite score.
-                composite_score += probability * SEVERITY_WEIGHTS[finding]
+ FOR each finding, probability in predictions:
+ IF finding in FINDING_THRESHOLDS:
+ IF probability >= FINDING_THRESHOLDS[finding]:
+ // This finding exceeds its threshold. Flag it.
+ append to triggered_findings: {
+ finding: finding,
+ probability: probability,
+ severity: SEVERITY_WEIGHTS[finding]
+ }
+ // Add weighted contribution to composite score.
+ composite_score += probability * SEVERITY_WEIGHTS[finding]
 
-    // Determine priority level based on composite score and finding types.
-    // Note: the severity-based rule takes precedence over composite score.
-    // A CRITICAL study may have a lower composite_score than an URGENT study
-    // because the severity >= 8 rule fires first. For dashboard sorting,
-    // use priority level as primary sort and composite_score as secondary.
-    IF any triggered finding has severity >= 8:
-        priority = "CRITICAL"       // pneumothorax or tension: interrupt radiologist
-    ELSE IF composite_score >= 5:
-        priority = "URGENT"         // significant findings: move to top of queue
-    ELSE IF length(triggered_findings) > 0:
-        priority = "ELEVATED"       // minor findings flagged: slight priority boost
-    ELSE:
-        priority = "ROUTINE"        // no findings above threshold: normal queue order
+ // Determine priority level based on composite score and finding types.
+ // Note: the severity-based rule takes precedence over composite score.
+ // A CRITICAL study may have a lower composite_score than an URGENT study
+ // because the severity >= 8 rule fires first. For dashboard sorting,
+ // use priority level as primary sort and composite_score as secondary.
+ IF any triggered finding has severity >= 8:
+ priority = "CRITICAL" // pneumothorax or tension: interrupt radiologist
+ ELSE IF composite_score >= 5:
+ priority = "URGENT" // significant findings: move to top of queue
+ ELSE IF length(triggered_findings) > 0:
+ priority = "ELEVATED" // minor findings flagged: slight priority boost
+ ELSE:
+ priority = "ROUTINE" // no findings above threshold: normal queue order
 
-    RETURN {
-        priority:           priority,
-        composite_score:    composite_score,
-        triggered_findings: triggered_findings
-    }
+ RETURN {
+ priority: priority,
+ composite_score: composite_score,
+ triggered_findings: triggered_findings
+ }
 ```
 
 **Step 5: Store results and update the worklist.** The final step persists the triage result for audit purposes and communicates the priority back to the PACS/RIS system to reorder the radiologist's worklist. The worklist update is the integration challenge. Every PACS vendor handles this differently. Common approaches include: sending an HL7 ORM message with updated priority, modifying the DICOM Modality Worklist entry, or using the PACS vendor's proprietary API. The audit record must capture everything: what was analyzed, what the model predicted, what priority was assigned, and when. This supports both HIPAA compliance and FDA post-market surveillance.
 
 ```pseudocode
 FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_result):
-    // Write the complete triage result to the audit database.
-    write record to database table "triage-results":
-        study_id          = study_id
-        accession_number  = accession_number
-        patient_id        = patient_id           // Required for FDA post-market surveillance:
-                                                 // must correlate AI findings with patient
-                                                 // outcomes over time. Because this field
-                                                 // contains PHI, the DynamoDB table requires
-                                                 // the same access controls as any PHI data
-                                                 // store (encryption at rest with CMK, IAM
-                                                 // policies restricted to authorized roles,
-                                                 // CloudTrail audit logging on all access).
-        model_version     = "cxr-triage-v2.1"   // track which model version produced this result
-        inference_time    = current UTC timestamp
-        priority          = priority_result.priority
-        composite_score   = priority_result.composite_score
-        findings          = priority_result.triggered_findings
-        raw_predictions   = predictions          // full probability vector for audit
+ // Write the complete triage result to the audit database.
+ write record to database table "triage-results":
+ study_id = study_id
+ accession_number = accession_number
+ patient_id = patient_id // Required for FDA post-market surveillance:
+ // must correlate AI findings with patient
+ // outcomes over time. Because this field
+ // contains PHI, the DynamoDB table requires
+ // the same access controls as any PHI data
+ // store (encryption at rest with CMK, IAM
+ // policies restricted to authorized roles,
+ // CloudTrail audit logging on all access).
+ model_version = "cxr-triage-v2.1" // track which model version produced this result
+ inference_time = current UTC timestamp
+ priority = priority_result.priority
+ composite_score = priority_result.composite_score
+ findings = priority_result.triggered_findings
+ raw_predictions = predictions // full probability vector for audit
 
-    // If priority is CRITICAL or URGENT, update the radiologist worklist.
-    IF priority_result.priority in ["CRITICAL", "URGENT"]:
+ // If priority is CRITICAL or URGENT, update the radiologist worklist.
+ IF priority_result.priority in ["CRITICAL", "URGENT"]:
 
-        // Send priority update to PACS/RIS via HL7 or vendor API.
-        // The exact mechanism depends on your PACS vendor.
-        send_worklist_update(
-            accession_number = accession_number,
-            new_priority     = priority_result.priority,
-            reason           = format_finding_summary(priority_result.triggered_findings)
-        )
+ // Send priority update to PACS/RIS via HL7 or vendor API.
+ // The exact mechanism depends on your PACS vendor.
+ send_worklist_update(
+ accession_number = accession_number,
+ new_priority = priority_result.priority,
+ reason = format_finding_summary(priority_result.triggered_findings)
+ )
 
-        // For CRITICAL findings, also send an immediate notification.
-        // The alert channel must be a HIPAA-compliant notification pathway.
-        // If using SNS, ensure all subscribers are covered under your BAA.
-        // Send only accession number and priority level in the alert;
-        // finding details should be accessible only through the authenticated
-        // PACS/RIS interface to minimize PHI exposure.
-        IF priority_result.priority == "CRITICAL":
-            send_alert(
-                channel  = "radiology-urgent",
-                message  = "CRITICAL: Study " + accession_number
-                         + " requires immediate read"
-            )
+ // For CRITICAL findings, also send an immediate notification.
+ // The alert channel must be a HIPAA-compliant notification pathway.
+ // If using SNS, ensure all subscribers are covered under your BAA.
+ // Send only accession number and priority level in the alert;
+ // finding details should be accessible only through the authenticated
+ // PACS/RIS interface to minimize PHI exposure.
+ IF priority_result.priority == "CRITICAL":
+ send_alert(
+ channel = "radiology-urgent",
+ message = "CRITICAL: Study " + accession_number
+ + " requires immediate read"
+ )
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -306,28 +306,28 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
 
 ```json
 {
-  "study_id": "1.2.840.113619.2.55.3.604688119.969.1234567890.123",
-  "accession_number": "CXR-2026-048291",
-  "model_version": "cxr-triage-v2.1",
-  "inference_time": "2026-03-15T08:42:03Z",
-  "inference_latency_ms": 1847,
-  "priority": "CRITICAL",
-  "composite_score": 7.84,
-  "triggered_findings": [
-    {
-      "finding": "pneumothorax",
-      "probability": 0.92,
-      "severity": 8
-    }
-  ],
-  "all_predictions": {
-    "pneumothorax": 0.92,
-    "tension_pneumo": 0.31,
-    "large_effusion": 0.08,
-    "pulmonary_edema": 0.04,
-    "mass_or_nodule": 0.12,
-    "cardiomegaly": 0.06
-  }
+ "study_id": "1.2.840.113619.2.55.3.604688119.969.1234567890.123",
+ "accession_number": "CXR-2026-048291",
+ "model_version": "cxr-triage-v2.1",
+ "inference_time": "2026-03-15T08:42:03Z",
+ "inference_latency_ms": 1847,
+ "priority": "CRITICAL",
+ "composite_score": 7.84,
+ "triggered_findings": [
+ {
+ "finding": "pneumothorax",
+ "probability": 0.92,
+ "severity": 8
+ }
+ ],
+ "all_predictions": {
+ "pneumothorax": 0.92,
+ "tension_pneumo": 0.31,
+ "large_effusion": 0.08,
+ "pulmonary_edema": 0.04,
+ "mass_or_nodule": 0.12,
+ "cardiomegaly": 0.06
+ }
 }
 ```
 
@@ -370,7 +370,7 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
 
 **AWS Sample Repos:**
 - [`aws-healthimaging-samples`](https://github.com/aws-samples/aws-healthimaging-samples): Code samples for AWS HealthImaging including DICOM import, retrieval, and metadata access
-- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including real-time inference endpoint deployment 
+- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including real-time inference endpoint deployment
 
 **AWS Solutions and Blogs:**
 - [Healthcare and Life Sciences on AWS](https://aws.amazon.com/health/): AWS healthcare industry hub covering medical imaging, genomics, and clinical AI use cases

@@ -96,7 +96,7 @@ The vision model path changes the feedback mechanism. You're not fine-tuning a m
 
 This is operationally simpler than OCR model fine-tuning. You don't need a training pipeline, a labeled dataset infrastructure, or a new model deployment. You need a library of few-shot examples, and you add to it when your reviewers find errors. The model's behavior improves the next time you update the prompt.
 
-> **⚠ PHI CROSS-CONTAMINATION RISK: Read before building the prompt library.**
+> ** PHI CROSS-CONTAMINATION RISK: Read before building the prompt library.**
 >
 > The feedback loop captures real patient document images as correction candidates (the `image_key` in Step 8 points to a photograph of a real clinical note). When a prompt engineer later promotes selected examples into the active `EXTRACTION_SYSTEM_PROMPT`, those images are embedded in the system prompt sent to Bedrock for every subsequent page processed, including pages from completely different patients.
 >
@@ -110,7 +110,7 @@ This is operationally simpler than OCR model fine-tuning. You don't need a train
 >
 > The prompt library bucket should use a separate S3 prefix (`prompt-library/synthetic/`) with IAM permissions restricted to the designated prompt engineer role only. No general developer role should have `PutObject` access to this prefix. Before deploying an updated prompt to production, run the validation function on all embedded images as a required CI/CD pipeline step. Fail the deployment if any image fails validation.
 >
-> Any deployment that enables the feedback loop (promoting real clinical outcomes back into the prompt library) without a validated de-identification pipeline is not HIPAA-compliant. This is not optional. 
+> Any deployment that enables the feedback loop (promoting real clinical outcomes back into the prompt library) without a validated de-identification pipeline is not HIPAA-compliant. This is not optional.
 
 Prompt caching makes this cost-efficient at scale. A few-shot extraction prompt with six or eight image examples embedded in it would be expensive to send with every API call. With Bedrock's prompt caching feature, the prompt prefix (including the few-shot examples) is cached on the service side. Subsequent calls reuse the cache hit at roughly 10% of the usual input cost. For high-volume deployments, this is significant.
 
@@ -124,29 +124,29 @@ A private workforce remains non-negotiable. PHI cannot touch public or vendor wo
 
 ```text
 [Ingest] → [Pre-process] → [Textract OCR] → [Quality Signal]
-                                                    |
-                              ┌─────────────────────┼──────────────────────┐
-                              ▼                     ▼                      ▼
-                      [High confidence:      [Medium confidence:    [Low confidence:
-                       Tier-1 vision]         Tier-2 vision]         Human review]
-                              │                     │                      │
-                              ▼                     ▼                      │
-                     [Vision Extraction    [Vision Extraction               │
-                      (Haiku/Nova Pro)]     (Sonnet/Opus)]                  │
-                              │                     │                      │
-                              └──────────┬──────────┘                      │
-                                         ▼                                 │
-                              [Composite Quality Score]                    │
-                              (OCR confidence + vision confidence)         │
-                                         │                                 │
-                              ┌──────────┼──────────┐                     │
-                              ▼          ▼          ▼                     ▼
-                         [Auto-Accept] [Flag]  [Human Review] ←──────────┘
-                              └──────────┼──────────┘
-                                         ▼
-                                 [Merge Results]
-                                         ▼
-                           [Final Record + Prompt Examples]
+ |
+ ┌─────────────────────┼──────────────────────┐
+ ▼ ▼ ▼
+ [High confidence: [Medium confidence: [Low confidence:
+ Tier-1 vision] Tier-2 vision] Human review]
+ │ │ │
+ ▼ ▼ │
+ [Vision Extraction [Vision Extraction │
+ (Haiku/Nova Pro)] (Sonnet/Opus)] │
+ │ │ │
+ └──────────┬──────────┘ │
+ ▼ │
+ [Composite Quality Score] │
+ (OCR confidence + vision confidence) │
+ │ │
+ ┌──────────┼──────────┐ │
+ ▼ ▼ ▼ ▼
+ [Auto-Accept] [Flag] [Human Review] ←──────────┘
+ └──────────┼──────────┘
+ ▼
+ [Merge Results]
+ ▼
+ [Final Record + Prompt Examples]
 ```
 
 **Ingest:** A handwritten document arrives. Scanned page, PDF from a fax, or a photograph. Arrival mechanism affects quality in ways that matter downstream.

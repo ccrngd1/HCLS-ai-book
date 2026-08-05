@@ -26,25 +26,25 @@
 
 ```mermaid
 flowchart TD
-    A[🔬 Slide Scanner] -->|WSI Upload| B[S3 Bucket\nslide-archive/]
-    B -->|S3 Event| C[Lambda\nslide-ingestion]
-    C -->|Queue Job| D[SQS\nanalysis-queue]
-    D -->|Trigger| E[Step Functions\nslide-analysis-pipeline]
+ A[Slide Scanner] -->|WSI Upload| B[S3 Bucket\nslide-archive/]
+ B -->|S3 Event| C[Lambda\nslide-ingestion]
+ C -->|Queue Job| D[SQS\nanalysis-queue]
+ D -->|Trigger| E[Step Functions\nslide-analysis-pipeline]
 
-    E -->|Step 1| F[Lambda\ntissue-detection]
-    F -->|Tissue Mask| E
-    E -->|Step 2| G[SageMaker Batch Transform\npatch-feature-extraction]
-    G -->|Feature Vectors| H[S3\nfeatures/]
-    E -->|Step 3| I[Lambda\nmil-aggregation]
-    I -->|Predictions + Heatmap| J[DynamoDB\nanalysis-results]
+ E -->|Step 1| F[Lambda\ntissue-detection]
+ F -->|Tissue Mask| E
+ E -->|Step 2| G[SageMaker Batch Transform\npatch-feature-extraction]
+ G -->|Feature Vectors| H[S3\nfeatures/]
+ E -->|Step 3| I[Lambda\nmil-aggregation]
+ I -->|Predictions + Heatmap| J[DynamoDB\nanalysis-results]
 
-    J -->|Notify| K[Pathologist Viewer]
-    B -->|Tile Requests| L[CloudFront + Lambda@Edge\ntile-server]
-    L -->|Tiles + Overlay| K
+ J -->|Notify| K[Pathologist Viewer]
+ B -->|Tile Requests| L[CloudFront + Lambda@Edge\ntile-server]
+ L -->|Tiles + Overlay| K
 
-    style B fill:#f9f,stroke:#333
-    style G fill:#ff9,stroke:#333
-    style J fill:#9ff,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style G fill:#ff9,stroke:#333
+ style J fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
@@ -83,222 +83,222 @@ flowchart TD
 
 ```pseudocode
 FUNCTION ingest_slide(bucket, key):
-    // Read the slide file header to extract metadata without loading the full image.
-    // WSI formats store metadata (dimensions, magnification, scanner info) in the header.
-    metadata = read_wsi_header(bucket, key)
+ // Read the slide file header to extract metadata without loading the full image.
+ // WSI formats store metadata (dimensions, magnification, scanner info) in the header.
+ metadata = read_wsi_header(bucket, key)
 
-    // Validate the slide is processable
-    IF metadata.format NOT IN ["svs", "ndpi", "tiff", "dicom"]:
-        RAISE UnsupportedFormatError(metadata.format)
+ // Validate the slide is processable
+ IF metadata.format NOT IN ["svs", "ndpi", "tiff", "dicom"]:
+ RAISE UnsupportedFormatError(metadata.format)
 
-    IF metadata.width < 10000 OR metadata.height < 10000:
-        RAISE SuspiciouslySmallSlide(metadata.dimensions)
-        // A real WSI at 20x+ should be at least 10K pixels per side.
-        // Smaller likely means a thumbnail or corrupted file.
+ IF metadata.width < 10000 OR metadata.height < 10000:
+ RAISE SuspiciouslySmallSlide(metadata.dimensions)
+ // A real WSI at 20x+ should be at least 10K pixels per side.
+ // Smaller likely means a thumbnail or corrupted file.
 
-    // Register the slide in the metadata store
-    slide_id = generate_unique_id()
-    write to database "slide-metadata":
-        slide_id     = slide_id
-        s3_path      = bucket + "/" + key
-        scanner      = metadata.scanner_model
-        magnification = metadata.objective_power    // e.g., 20 or 40
-        width        = metadata.width
-        height       = metadata.height
-        stain        = metadata.stain_type          // H&E, IHC, special stain
-        status       = "QUEUED"
-        ingested_at  = current UTC timestamp
+ // Register the slide in the metadata store
+ slide_id = generate_unique_id()
+ write to database "slide-metadata":
+ slide_id = slide_id
+ s3_path = bucket + "/" + key
+ scanner = metadata.scanner_model
+ magnification = metadata.objective_power // e.g., 20 or 40
+ width = metadata.width
+ height = metadata.height
+ stain = metadata.stain_type // H&E, IHC, special stain
+ status = "QUEUED"
+ ingested_at = current UTC timestamp
 
-    // Queue for analysis
-    send message to analysis queue:
-        slide_id = slide_id
-        s3_path  = bucket + "/" + key
-        priority = determine_priority(metadata)     // STAT cases get higher priority
+ // Queue for analysis
+ send message to analysis queue:
+ slide_id = slide_id
+ s3_path = bucket + "/" + key
+ priority = determine_priority(metadata) // STAT cases get higher priority
 
-    RETURN slide_id
+ RETURN slide_id
 ```
 
 **Step 2: Tissue detection.** Most of a glass slide is empty: clear glass with no tissue. Processing empty regions wastes compute and introduces noise. This step generates a binary tissue mask at low resolution (typically the lowest pyramid level, around 1000x1000 pixels) to identify where tissue actually exists. The approach is straightforward: convert to a color space where tissue is distinguishable from background (HSV or LAB), apply Otsu thresholding, and clean up with morphological operations. The output is a mask that tells the patch extraction step which coordinates to process. Skip this and you'll extract 3-5x more patches than necessary, most of which are blank glass.
 
 ```pseudocode
 FUNCTION detect_tissue(slide_id, s3_path):
-    // Read the lowest resolution level of the pyramidal image.
-    // This is typically 16x-64x downsampled from the full resolution.
-    // At this scale, the entire slide fits in memory as a small image.
-    thumbnail = read_pyramid_level(s3_path, level="lowest")
-    // Result: roughly 1000x1000 pixel image of the entire slide
+ // Read the lowest resolution level of the pyramidal image.
+ // This is typically 16x-64x downsampled from the full resolution.
+ // At this scale, the entire slide fits in memory as a small image.
+ thumbnail = read_pyramid_level(s3_path, level="lowest")
+ // Result: roughly 1000x1000 pixel image of the entire slide
 
-    // Convert to HSV color space.
-    // In HSV, tissue (pink/purple from H&E stain) has distinct saturation values
-    // compared to background glass (white/near-white, low saturation).
-    hsv_image = convert_to_hsv(thumbnail)
+ // Convert to HSV color space.
+ // In HSV, tissue (pink/purple from H&E stain) has distinct saturation values
+ // compared to background glass (white/near-white, low saturation).
+ hsv_image = convert_to_hsv(thumbnail)
 
-    // Apply Otsu thresholding on the saturation channel.
-    // Otsu automatically finds the optimal threshold to separate two populations
-    // (tissue vs. background) without manual tuning.
-    saturation_channel = hsv_image.saturation
-    threshold = otsu_threshold(saturation_channel)
-    tissue_mask = saturation_channel > threshold
+ // Apply Otsu thresholding on the saturation channel.
+ // Otsu automatically finds the optimal threshold to separate two populations
+ // (tissue vs. background) without manual tuning.
+ saturation_channel = hsv_image.saturation
+ threshold = otsu_threshold(saturation_channel)
+ tissue_mask = saturation_channel > threshold
 
-    // Morphological cleanup: remove small noise regions, fill small holes.
-    // A speck of dust is not tissue. A small hole in tissue is still tissue.
-    tissue_mask = morphological_close(tissue_mask, kernel_size=5)
-    tissue_mask = remove_small_objects(tissue_mask, min_size=100)
+ // Morphological cleanup: remove small noise regions, fill small holes.
+ // A speck of dust is not tissue. A small hole in tissue is still tissue.
+ tissue_mask = morphological_close(tissue_mask, kernel_size=5)
+ tissue_mask = remove_small_objects(tissue_mask, min_size=100)
 
-    // Calculate tissue percentage for quality metrics
-    tissue_fraction = count_nonzero(tissue_mask) / total_pixels(tissue_mask)
+ // Calculate tissue percentage for quality metrics
+ tissue_fraction = count_nonzero(tissue_mask) / total_pixels(tissue_mask)
 
-    IF tissue_fraction < 0.05:
-        // Less than 5% tissue is suspicious. Might be a blank slide or failed scan.
-        flag_for_review(slide_id, reason="very_low_tissue_fraction")
+ IF tissue_fraction < 0.05:
+ // Less than 5% tissue is suspicious. Might be a blank slide or failed scan.
+ flag_for_review(slide_id, reason="very_low_tissue_fraction")
 
-    // Store the tissue mask for the next step
-    save_mask(slide_id, tissue_mask)
+ // Store the tissue mask for the next step
+ save_mask(slide_id, tissue_mask)
 
-    RETURN tissue_mask, tissue_fraction
+ RETURN tissue_mask, tissue_fraction
 ```
 
 **Step 3: Patch extraction coordinates.** Given the tissue mask, this step determines which patches to extract from the full-resolution image. It maps the low-resolution mask back to full-resolution coordinates and generates a list of (x, y) positions for each patch that overlaps with tissue. The patch size and magnification level are configurable: 256x256 at 20x is standard for many tasks, but some applications benefit from larger patches or higher magnification. The output is a manifest of patch coordinates that the feature extraction step will process.
 
 ```pseudocode
-PATCH_SIZE = 256          // pixels per patch side
-TARGET_MAGNIFICATION = 20  // 20x objective magnification
-OVERLAP = 0               // no overlap between patches (common for efficiency)
+PATCH_SIZE = 256 // pixels per patch side
+TARGET_MAGNIFICATION = 20 // 20x objective magnification
+OVERLAP = 0 // no overlap between patches (common for efficiency)
 
 FUNCTION generate_patch_coordinates(slide_id, tissue_mask, slide_metadata):
-    // Calculate the scaling factor between the tissue mask and full resolution.
-    // If the mask is 1000x1000 and the slide is 100,000x100,000, scale = 100.
-    scale_x = slide_metadata.width / tissue_mask.width
-    scale_y = slide_metadata.height / tissue_mask.height
+ // Calculate the scaling factor between the tissue mask and full resolution.
+ // If the mask is 1000x1000 and the slide is 100,000x100,000, scale = 100.
+ scale_x = slide_metadata.width / tissue_mask.width
+ scale_y = slide_metadata.height / tissue_mask.height
 
-    // Determine the read level for the target magnification.
-    // If the slide was scanned at 40x and we want 20x, we read at level 1 (2x downsample).
-    downsample = slide_metadata.magnification / TARGET_MAGNIFICATION
-    read_level = find_closest_pyramid_level(downsample)
+ // Determine the read level for the target magnification.
+ // If the slide was scanned at 40x and we want 20x, we read at level 1 (2x downsample).
+ downsample = slide_metadata.magnification / TARGET_MAGNIFICATION
+ read_level = find_closest_pyramid_level(downsample)
 
-    patch_coordinates = empty list
+ patch_coordinates = empty list
 
-    // Walk a grid across the tissue mask
-    FOR y FROM 0 TO tissue_mask.height STEP (PATCH_SIZE / scale_y):
-        FOR x FROM 0 TO tissue_mask.width STEP (PATCH_SIZE / scale_x):
+ // Walk a grid across the tissue mask
+ FOR y FROM 0 TO tissue_mask.height STEP (PATCH_SIZE / scale_y):
+ FOR x FROM 0 TO tissue_mask.width STEP (PATCH_SIZE / scale_x):
 
-            // Check if this grid cell overlaps with tissue
-            mask_region = tissue_mask[y : y + patch_height, x : x + patch_width]
-            tissue_overlap = count_nonzero(mask_region) / size(mask_region)
+ // Check if this grid cell overlaps with tissue
+ mask_region = tissue_mask[y : y + patch_height, x : x + patch_width]
+ tissue_overlap = count_nonzero(mask_region) / size(mask_region)
 
-            IF tissue_overlap > 0.5:
-                // At least 50% of this patch is tissue. Include it.
-                // Convert mask coordinates back to full-resolution coordinates.
-                full_res_x = x * scale_x
-                full_res_y = y * scale_y
+ IF tissue_overlap > 0.5:
+ // At least 50% of this patch is tissue. Include it.
+ // Convert mask coordinates back to full-resolution coordinates.
+ full_res_x = x * scale_x
+ full_res_y = y * scale_y
 
-                append to patch_coordinates:
-                    { x: full_res_x, y: full_res_y,
-                      width: PATCH_SIZE, height: PATCH_SIZE,
-                      level: read_level }
+ append to patch_coordinates:
+ { x: full_res_x, y: full_res_y,
+ width: PATCH_SIZE, height: PATCH_SIZE,
+ level: read_level }
 
-    // Store the manifest
-    save_patch_manifest(slide_id, patch_coordinates)
+ // Store the manifest
+ save_patch_manifest(slide_id, patch_coordinates)
 
-    RETURN patch_coordinates
-    // Typical output: 10,000 - 50,000 patch coordinates per slide
+ RETURN patch_coordinates
+ // Typical output: 10,000 - 50,000 patch coordinates per slide
 ```
 
 **Step 4: Feature extraction (GPU-intensive).** This is the computational core. Each patch is read from the WSI, preprocessed (normalized, resized if needed), and passed through a pre-trained feature extractor (typically a vision transformer or ResNet variant trained on pathology data). The output is a feature vector per patch (512-2048 dimensions). For a slide with 30,000 patches, this produces a feature matrix of shape [30000, feature_dim]. This step runs on GPU and dominates the total processing time. Batch processing (feeding multiple patches through the model simultaneously) is critical for throughput.
 
 ```pseudocode
-BATCH_SIZE = 64           // patches per GPU batch
-FEATURE_DIM = 1024        // output dimension of the feature extractor
+BATCH_SIZE = 64 // patches per GPU batch
+FEATURE_DIM = 1024 // output dimension of the feature extractor
 
 FUNCTION extract_features(slide_id, s3_path, patch_coordinates):
-    // Load the pre-trained pathology feature extractor.
-    // This is a model trained on millions of pathology patches via self-supervised learning.
-    // It produces general-purpose tissue morphology features.
-    model = load_pretrained_model("pathology-foundation-model")
-    model.set_mode("inference")    // no gradient computation needed
+ // Load the pre-trained pathology feature extractor.
+ // This is a model trained on millions of pathology patches via self-supervised learning.
+ // It produces general-purpose tissue morphology features.
+ model = load_pretrained_model("pathology-foundation-model")
+ model.set_mode("inference") // no gradient computation needed
 
-    all_features = empty matrix [len(patch_coordinates), FEATURE_DIM]
+ all_features = empty matrix [len(patch_coordinates), FEATURE_DIM]
 
-    // Process patches in batches for GPU efficiency
-    FOR batch_start FROM 0 TO len(patch_coordinates) STEP BATCH_SIZE:
-        batch_coords = patch_coordinates[batch_start : batch_start + BATCH_SIZE]
+ // Process patches in batches for GPU efficiency
+ FOR batch_start FROM 0 TO len(patch_coordinates) STEP BATCH_SIZE:
+ batch_coords = patch_coordinates[batch_start : batch_start + BATCH_SIZE]
 
-        // Read patch pixels from the WSI file
-        // This uses byte-range reads to extract specific regions without loading the full file
-        patch_images = read_patches_from_wsi(s3_path, batch_coords)
+ // Read patch pixels from the WSI file
+ // This uses byte-range reads to extract specific regions without loading the full file
+ patch_images = read_patches_from_wsi(s3_path, batch_coords)
 
-        // Stain normalization: adjust colors to a reference standard.
-        // Different labs/scanners produce different color profiles.
-        // Without this, a model trained on Lab A's slides may fail on Lab B's slides.
-        normalized_patches = stain_normalize(patch_images, method="macenko")
-        // NOTE: In production, consider separating stain normalization (CPU-bound)
-        // from feature extraction (GPU-bound) to improve GPU utilization.
+ // Stain normalization: adjust colors to a reference standard.
+ // Different labs/scanners produce different color profiles.
+ // Without this, a model trained on Lab A's slides may fail on Lab B's slides.
+ normalized_patches = stain_normalize(patch_images, method="macenko")
+ // NOTE: In production, consider separating stain normalization (CPU-bound)
+ // from feature extraction (GPU-bound) to improve GPU utilization.
 
-        // Standard preprocessing: resize to model input size, normalize pixel values
-        preprocessed = preprocess(normalized_patches,
-                                  target_size=model.input_size,
-                                  normalize="imagenet")
+ // Standard preprocessing: resize to model input size, normalize pixel values
+ preprocessed = preprocess(normalized_patches,
+ target_size=model.input_size,
+ normalize="imagenet")
 
-        // Run inference: extract feature vectors
-        features = model.forward(preprocessed)
-        // Shape: [batch_size, FEATURE_DIM]
+ // Run inference: extract feature vectors
+ features = model.forward(preprocessed)
+ // Shape: [batch_size, FEATURE_DIM]
 
-        all_features[batch_start : batch_start + BATCH_SIZE] = features
+ all_features[batch_start : batch_start + BATCH_SIZE] = features
 
-    // Save features to storage for the aggregation step
-    save_features(slide_id, all_features, patch_coordinates)
+ // Save features to storage for the aggregation step
+ save_features(slide_id, all_features, patch_coordinates)
 
-    RETURN all_features
+ RETURN all_features
 ```
 
 **Step 5: MIL aggregation and classification.** The aggregation step takes the bag of patch features and produces slide-level predictions. An attention-based MIL model assigns importance weights to each patch and computes a weighted combination for classification. The attention weights are the key to interpretability: patches with high attention are the regions the model considers most diagnostic. The output includes both the prediction (e.g., "malignant, Gleason grade 4") and the attention heatmap for pathologist review. For slides with more than 30,000 patches, the feature matrix alone exceeds 120 MB; consider running aggregation on a lightweight SageMaker endpoint or Fargate task rather than Lambda for these outliers.
 
 ```pseudocode
 FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
-    // Load the task-specific MIL classifier.
-    // This is a lightweight model trained on slide-level labels (e.g., cancer vs. benign).
-    // It takes the bag of patch features and produces a slide-level prediction.
-    mil_model = load_model("breast-cancer-mil-classifier")
+ // Load the task-specific MIL classifier.
+ // This is a lightweight model trained on slide-level labels (e.g., cancer vs. benign).
+ // It takes the bag of patch features and produces a slide-level prediction.
+ mil_model = load_model("breast-cancer-mil-classifier")
 
-    // Run MIL inference
-    // Input: feature matrix [num_patches, feature_dim]
-    // Output: prediction logits + attention weights per patch
-    prediction, attention_weights = mil_model.forward(features)
+ // Run MIL inference
+ // Input: feature matrix [num_patches, feature_dim]
+ // Output: prediction logits + attention weights per patch
+ prediction, attention_weights = mil_model.forward(features)
 
-    // Convert logits to probabilities
-    probabilities = softmax(prediction)
-    // Example output: { "benign": 0.08, "malignant": 0.92 }
+ // Convert logits to probabilities
+ probabilities = softmax(prediction)
+ // Example output: { "benign": 0.08, "malignant": 0.92 }
 
-    predicted_class = argmax(probabilities)
-    confidence = max(probabilities)
+ predicted_class = argmax(probabilities)
+ confidence = max(probabilities)
 
-    // Generate the attention heatmap
-    // Map attention weights back to slide coordinates for visualization
-    heatmap = empty list
-    FOR i FROM 0 TO len(patch_coordinates):
-        append to heatmap:
-            { x: patch_coordinates[i].x,
-              y: patch_coordinates[i].y,
-              attention: attention_weights[i],
-              // Top-K patches become "regions of interest" for the pathologist
-              is_roi: attention_weights[i] > percentile(attention_weights, 95) }
+ // Generate the attention heatmap
+ // Map attention weights back to slide coordinates for visualization
+ heatmap = empty list
+ FOR i FROM 0 TO len(patch_coordinates):
+ append to heatmap:
+ { x: patch_coordinates[i].x,
+ y: patch_coordinates[i].y,
+ attention: attention_weights[i],
+ // Top-K patches become "regions of interest" for the pathologist
+ is_roi: attention_weights[i] > percentile(attention_weights, 95) }
 
-    // Store results
-    write to database "analysis-results":
-        slide_id         = slide_id
-        prediction       = predicted_class
-        confidence       = confidence
-        class_probs      = probabilities
-        num_patches      = len(patch_coordinates)
-        top_regions      = filter(heatmap, where is_roi == true)
-        heatmap_path     = save_heatmap_overlay(slide_id, heatmap)
-        completed_at     = current UTC timestamp
+ // Store results
+ write to database "analysis-results":
+ slide_id = slide_id
+ prediction = predicted_class
+ confidence = confidence
+ class_probs = probabilities
+ num_patches = len(patch_coordinates)
+ top_regions = filter(heatmap, where is_roi == true)
+ heatmap_path = save_heatmap_overlay(slide_id, heatmap)
+ completed_at = current UTC timestamp
 
-    // Update slide status
-    update database "slide-metadata" where slide_id = slide_id:
-        status = "COMPLETED"
+ // Update slide status
+ update database "slide-metadata" where slide_id = slide_id:
+ status = "COMPLETED"
 
-    RETURN predicted_class, confidence, heatmap
+ RETURN predicted_class, confidence, heatmap
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -309,24 +309,24 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 
 ```json
 {
-  "slide_id": "WSI-2026-03-15-00847",
-  "prediction": "malignant",
-  "confidence": 0.94,
-  "class_probabilities": {
-    "benign": 0.06,
-    "malignant": 0.94
-  },
-  "num_patches_analyzed": 28473,
-  "tissue_fraction": 0.42,
-  "processing_time_seconds": 847,
-  "top_regions": [
-    { "x": 45200, "y": 32100, "attention": 0.98, "patch_size": 256 },
-    { "x": 45456, "y": 32100, "attention": 0.97, "patch_size": 256 },
-    { "x": 44944, "y": 32356, "attention": 0.96, "patch_size": 256 }
-  ],
-  "heatmap_path": "s3://slide-results/heatmaps/WSI-2026-03-15-00847.png",
-  "model_version": "breast-mil-v2.3",
-  "completed_at": "2026-03-15T14:38:22Z"
+ "slide_id": "WSI-2026-03-15-00847",
+ "prediction": "malignant",
+ "confidence": 0.94,
+ "class_probabilities": {
+ "benign": 0.06,
+ "malignant": 0.94
+ },
+ "num_patches_analyzed": 28473,
+ "tissue_fraction": 0.42,
+ "processing_time_seconds": 847,
+ "top_regions": [
+ { "x": 45200, "y": 32100, "attention": 0.98, "patch_size": 256 },
+ { "x": 45456, "y": 32100, "attention": 0.97, "patch_size": 256 },
+ { "x": 44944, "y": 32356, "attention": 0.96, "patch_size": 256 }
+ ],
+ "heatmap_path": "s3://slide-results/heatmaps/WSI-2026-03-15-00847.png",
+ "model_version": "breast-mil-v2.3",
+ "completed_at": "2026-03-15T14:38:22Z"
 }
 ```
 

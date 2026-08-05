@@ -24,24 +24,24 @@
 
 ```mermaid
 flowchart TD
-    A[📱 Patient App / Clinician Portal] -->|Upload Image| B[API Gateway]
-    B -->|POST /triage| C[Lambda: Orchestrator]
-    C -->|Strip EXIF + Store| D[S3: lesion-images/]
-    C -->|Quality Check| E{Image Usable?}
-    E -->|No| F[Return: Retake Guidance]
-    E -->|Yes| G[Lambda: Preprocess]
-    G -->|Invoke Endpoint| H[SageMaker Endpoint\nLesion Classifier]
-    H -->|Predictions| C
-    C -->|Apply Thresholds| I[Triage Decision]
-    I -->|Store Result| J[DynamoDB: triage-cases]
-    I -->|Urgent/Suspicious| K[Notification: Priority Queue]
-    I -->|Return Result| A
-    C -->|On Failure| L[SQS: DLQ]
-    L -->|Retry| C
+ A[Patient App / Clinician Portal] -->|Upload Image| B[API Gateway]
+ B -->|POST /triage| C[Lambda: Orchestrator]
+ C -->|Strip EXIF + Store| D[S3: lesion-images/]
+ C -->|Quality Check| E{Image Usable?}
+ E -->|No| F[Return: Retake Guidance]
+ E -->|Yes| G[Lambda: Preprocess]
+ G -->|Invoke Endpoint| H[SageMaker Endpoint\nLesion Classifier]
+ H -->|Predictions| C
+ C -->|Apply Thresholds| I[Triage Decision]
+ I -->|Store Result| J[DynamoDB: triage-cases]
+ I -->|Urgent/Suspicious| K[Notification: Priority Queue]
+ I -->|Return Result| A
+ C -->|On Failure| L[SQS: DLQ]
+ L -->|Retry| C
 
-    style D fill:#f9f,stroke:#333
-    style H fill:#ff9,stroke:#333
-    style J fill:#9ff,stroke:#333
+ style D fill:#f9f,stroke:#333
+ style H fill:#ff9,stroke:#333
+ style J fill:#9ff,stroke:#333
 ```
 
 ## Prerequisites
@@ -85,100 +85,100 @@ flowchart TD
 
 ```pseudocode
 FUNCTION strip_and_store(image_bytes, patient_id):
-    // Validate file type by checking magic bytes, not just the extension.
-    // Enforce maximum file size at the API Gateway level (e.g., 10 MB).
-    IF NOT valid_image_magic_bytes(image_bytes):
-        RETURN { error: "Invalid file type. Please upload a JPEG or PNG image." }
+ // Validate file type by checking magic bytes, not just the extension.
+ // Enforce maximum file size at the API Gateway level (e.g., 10 MB).
+ IF NOT valid_image_magic_bytes(image_bytes):
+ RETURN { error: "Invalid file type. Please upload a JPEG or PNG image." }
 
-    // Strip EXIF metadata. Remove GPS, device IDs, photographer info.
-    // Keep only timestamp and dimensions for clinical context.
-    stripped_image = remove_exif_metadata(image_bytes, keep=["DateTime", "ImageWidth", "ImageHeight"])
+ // Strip EXIF metadata. Remove GPS, device IDs, photographer info.
+ // Keep only timestamp and dimensions for clinical context.
+ stripped_image = remove_exif_metadata(image_bytes, keep=["DateTime", "ImageWidth", "ImageHeight"])
 
-    // Store the stripped image in S3 with encryption.
-    image_key = "lesion-images/{date}/{patient_id}/{unique_id}.jpg"
-    upload to S3 bucket with:
-        key                = image_key
-        body               = stripped_image
-        server_side_encryption = "aws:kms"
+ // Store the stripped image in S3 with encryption.
+ image_key = "lesion-images/{date}/{patient_id}/{unique_id}.jpg"
+ upload to S3 bucket with:
+ key = image_key
+ body = stripped_image
+ server_side_encryption = "aws:kms"
 
-    RETURN { image_key: image_key, original_bytes: stripped_image }
+ RETURN { image_key: image_key, original_bytes: stripped_image }
 ```
 
 **Step 2: Image quality validation.** Before spending compute on inference, verify the submitted image is actually usable. A blurry photo, an image that's too dark, or one where no lesion is visible will produce garbage predictions. This step catches those early and returns actionable feedback to the submitter. The quality check is lightweight (basic image statistics, not a full ML model) and runs in milliseconds. Skip this step and you'll waste inference costs on unusable images while returning meaningless confidence scores that erode clinician trust.
 
 ```pseudocode
 FUNCTION validate_image_quality(image_bytes):
-    // Load the image and compute basic quality metrics.
-    // These are fast statistical checks, not ML inference.
-    image = decode_image(image_bytes)
+ // Load the image and compute basic quality metrics.
+ // These are fast statistical checks, not ML inference.
+ image = decode_image(image_bytes)
 
-    // Check 1: Resolution. The model needs enough pixels to see lesion detail.
-    // Below 224x224 (typical model input size), there's not enough information.
-    width, height = image.dimensions
-    IF width < 224 OR height < 224:
-        RETURN { valid: false, reason: "Image resolution too low. Please move closer to the lesion." }
+ // Check 1: Resolution. The model needs enough pixels to see lesion detail.
+ // Below 224x224 (typical model input size), there's not enough information.
+ width, height = image.dimensions
+ IF width < 224 OR height < 224:
+ RETURN { valid: false, reason: "Image resolution too low. Please move closer to the lesion." }
 
-    // Check 2: Blur detection using Laplacian variance.
-    // A sharp image has high variance in its edge map; a blurry one is flat.
-    // Threshold calibrated on sample images; adjust based on your camera population.
-    blur_score = compute_laplacian_variance(image)
-    IF blur_score < 100:
-        RETURN { valid: false, reason: "Image appears blurry. Please hold steady and ensure focus." }
+ // Check 2: Blur detection using Laplacian variance.
+ // A sharp image has high variance in its edge map; a blurry one is flat.
+ // Threshold calibrated on sample images; adjust based on your camera population.
+ blur_score = compute_laplacian_variance(image)
+ IF blur_score < 100:
+ RETURN { valid: false, reason: "Image appears blurry. Please hold steady and ensure focus." }
 
-    // Check 3: Brightness. Too dark or too bright means lost detail.
-    mean_brightness = compute_mean_pixel_value(image)
-    IF mean_brightness < 40:
-        RETURN { valid: false, reason: "Image too dark. Please improve lighting." }
-    IF mean_brightness > 220:
-        RETURN { valid: false, reason: "Image too bright or overexposed. Reduce direct light." }
+ // Check 3: Brightness. Too dark or too bright means lost detail.
+ mean_brightness = compute_mean_pixel_value(image)
+ IF mean_brightness < 40:
+ RETURN { valid: false, reason: "Image too dark. Please improve lighting." }
+ IF mean_brightness > 220:
+ RETURN { valid: false, reason: "Image too bright or overexposed. Reduce direct light." }
 
-    RETURN { valid: true }
+ RETURN { valid: true }
 ```
 
 **Step 3: Image preprocessing.** The classification model expects a specific input format: fixed dimensions, normalized pixel values, and ideally a clean view of the lesion without excessive background. This step transforms the raw photograph into what the model needs. Different models have different input requirements, so the preprocessing must match the model's training pipeline exactly. If you resize differently than the training data was resized, or normalize to a different range, accuracy degrades silently.
 
 ```pseudocode
 FUNCTION preprocess_image(image_bytes, target_size=224):
-    // Decode and resize to the model's expected input dimensions.
-    // Most classification models expect square inputs (224x224 or 299x299).
-    image = decode_image(image_bytes)
-    image = resize(image, target_size, target_size)
+ // Decode and resize to the model's expected input dimensions.
+ // Most classification models expect square inputs (224x224 or 299x299).
+ image = decode_image(image_bytes)
+ image = resize(image, target_size, target_size)
 
-    // Normalize pixel values to [0, 1] range.
-    // Neural networks train on normalized inputs; raw 0-255 values would produce
-    // wildly wrong activations.
-    image = image / 255.0
+ // Normalize pixel values to [0, 1] range.
+ // Neural networks train on normalized inputs; raw 0-255 values would produce
+ // wildly wrong activations.
+ image = image / 255.0
 
-    // Apply the same channel-wise normalization used during training.
-    // These values (ImageNet means and standard deviations) are standard for
-    // models pre-trained on ImageNet and fine-tuned on dermatology data.
-    mean = [0.485, 0.456, 0.406]  // RGB channel means from ImageNet
-    std  = [0.229, 0.224, 0.225]  // RGB channel standard deviations
-    image = (image - mean) / std
+ // Apply the same channel-wise normalization used during training.
+ // These values (ImageNet means and standard deviations) are standard for
+ // models pre-trained on ImageNet and fine-tuned on dermatology data.
+ mean = [0.485, 0.456, 0.406] // RGB channel means from ImageNet
+ std = [0.229, 0.224, 0.225] // RGB channel standard deviations
+ image = (image - mean) / std
 
-    // Serialize to the format the inference endpoint expects.
-    // SageMaker endpoints typically accept raw bytes or JSON-encoded tensors.
-    payload = serialize_to_model_format(image)
+ // Serialize to the format the inference endpoint expects.
+ // SageMaker endpoints typically accept raw bytes or JSON-encoded tensors.
+ payload = serialize_to_model_format(image)
 
-    RETURN payload
+ RETURN payload
 ```
 
 **Step 4: Model inference.** Send the preprocessed image to the classification model and get back a probability distribution across triage categories. The model outputs raw logits or softmax probabilities for each class. This is the core ML step, and it's also the most expensive computationally. The endpoint should respond in under 2 seconds for a good user experience. If latency is a concern at scale, consider batching or asynchronous inference for non-urgent submissions.
 
 ```pseudocode
 FUNCTION classify_lesion(preprocessed_payload, endpoint_name):
-    // Call the SageMaker real-time inference endpoint.
-    // The endpoint hosts the trained model and handles GPU allocation.
-    response = call SageMaker.InvokeEndpoint with:
-        endpoint_name = endpoint_name
-        content_type  = "application/x-image"    // or "application/json" depending on model server
-        body          = preprocessed_payload
+ // Call the SageMaker real-time inference endpoint.
+ // The endpoint hosts the trained model and handles GPU allocation.
+ response = call SageMaker.InvokeEndpoint with:
+ endpoint_name = endpoint_name
+ content_type = "application/x-image" // or "application/json" depending on model server
+ body = preprocessed_payload
 
-    // Parse the model's output: probability for each triage category.
-    // Example output: { "benign": 0.15, "suspicious": 0.72, "urgent": 0.13 }
-    predictions = parse_response(response.Body)
+ // Parse the model's output: probability for each triage category.
+ // Example output: { "benign": 0.15, "suspicious": 0.72, "urgent": 0.13 }
+ predictions = parse_response(response.Body)
 
-    RETURN predictions
+ RETURN predictions
 ```
 
 **Step 5: Triage decision logic.** Raw model probabilities need to be translated into actionable triage decisions. This is where clinical judgment meets engineering. The thresholds determine the sensitivity/specificity tradeoff: lower the "urgent" threshold and you catch more true positives but flood the queue with false alarms. Raise it and you miss cases. These thresholds should be set in collaboration with dermatologists and validated on a held-out dataset with known outcomes. They're configuration, not code, and they will need adjustment over time as you gather real-world performance data.
@@ -186,94 +186,94 @@ FUNCTION classify_lesion(preprocessed_payload, endpoint_name):
 ```pseudocode
 // Triage thresholds. These are clinical decisions, not engineering decisions.
 // Set in collaboration with dermatology leadership. Review quarterly.
-URGENT_THRESHOLD     = 0.70  // above this: immediate dermatology review
-SUSPICIOUS_THRESHOLD = 0.40  // above this: expedited scheduling (within 2 weeks)
+URGENT_THRESHOLD = 0.70 // above this: immediate dermatology review
+SUSPICIOUS_THRESHOLD = 0.40 // above this: expedited scheduling (within 2 weeks)
 // Below suspicious threshold: standard follow-up recommendation
 
 FUNCTION determine_triage(predictions):
-    urgent_score     = predictions["urgent"]
-    suspicious_score = predictions["suspicious"]
-    benign_score     = predictions["benign"]
+ urgent_score = predictions["urgent"]
+ suspicious_score = predictions["suspicious"]
+ benign_score = predictions["benign"]
 
-    // Priority logic: check urgent first, then suspicious, then default to routine.
-    // If both urgent and suspicious are high, urgent wins.
-    IF urgent_score >= URGENT_THRESHOLD:
-        RETURN {
-            category: "URGENT",
-            action: "Immediate dermatology review recommended",
-            confidence: urgent_score,
-            all_scores: predictions
-        }
+ // Priority logic: check urgent first, then suspicious, then default to routine.
+ // If both urgent and suspicious are high, urgent wins.
+ IF urgent_score >= URGENT_THRESHOLD:
+ RETURN {
+ category: "URGENT",
+ action: "Immediate dermatology review recommended",
+ confidence: urgent_score,
+ all_scores: predictions
+ }
 
-    IF suspicious_score >= SUSPICIOUS_THRESHOLD:
-        RETURN {
-            category: "SUSPICIOUS",
-            action: "Expedited dermatology appointment recommended (within 2 weeks)",
-            confidence: suspicious_score,
-            all_scores: predictions
-        }
+ IF suspicious_score >= SUSPICIOUS_THRESHOLD:
+ RETURN {
+ category: "SUSPICIOUS",
+ action: "Expedited dermatology appointment recommended (within 2 weeks)",
+ confidence: suspicious_score,
+ all_scores: predictions
+ }
 
-    RETURN {
-        category: "ROUTINE",
-        action: "Standard monitoring. Follow up if changes observed.",
-        confidence: benign_score,
-        all_scores: predictions
-    }
+ RETURN {
+ category: "ROUTINE",
+ action: "Standard monitoring. Follow up if changes observed.",
+ confidence: benign_score,
+ all_scores: predictions
+ }
 ```
 
 **Step 6: Store results and notify.** Every triage case gets a permanent record: the image reference, model output, triage decision, and timestamps. This serves three purposes: (1) the dermatologist review queue needs to pull cases by priority, (2) the audit trail must show what the AI recommended and when, and (3) outcome tracking (what did the dermatologist actually find?) enables model performance monitoring over time. For urgent cases, an immediate notification ensures the dermatology team is alerted without waiting for someone to check the queue.
 
 ```pseudocode
 FUNCTION store_and_notify(case_id, patient_id, image_key, triage_result):
-    // Write the complete triage record to the database.
-    write to DynamoDB table "triage-cases":
-        case_id              = case_id
-        patient_id           = patient_id
-        image_key            = image_key                          // S3 reference to the original image
-        triage_category      = triage_result.category             // URGENT, SUSPICIOUS, or ROUTINE
-        triage_action        = triage_result.action               // human-readable recommendation
-        model_confidence     = triage_result.confidence           // primary category confidence
-        all_scores           = triage_result.all_scores           // full probability distribution
-        submitted_at         = current UTC timestamp (ISO 8601)
-        reviewed_by          = null                               // populated when dermatologist reviews
-        dermatologist_dx     = null                               // populated with actual diagnosis
-        status               = "PENDING_REVIEW"
+ // Write the complete triage record to the database.
+ write to DynamoDB table "triage-cases":
+ case_id = case_id
+ patient_id = patient_id
+ image_key = image_key // S3 reference to the original image
+ triage_category = triage_result.category // URGENT, SUSPICIOUS, or ROUTINE
+ triage_action = triage_result.action // human-readable recommendation
+ model_confidence = triage_result.confidence // primary category confidence
+ all_scores = triage_result.all_scores // full probability distribution
+ submitted_at = current UTC timestamp (ISO 8601)
+ reviewed_by = null // populated when dermatologist reviews
+ dermatologist_dx = null // populated with actual diagnosis
+ status = "PENDING_REVIEW"
 
-    // For urgent cases, send an immediate notification.
-    // Don't rely on someone polling the queue for time-sensitive findings.
-    // Note: the notification contains only the case_id, not patient identifiers.
-    // The dermatologist accesses patient details through the secure review queue.
-    IF triage_result.category == "URGENT":
-        publish to SNS topic "urgent-derm-triage":
-            message = "Urgent lesion triage: Case {case_id}. "
-                    + "Model confidence: {triage_result.confidence}. "
-                    + "Immediate dermatology review recommended. "
-                    + "Access patient details in the secure review queue."
+ // For urgent cases, send an immediate notification.
+ // Don't rely on someone polling the queue for time-sensitive findings.
+ // Note: the notification contains only the case_id, not patient identifiers.
+ // The dermatologist accesses patient details through the secure review queue.
+ IF triage_result.category == "URGENT":
+ publish to SNS topic "urgent-derm-triage":
+ message = "Urgent lesion triage: Case {case_id}. "
+ + "Model confidence: {triage_result.confidence}. "
+ + "Immediate dermatology review recommended. "
+ + "Access patient details in the secure review queue."
 
-    RETURN case_id
+ RETURN case_id
 ```
 
 **Error handling: what happens when inference fails.** If the SageMaker endpoint times out or returns an error (GPU cold starts, transient failures, endpoint scaling), the case must not be lost. Write the case to DynamoDB with status `PENDING_INFERENCE` and route the message to the SQS dead letter queue for retry. A scheduled Lambda processes the DLQ and retries inference. If retries are exhausted, route the case to the dermatology queue with a `MANUAL_REVIEW` flag so a human triages it manually.
 
 ```pseudocode
 FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
-    // Write a record so the case is tracked even though inference failed.
-    write to DynamoDB table "triage-cases":
-        case_id         = case_id
-        patient_id      = patient_id
-        image_key       = image_key
-        status          = "PENDING_INFERENCE"
-        error_message   = error.message
-        submitted_at    = current UTC timestamp (ISO 8601)
-        retry_count     = 0
+ // Write a record so the case is tracked even though inference failed.
+ write to DynamoDB table "triage-cases":
+ case_id = case_id
+ patient_id = patient_id
+ image_key = image_key
+ status = "PENDING_INFERENCE"
+ error_message = error.message
+ submitted_at = current UTC timestamp (ISO 8601)
+ retry_count = 0
 
-    // Send to DLQ for retry processing.
-    send to SQS dead letter queue:
-        message_body = { case_id: case_id, image_key: image_key }
+ // Send to DLQ for retry processing.
+ send to SQS dead letter queue:
+ message_body = { case_id: case_id, image_key: image_key }
 
-    // Alert operations team if DLQ depth exceeds threshold.
-    // A growing DLQ means the endpoint is unhealthy.
-    RETURN case_id
+ // Alert operations team if DLQ depth exceeds threshold.
+ // A growing DLQ means the endpoint is unhealthy.
+ RETURN case_id
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -284,21 +284,21 @@ FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
 
 ```json
 {
-  "case_id": "TRIAGE-2026-03-15-00847",
-  "patient_id": "PT-928471",
-  "image_key": "lesion-images/2026/03/15/PT-928471-left-forearm.jpg",
-  "triage_category": "SUSPICIOUS",
-  "triage_action": "Expedited dermatology appointment recommended (within 2 weeks)",
-  "model_confidence": 0.68,
-  "all_scores": {
-    "benign": 0.22,
-    "suspicious": 0.68,
-    "urgent": 0.10
-  },
-  "submitted_at": "2026-03-15T09:14:22Z",
-  "reviewed_by": null,
-  "dermatologist_dx": null,
-  "status": "PENDING_REVIEW"
+ "case_id": "TRIAGE-2026-03-15-00847",
+ "patient_id": "PT-928471",
+ "image_key": "lesion-images/2026/03/15/PT-928471-left-forearm.jpg",
+ "triage_category": "SUSPICIOUS",
+ "triage_action": "Expedited dermatology appointment recommended (within 2 weeks)",
+ "model_confidence": 0.68,
+ "all_scores": {
+ "benign": 0.22,
+ "suspicious": 0.68,
+ "urgent": 0.10
+ },
+ "submitted_at": "2026-03-15T09:14:22Z",
+ "reviewed_by": null,
+ "dermatologist_dx": null,
+ "status": "PENDING_REVIEW"
 }
 ```
 

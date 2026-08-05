@@ -1,6 +1,6 @@
 # Recipe 1.10 Architecture and Implementation: Historical Chart Migration
 
-*Companion to [Recipe 1.10: Historical Chart Migration 🔷](chapter01.10-historical-chart-migration). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.10: Historical Chart Migration ](chapter01.10-historical-chart-migration). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -40,53 +40,53 @@
 
 ```mermaid
 flowchart TB
-    A[🏭 Bulk Scanning<br/>Facility] -->|PDF Upload| B[S3 Standard<br/>charts-raw/]
+ A[Bulk Scanning<br/>Facility] -->|PDF Upload| B[S3 Standard<br/>charts-raw/]
 
-    B -->|Manifest Job| C[Lambda: manifest-gen<br/>CSV per chart batch]
-    C -->|Submit Array Jobs| D[AWS Batch<br/>Outer Loop Fleet]
+ B -->|Manifest Job| C[Lambda: manifest-gen<br/>CSV per chart batch]
+ C -->|Submit Array Jobs| D[AWS Batch<br/>Outer Loop Fleet]
 
-    D -->|Per-Chart Container| E[Step Functions<br/>Per-Chart Pipeline]
+ D -->|Per-Chart Container| E[Step Functions<br/>Per-Chart Pipeline]
 
-    E --> F[Lambda: preprocess<br/>Blank detection + rotation]
-    F -->|Processed pages| G[Amazon Textract<br/>DetectDocumentText async]
-    G -->|SNS Completion| H[Lambda: ocr-complete<br/>Retrieve blocks + confidence]
+ E --> F[Lambda: preprocess<br/>Blank detection + rotation]
+ F -->|Processed pages| G[Amazon Textract<br/>DetectDocumentText async]
+ G -->|SNS Completion| H[Lambda: ocr-complete<br/>Retrieve blocks + confidence]
 
-    H -->|Generate JSONL| I1[S3: batch-input/<br/>nova-lite-classify.jsonl]
-    I1 -->|CreateModelInvocationJob| J1[Bedrock Batch<br/>TIER 1: Nova Lite<br/>Classification + Triage<br/>📦 Prompt Caching]
-    J1 -->|Results JSONL| K[Lambda: route-pages<br/>Quality threshold routing]
+ H -->|Generate JSONL| I1[S3: batch-input/<br/>nova-lite-classify.jsonl]
+ I1 -->|CreateModelInvocationJob| J1[Bedrock Batch<br/>TIER 1: Nova Lite<br/>Classification + Triage<br/> Prompt Caching]
+ J1 -->|Results JSONL| K[Lambda: route-pages<br/>Quality threshold routing]
 
-    K -->|Low confidence pages| L[Lambda: gen-vision-requests<br/>Page image + prompt]
-    K -->|High confidence typed| M[Lambda: gen-extract-requests<br/>Text + extraction prompt]
+ K -->|Low confidence pages| L[Lambda: gen-vision-requests<br/>Page image + prompt]
+ K -->|High confidence typed| M[Lambda: gen-extract-requests<br/>Text + extraction prompt]
 
-    L -->|Generate JSONL| I2[S3: batch-input/<br/>sonnet-vision.jsonl]
-    I2 -->|CreateModelInvocationJob| J2[Bedrock Batch<br/>TIER 3-4: Sonnet / Opus Vision<br/>Degraded + Handwritten Pages]
+ L -->|Generate JSONL| I2[S3: batch-input/<br/>sonnet-vision.jsonl]
+ I2 -->|CreateModelInvocationJob| J2[Bedrock Batch<br/>TIER 3-4: Sonnet / Opus Vision<br/>Degraded + Handwritten Pages]
 
-    M -->|Generate JSONL| I3[S3: batch-input/<br/>nova-pro-extract.jsonl]
-    I3 -->|CreateModelInvocationJob| J3[Bedrock Batch<br/>TIER 2: Nova Pro / Haiku<br/>Standard Clinical Extraction]
+ M -->|Generate JSONL| I3[S3: batch-input/<br/>nova-pro-extract.jsonl]
+ I3 -->|CreateModelInvocationJob| J3[Bedrock Batch<br/>TIER 2: Nova Pro / Haiku<br/>Standard Clinical Extraction]
 
-    J2 --> N[Lambda: merge-extractions<br/>Combine tier results]
-    J3 --> N
+ J2 --> N[Lambda: merge-extractions<br/>Combine tier results]
+ J3 --> N
 
-    N -->|Generate JSONL| I4[S3: batch-input/<br/>sonnet-fhir.jsonl]
-    I4 -->|CreateModelInvocationJob| J4[Bedrock Batch<br/>TIER 3: Sonnet<br/>FHIR Resource Mapping]
+ N -->|Generate JSONL| I4[S3: batch-input/<br/>sonnet-fhir.jsonl]
+ I4 -->|CreateModelInvocationJob| J4[Bedrock Batch<br/>TIER 3: Sonnet<br/>FHIR Resource Mapping]
 
-    J4 --> O[Lambda: code-validate<br/>Comprehend Medical<br/>ICD-10 + RxNorm validation]
-    O --> P[Lambda: bundle-assemble<br/>FHIR NDJSON bundle]
+ J4 --> O[Lambda: code-validate<br/>Comprehend Medical<br/>ICD-10 + RxNorm validation]
+ O --> P[Lambda: bundle-assemble<br/>FHIR NDJSON bundle]
 
-    P -->|FHIR NDJSON| Q[S3: fhir-bundles/]
-    Q -->|StartFHIRImportJob| R[Amazon HealthLake<br/>FHIR R4 Data Store]
+ P -->|FHIR NDJSON| Q[S3: fhir-bundles/]
+ Q -->|StartFHIRImportJob| R[Amazon HealthLake<br/>FHIR R4 Data Store]
 
-    E -->|Progress Updates| S[DynamoDB<br/>migration-tracking]
-    R -->|Import Complete| S
-    B -->|Lifecycle: post-migration| T[S3 Glacier IR<br/>charts-archive/]
-    S -->|Metrics| U[CloudWatch<br/>Migration Dashboard]
+ E -->|Progress Updates| S[DynamoDB<br/>migration-tracking]
+ R -->|Import Complete| S
+ B -->|Lifecycle: post-migration| T[S3 Glacier IR<br/>charts-archive/]
+ S -->|Metrics| U[CloudWatch<br/>Migration Dashboard]
 
-    style J1 fill:#dfd,stroke:#333
-    style J2 fill:#ffd,stroke:#333
-    style J3 fill:#dfd,stroke:#333
-    style J4 fill:#fbd,stroke:#333
-    style R fill:#9ff,stroke:#333
-    style D fill:#adf,stroke:#333
+ style J1 fill:#dfd,stroke:#333
+ style J2 fill:#ffd,stroke:#333
+ style J3 fill:#dfd,stroke:#333
+ style J4 fill:#fbd,stroke:#333
+ style R fill:#9ff,stroke:#333
+ style D fill:#adf,stroke:#333
 ```
 
 ### Prerequisites
@@ -147,62 +147,62 @@ Before processing starts, you need a manifest: one row per chart with the S3 loc
 // Format: bucket, key, chart_id, member_id, scan_date, estimated_page_count
 
 FUNCTION generate_migration_manifest(s3_prefix: string, output_key: string):
-    chart_objects = list_all_s3_objects(bucket="charts-raw", prefix=s3_prefix)
+ chart_objects = list_all_s3_objects(bucket="charts-raw", prefix=s3_prefix)
 
-    manifest_rows    = empty list
-    dynamodb_records = empty list
+ manifest_rows = empty list
+ dynamodb_records = empty list
 
-    FOR each object in chart_objects:
-        chart_id = extract_chart_id_from_key(object.key)
-        // Your scanning vendor encodes the chart ID in the filename.
-        // Agree on the naming convention before scanning starts.
+ FOR each object in chart_objects:
+ chart_id = extract_chart_id_from_key(object.key)
+ // Your scanning vendor encodes the chart ID in the filename.
+ // Agree on the naming convention before scanning starts.
 
-        // Idempotency check: skip charts already completed
-        existing = get_dynamodb_item(table="migration-tracking", key=chart_id)
-        IF existing is not null AND existing.status IN ["completed", "import_submitted"]:
-            log: "Skipping already-processed chart: " + chart_id
-            CONTINUE
+ // Idempotency check: skip charts already completed
+ existing = get_dynamodb_item(table="migration-tracking", key=chart_id)
+ IF existing is not null AND existing.status IN ["completed", "import_submitted"]:
+ log: "Skipping already-processed chart: " + chart_id
+ CONTINUE
 
-        manifest_rows.append({
-            bucket:   "charts-raw",
-            key:      object.key,
-            chart_id: chart_id
-        })
+ manifest_rows.append({
+ bucket: "charts-raw",
+ key: object.key,
+ chart_id: chart_id
+ })
 
-        dynamodb_records.append({
-            chart_id:   chart_id,
-            s3_key:     object.key,
-            status:     "pending",
-            created_at: current UTC timestamp,
-            page_count: null,    // populated after Textract completes
-            // Initialize tier counters for the operations dashboard
-            tier1_pages: 0,
-            tier2_pages: 0,
-            tier3_pages: 0,
-            tier4_pages: 0
-        })
+ dynamodb_records.append({
+ chart_id: chart_id,
+ s3_key: object.key,
+ status: "pending",
+ created_at: current UTC timestamp,
+ page_count: null, // populated after Textract completes
+ // Initialize tier counters for the operations dashboard
+ tier1_pages: 0,
+ tier2_pages: 0,
+ tier3_pages: 0,
+ tier4_pages: 0
+ })
 
-    write_manifest_csv_to_s3(manifest_rows, bucket="manifests", key=output_key)
-    write_dynamodb_records_in_batches(dynamodb_records, batch_size=25)
+ write_manifest_csv_to_s3(manifest_rows, bucket="manifests", key=output_key)
+ write_dynamodb_records_in_batches(dynamodb_records, batch_size=25)
 
-    RETURN count(manifest_rows), "manifests/" + output_key
+ RETURN count(manifest_rows), "manifests/" + output_key
 
 FUNCTION submit_batch_migration_job(manifest_key: string, job_count: int) -> string:
-    // AWS Batch array jobs: N copies of the same job definition, each with a
-    // unique array index used to select a row from the manifest.
-    // Array jobs are capped at 10,000 child jobs. For programs processing millions
-    // of charts, submit manifests in chunks of 10,000 and queue multiple array jobs,
-    // or use an SQS-based work queue where workers pull chart IDs independently.
-    response = batch_client.submit_job(
-        jobName:       "chart-migration-" + today_date() + "-" + batch_index,
-        jobQueue:      "chart-migration-queue",
-        jobDefinition: "chart-migration-job-def",
-        arrayProperties: { size: min(job_count, 10000) },
-        parameters: { manifest_key: manifest_key }
-    )
+ // AWS Batch array jobs: N copies of the same job definition, each with a
+ // unique array index used to select a row from the manifest.
+ // Array jobs are capped at 10,000 child jobs. For programs processing millions
+ // of charts, submit manifests in chunks of 10,000 and queue multiple array jobs,
+ // or use an SQS-based work queue where workers pull chart IDs independently.
+ response = batch_client.submit_job(
+ jobName: "chart-migration-" + today_date() + "-" + batch_index,
+ jobQueue: "chart-migration-queue",
+ jobDefinition: "chart-migration-job-def",
+ arrayProperties: { size: min(job_count, 10000) },
+ parameters: { manifest_key: manifest_key }
+ )
 
-    log: "Submitted array job " + response.jobId + " with " + job_count + " charts"
-    RETURN response.jobId
+ log: "Submitted array job " + response.jobId + " with " + job_count + " charts"
+ RETURN response.jobId
 ```
 
 ---
@@ -213,65 +213,65 @@ Fixing quality issues before OCR is dramatically cheaper than paying for Textrac
 
 ```pseudocode
 FUNCTION preprocess_chart(chart_pdf_key: string) -> tuple[string, dict]:
-    pdf_bytes = download_s3_object(bucket="charts-raw", key=chart_pdf_key)
-    pages     = split_pdf_into_pages(pdf_bytes)
+ pdf_bytes = download_s3_object(bucket="charts-raw", key=chart_pdf_key)
+ pages = split_pdf_into_pages(pdf_bytes)
 
-    quality_report = {
-        total_pages:         length(pages),
-        blank_pages_skipped: 0,
-        rotations_corrected: 0,
-        deskews_applied:     0,
-        low_dpi_warnings:    0
-    }
+ quality_report = {
+ total_pages: length(pages),
+ blank_pages_skipped: 0,
+ rotations_corrected: 0,
+ deskews_applied: 0,
+ low_dpi_warnings: 0
+ }
 
-    processed_pages = empty list
+ processed_pages = empty list
 
-    FOR page_num, image_bytes in pages:
-        img = load_image(image_bytes)
+ FOR page_num, image_bytes in pages:
+ img = load_image(image_bytes)
 
-        // Skip blank pages (saves both Textract and LLM costs)
-        IF is_blank_page(img, white_threshold=0.98):
-            quality_report.blank_pages_skipped += 1
-            CONTINUE
+ // Skip blank pages (saves both Textract and LLM costs)
+ IF is_blank_page(img, white_threshold=0.98):
+ quality_report.blank_pages_skipped += 1
+ CONTINUE
 
-        // Correct orientation (fax scans often have incorrect EXIF metadata)
-        orientation = detect_page_orientation(img)
-        IF orientation != 0:
-            img = rotate_image(img, degrees=orientation)
-            quality_report.rotations_corrected += 1
+ // Correct orientation (fax scans often have incorrect EXIF metadata)
+ orientation = detect_page_orientation(img)
+ IF orientation != 0:
+ img = rotate_image(img, degrees=orientation)
+ quality_report.rotations_corrected += 1
 
-        // Deskew pages (scanner skew up to 5 degrees is common)
-        skew_angle = detect_skew_angle(img)
-        IF absolute_value(skew_angle) > 0.5:
-            img = deskew_image(img, angle=skew_angle)
-            quality_report.deskews_applied += 1
+ // Deskew pages (scanner skew up to 5 degrees is common)
+ skew_angle = detect_skew_angle(img)
+ IF absolute_value(skew_angle) > 0.5:
+ img = deskew_image(img, angle=skew_angle)
+ quality_report.deskews_applied += 1
 
-        // Check DPI and flag (cannot upsample effectively, but flag for reporting)
-        dpi = get_image_dpi(img)
-        IF dpi < 200:
-            quality_report.low_dpi_warnings += 1
-            // Do NOT log the page text or content here.
-            // Log only structural metadata to CloudWatch.
-            log_metric("low_dpi_page", { chart_id: chart_id, page: page_num, dpi: dpi })
+ // Check DPI and flag (cannot upsample effectively, but flag for reporting)
+ dpi = get_image_dpi(img)
+ IF dpi < 200:
+ quality_report.low_dpi_warnings += 1
+ // Do NOT log the page text or content here.
+ // Log only structural metadata to CloudWatch.
+ log_metric("low_dpi_page", { chart_id: chart_id, page: page_num, dpi: dpi })
 
-        processed_pages.append({ page_num: page_num, image: img, orig_dpi: dpi })
+ processed_pages.append({ page_num: page_num, image: img, orig_dpi: dpi })
 
-    processed_pdf_bytes = assemble_pdf_from_images(processed_pages)
-    processed_key = "charts-processed/" + chart_id + "/" + chart_pdf_key
-    upload_s3_object(bucket="charts-processed", key=processed_key, data=processed_pdf_bytes)
+ processed_pdf_bytes = assemble_pdf_from_images(processed_pages)
+ processed_key = "charts-processed/" + chart_id + "/" + chart_pdf_key
+ upload_s3_object(bucket="charts-processed", key=processed_key, data=processed_pdf_bytes)
 
-    // Also store individual page images (needed for vision path in Step 5)
-    FOR page_num, img in processed_pages:
-        page_image_key = "page-images/" + chart_id + "/page-" + page_num + ".png"
-        upload_s3_object(bucket="charts-processed", key=page_image_key, data=encode_png(img))
+ // Also store individual page images (needed for vision path in Step 5)
+ FOR page_num, img in processed_pages:
+ page_image_key = "page-images/" + chart_id + "/page-" + page_num + ".png"
+ upload_s3_object(bucket="charts-processed", key=page_image_key, data=encode_png(img))
 
-    RETURN processed_key, quality_report
+ RETURN processed_key, quality_report
 
 FUNCTION is_blank_page(img, white_threshold: float) -> bool:
-    grayscale = convert_to_grayscale(img)
-    white_pixels = count of pixels with brightness > 240
-    total_pixels = img.width * img.height
-    RETURN (white_pixels / total_pixels) > white_threshold
+ grayscale = convert_to_grayscale(img)
+ white_pixels = count of pixels with brightness > 240
+ total_pixels = img.width * img.height
+ RETURN (white_pixels / total_pixels) > white_threshold
 ```
 
 ---
@@ -282,74 +282,74 @@ Textract runs on every page as the quality signal generator. Word-level confiden
 
 ```pseudocode
 FUNCTION start_textract_ocr(processed_chart_key: string, chart_id: string) -> string:
-    response = textract_client.start_document_text_detection(
-        DocumentLocation={
-            "S3Object": { "Bucket": "charts-processed", "Name": processed_chart_key }
-        },
-        NotificationChannel={
-            "SNSTopicArn": "arn:aws:sns:us-east-1:ACCOUNT:textract-chart-jobs",
-            "RoleArn":     "arn:aws:iam::ACCOUNT:role/textract-sns-role"
-        },
-        JobTag=chart_id
-    )
+ response = textract_client.start_document_text_detection(
+ DocumentLocation={
+ "S3Object": { "Bucket": "charts-processed", "Name": processed_chart_key }
+ },
+ NotificationChannel={
+ "SNSTopicArn": "arn:aws:sns:us-east-1:ACCOUNT:textract-chart-jobs",
+ "RoleArn": "arn:aws:iam::ACCOUNT:role/textract-sns-role"
+ },
+ JobTag=chart_id
+ )
 
-    job_id = response.JobId
+ job_id = response.JobId
 
-    update_dynamodb_item(
-        table="migration-tracking",
-        key=chart_id,
-        updates={
-            textract_job_id: job_id,
-            status:          "ocr_in_progress"
-        }
-    )
+ update_dynamodb_item(
+ table="migration-tracking",
+ key=chart_id,
+ updates={
+ textract_job_id: job_id,
+ status: "ocr_in_progress"
+ }
+ )
 
-    RETURN job_id
+ RETURN job_id
 
 FUNCTION retrieve_ocr_results(job_id: string, chart_id: string) -> string:
-    all_blocks = retrieve_all_textract_blocks_paginated(job_id)
+ all_blocks = retrieve_all_textract_blocks_paginated(job_id)
 
-    // Compute per-page quality signals from word blocks
-    page_quality = empty map
-    pages = group_blocks_by_page(all_blocks)
+ // Compute per-page quality signals from word blocks
+ page_quality = empty map
+ pages = group_blocks_by_page(all_blocks)
 
-    FOR page_num, page_blocks in pages:
-        words = filter page_blocks where BlockType == "WORD"
-        IF length(words) == 0:
-            page_quality[page_num] = {
-                avg_confidence:   null,
-                handwriting_pct:  0.0,
-                word_count:       0,
-                is_blank:         true
-            }
-            CONTINUE
+ FOR page_num, page_blocks in pages:
+ words = filter page_blocks where BlockType == "WORD"
+ IF length(words) == 0:
+ page_quality[page_num] = {
+ avg_confidence: null,
+ handwriting_pct: 0.0,
+ word_count: 0,
+ is_blank: true
+ }
+ CONTINUE
 
-        avg_conf = average(word.Confidence / 100.0 for word in words)
-        handwritten = count(words where word.TextType == "HANDWRITING")
-        hw_pct = handwritten / length(words)
+ avg_conf = average(word.Confidence / 100.0 for word in words)
+ handwritten = count(words where word.TextType == "HANDWRITING")
+ hw_pct = handwritten / length(words)
 
-        page_quality[page_num] = {
-            avg_confidence:   round(avg_conf, 3),
-            handwriting_pct:  round(hw_pct, 3),
-            word_count:       length(words),
-            page_text:        join(word.Text for word in sorted_reading_order(words),
-                                   separator=" ")
-        }
+ page_quality[page_num] = {
+ avg_confidence: round(avg_conf, 3),
+ handwriting_pct: round(hw_pct, 3),
+ word_count: length(words),
+ page_text: join(word.Text for word in sorted_reading_order(words),
+ separator=" ")
+ }
 
-    // Write blocks and quality signals to S3
-    ocr_output_key = "textract-output/" + chart_id + "/blocks.json"
-    quality_key    = "textract-output/" + chart_id + "/page-quality.json"
-    write_json_to_s3(bucket="textract-output", key=ocr_output_key, data=all_blocks)
-    write_json_to_s3(bucket="textract-output", key=quality_key, data=page_quality)
+ // Write blocks and quality signals to S3
+ ocr_output_key = "textract-output/" + chart_id + "/blocks.json"
+ quality_key = "textract-output/" + chart_id + "/page-quality.json"
+ write_json_to_s3(bucket="textract-output", key=ocr_output_key, data=all_blocks)
+ write_json_to_s3(bucket="textract-output", key=quality_key, data=page_quality)
 
-    page_count = max(page_quality.keys())
-    update_dynamodb_item(
-        table="migration-tracking",
-        key=chart_id,
-        updates={ page_count: page_count, status: "classifying" }
-    )
+ page_count = max(page_quality.keys())
+ update_dynamodb_item(
+ table="migration-tracking",
+ key=chart_id,
+ updates={ page_count: page_count, status: "classifying" }
+ )
 
-    RETURN quality_key
+ RETURN quality_key
 ```
 
 ---
@@ -385,11 +385,11 @@ Document types:
 
 Return a JSON object with:
 {
-  "doc_type": "<one of the types above>",
-  "confidence": <0.0-1.0>,
-  "handwriting_heavy": <true if >50% of content appears handwritten>,
-  "structured_content": <true if the page contains tables or form fields worth extracting>,
-  "extraction_tier": <1, 2, 3, or 4> // 1=skip, 2=nova-pro, 3=sonnet, 4=opus
+ "doc_type": "<one of the types above>",
+ "confidence": <0.0-1.0>,
+ "handwriting_heavy": <true if >50% of content appears handwritten>,
+ "structured_content": <true if the page contains tables or form fields worth extracting>,
+ "extraction_tier": <1, 2, 3, or 4> // 1=skip, 2=nova-pro, 3=sonnet, 4=opus
 }
 
 Extraction tier guidance:
@@ -402,83 +402,83 @@ Return ONLY valid JSON. No explanation. No markdown.
 """
 
 FUNCTION generate_classification_batch_jsonl(chart_id: string,
-                                              page_quality: dict) -> string:
-    requests = empty list
+ page_quality: dict) -> string:
+ requests = empty list
 
-    FOR page_num, quality in page_quality:
-        IF quality.is_blank:
-            CONTINUE  // Already filtered in preprocess step
+ FOR page_num, quality in page_quality:
+ IF quality.is_blank:
+ CONTINUE // Already filtered in preprocess step
 
-        request = {
-            // recordId ties results back to this chart + page
-            "recordId": chart_id + "-page-" + page_num,
-            "modelInput": {
-                "system": [
-                    {
-                        "text": CLASSIFICATION_SYSTEM_PROMPT,
-                        "cachePoint": { "type": "default" }
-                        // This caches the system prompt for 1 hour.
-                        // After the first call, Bedrock charges 10% of the
-                        // base input token rate for the cached portion.
-                        // On a 10,000-page batch job, this saves ~85% on
-                        // the system prompt input cost.
-                    }
-                ],
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "text": "Chart: " + chart_id + "\n"
-                                        + "Page: " + page_num + "\n"
-                                        + "OCR confidence: " + quality.avg_confidence + "\n"
-                                        + "Handwriting detected: " + quality.handwriting_pct + "\n\n"
-                                        + "Page text:\n"
-                                        + sanitize_page_text(quality.page_text)
-                                        // sanitize_page_text strips control characters,
-                                        // Unicode PUA code points, and injection patterns.
-                                        // See the Python companion for implementation.
-                            }
-                        ]
-                    }
-                ],
-                "inferenceConfig": { "maxTokens": 256, "temperature": 0 }
-            }
-        }
-        requests.append(json_serialize(request))
+ request = {
+ // recordId ties results back to this chart + page
+ "recordId": chart_id + "-page-" + page_num,
+ "modelInput": {
+ "system": [
+ {
+ "text": CLASSIFICATION_SYSTEM_PROMPT,
+ "cachePoint": { "type": "default" }
+ // This caches the system prompt for 1 hour.
+ // After the first call, Bedrock charges 10% of the
+ // base input token rate for the cached portion.
+ // On a 10,000-page batch job, this saves ~85% on
+ // the system prompt input cost.
+ }
+ ],
+ "messages": [
+ {
+ "role": "user",
+ "content": [
+ {
+ "text": "Chart: " + chart_id + "\n"
+ + "Page: " + page_num + "\n"
+ + "OCR confidence: " + quality.avg_confidence + "\n"
+ + "Handwriting detected: " + quality.handwriting_pct + "\n\n"
+ + "Page text:\n"
+ + sanitize_page_text(quality.page_text)
+ // sanitize_page_text strips control characters,
+ // Unicode PUA code points, and injection patterns.
+ // See the Python companion for implementation.
+ }
+ ]
+ }
+ ],
+ "inferenceConfig": { "maxTokens": 256, "temperature": 0 }
+ }
+ }
+ requests.append(json_serialize(request))
 
-    jsonl_key = "batch-input/" + chart_id + "/classify.jsonl"
-    write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
-    RETURN jsonl_key
+ jsonl_key = "batch-input/" + chart_id + "/classify.jsonl"
+ write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
+ RETURN jsonl_key
 
 FUNCTION submit_classification_batch_job(jsonl_keys: list) -> string:
-    // Submit one batch inference job covering all charts in the current wave.
-    // Aggregating many charts into one job is more efficient than one job per chart.
-    // Typical wave size: 1,000 to 10,000 charts.
+ // Submit one batch inference job covering all charts in the current wave.
+ // Aggregating many charts into one job is more efficient than one job per chart.
+ // Typical wave size: 1,000 to 10,000 charts.
 
-    response = bedrock_client.create_model_invocation_job(
-        jobName:           "classify-" + current_timestamp(),
-        modelId:           "us.amazon.nova-lite-v1:0",
-        // Note: the us. prefix routes through cross-region inference profiles.
-        // For strict version pinning in production, use the full model ARN.
-        // Example: arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0
-        inputDataConfig:   { "s3InputDataConfig": { "s3Uri": "s3://batch-inference/batch-input/" } },
-        outputDataConfig:  {
-            "s3OutputDataConfig": {
-                "s3Uri":    "s3://batch-inference/batch-output/",
-                "kmsKeyId": KMS_KEY_ARN
-            }
-        },
-        roleArn: BEDROCK_BATCH_ROLE_ARN
-    )
+ response = bedrock_client.create_model_invocation_job(
+ jobName: "classify-" + current_timestamp(),
+ modelId: "us.amazon.nova-lite-v1:0",
+ // Note: the us. prefix routes through cross-region inference profiles.
+ // For strict version pinning in production, use the full model ARN.
+ // Example: arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0
+ inputDataConfig: { "s3InputDataConfig": { "s3Uri": "s3://batch-inference/batch-input/" } },
+ outputDataConfig: {
+ "s3OutputDataConfig": {
+ "s3Uri": "s3://batch-inference/batch-output/",
+ "kmsKeyId": KMS_KEY_ARN
+ }
+ },
+ roleArn: BEDROCK_BATCH_ROLE_ARN
+ )
 
-    update_dynamodb_item(
-        table="migration-tracking",
-        key="batch-job-" + response.jobArn,
-        updates={ status: "classification_submitted", job_arn: response.jobArn }
-    )
+ update_dynamodb_item(
+ table="migration-tracking",
+ key="batch-job-" + response.jobArn,
+ updates={ status: "classification_submitted", job_arn: response.jobArn }
+ )
 
-    RETURN response.jobArn
+ RETURN response.jobArn
 ```
 
 ---
@@ -488,66 +488,66 @@ FUNCTION submit_classification_batch_job(jsonl_keys: list) -> string:
 After classification results arrive, the routing Lambda reads the results JSONL and assigns each page to its extraction tier. Pages routed to Tier 4 (Opus) need their images pre-staged in S3 for the vision call. Pages routed to Tier 1 (skip) are noted and excluded from extraction.
 
 ```pseudocode
-CONFIDENCE_TO_VISION_PATH = 0.65   // below this, route to vision regardless of classification tier
-CONFIDENCE_TO_OPUS       = 0.45    // below this, escalate to Tier 4 Opus
+CONFIDENCE_TO_VISION_PATH = 0.65 // below this, route to vision regardless of classification tier
+CONFIDENCE_TO_OPUS = 0.45 // below this, escalate to Tier 4 Opus
 
 FUNCTION process_classification_results(results_s3_prefix: string) -> dict:
-    // Load and parse results JSONL
-    result_lines = read_jsonl_from_s3(bucket="batch-inference",
-                                       prefix=results_s3_prefix)
+ // Load and parse results JSONL
+ result_lines = read_jsonl_from_s3(bucket="batch-inference",
+ prefix=results_s3_prefix)
 
-    tier_routing = {
-        "tier1_skip":    empty list,
-        "tier2_nova":    empty list,
-        "tier3_sonnet":  empty list,
-        "tier4_opus":    empty list
-    }
+ tier_routing = {
+ "tier1_skip": empty list,
+ "tier2_nova": empty list,
+ "tier3_sonnet": empty list,
+ "tier4_opus": empty list
+ }
 
-    FOR each result_line in result_lines:
-        record_id = result_line.recordId
-        chart_id, page_num = parse_record_id(record_id)
-        // record_id format: "{chart_id}-page-{page_num}"
+ FOR each result_line in result_lines:
+ record_id = result_line.recordId
+ chart_id, page_num = parse_record_id(record_id)
+ // record_id format: "{chart_id}-page-{page_num}"
 
-        // Parse LLM output
-        output_text = result_line.modelOutput.output.message.content[0].text
-        classification = parse_json_safely(output_text)
+ // Parse LLM output
+ output_text = result_line.modelOutput.output.message.content[0].text
+ classification = parse_json_safely(output_text)
 
-        IF classification is null:
-            // Malformed JSON from LLM. Route to Tier 3 for retry with stronger model.
-            log_metric("classification_parse_error", { chart: chart_id, page: page_num })
-            tier_routing["tier3_sonnet"].append({ chart_id, page_num, reason: "parse_error" })
-            CONTINUE
+ IF classification is null:
+ // Malformed JSON from LLM. Route to Tier 3 for retry with stronger model.
+ log_metric("classification_parse_error", { chart: chart_id, page: page_num })
+ tier_routing["tier3_sonnet"].append({ chart_id, page_num, reason: "parse_error" })
+ CONTINUE
 
-        // Override tier based on Textract quality signal if needed.
-        // The LLM suggests a tier; Textract confidence can escalate it.
-        page_quality = load_page_quality(chart_id, page_num)
-        assigned_tier = classification.extraction_tier
+ // Override tier based on Textract quality signal if needed.
+ // The LLM suggests a tier; Textract confidence can escalate it.
+ page_quality = load_page_quality(chart_id, page_num)
+ assigned_tier = classification.extraction_tier
 
-        IF page_quality.avg_confidence < CONFIDENCE_TO_OPUS:
-            assigned_tier = 4
-        ELSE IF page_quality.avg_confidence < CONFIDENCE_TO_VISION_PATH:
-            assigned_tier = max(assigned_tier, 3)
+ IF page_quality.avg_confidence < CONFIDENCE_TO_OPUS:
+ assigned_tier = 4
+ ELSE IF page_quality.avg_confidence < CONFIDENCE_TO_VISION_PATH:
+ assigned_tier = max(assigned_tier, 3)
 
-        // Record the routing decision for the CloudWatch tier distribution metric
-        entry = {
-            chart_id:          chart_id,
-            page_num:          page_num,
-            doc_type:          classification.doc_type,
-            classification_conf: classification.confidence,
-            ocr_confidence:    page_quality.avg_confidence,
-            structured:        classification.structured_content,
-            assigned_tier:     assigned_tier
-        }
-        tier_routing["tier" + assigned_tier + "_..."].append(entry)
+ // Record the routing decision for the CloudWatch tier distribution metric
+ entry = {
+ chart_id: chart_id,
+ page_num: page_num,
+ doc_type: classification.doc_type,
+ classification_conf: classification.confidence,
+ ocr_confidence: page_quality.avg_confidence,
+ structured: classification.structured_content,
+ assigned_tier: assigned_tier
+ }
+ tier_routing["tier" + assigned_tier + "_..."].append(entry)
 
-    // Emit tier distribution metrics to CloudWatch
-    // (Do NOT include doc_type or clinical content in these metrics)
-    emit_cloudwatch_metric("tier1_skip_pages",   count(tier_routing.tier1_skip))
-    emit_cloudwatch_metric("tier2_nova_pages",   count(tier_routing.tier2_nova))
-    emit_cloudwatch_metric("tier3_sonnet_pages", count(tier_routing.tier3_sonnet))
-    emit_cloudwatch_metric("tier4_opus_pages",   count(tier_routing.tier4_opus))
+ // Emit tier distribution metrics to CloudWatch
+ // (Do NOT include doc_type or clinical content in these metrics)
+ emit_cloudwatch_metric("tier1_skip_pages", count(tier_routing.tier1_skip))
+ emit_cloudwatch_metric("tier2_nova_pages", count(tier_routing.tier2_nova))
+ emit_cloudwatch_metric("tier3_sonnet_pages", count(tier_routing.tier3_sonnet))
+ emit_cloudwatch_metric("tier4_opus_pages", count(tier_routing.tier4_opus))
 
-    RETURN tier_routing
+ RETURN tier_routing
 ```
 
 ---
@@ -571,65 +571,65 @@ Extract:
 
 Return a JSON object:
 {
-  "document_date": "<YYYY-MM-DD or null>",
-  "doc_type_confirmed": "<document type>",
-  "diagnoses": [{"description": "...", "icd_concept": "...", "date": "..."}],
-  "medications": [{"name": "...", "dose": "...", "frequency": "..."}],
-  "procedures": [{"description": "...", "date": "..."}],
-  "lab_values": [{"test": "...", "value": "...", "unit": "...", "ref_range": "..."}],
-  "allergies": ["..."],
-  "vital_signs": [{"type": "...", "value": "...", "unit": "...", "date": "..."}],
-  "extraction_notes": "<any notable issues, ambiguities, or limitations>"
+ "document_date": "<YYYY-MM-DD or null>",
+ "doc_type_confirmed": "<document type>",
+ "diagnoses": [{"description": "...", "icd_concept": "...", "date": "..."}],
+ "medications": [{"name": "...", "dose": "...", "frequency": "..."}],
+ "procedures": [{"description": "...", "date": "..."}],
+ "lab_values": [{"test": "...", "value": "...", "unit": "...", "ref_range": "..."}],
+ "allergies": ["..."],
+ "vital_signs": [{"type": "...", "value": "...", "unit": "...", "date": "..."}],
+ "extraction_notes": "<any notable issues, ambiguities, or limitations>"
 }
 
 Return ONLY valid JSON.
 """
 
 FUNCTION generate_extraction_tier2_jsonl(tier2_pages: list) -> string:
-    requests = empty list
+ requests = empty list
 
-    FOR page_info in tier2_pages:
-        chart_id = page_info.chart_id
-        page_num = page_info.page_num
+ FOR page_info in tier2_pages:
+ chart_id = page_info.chart_id
+ page_num = page_info.page_num
 
-        page_text = load_page_text_from_ocr(chart_id, page_num)
+ page_text = load_page_text_from_ocr(chart_id, page_num)
 
-        request = {
-            "recordId": chart_id + "-ext2-page-" + page_num,
-            "modelInput": {
-                "system": [
-                    {
-                        "text": EXTRACTION_TIER2_SYSTEM,
-                        "cachePoint": { "type": "default" }
-                        // Cache the extraction system prompt too.
-                        // Same prompt for every page in this tier.
-                    }
-                ],
-                "messages": [{
-                    "role": "user",
-                    "content": [{
-                        "text": "Chart: " + chart_id + " | Page: " + page_num
-                                + " | Type: " + page_info.doc_type + "\n\n"
-                                + sanitize_page_text(page_text)
-                    }]
-                }],
-                "inferenceConfig": { "maxTokens": 1024, "temperature": 0 }
-            }
-        }
-        requests.append(json_serialize(request))
+ request = {
+ "recordId": chart_id + "-ext2-page-" + page_num,
+ "modelInput": {
+ "system": [
+ {
+ "text": EXTRACTION_TIER2_SYSTEM,
+ "cachePoint": { "type": "default" }
+ // Cache the extraction system prompt too.
+ // Same prompt for every page in this tier.
+ }
+ ],
+ "messages": [{
+ "role": "user",
+ "content": [{
+ "text": "Chart: " + chart_id + " | Page: " + page_num
+ + " | Type: " + page_info.doc_type + "\n\n"
+ + sanitize_page_text(page_text)
+ }]
+ }],
+ "inferenceConfig": { "maxTokens": 1024, "temperature": 0 }
+ }
+ }
+ requests.append(json_serialize(request))
 
-    jsonl_key = "batch-input/extract-tier2-" + batch_id + ".jsonl"
-    write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
-    RETURN jsonl_key
+ jsonl_key = "batch-input/extract-tier2-" + batch_id + ".jsonl"
+ write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
+ RETURN jsonl_key
 
 FUNCTION generate_extraction_vision_jsonl(vision_pages: list, model_tier: int) -> string:
-    // For Tier 3 (Sonnet) and Tier 4 (Opus) pages requiring vision.
-    // The page image is sent directly to the model instead of OCR text.
-    // Vision is used when OCR confidence is low (fax artifacts, handwriting).
+ // For Tier 3 (Sonnet) and Tier 4 (Opus) pages requiring vision.
+ // The page image is sent directly to the model instead of OCR text.
+ // Vision is used when OCR confidence is low (fax artifacts, handwriting).
 
-    requests = empty list
+ requests = empty list
 
-    VISION_EXTRACTION_PROMPT = """
+ VISION_EXTRACTION_PROMPT = """
 Read this handwritten or degraded medical record page. Extract all clinical information visible.
 
 The page is from a historical paper medical chart. Focus on:
@@ -641,82 +641,82 @@ The page is from a historical paper medical chart. Focus on:
 
 Return JSON in this format:
 {
-  "document_date": "<YYYY-MM-DD or null>",
-  "doc_type_confirmed": "<document type>",
-  "diagnoses": [{"description": "...", "icd_concept": "...", "date": "..."}],
-  "medications": [{"name": "...", "dose": "...", "frequency": "..."}],
-  "procedures": [{"description": "...", "date": "..."}],
-  "lab_values": [{"test": "...", "value": "...", "unit": "...", "ref_range": "..."}],
-  "allergies": ["..."],
-  "vital_signs": [{"type": "...", "value": "...", "unit": "...", "date": "..."}],
-  "legibility": <0.0-1.0, your confidence in the accuracy of this extraction>,
-  "extraction_notes": "<anything that was unclear, partially legible, or uncertain>"
+ "document_date": "<YYYY-MM-DD or null>",
+ "doc_type_confirmed": "<document type>",
+ "diagnoses": [{"description": "...", "icd_concept": "...", "date": "..."}],
+ "medications": [{"name": "...", "dose": "...", "frequency": "..."}],
+ "procedures": [{"description": "...", "date": "..."}],
+ "lab_values": [{"test": "...", "value": "...", "unit": "...", "ref_range": "..."}],
+ "allergies": ["..."],
+ "vital_signs": [{"type": "...", "value": "...", "unit": "...", "date": "..."}],
+ "legibility": <0.0-1.0, your confidence in the accuracy of this extraction>,
+ "extraction_notes": "<anything that was unclear, partially legible, or uncertain>"
 }
 
 Return ONLY valid JSON.
 """
 
-    model_id = "us.anthropic.claude-sonnet-4-6-v1:0"
-    IF model_tier == 4:
-        model_id = "us.anthropic.claude-opus-4-6-20260204-v1:0"
+ model_id = "us.anthropic.claude-sonnet-4-6-v1:0"
+ IF model_tier == 4:
+ model_id = "us.anthropic.claude-opus-4-6-20260204-v1:0"
 
-    FOR page_info in vision_pages:
-        chart_id    = page_info.chart_id
-        page_num    = page_info.page_num
-        image_key   = "page-images/" + chart_id + "/page-" + page_num + ".png"
-        image_bytes = load_s3_object(bucket="charts-processed", key=image_key)
+ FOR page_info in vision_pages:
+ chart_id = page_info.chart_id
+ page_num = page_info.page_num
+ image_key = "page-images/" + chart_id + "/page-" + page_num + ".png"
+ image_bytes = load_s3_object(bucket="charts-processed", key=image_key)
 
-        // IMPORTANT: batch JSONL requires base64-encoded strings for image bytes.
-        // The synchronous Converse API lets boto3 handle encoding transparently.
-        // In batch JSONL you build the raw JSON yourself, so you must encode manually.
-        // Using list(image_bytes) produces a JSON integer array the Bedrock service
-        // cannot deserialize -- every vision batch request silently fails.
-        // [EDITOR: review fix - P0 image encoding. Fixed base64 encoding for batch JSONL.
-        //  base64.b64encode(image_bytes).decode("utf-8") produces the string Bedrock
-        //  requires. list(image_bytes) (the prior pattern) caused silent batch failures.]
-        image_bytes_b64 = base64.b64encode(image_bytes).decode("utf-8")
+ // IMPORTANT: batch JSONL requires base64-encoded strings for image bytes.
+ // The synchronous Converse API lets boto3 handle encoding transparently.
+ // In batch JSONL you build the raw JSON yourself, so you must encode manually.
+ // Using list(image_bytes) produces a JSON integer array the Bedrock service
+ // cannot deserialize -- every vision batch request silently fails.
+ // [EDITOR: review fix - P0 image encoding. Fixed base64 encoding for batch JSONL.
+ // base64.b64encode(image_bytes).decode("utf-8") produces the string Bedrock
+ // requires. list(image_bytes) (the prior pattern) caused silent batch failures.]
+ image_bytes_b64 = base64.b64encode(image_bytes).decode("utf-8")
 
-        request = {
-            "recordId": chart_id + "-ext" + model_tier + "-page-" + page_num,
-            "modelInput": {
-                "system": [{
-                    "text": VISION_EXTRACTION_PROMPT,
-                    "cachePoint": { "type": "default" }
-                }],
-                "messages": [{
-                    "role": "user",
-                    "content": [
-                        {
-                            "image": {
-                                "format": "png",
-                                "source": { "bytes": image_bytes_b64 }
-                                // base64-encoded string as required for batch JSONL.
-                            }
-                        },
-                        {
-                            "text": "Chart: " + chart_id + " | Page: " + page_num
-                        }
-                    ]
-                }],
-                "inferenceConfig": { "maxTokens": 1024, "temperature": 0 }
-            }
-        }
-        requests.append(json_serialize(request))
+ request = {
+ "recordId": chart_id + "-ext" + model_tier + "-page-" + page_num,
+ "modelInput": {
+ "system": [{
+ "text": VISION_EXTRACTION_PROMPT,
+ "cachePoint": { "type": "default" }
+ }],
+ "messages": [{
+ "role": "user",
+ "content": [
+ {
+ "image": {
+ "format": "png",
+ "source": { "bytes": image_bytes_b64 }
+ // base64-encoded string as required for batch JSONL.
+ }
+ },
+ {
+ "text": "Chart: " + chart_id + " | Page: " + page_num
+ }
+ ]
+ }],
+ "inferenceConfig": { "maxTokens": 1024, "temperature": 0 }
+ }
+ }
+ requests.append(json_serialize(request))
 
-    // Vision JSONL file size note: embedded base64 images create very large files.
-    // A 300 DPI PNG page runs 1-3MB raw; base64-encoded, that is 1.3-4MB per request line.
-    // For a wave of 10,000 vision-path pages, the input JSONL can reach 13-40GB.
-    // Required actions before submitting:
-    //   (1) Split vision batches into smaller JSONL files (2,000-3,000 pages per file).
-    //   (2) Use S3 multipart upload for files larger than 5GB (boto3 TransferConfig).
-    //   (3) Verify each individual request line stays within Bedrock's per-request
-    //       payload limit for your region (check current batch inference docs).
-    //   (4) Consider downsampling 600 DPI source images to 300 DPI before embedding;
-    //       300 DPI is sufficient for vision model performance per Recipe 1.6.
-    // [EDITOR: review fix - P1 vision JSONL file sizes. Added size and splitting guidance.]
-    jsonl_key = "batch-input/extract-tier" + model_tier + "-vision-" + batch_id + ".jsonl"
-    write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
-    RETURN jsonl_key
+ // Vision JSONL file size note: embedded base64 images create very large files.
+ // A 300 DPI PNG page runs 1-3MB raw; base64-encoded, that is 1.3-4MB per request line.
+ // For a wave of 10,000 vision-path pages, the input JSONL can reach 13-40GB.
+ // Required actions before submitting:
+ // (1) Split vision batches into smaller JSONL files (2,000-3,000 pages per file).
+ // (2) Use S3 multipart upload for files larger than 5GB (boto3 TransferConfig).
+ // (3) Verify each individual request line stays within Bedrock's per-request
+ // payload limit for your region (check current batch inference docs).
+ // (4) Consider downsampling 600 DPI source images to 300 DPI before embedding;
+ // 300 DPI is sufficient for vision model performance per Recipe 1.6.
+ // [EDITOR: review fix - P1 vision JSONL file sizes. Added size and splitting guidance.]
+ jsonl_key = "batch-input/extract-tier" + model_tier + "-vision-" + batch_id + ".jsonl"
+ write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
+ RETURN jsonl_key
 ```
 
 ---
@@ -727,57 +727,57 @@ After extraction results arrive from all tiers, the clinical concepts (diagnoses
 
 ```pseudocode
 FUNCTION validate_codes_with_comprehend_medical(extractions: dict) -> dict:
-    // extractions: map of page_num -> extraction_result from all tiers
+ // extractions: map of page_num -> extraction_result from all tiers
 
-    FOR page_num, extraction in extractions:
-        IF extraction.diagnoses is empty AND extraction.medications is empty:
-            CONTINUE  // Nothing to validate
+ FOR page_num, extraction in extractions:
+ IF extraction.diagnoses is empty AND extraction.medications is empty:
+ CONTINUE // Nothing to validate
 
-        validated = {
-            diagnoses_coded:   empty list,
-            medications_coded: empty list
-        }
+ validated = {
+ diagnoses_coded: empty list,
+ medications_coded: empty list
+ }
 
-        // ICD-10 inference for diagnoses
-        // Comprehend Medical accepts up to 20,000 characters per call.
-        // Chunk diagnosis descriptions if needed.
-        diagnosis_text = join(d.description for d in extraction.diagnoses, separator="\n")
-        IF length(diagnosis_text) > 0:
-            // Retry configuration: use adaptive mode (exponential backoff + jitter)
-            // Comprehend Medical throttles at high call rates. This is expected.
-            icd10_response = comprehend_medical_client_with_retry.infer_icd10_cm(
-                Text=diagnosis_text[:20000]  // truncate to API limit
-            )
-            FOR each icd10_entity in icd10_response.Entities:
-                IF icd10_entity.ICD10CMConcepts AND
-                   icd10_entity.ICD10CMConcepts[0].Score >= 0.80:
-                    validated.diagnoses_coded.append({
-                        description: icd10_entity.Text,
-                        icd10_code:  icd10_entity.ICD10CMConcepts[0].Code,
-                        icd10_display: icd10_entity.ICD10CMConcepts[0].Description,
-                        score:       icd10_entity.ICD10CMConcepts[0].Score
-                    })
+ // ICD-10 inference for diagnoses
+ // Comprehend Medical accepts up to 20,000 characters per call.
+ // Chunk diagnosis descriptions if needed.
+ diagnosis_text = join(d.description for d in extraction.diagnoses, separator="\n")
+ IF length(diagnosis_text) > 0:
+ // Retry configuration: use adaptive mode (exponential backoff + jitter)
+ // Comprehend Medical throttles at high call rates. This is expected.
+ icd10_response = comprehend_medical_client_with_retry.infer_icd10_cm(
+ Text=diagnosis_text[:20000] // truncate to API limit
+ )
+ FOR each icd10_entity in icd10_response.Entities:
+ IF icd10_entity.ICD10CMConcepts AND
+ icd10_entity.ICD10CMConcepts[0].Score >= 0.80:
+ validated.diagnoses_coded.append({
+ description: icd10_entity.Text,
+ icd10_code: icd10_entity.ICD10CMConcepts[0].Code,
+ icd10_display: icd10_entity.ICD10CMConcepts[0].Description,
+ score: icd10_entity.ICD10CMConcepts[0].Score
+ })
 
-        // RxNorm inference for medications
-        medication_text = join(m.name + " " + (m.dose or "") for m in extraction.medications,
-                                separator="\n")
-        IF length(medication_text) > 0:
-            rxnorm_response = comprehend_medical_client_with_retry.infer_rxnorm(
-                Text=medication_text[:20000]
-            )
-            FOR each rx_entity in rxnorm_response.Entities:
-                IF rx_entity.RxNormConcepts AND
-                   rx_entity.RxNormConcepts[0].Score >= 0.80:
-                    validated.medications_coded.append({
-                        name:         rx_entity.Text,
-                        rxnorm_cui:   rx_entity.RxNormConcepts[0].Code,
-                        rxnorm_name:  rx_entity.RxNormConcepts[0].Description,
-                        score:        rx_entity.RxNormConcepts[0].Score
-                    })
+ // RxNorm inference for medications
+ medication_text = join(m.name + " " + (m.dose or "") for m in extraction.medications,
+ separator="\n")
+ IF length(medication_text) > 0:
+ rxnorm_response = comprehend_medical_client_with_retry.infer_rxnorm(
+ Text=medication_text[:20000]
+ )
+ FOR each rx_entity in rxnorm_response.Entities:
+ IF rx_entity.RxNormConcepts AND
+ rx_entity.RxNormConcepts[0].Score >= 0.80:
+ validated.medications_coded.append({
+ name: rx_entity.Text,
+ rxnorm_cui: rx_entity.RxNormConcepts[0].Code,
+ rxnorm_name: rx_entity.RxNormConcepts[0].Description,
+ score: rx_entity.RxNormConcepts[0].Score
+ })
 
-        extractions[page_num]["validated_codes"] = validated
+ extractions[page_num]["validated_codes"] = validated
 
-    RETURN extractions
+ RETURN extractions
 ```
 
 ---
@@ -795,16 +795,16 @@ The data was extracted from paper charts via OCR and LLM analysis.
 
 IMPORTANT RULES:
 1. All migrated records use verificationStatus = "unconfirmed" for Condition resources.
-   Do NOT use "confirmed". These are OCR-derived records, not clinician-verified.
+ Do NOT use "confirmed". These are OCR-derived records, not clinician-verified.
 2. Do NOT include clinicalStatus on Condition resources.
-   The condition-clinical ValueSet has no "unknown" code and HealthLake will reject it.
+ The condition-clinical ValueSet has no "unknown" code and HealthLake will reject it.
 3. For dates inferred from document context (not explicitly stated), include them
-   but note the inference in the resource's note field.
+ but note the inference in the resource's note field.
 4. Every resource MUST include a note field with: source chart ID, page range,
-   OCR confidence level, and extraction tier. This is the provenance trail.
+ OCR confidence level, and extraction tier. This is the provenance trail.
 5. Status for MedicationStatement is always "unknown" for historical records.
 6. Only generate resources for data with reasonable confidence. If the extraction
-   notes indicate the content was unclear or illegible, omit those specific fields.
+ notes indicate the content was unclear or illegible, omit those specific fields.
 
 Generate a JSON array of FHIR R4 resources. Include:
 - One DocumentReference per page range (always generated, even if no other resources)
@@ -817,45 +817,45 @@ Return ONLY a valid JSON array of FHIR resources.
 """
 
 FUNCTION generate_fhir_mapping_jsonl(chart_id: string,
-                                      member_id: string,
-                                      validated_extractions: dict) -> string:
-    // Group pages into logical document segments (boundaries from Step 3 OCR output)
-    segments = group_pages_into_segments(validated_extractions, chart_id)
+ member_id: string,
+ validated_extractions: dict) -> string:
+ // Group pages into logical document segments (boundaries from Step 3 OCR output)
+ segments = group_pages_into_segments(validated_extractions, chart_id)
 
-    requests = empty list
+ requests = empty list
 
-    FOR segment in segments:
-        // Assemble segment data: pages, extractions, validated codes
-        segment_data = {
-            chart_id:    chart_id,
-            member_id:   member_id,
-            start_page:  segment.start_page,
-            end_page:    segment.end_page,
-            doc_type:    segment.doc_type,
-            pages:       [validated_extractions[p] for p in segment.page_range]
-        }
+ FOR segment in segments:
+ // Assemble segment data: pages, extractions, validated codes
+ segment_data = {
+ chart_id: chart_id,
+ member_id: member_id,
+ start_page: segment.start_page,
+ end_page: segment.end_page,
+ doc_type: segment.doc_type,
+ pages: [validated_extractions[p] for p in segment.page_range]
+ }
 
-        request = {
-            "recordId": chart_id + "-fhir-seg-" + segment.start_page,
-            "modelInput": {
-                "system": [{
-                    "text": FHIR_MAPPING_SYSTEM,
-                    "cachePoint": { "type": "default" }
-                }],
-                "messages": [{
-                    "role": "user",
-                    "content": [{
-                        "text": json_serialize(segment_data)
-                    }]
-                }],
-                "inferenceConfig": { "maxTokens": 4096, "temperature": 0 }
-            }
-        }
-        requests.append(json_serialize(request))
+ request = {
+ "recordId": chart_id + "-fhir-seg-" + segment.start_page,
+ "modelInput": {
+ "system": [{
+ "text": FHIR_MAPPING_SYSTEM,
+ "cachePoint": { "type": "default" }
+ }],
+ "messages": [{
+ "role": "user",
+ "content": [{
+ "text": json_serialize(segment_data)
+ }]
+ }],
+ "inferenceConfig": { "maxTokens": 4096, "temperature": 0 }
+ }
+ }
+ requests.append(json_serialize(request))
 
-    jsonl_key = "batch-input/" + chart_id + "/fhir-map.jsonl"
-    write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
-    RETURN jsonl_key
+ jsonl_key = "batch-input/" + chart_id + "/fhir-map.jsonl"
+ write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
+ RETURN jsonl_key
 
 // generate_fallback_document_reference: called in assemble_fhir_bundle when FHIR
 // output is malformed or unparseable. Produces a minimal valid DocumentReference so
@@ -863,80 +863,80 @@ FUNCTION generate_fhir_mapping_jsonl(chart_id: string,
 // Without this definition, the fallback call raises a NameError and the intended
 // graceful degradation becomes an unhandled exception.
 // [EDITOR: review fix - P1 undefined function. Added definition for
-//  generate_fallback_document_reference, which was called but never defined in v2.
-//  A NameError here turns graceful fallback into an unhandled exception.]
+// generate_fallback_document_reference, which was called but never defined in v2.
+// A NameError here turns graceful fallback into an unhandled exception.]
 FUNCTION generate_fallback_document_reference(chart_id: string,
-                                               member_id: string,
-                                               result: dict) -> dict:
-    // result is the raw batch inference result record (including recordId).
-    segment_id = result.get("recordId", "unknown-segment")
-    RETURN {
-        "resourceType": "DocumentReference",
-        "status":       "current",
-        "subject":      { "reference": "Patient/" + member_id },
-        "type": {
-            "coding": [{
-                "system":  "http://loinc.org",
-                "code":    "34133-9",
-                "display": "Summary of episode note"
-            }]
-        },
-        "note": [{
-            "text": (
-                "FHIR mapping failed for chart " + chart_id + ", segment " + segment_id + ". "
-                + "DocumentReference generated as fallback. Manual review recommended. "
-                + "Original chart content preserved in S3 source bucket."
-            )
-        }]
-    }
-    // After generating this fallback, emit a CloudWatch metric so the fallback rate
-    // is visible in the operations dashboard:
-    //   emit_cloudwatch_metric("fhir_mapping_fallback", 1)
-    // A fallback rate above 1-2% on a wave warrants investigation.
+ member_id: string,
+ result: dict) -> dict:
+ // result is the raw batch inference result record (including recordId).
+ segment_id = result.get("recordId", "unknown-segment")
+ RETURN {
+ "resourceType": "DocumentReference",
+ "status": "current",
+ "subject": { "reference": "Patient/" + member_id },
+ "type": {
+ "coding": [{
+ "system": "http://loinc.org",
+ "code": "34133-9",
+ "display": "Summary of episode note"
+ }]
+ },
+ "note": [{
+ "text": (
+ "FHIR mapping failed for chart " + chart_id + ", segment " + segment_id + ". "
+ + "DocumentReference generated as fallback. Manual review recommended. "
+ + "Original chart content preserved in S3 source bucket."
+ )
+ }]
+ }
+ // After generating this fallback, emit a CloudWatch metric so the fallback rate
+ // is visible in the operations dashboard:
+ // emit_cloudwatch_metric("fhir_mapping_fallback", 1)
+ // A fallback rate above 1-2% on a wave warrants investigation.
 
 FUNCTION assemble_fhir_bundle(chart_id: string,
-                               member_id: string,
-                               fhir_mapping_results: list) -> dict:
-    all_resources = empty list
+ member_id: string,
+ fhir_mapping_results: list) -> dict:
+ all_resources = empty list
 
-    FOR result in fhir_mapping_results:
-        output_text = result.modelOutput.output.message.content[0].text
-        resources   = parse_json_safely(output_text)
+ FOR result in fhir_mapping_results:
+ output_text = result.modelOutput.output.message.content[0].text
+ resources = parse_json_safely(output_text)
 
-        IF resources is null OR not is_list(resources):
-            // Malformed FHIR output. Generate a bare DocumentReference as fallback.
-            log_metric("fhir_mapping_parse_error", { chart: chart_id, segment: result.recordId })
-            resources = [generate_fallback_document_reference(chart_id, member_id, result)]
+ IF resources is null OR not is_list(resources):
+ // Malformed FHIR output. Generate a bare DocumentReference as fallback.
+ log_metric("fhir_mapping_parse_error", { chart: chart_id, segment: result.recordId })
+ resources = [generate_fallback_document_reference(chart_id, member_id, result)]
 
-        all_resources.extend(resources)
+ all_resources.extend(resources)
 
-    // MANDATORY: Validate all medical codes in LLM-generated FHIR resources
-    // before HealthLake ingestion. LLMs hallucinate plausible medical codes.
-    FOR EACH fhir_resource IN all_resources:
-        validated_codes = validate_medical_codes(fhir_resource)
-        IF any code fails validation:
-            flag_resource_for_review(fhir_resource, invalid_codes)
+ // MANDATORY: Validate all medical codes in LLM-generated FHIR resources
+ // before HealthLake ingestion. LLMs hallucinate plausible medical codes.
+ FOR EACH fhir_resource IN all_resources:
+ validated_codes = validate_medical_codes(fhir_resource)
+ IF any code fails validation:
+ flag_resource_for_review(fhir_resource, invalid_codes)
 
-    // De-duplicate: same ICD-10 code from multiple pages produces one Condition
-    all_resources = deduplicate_conditions(all_resources,
-                                           key=["subject.reference", "code.coding[0].code"])
-    all_resources = deduplicate_medication_statements(all_resources,
-                                                       key=["subject.reference",
-                                                            "medicationCodeableConcept.coding[0].code"])
+ // De-duplicate: same ICD-10 code from multiple pages produces one Condition
+ all_resources = deduplicate_conditions(all_resources,
+ key=["subject.reference", "code.coding[0].code"])
+ all_resources = deduplicate_medication_statements(all_resources,
+ key=["subject.reference",
+ "medicationCodeableConcept.coding[0].code"])
 
-    resource_counts = {
-        "DocumentReference":  count(r where r.resourceType == "DocumentReference"),
-        "Condition":          count(r where r.resourceType == "Condition"),
-        "MedicationStatement": count(r where r.resourceType == "MedicationStatement"),
-        "Observation":        count(r where r.resourceType == "Observation"),
-        "Immunization":       count(r where r.resourceType == "Immunization")
-    }
+ resource_counts = {
+ "DocumentReference": count(r where r.resourceType == "DocumentReference"),
+ "Condition": count(r where r.resourceType == "Condition"),
+ "MedicationStatement": count(r where r.resourceType == "MedicationStatement"),
+ "Observation": count(r where r.resourceType == "Observation"),
+ "Immunization": count(r where r.resourceType == "Immunization")
+ }
 
-    RETURN {
-        resources:       all_resources,
-        resource_counts: resource_counts,
-        total:           length(all_resources)
-    }
+ RETURN {
+ resources: all_resources,
+ resource_counts: resource_counts,
+ total: length(all_resources)
+ }
 ```
 
 ---
@@ -947,77 +947,77 @@ HealthLake's bulk import reads NDJSON from S3: one FHIR resource per line. To av
 
 ```pseudocode
 FUNCTION write_fhir_bundle_to_s3(chart_id: string,
-                                   bundle: dict) -> string:
-    ndjson_lines = join(json_serialize(r) for r in bundle.resources, separator="\n")
-    bundle_key   = "fhir-bundles/" + chart_id + "/bundle.ndjson"
-    write_string_to_s3(bucket="fhir-output", key=bundle_key, data=ndjson_lines)
+ bundle: dict) -> string:
+ ndjson_lines = join(json_serialize(r) for r in bundle.resources, separator="\n")
+ bundle_key = "fhir-bundles/" + chart_id + "/bundle.ndjson"
+ write_string_to_s3(bucket="fhir-output", key=bundle_key, data=ndjson_lines)
 
-    // DynamoDB update uses Decimal for all numeric values (boto3 requires this)
-    update_dynamodb_item(
-        table="migration-tracking",
-        key=chart_id,
-        updates={
-            status:             "fhir_ready",
-            fhir_bundle_key:    bundle_key,
-            fhir_resource_total: Decimal(str(bundle.total)),
-            conditions_count:   Decimal(str(bundle.resource_counts.Condition)),
-            obs_count:          Decimal(str(bundle.resource_counts.Observation)),
-            med_count:          Decimal(str(bundle.resource_counts.MedicationStatement)),
-            docref_count:       Decimal(str(bundle.resource_counts.DocumentReference))
-        }
-    )
+ // DynamoDB update uses Decimal for all numeric values (boto3 requires this)
+ update_dynamodb_item(
+ table="migration-tracking",
+ key=chart_id,
+ updates={
+ status: "fhir_ready",
+ fhir_bundle_key: bundle_key,
+ fhir_resource_total: Decimal(str(bundle.total)),
+ conditions_count: Decimal(str(bundle.resource_counts.Condition)),
+ obs_count: Decimal(str(bundle.resource_counts.Observation)),
+ med_count: Decimal(str(bundle.resource_counts.MedicationStatement)),
+ docref_count: Decimal(str(bundle.resource_counts.DocumentReference))
+ }
+ )
 
-    RETURN bundle_key
+ RETURN bundle_key
 
 FUNCTION submit_healthlake_import_batch(datastore_id: string, batch_size: int = 2000):
-    ready_charts = query_dynamodb(
-        table="migration-tracking",
-        filter="status = 'fhir_ready'",
-        limit=batch_size
-    )
+ ready_charts = query_dynamodb(
+ table="migration-tracking",
+ filter="status = 'fhir_ready'",
+ limit=batch_size
+ )
 
-    IF length(ready_charts) == 0:
-        RETURN
+ IF length(ready_charts) == 0:
+ RETURN
 
-    // All FHIR NDJSON files for this batch live under fhir-bundles/.
-    // HealthLake StartFHIRImportJob takes an S3 URI prefix, not a manifest of manifests.
-    // Write all bundles for this batch to a timestamped import prefix.
-    import_prefix = "fhir-imports/" + current_timestamp() + "/"
-    FOR chart in ready_charts:
-        copy_s3_object(
-            src_bucket="fhir-output",
-            src_key=chart.fhir_bundle_key,
-            dst_bucket="fhir-import-staging",
-            dst_key=import_prefix + chart.chart_id + ".ndjson"
-        )
+ // All FHIR NDJSON files for this batch live under fhir-bundles/.
+ // HealthLake StartFHIRImportJob takes an S3 URI prefix, not a manifest of manifests.
+ // Write all bundles for this batch to a timestamped import prefix.
+ import_prefix = "fhir-imports/" + current_timestamp() + "/"
+ FOR chart in ready_charts:
+ copy_s3_object(
+ src_bucket="fhir-output",
+ src_key=chart.fhir_bundle_key,
+ dst_bucket="fhir-import-staging",
+ dst_key=import_prefix + chart.chart_id + ".ndjson"
+ )
 
-    response = healthlake_client.start_fhir_import_job(
-        InputDataConfig={
-            "S3Uri": "s3://fhir-import-staging/" + import_prefix
-        },
-        JobOutputDataConfig={
-            "S3Configuration": {
-                "S3Uri":    "s3://fhir-output/import-results/" + current_timestamp() + "/",
-                "KmsKeyId": KMS_KEY_ARN
-            }
-        },
-        DatastoreId:       datastore_id,
-        DataAccessRoleArn: HEALTHLAKE_IMPORT_ROLE_ARN
-    )
+ response = healthlake_client.start_fhir_import_job(
+ InputDataConfig={
+ "S3Uri": "s3://fhir-import-staging/" + import_prefix
+ },
+ JobOutputDataConfig={
+ "S3Configuration": {
+ "S3Uri": "s3://fhir-output/import-results/" + current_timestamp() + "/",
+ "KmsKeyId": KMS_KEY_ARN
+ }
+ },
+ DatastoreId: datastore_id,
+ DataAccessRoleArn: HEALTHLAKE_IMPORT_ROLE_ARN
+ )
 
-    import_job_id = response.JobId
+ import_job_id = response.JobId
 
-    FOR chart in ready_charts:
-        update_dynamodb_item(
-            table="migration-tracking",
-            key=chart.chart_id,
-            updates={
-                status:             "import_submitted",
-                healthlake_job_id:  import_job_id
-            }
-        )
+ FOR chart in ready_charts:
+ update_dynamodb_item(
+ table="migration-tracking",
+ key=chart.chart_id,
+ updates={
+ status: "import_submitted",
+ healthlake_job_id: import_job_id
+ }
+ )
 
-    RETURN import_job_id
+ RETURN import_job_id
 ```
 
 ---
@@ -1030,45 +1030,45 @@ After HealthLake confirms import success, the source PDF moves to Glacier. This 
 // S3 Lifecycle policy for the charts-raw bucket.
 // Applied once; no per-chart API calls needed.
 LIFECYCLE_POLICY = {
-    Rules: [{
-        ID:     "archive-completed-charts",
-        Status: "Enabled",
-        Filter: {
-            // Tag filter: charts tagged "migration-status=completed"
-            // become eligible for transition.
-            // We set this tag on the S3 object after HealthLake import succeeds.
-            Tag: { Key: "migration-status", Value: "completed" }
-        },
-        Transitions: [{
-            Days:         30,
-            StorageClass: "GLACIER_IR"
-            // Glacier Instant Retrieval: millisecond access for legal discovery
-            // or member record requests. More expensive than Deep Archive but
-            // appropriate when retrieval latency matters.
-        }],
-        // CMS requires 10-year retention for Medicare records.
-        // Set per your member population.
-        Expiration: { Days: 3653 }   // 10 years
-    }]
+ Rules: [{
+ ID: "archive-completed-charts",
+ Status: "Enabled",
+ Filter: {
+ // Tag filter: charts tagged "migration-status=completed"
+ // become eligible for transition.
+ // We set this tag on the S3 object after HealthLake import succeeds.
+ Tag: { Key: "migration-status", Value: "completed" }
+ },
+ Transitions: [{
+ Days: 30,
+ StorageClass: "GLACIER_IR"
+ // Glacier Instant Retrieval: millisecond access for legal discovery
+ // or member record requests. More expensive than Deep Archive but
+ // appropriate when retrieval latency matters.
+ }],
+ // CMS requires 10-year retention for Medicare records.
+ // Set per your member population.
+ Expiration: { Days: 3653 } // 10 years
+ }]
 }
 
 FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
-    // Tag the S3 object to trigger the lifecycle rule
-    set_s3_object_tag(
-        bucket="charts-raw",
-        key=s3_key,
-        tag_key="migration-status",
-        tag_value="completed"
-    )
+ // Tag the S3 object to trigger the lifecycle rule
+ set_s3_object_tag(
+ bucket="charts-raw",
+ key=s3_key,
+ tag_key="migration-status",
+ tag_value="completed"
+ )
 
-    update_dynamodb_item(
-        table="migration-tracking",
-        key=chart_id,
-        updates={
-            status:       "completed",
-            completed_at: current UTC timestamp
-        }
-    )
+ update_dynamodb_item(
+ table="migration-tracking",
+ key=chart_id,
+ updates={
+ status: "completed",
+ completed_at: current UTC timestamp
+ }
+ )
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code demonstrating these patterns using boto3, check out the [Python Example](chapter01.10-python-example). It walks through the Bedrock batch inference API, prompt caching configuration, vision calls, FHIR bundle assembly, and all the production gotchas (DynamoDB Decimals, Lambda timeouts, PHI-safe logging) with inline comments.
@@ -1081,52 +1081,52 @@ FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
 
 ```json
 {
-  "migration_summary": {
-    "charts_total": 10000,
-    "charts_completed": 9891,
-    "charts_in_progress": 0,
-    "charts_failed": 67,
-    "charts_skipped_duplicates": 42,
-    "charts_flagged_for_manual_review": 218,
-    "total_pages_processed": 1503000,
-    "avg_pages_per_chart": 150,
-    "elapsed_days": 8,
-    "throughput_charts_per_day": 1238
-  },
-  "model_tier_distribution": {
-    "tier1_skip": { "pages": 94000, "pct": 0.063 },
-    "tier2_nova_pro": { "pages": 1028000, "pct": 0.684 },
-    "tier3_sonnet": { "pages": 331000, "pct": 0.220 },
-    "tier4_opus": { "pages": 50000, "pct": 0.033 }
-  },
-  "batch_inference_jobs": {
-    "classification_jobs": 14,
-    "extraction_jobs": 38,
-    "fhir_mapping_jobs": 12,
-    "avg_job_completion_hours": 4.2
-  },
-  "fhir_output": {
-    "document_references": 82400,
-    "conditions": 318200,
-    "observations": 489000,
-    "medication_statements": 212100,
-    "immunizations": 28400,
-    "total_fhir_resources": 1131100
-  },
-  "cost_summary": {
-    "textract_text_detection": "$2,254.50",
-    "bedrock_tier1_nova_lite": "$187.00",
-    "bedrock_tier2_nova_pro": "$1,131.00",
-    "bedrock_tier3_sonnet": "$2,978.00",
-    "bedrock_tier4_opus": "$1,125.00",
-    "bedrock_fhir_mapping_sonnet": "$1,442.00",
-    "comprehend_medical_codes": "$901.00",
-    "healthlake_import": "$181.00",
-    "aws_batch_compute": "$540.00",
-    "s3_storage_transfer": "$320.00",
-    "total": "$11,059.50",
-    "cost_per_chart": "$1.11"
-  }
+ "migration_summary": {
+ "charts_total": 10000,
+ "charts_completed": 9891,
+ "charts_in_progress": 0,
+ "charts_failed": 67,
+ "charts_skipped_duplicates": 42,
+ "charts_flagged_for_manual_review": 218,
+ "total_pages_processed": 1503000,
+ "avg_pages_per_chart": 150,
+ "elapsed_days": 8,
+ "throughput_charts_per_day": 1238
+ },
+ "model_tier_distribution": {
+ "tier1_skip": { "pages": 94000, "pct": 0.063 },
+ "tier2_nova_pro": { "pages": 1028000, "pct": 0.684 },
+ "tier3_sonnet": { "pages": 331000, "pct": 0.220 },
+ "tier4_opus": { "pages": 50000, "pct": 0.033 }
+ },
+ "batch_inference_jobs": {
+ "classification_jobs": 14,
+ "extraction_jobs": 38,
+ "fhir_mapping_jobs": 12,
+ "avg_job_completion_hours": 4.2
+ },
+ "fhir_output": {
+ "document_references": 82400,
+ "conditions": 318200,
+ "observations": 489000,
+ "medication_statements": 212100,
+ "immunizations": 28400,
+ "total_fhir_resources": 1131100
+ },
+ "cost_summary": {
+ "textract_text_detection": "$2,254.50",
+ "bedrock_tier1_nova_lite": "$187.00",
+ "bedrock_tier2_nova_pro": "$1,131.00",
+ "bedrock_tier3_sonnet": "$2,978.00",
+ "bedrock_tier4_opus": "$1,125.00",
+ "bedrock_fhir_mapping_sonnet": "$1,442.00",
+ "comprehend_medical_codes": "$901.00",
+ "healthlake_import": "$181.00",
+ "aws_batch_compute": "$540.00",
+ "s3_storage_transfer": "$320.00",
+ "total": "$11,059.50",
+ "cost_per_chart": "$1.11"
+ }
 }
 ```
 
@@ -1140,25 +1140,25 @@ FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
 
 ```json
 {
-  "chart_id": "CHT-2026-009143",
-  "member_id": "MED4182091",
-  "status": "completed",
-  "pages": 184,
-  "model_tier_distribution": {
-    "tier1_skip": 11,
-    "tier2_nova_pro": 128,
-    "tier3_sonnet": 40,
-    "tier4_opus": 5
-  },
-  "fhir_resources": {
-    "document_references": 19,
-    "conditions": 34,
-    "observations": 87,
-    "medication_statements": 22,
-    "immunizations": 6,
-    "total": 168
-  },
-  "completed_at": "2026-03-05T09:44:18Z"
+ "chart_id": "CHT-2026-009143",
+ "member_id": "MED4182091",
+ "status": "completed",
+ "pages": 184,
+ "model_tier_distribution": {
+ "tier1_skip": 11,
+ "tier2_nova_pro": 128,
+ "tier3_sonnet": 40,
+ "tier4_opus": 5
+ },
+ "fhir_resources": {
+ "document_references": 19,
+ "conditions": 34,
+ "observations": 87,
+ "medication_statements": 22,
+ "immunizations": 6,
+ "total": 168
+ },
+ "completed_at": "2026-03-05T09:44:18Z"
 }
 ```
 
@@ -1204,7 +1204,7 @@ The pseudocode captures the core logic. A production chart migration program req
 
 **Model version pinning.** The cross-region inference profile IDs used in this recipe (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1:0`) are AWS-managed mappings that can be updated to new underlying model versions. For a migration program where consistent extraction behavior matters across six to twelve months of processing, pin to explicit model version ARNs (e.g., `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-v1:0`). Test your extraction quality after any model update before continuing bulk processing.
 
-**Vision JSONL file sizes.** Embedding base64-encoded page images in batch JSONL creates very large files: a 300 DPI PNG page runs 1 to 3 MB raw, which becomes 1.3 to 4 MB per request line after base64 encoding. A wave of 10,000 vision-path pages produces an input JSONL of 13 to 40 GB. Split vision batches into smaller JSONL files before submission (2,000 to 3,000 pages per file is a manageable chunk). Use S3 multipart upload for files larger than 5 GB (boto3's `TransferConfig` handles this automatically when configured). Validate that each individual request line stays within Bedrock's current per-request payload limit for your region. Consider downsampling very high-resolution source images from 600 DPI to 300 DPI before embedding -- 300 DPI is sufficient for vision model performance per Recipe 1.6's benchmarks and cuts file sizes by approximately 75%.  
+**Vision JSONL file sizes.** Embedding base64-encoded page images in batch JSONL creates very large files: a 300 DPI PNG page runs 1 to 3 MB raw, which becomes 1.3 to 4 MB per request line after base64 encoding. A wave of 10,000 vision-path pages produces an input JSONL of 13 to 40 GB. Split vision batches into smaller JSONL files before submission (2,000 to 3,000 pages per file is a manageable chunk). Use S3 multipart upload for files larger than 5 GB (boto3's `TransferConfig` handles this automatically when configured). Validate that each individual request line stays within Bedrock's current per-request payload limit for your region. Consider downsampling very high-resolution source images from 600 DPI to 300 DPI before embedding -- 300 DPI is sufficient for vision model performance per Recipe 1.6's benchmarks and cuts file sizes by approximately 75%.
 
 **Service Unavailability During Long-Running Migration.** A 6-12 month migration program will encounter AWS service incidents. Bedrock batch inference jobs that fail mid-execution need automatic retry with checkpoint resumption (do not reprocess successfully extracted charts). Production deployments need: (1) per-batch checkpoint tracking in DynamoDB so failed batches resume from the last successful chart, (2) CloudWatch alarms on batch job failure rates with automatic pause if the failure rate exceeds a threshold (preventing wasted spend on a degraded service), and (3) a model version governance process: lock model IDs at program start, document them in a migration configuration file, and require re-processing validation on a sample of previously processed charts before any mid-program model version change.
 
@@ -1258,7 +1258,7 @@ The pseudocode captures the core logic. A production chart migration program req
 - [Accelerating Healthcare Data Interoperability with Amazon HealthLake](https://aws.amazon.com/blogs/industries/accelerating-healthcare-data-interoperability-with-amazon-healthlake/): HealthLake architecture, FHIR import mechanics, and downstream analytics patterns relevant to the output stage of this recipe
 - [Amazon Bedrock Batch Inference for Large-Scale Document Processing](https://aws.amazon.com/blogs/machine-learning/): Search the ML blog for recent batch inference deep dives covering JSONL format, cost optimization, and throughput benchmarks
 
---- 
+---
 
 ---
 

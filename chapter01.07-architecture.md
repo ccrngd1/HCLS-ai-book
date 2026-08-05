@@ -1,6 +1,6 @@
 # Recipe 1.7 Architecture and Implementation: Prescription Label OCR
 
-*Companion to [Recipe 1.7: Prescription Label OCR 🔶](chapter01.07-prescription-label-ocr). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.7: Prescription Label OCR ](chapter01.07-prescription-label-ocr). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -24,19 +24,19 @@
 
 ```mermaid
 flowchart LR
-    A[📱 Member App] -->|Label Photo| B[S3 Bucket\nrx-labels/]
-    B -->|S3 Event| C[Lambda\nrx-label-extractor]
-    C -->|AnalyzeDocument\nFORMS| D[Amazon Textract]
-    D -->|Key-Value Pairs| C
-    C -->|Medication Text| E[Comprehend Medical\nDetectEntitiesV2]
-    E -->|Entities + RxNorm| C
-    C -->|Structured Rx Record| F[DynamoDB\nmedication-records]
-    C -->|Structured JSON| G[API Response\nto Caller]
+ A[Member App] -->|Label Photo| B[S3 Bucket\nrx-labels/]
+ B -->|S3 Event| C[Lambda\nrx-label-extractor]
+ C -->|AnalyzeDocument\nFORMS| D[Amazon Textract]
+ D -->|Key-Value Pairs| C
+ C -->|Medication Text| E[Comprehend Medical\nDetectEntitiesV2]
+ E -->|Entities + RxNorm| C
+ C -->|Structured Rx Record| F[DynamoDB\nmedication-records]
+ C -->|Structured JSON| G[API Response\nto Caller]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style E fill:#f96,stroke:#333
-    style F fill:#9ff,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style E fill:#f96,stroke:#333
+ style F fill:#9ff,stroke:#333
 ```
 
 > **Deployment topology note:** The diagram above shows the asynchronous model: member app uploads to S3, S3 event triggers Lambda, result lands in DynamoDB. For **member-facing synchronous use** (upload image, get structured record back in the HTTP response), the member app POSTs the image to API Gateway, which invokes Lambda directly. Lambda calls Textract and Comprehend Medical, assembles the record, writes to DynamoDB, and returns the structured JSON in the response. Latency: 2-5 seconds. S3 storage still happens inside Lambda for the audit trail, but S3 events are not the trigger. For **asynchronous bulk/background processing**, member app uploads directly to S3 via presigned URL, S3 event triggers Lambda, and the member app polls a status endpoint or receives a push notification when the record is ready.
@@ -86,252 +86,252 @@ flowchart LR
 
 ```pseudocode
 FUNCTION extract_label(bucket, key):
-    // Send the label image to Textract for intelligent analysis.
-    // "bucket" is the name of the S3 storage container; "key" is the filename/path.
-    response = call Textract.AnalyzeDocument with:
-        document  = S3 object at bucket/key   // locate the image in cloud storage
-        features  = ["FORMS"]                 // FORMS mode: return matched label-value pairs,
-                                              // not just a flat string of characters
-    RETURN response
+ // Send the label image to Textract for intelligent analysis.
+ // "bucket" is the name of the S3 storage container; "key" is the filename/path.
+ response = call Textract.AnalyzeDocument with:
+ document = S3 object at bucket/key // locate the image in cloud storage
+ features = ["FORMS"] // FORMS mode: return matched label-value pairs,
+ // not just a flat string of characters
+ RETURN response
 ```
 
 **Step 2: Parse key-value pairs.** Textract returns a collection of text blocks connected by relationship links. This step walks that structure and assembles the matched key-value pairs, along with confidence scores indicating how clearly each piece of text was read. The output is a map from raw label text (whatever the pharmacy printed, e.g., "SIG", "Rx #", "Dispense Date") to extracted value text, with a confidence score for each pair. Think of it as sorting through labeled index cards and connecting each label to its matching answer. Skip this step and you're left with raw building blocks; no downstream logic can use them.
 
 ```pseudocode
 FUNCTION parse_key_value_pairs(textract_response):
-    // Pull out all detected text regions from Textract's response.
-    blocks    = textract_response.Blocks
+ // Pull out all detected text regions from Textract's response.
+ blocks = textract_response.Blocks
 
-    // Build a lookup index: block ID -> block data.
-    // Textract connects labels to values by referencing block IDs.
-    block_map = build map of block.Id -> block for all blocks
+ // Build a lookup index: block ID -> block data.
+ // Textract connects labels to values by referencing block IDs.
+ block_map = build map of block.Id -> block for all blocks
 
-    // This holds our results: label text -> { value text, confidence score }.
-    key_values = empty map
+ // This holds our results: label text -> { value text, confidence score }.
+ key_values = empty map
 
-    FOR each block in blocks:
-        // Only process KEY_VALUE_SET blocks that are the KEY side of a pair.
-        // Textract marks each pair half as KEY (the label) or VALUE (the answer).
-        IF block.BlockType == "KEY_VALUE_SET" AND block is a KEY entity:
+ FOR each block in blocks:
+ // Only process KEY_VALUE_SET blocks that are the KEY side of a pair.
+ // Textract marks each pair half as KEY (the label) or VALUE (the answer).
+ IF block.BlockType == "KEY_VALUE_SET" AND block is a KEY entity:
 
-            // Assemble the label text (e.g., "SIG", "Rx Number", "Dispense Date")
-            key_text    = get concatenated text from block's CHILD blocks in block_map
+ // Assemble the label text (e.g., "SIG", "Rx Number", "Dispense Date")
+ key_text = get concatenated text from block's CHILD blocks in block_map
 
-            // Follow the link to the paired VALUE block
-            value_block = follow block's VALUE relationship to find the linked value block
+ // Follow the link to the paired VALUE block
+ value_block = follow block's VALUE relationship to find the linked value block
 
-            // Assemble the value text (e.g., "Take 1 tab PO BID", "7284910", "02/28/2026")
-            value_text  = get concatenated text from value_block's CHILD blocks in block_map
+ // Assemble the value text (e.g., "Take 1 tab PO BID", "7284910", "02/28/2026")
+ value_text = get concatenated text from value_block's CHILD blocks in block_map
 
-            // Record the lower of the two confidence scores.
-            // If either the key or the value was hard to read, flag both.
-            confidence  = minimum of (block.Confidence, value_block.Confidence)
+ // Record the lower of the two confidence scores.
+ // If either the key or the value was hard to read, flag both.
+ confidence = minimum of (block.Confidence, value_block.Confidence)
 
-            key_values[key_text] = { value: value_text, confidence: confidence }
+ key_values[key_text] = { value: value_text, confidence: confidence }
 
-    RETURN key_values
+ RETURN key_values
 ```
 
 **Step 3: Normalize pharmacy fields.** Every pharmacy chain prints prescription labels differently. "Drug Name," "Medication," and "Rx" all mean the same field. "SIG" and "Directions" and "Instructions" all point to the patient instruction line. "Refills" and "Refills Remaining" and "Refills Left" all contain the same count. This step maps whatever labels Textract found on a given label to a consistent set of canonical field names. The mapping table (RX_FIELD_MAP) is the operational knowledge base of this recipe: it encodes real-world pharmacy label layouts and requires maintenance as new layouts are encountered. The NDC field is especially important to capture correctly: it is printed on most labels in 10-digit format and is the most reliable structured identifier for the specific drug dispensed. Skip this step and you have accurate text with no reliable way to use it across chains.
 
 ```pseudocode
 RX_FIELD_MAP = {
-    "drug_name":    ["drug name", "medication", "medication name", "drug", "product", "item", "drug/product"],
-    "dosage":       ["strength", "dosage", "dose", "potency"],
-    "quantity":     ["qty", "quantity", "qty dispensed", "disp qty", "#"],
-    "directions":   ["sig", "directions", "instructions", "take", "use", "dir"],
-    "prescriber":   ["prescriber", "doctor", "physician", "prescribed by", "dr.", "provider"],
-    "pharmacy":     ["pharmacy", "store", "dispensed by", "location"],
-    "rx_number":    ["rx #", "rx number", "prescription #", "rx no", "prescription number", "rx", "rx num"],
-    "refills":      ["refills", "refills remaining", "refills left", "rfl", "ref"],
-    "days_supply":  ["days supply", "day supply", "days", "supply"],
-    "date_filled":  ["date filled", "fill date", "dispensed", "disp date", "date"],
-    "ndc":          ["ndc", "ndc #", "national drug code", "ndc code"],
-    "lot_number":   ["lot", "lot #", "lot number"]
+ "drug_name": ["drug name", "medication", "medication name", "drug", "product", "item", "drug/product"],
+ "dosage": ["strength", "dosage", "dose", "potency"],
+ "quantity": ["qty", "quantity", "qty dispensed", "disp qty", "#"],
+ "directions": ["sig", "directions", "instructions", "take", "use", "dir"],
+ "prescriber": ["prescriber", "doctor", "physician", "prescribed by", "dr.", "provider"],
+ "pharmacy": ["pharmacy", "store", "dispensed by", "location"],
+ "rx_number": ["rx #", "rx number", "prescription #", "rx no", "prescription number", "rx", "rx num"],
+ "refills": ["refills", "refills remaining", "refills left", "rfl", "ref"],
+ "days_supply": ["days supply", "day supply", "days", "supply"],
+ "date_filled": ["date filled", "fill date", "dispensed", "disp date", "date"],
+ "ndc": ["ndc", "ndc #", "national drug code", "ndc code"],
+ "lot_number": ["lot", "lot #", "lot number"]
 }
 
 FUNCTION normalize_rx_fields(raw_kv):
-    normalized = empty map
+ normalized = empty map
 
-    FOR each canonical_name, variants in RX_FIELD_MAP:
-        FOR each raw_key, raw_val in raw_kv:
-            // Compare case-insensitively and strip whitespace
-            IF lowercase(trim(raw_key)) is in variants:
-                normalized[canonical_name] = {
-                    value:      trim(raw_val.value),
-                    confidence: raw_val.confidence
-                }
-                BREAK   // found a match for this canonical field
+ FOR each canonical_name, variants in RX_FIELD_MAP:
+ FOR each raw_key, raw_val in raw_kv:
+ // Compare case-insensitively and strip whitespace
+ IF lowercase(trim(raw_key)) is in variants:
+ normalized[canonical_name] = {
+ value: trim(raw_val.value),
+ confidence: raw_val.confidence
+ }
+ BREAK // found a match for this canonical field
 
-    RETURN normalized
+ RETURN normalized
 ```
 
 **Step 4: Decode SIG abbreviations.** The directions field from a prescription label reads like "Take 1 TAB PO BID x 14d PRN pain." A human pharmacist reads this instantly. A downstream care management system or FHIR document cannot. This step decodes the pharmacy abbreviation shorthand in the directions field into plain language. It works as a word-level lookup: split the directions string on spaces, check each word against the SIG codebook, substitute the decoded meaning if found, and reassemble the string. The output is human-readable and machine-processable text that downstream systems can display to members and parse for structured frequency and route information. Skip this step and your medication records carry an abbreviation string that every consumer of the data has to decode independently, inconsistently.
 
 ```pseudocode
 SIG_CODES = {
-    // Frequency codes
-    "qd":   "once daily",
-    "qdaily": "once daily",
-    "bid":  "twice daily",
-    "tid":  "three times daily",
-    "qid":  "four times daily",
-    "qhs":  "at bedtime",
-    "prn":  "as needed",
-    "stat": "immediately",
-    "q4h":  "every 4 hours",
-    "q6h":  "every 6 hours",
-    "q8h":  "every 8 hours",
-    "q12h": "every 12 hours",
-    "ud":   "as directed",
+ // Frequency codes
+ "qd": "once daily",
+ "qdaily": "once daily",
+ "bid": "twice daily",
+ "tid": "three times daily",
+ "qid": "four times daily",
+ "qhs": "at bedtime",
+ "prn": "as needed",
+ "stat": "immediately",
+ "q4h": "every 4 hours",
+ "q6h": "every 6 hours",
+ "q8h": "every 8 hours",
+ "q12h": "every 12 hours",
+ "ud": "as directed",
 
-    // Route codes
-    "po":   "by mouth",
-    "sl":   "under the tongue",
-    "pr":   "rectally",
-    "top":  "topically",
-    "inh":  "inhaled",
-    "inj":  "by injection",
+ // Route codes
+ "po": "by mouth",
+ "sl": "under the tongue",
+ "pr": "rectally",
+ "top": "topically",
+ "inh": "inhaled",
+ "inj": "by injection",
 
-    // Timing codes
-    "ac":   "before meals",
-    "pc":   "after meals",
-    "hs":   "at bedtime",
+ // Timing codes
+ "ac": "before meals",
+ "pc": "after meals",
+ "hs": "at bedtime",
 
-    // Dose form codes
-    "tab":  "tablet",
-    "tabs": "tablets",
-    "cap":  "capsule",
-    "caps": "capsules",
-    "ml":   "milliliter",
-    "gtt":  "drop",
-    "gtts": "drops",
-    "supp": "suppository",
-    "soln": "solution",
-    "susp": "suspension"
+ // Dose form codes
+ "tab": "tablet",
+ "tabs": "tablets",
+ "cap": "capsule",
+ "caps": "capsules",
+ "ml": "milliliter",
+ "gtt": "drop",
+ "gtts": "drops",
+ "supp": "suppository",
+ "soln": "solution",
+ "susp": "suspension"
 }
 
 FUNCTION decode_sig(raw_sig):
-    // Split the directions string on whitespace
-    words   = split raw_sig on whitespace
+ // Split the directions string on whitespace
+ words = split raw_sig on whitespace
 
-    // For each word, strip punctuation then check the codebook (case-insensitive)
-    decoded = []
-    FOR each word in words:
-        clean  = strip leading and trailing punctuation from word
-        lookup = lowercase(clean)
-        IF lookup is in SIG_CODES:
-            append SIG_CODES[lookup] to decoded
-        ELSE:
-            // Pass through any word that isn't a recognized abbreviation
-            // (numbers, drug names, durations like "14d", custom text)
-            append word to decoded
+ // For each word, strip punctuation then check the codebook (case-insensitive)
+ decoded = []
+ FOR each word in words:
+ clean = strip leading and trailing punctuation from word
+ lookup = lowercase(clean)
+ IF lookup is in SIG_CODES:
+ append SIG_CODES[lookup] to decoded
+ ELSE:
+ // Pass through any word that isn't a recognized abbreviation
+ // (numbers, drug names, durations like "14d", custom text)
+ append word to decoded
 
-    RETURN join decoded with single space
+ RETURN join decoded with single space
 ```
 
 **Step 5: Map to RxNorm via Comprehend Medical.** This step takes the full normalized label text and passes it through Comprehend Medical's `DetectEntitiesV2` API. DetectEntitiesV2 is trained on clinical text to identify MEDICATION entities and their attributes (dosage, route, frequency), and it returns RxNorm concept IDs that correspond to each detected medication. Passing the full label text (not just drug name and dosage) gives the model surrounding clinical context (route, frequency, indication) that helps disambiguate similar drug names and confirm the correct dosage form. The RxNorm concept ID is the clinical-equivalence identifier: it's the same for Lisinopril 10mg oral tablet regardless of manufacturer, package size, or dispensing pharmacy. This is what downstream systems need for medication reconciliation, drug interaction checking, and formulary matching. A confidence threshold filters out low-confidence mappings.
 
 ```pseudocode
-RXNORM_CONFIDENCE_THRESHOLD = 0.70  // discard low-confidence RxNorm mappings
+RXNORM_CONFIDENCE_THRESHOLD = 0.70 // discard low-confidence RxNorm mappings
 
 FUNCTION map_to_rxnorm(normalized_fields):
-    // Assemble the full normalized label text for maximum entity context.
-    // More surrounding context improves Comprehend Medical's accuracy
-    // for medication entity detection and RxNorm concept selection.
-    medication_text = concatenate all values from normalized_fields
-                      separated by spaces
-    // e.g., "Amoxicillin 500mg Take 1 CAP PO TID x 7d Dr. Sarah Chen 0 00093-4155-21"
+ // Assemble the full normalized label text for maximum entity context.
+ // More surrounding context improves Comprehend Medical's accuracy
+ // for medication entity detection and RxNorm concept selection.
+ medication_text = concatenate all values from normalized_fields
+ separated by spaces
+ // e.g., "Amoxicillin 500mg Take 1 CAP PO TID x 7d Dr. Sarah Chen 0 00093-4155-21"
 
-    // Call Comprehend Medical to detect medication entities and RxNorm concepts.
-    // DetectEntitiesV2 handles clinical vocabulary and understands medication entity structure.
-    response = call ComprehendMedical.DetectEntitiesV2 with:
-        text = medication_text
+ // Call Comprehend Medical to detect medication entities and RxNorm concepts.
+ // DetectEntitiesV2 handles clinical vocabulary and understands medication entity structure.
+ response = call ComprehendMedical.DetectEntitiesV2 with:
+ text = medication_text
 
-    rxnorm_mappings = []
+ rxnorm_mappings = []
 
-    FOR each entity in response.Entities:
-        // Only process MEDICATION category entities.
-        // DetectEntitiesV2 also detects MEDICAL_CONDITION, TEST_TREATMENT_PROCEDURE, etc.
-        // We want only the medication entities for this step.
-        IF entity.Category == "MEDICATION":
+ FOR each entity in response.Entities:
+ // Only process MEDICATION category entities.
+ // DetectEntitiesV2 also detects MEDICAL_CONDITION, TEST_TREATMENT_PROCEDURE, etc.
+ // We want only the medication entities for this step.
+ IF entity.Category == "MEDICATION":
 
-            // Each entity can carry one or more RxNorm concept candidates, ranked by confidence.
-            FOR each concept in entity.RxNormConcepts:
-                IF concept.Score >= RXNORM_CONFIDENCE_THRESHOLD:
-                    // Record the mapping: text as detected, RxNorm ID, concept type, description
-                    append to rxnorm_mappings:
-                        {
-                            detected_text:   entity.Text,         // what Comprehend Medical read
-                            rxnorm_id:       concept.Code,        // standard RxNorm concept ID
-                            description:     concept.Description, // e.g., "lisinopril 10 MG Oral Tablet"
-                            concept_type:    concept.Type,        // TTY: "SCD", "IN", "SBD", etc.
-                            confidence:      round(concept.Score, 3)
-                        }
+ // Each entity can carry one or more RxNorm concept candidates, ranked by confidence.
+ FOR each concept in entity.RxNormConcepts:
+ IF concept.Score >= RXNORM_CONFIDENCE_THRESHOLD:
+ // Record the mapping: text as detected, RxNorm ID, concept type, description
+ append to rxnorm_mappings:
+ {
+ detected_text: entity.Text, // what Comprehend Medical read
+ rxnorm_id: concept.Code, // standard RxNorm concept ID
+ description: concept.Description, // e.g., "lisinopril 10 MG Oral Tablet"
+ concept_type: concept.Type, // TTY: "SCD", "IN", "SBD", etc.
+ confidence: round(concept.Score, 3)
+ }
 
-    // Return the list of matched concepts, sorted by confidence descending.
-    // The first entry is the highest-confidence RxNorm match.
-    RETURN sort rxnorm_mappings by confidence descending
+ // Return the list of matched concepts, sorted by confidence descending.
+ // The first entry is the highest-confidence RxNorm match.
+ RETURN sort rxnorm_mappings by confidence descending
 ```
 
 **Step 6: Validate NDC and compute refill metrics.** Before writing the final record, two quick validation steps add significant downstream value. First, validate the extracted NDC code: NDC codes have a well-defined format (either 10-digit or 11-digit with hyphens) and can be verified against a known pattern. A malformed NDC indicates either an extraction error or a label format you haven't seen before. Flag it rather than silently passing a bad identifier downstream. Second, compute refill metrics from the raw label fields. "Refills: 3" tells you the remaining count. The days supply field tells you how long one fill lasts. Together, they give you the days of medication coverage remaining, which is directly useful for medication adherence programs and care gap identification. These calculations are simple arithmetic, but doing them here centralizes the logic so every consumer of the medication record gets the same computed values.
 
 ```pseudocode
 FUNCTION validate_ndc(ndc_raw):
-    // Remove hyphens and whitespace for validation
-    ndc_clean = remove all hyphens and spaces from ndc_raw
+ // Remove hyphens and whitespace for validation
+ ndc_clean = remove all hyphens and spaces from ndc_raw
 
-    // Standard NDC is 10 digits. Some systems use an 11-digit representation.
-    // Validate by checking that the cleaned value is 10 or 11 numeric digits.
-    IF ndc_clean matches pattern "^[0-9]{10,11}$":
-        RETURN { valid: true, ndc_normalized: ndc_clean }
-    ELSE:
-        RETURN { valid: false, ndc_raw: ndc_raw, error: "NDC format not recognized" }
+ // Standard NDC is 10 digits. Some systems use an 11-digit representation.
+ // Validate by checking that the cleaned value is 10 or 11 numeric digits.
+ IF ndc_clean matches pattern "^[0-9]{10,11}$":
+ RETURN { valid: true, ndc_normalized: ndc_clean }
+ ELSE:
+ RETURN { valid: false, ndc_raw: ndc_raw, error: "NDC format not recognized" }
 
 FUNCTION compute_refill_metrics(refills_remaining_str, days_supply_str):
-    // Parse the raw string values from the label (e.g., "3", "30")
-    refills_remaining = parse integer from refills_remaining_str
-    days_supply       = parse integer from days_supply_str
+ // Parse the raw string values from the label (e.g., "3", "30")
+ refills_remaining = parse integer from refills_remaining_str
+ days_supply = parse integer from days_supply_str
 
-    // Total days of medication coverage if all refills are filled:
-    // current fill + remaining refills, each covering days_supply
-    total_days_remaining = (1 + refills_remaining) * days_supply
+ // Total days of medication coverage if all refills are filled:
+ // current fill + remaining refills, each covering days_supply
+ total_days_remaining = (1 + refills_remaining) * days_supply
 
-    RETURN {
-        refills_remaining:    refills_remaining,
-        days_supply:          days_supply,
-        total_days_remaining: total_days_remaining
-        // total_days_remaining drives downstream adherence gap detection
-    }
+ RETURN {
+ refills_remaining: refills_remaining,
+ days_supply: days_supply,
+ total_days_remaining: total_days_remaining
+ // total_days_remaining drives downstream adherence gap detection
+ }
 ```
 
 **Step 7: Assemble and store the medication record.** The final step assembles all pipeline outputs into a single record and writes it to the database. Every field carries both the raw extracted value (what the label actually said) and the normalized or decoded value (what it means). This dual representation is important for auditability: when a care coordinator or pharmacist reviews a record, they can see both what the label printed and how the system interpreted it. Any field that fell below the confidence threshold, any NDC that failed validation, and any failed RxNorm mappings are recorded in a flags array so downstream systems and review queues know exactly what needs a human eye.
 
 ```pseudocode
-CONFIDENCE_THRESHOLD = 90.0  // same threshold as Recipe 1.1; fields below this go to human review
+CONFIDENCE_THRESHOLD = 90.0 // same threshold as Recipe 1.1; fields below this go to human review
 
 FUNCTION store_medication_record(image_key, normalized_fields, rxnorm_mappings, ndc_validation, refill_metrics):
-    // Separate high-confidence fields from those needing review
-    clean_fields   = { field: data.value for field, data in normalized_fields
-                       where data.confidence >= CONFIDENCE_THRESHOLD }
-    flagged_fields = [ { field: field, extracted_value: data.value, confidence: data.confidence }
-                       for field, data in normalized_fields
-                       where data.confidence < CONFIDENCE_THRESHOLD ]
+ // Separate high-confidence fields from those needing review
+ clean_fields = { field: data.value for field, data in normalized_fields
+ where data.confidence >= CONFIDENCE_THRESHOLD }
+ flagged_fields = [{ field: field, extracted_value: data.value, confidence: data.confidence }
+ for field, data in normalized_fields
+ where data.confidence < CONFIDENCE_THRESHOLD ]
 
-    // Add NDC validation flags if needed
-    IF ndc_validation.valid == false:
-        append to flagged_fields: { field: "ndc", issue: ndc_validation.error }
+ // Add NDC validation flags if needed
+ IF ndc_validation.valid == false:
+ append to flagged_fields: { field: "ndc", issue: ndc_validation.error }
 
-    write record to database table "medication-records":
-        image_key            = image_key
-        extraction_timestamp = current UTC timestamp (ISO 8601)
-        fields               = clean_fields
-        directions_decoded   = decoded SIG text from Step 4
-        ndc_validated        = ndc_validation
-        rxnorm_mappings      = rxnorm_mappings           // list of matched RxNorm concepts
-        refill_metrics       = refill_metrics            // days coverage, refills remaining
-        flagged_fields       = flagged_fields
-        needs_review         = (length of flagged_fields > 0)
+ write record to database table "medication-records":
+ image_key = image_key
+ extraction_timestamp = current UTC timestamp (ISO 8601)
+ fields = clean_fields
+ directions_decoded = decoded SIG text from Step 4
+ ndc_validated = ndc_validation
+ rxnorm_mappings = rxnorm_mappings // list of matched RxNorm concepts
+ refill_metrics = refill_metrics // days coverage, refills remaining
+ flagged_fields = flagged_fields
+ needs_review = (length of flagged_fields > 0)
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.07-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -344,40 +344,40 @@ FUNCTION store_medication_record(image_key, normalized_fields, rxnorm_mappings, 
 
 ```json
 {
-  "image_key": "rx-labels/2026/03/01/label-00182.jpg",
-  "extraction_timestamp": "2026-03-01T14:22:08Z",
-  "fields": {
-    "drug_name": "Amoxicillin",
-    "dosage": "500mg",
-    "quantity": "21",
-    "directions": "Take 1 CAP PO TID x 7d",
-    "rx_number": "7284910",
-    "prescriber": "Dr. Sarah Chen",
-    "pharmacy": "CVS Pharmacy #4821",
-    "date_filled": "02/28/2026",
-    "ndc": "00093-4155-21"
-  },
-  "directions_decoded": "Take 1 capsule by mouth three times daily x 7d",
-  "ndc_validated": {
-    "valid": true,
-    "ndc_normalized": "00093415521"
-  },
-  "rxnorm_mappings": [
-    {
-      "detected_text": "Amoxicillin 500mg",
-      "rxnorm_id": "723",
-      "description": "Amoxicillin 500 MG Oral Capsule",
-      "concept_type": "SCD",
-      "confidence": 0.964
-    }
-  ],
-  "refill_metrics": {
-    "refills_remaining": 0,
-    "days_supply": 7,
-    "total_days_remaining": 7
-  },
-  "flagged_fields": [],
-  "needs_review": false
+ "image_key": "rx-labels/2026/03/01/label-00182.jpg",
+ "extraction_timestamp": "2026-03-01T14:22:08Z",
+ "fields": {
+ "drug_name": "Amoxicillin",
+ "dosage": "500mg",
+ "quantity": "21",
+ "directions": "Take 1 CAP PO TID x 7d",
+ "rx_number": "7284910",
+ "prescriber": "Dr. Sarah Chen",
+ "pharmacy": "CVS Pharmacy #4821",
+ "date_filled": "02/28/2026",
+ "ndc": "00093-4155-21"
+ },
+ "directions_decoded": "Take 1 capsule by mouth three times daily x 7d",
+ "ndc_validated": {
+ "valid": true,
+ "ndc_normalized": "00093415521"
+ },
+ "rxnorm_mappings": [
+ {
+ "detected_text": "Amoxicillin 500mg",
+ "rxnorm_id": "723",
+ "description": "Amoxicillin 500 MG Oral Capsule",
+ "concept_type": "SCD",
+ "confidence": 0.964
+ }
+ ],
+ "refill_metrics": {
+ "refills_remaining": 0,
+ "days_supply": 7,
+ "total_days_remaining": 7
+ },
+ "flagged_fields": [],
+ "needs_review": false
 }
 ```
 

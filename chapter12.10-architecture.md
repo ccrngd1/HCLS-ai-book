@@ -24,23 +24,23 @@
 
 ```mermaid
 flowchart TD
-    A[🏥 Bedside Monitors\nHL7/IEEE 11073] -->|Device Integration\nEngine| B[Kinesis Data Streams\nWaveform Ingestion]
-    B -->|Trigger| C[ECS/Fargate\nPreprocessing]
-    C -->|Clean Segments| D[SageMaker Endpoints\nPer-Waveform-Type\nClassification]
-    C -->|Signal Quality\nMetrics| E[Timestream\nQuality Metrics]
-    C -->|Raw Archive| F[S3\nWaveform Archive]
-    D -->|Classifications| G[SQS → Lambda\nPost-Processing &\nAlert Logic]
-    G -->|Actionable Alerts| H[SNS\nClinical Notifications]
-    G -->|All Results| E
-    H -->|Pager/App| I[👩⚕️ Clinical Staff]
-    H -->|Display| J[🖥️ Nurse Station]
-    C -.->|Failures| K[DLQ\nFailed Records]
-    D -.->|Failures| K
-    G -.->|Failures| K
+ A[Bedside Monitors\nHL7/IEEE 11073] -->|Device Integration\nEngine| B[Kinesis Data Streams\nWaveform Ingestion]
+ B -->|Trigger| C[ECS/Fargate\nPreprocessing]
+ C -->|Clean Segments| D[SageMaker Endpoints\nPer-Waveform-Type\nClassification]
+ C -->|Signal Quality\nMetrics| E[Timestream\nQuality Metrics]
+ C -->|Raw Archive| F[S3\nWaveform Archive]
+ D -->|Classifications| G[SQS → Lambda\nPost-Processing &\nAlert Logic]
+ G -->|Actionable Alerts| H[SNS\nClinical Notifications]
+ G -->|All Results| E
+ H -->|Pager/App| I[Clinical Staff]
+ H -->|Display| J[Nurse Station]
+ C -.->|Failures| K[DLQ\nFailed Records]
+ D -.->|Failures| K
+ G -.->|Failures| K
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style E fill:#9ff,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style E fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
@@ -78,243 +78,243 @@ flowchart TD
 
 ```pseudocode
 FUNCTION ingest_waveform_sample(session_id, waveform_type, timestamp, samples):
-    // Package the waveform data into a structured record.
-    // "samples" is an array of numerical values from the ADC (analog-to-digital converter).
-    // For ECG at 500 Hz, a 1-second batch would contain 500 values.
-    // NOTE: session_id is an opaque UUID mapped to the patient MRN in a separate
-    // identity service. Never use MRN directly as a partition key or S3 path component.
-    record = {
-        session_id:    session_id,        // opaque encounter-session UUID
-        waveform_type: waveform_type,     // e.g., "ecg_lead_ii", "art_bp", "eeg_fp1"
-        timestamp:     timestamp,         // precise timestamp of first sample in this batch (ISO 8601)
-        sample_rate:   250,               // samples per second (varies by waveform type)
-        values:        samples            // array of numerical sample values
-    }
+ // Package the waveform data into a structured record.
+ // "samples" is an array of numerical values from the ADC (analog-to-digital converter).
+ // For ECG at 500 Hz, a 1-second batch would contain 500 values.
+ // NOTE: session_id is an opaque UUID mapped to the patient MRN in a separate
+ // identity service. Never use MRN directly as a partition key or S3 path component.
+ record = {
+ session_id: session_id, // opaque encounter-session UUID
+ waveform_type: waveform_type, // e.g., "ecg_lead_ii", "art_bp", "eeg_fp1"
+ timestamp: timestamp, // precise timestamp of first sample in this batch (ISO 8601)
+ sample_rate: 250, // samples per second (varies by waveform type)
+ values: samples // array of numerical sample values
+ }
 
-    // Push to Kinesis with session+device as partition key.
-    // This guarantees ordering: all samples from this patient's ECG arrive in sequence.
-    put_record to Kinesis stream "waveform-ingestion":
-        data          = serialize(record)
-        partition_key = session_id + ":" + waveform_type
+ // Push to Kinesis with session+device as partition key.
+ // This guarantees ordering: all samples from this patient's ECG arrive in sequence.
+ put_record to Kinesis stream "waveform-ingestion":
+ data = serialize(record)
+ partition_key = session_id + ":" + waveform_type
 
-    // Also archive the raw data to S3 for long-term retention.
-    // Use a time-partitioned key structure for efficient retrieval.
-    put_object to S3 bucket "waveform-archive":
-        key  = "{session_id}/{waveform_type}/{date}/{hour}/{timestamp}.json"
-        body = serialize(record)
+ // Also archive the raw data to S3 for long-term retention.
+ // Use a time-partitioned key structure for efficient retrieval.
+ put_object to S3 bucket "waveform-archive":
+ key = "{session_id}/{waveform_type}/{date}/{hour}/{timestamp}.json"
+ body = serialize(record)
 ```
 
 **Step 2: Preprocessing and quality control.** Raw waveform data is noisy. Before any ML model sees it, you need to filter out non-physiological noise, detect segments corrupted by artifact, and score the overall signal quality. This step runs continuously as data arrives. Segments that fail quality checks are logged (you need to know your data loss rate) but excluded from classification. Passing artifact-contaminated data to the classifier is worse than skipping it: you'll get confident wrong answers that trigger false alarms.
 
 ```pseudocode
 FUNCTION preprocess_waveform(raw_record):
-    // Extract the raw sample values from the ingested record.
-    samples     = raw_record.values
-    sample_rate = raw_record.sample_rate
-    waveform_type = raw_record.waveform_type
+ // Extract the raw sample values from the ingested record.
+ samples = raw_record.values
+ sample_rate = raw_record.sample_rate
+ waveform_type = raw_record.waveform_type
 
-    // Step 2a: Bandpass filter to remove out-of-band noise.
-    // Filter parameters depend on waveform type:
-    //   ECG: 0.5 - 40 Hz (morphology analysis) or 0.5 - 150 Hz (full bandwidth)
-    //   EEG: 0.5 - 50 Hz
-    //   Arterial BP: 0.1 - 20 Hz
-    filter_params = get_filter_params(waveform_type)
-    filtered = apply_bandpass_filter(samples, filter_params.low_hz, filter_params.high_hz, sample_rate)
+ // Step 2a: Bandpass filter to remove out-of-band noise.
+ // Filter parameters depend on waveform type:
+ // ECG: 0.5 - 40 Hz (morphology analysis) or 0.5 - 150 Hz (full bandwidth)
+ // EEG: 0.5 - 50 Hz
+ // Arterial BP: 0.1 - 20 Hz
+ filter_params = get_filter_params(waveform_type)
+ filtered = apply_bandpass_filter(samples, filter_params.low_hz, filter_params.high_hz, sample_rate)
 
-    // Step 2b: Notch filter for powerline interference (50 or 60 Hz depending on region).
-    filtered = apply_notch_filter(filtered, powerline_frequency=60, sample_rate)
+ // Step 2b: Notch filter for powerline interference (50 or 60 Hz depending on region).
+ filtered = apply_notch_filter(filtered, powerline_frequency=60, sample_rate)
 
-    // Step 2c: Compute signal quality index (SQI).
-    // SQI combines multiple quality metrics into a single 0-1 score:
-    //   - Amplitude range (is the signal within physiological bounds?)
-    //   - Baseline wander (is there excessive low-frequency drift?)
-    //   - High-frequency noise power (is there excessive EMG contamination?)
-    //   - Flatline detection (is the signal suspiciously constant? Electrode off?)
-    //   - Saturation detection (is the signal clipping at ADC limits?)
-    sqi_score = compute_signal_quality_index(filtered, waveform_type, sample_rate)
+ // Step 2c: Compute signal quality index (SQI).
+ // SQI combines multiple quality metrics into a single 0-1 score:
+ // - Amplitude range (is the signal within physiological bounds?)
+ // - Baseline wander (is there excessive low-frequency drift?)
+ // - High-frequency noise power (is there excessive EMG contamination?)
+ // - Flatline detection (is the signal suspiciously constant? Electrode off?)
+ // - Saturation detection (is the signal clipping at ADC limits?)
+ sqi_score = compute_signal_quality_index(filtered, waveform_type, sample_rate)
 
-    // Step 2d: Quality gate. Reject segments below threshold.
-    IF sqi_score < QUALITY_THRESHOLD:  // typically 0.6 - 0.8 depending on application
-        log_quality_rejection(raw_record, sqi_score)
-        write_quality_metric to Timestream:
-            session_id = raw_record.session_id
-            metric     = "sqi_rejection"
-            value      = sqi_score
-            timestamp  = raw_record.timestamp
-        RETURN null  // do not pass to classifier
+ // Step 2d: Quality gate. Reject segments below threshold.
+ IF sqi_score < QUALITY_THRESHOLD: // typically 0.6 - 0.8 depending on application
+ log_quality_rejection(raw_record, sqi_score)
+ write_quality_metric to Timestream:
+ session_id = raw_record.session_id
+ metric = "sqi_rejection"
+ value = sqi_score
+ timestamp = raw_record.timestamp
+ RETURN null // do not pass to classifier
 
-    // Step 2e: Segment into analysis windows.
-    // The classifier expects fixed-length input windows.
-    // Window size depends on what you're detecting:
-    //   Arrhythmia: 10-30 seconds
-    //   Seizure: 30-60 seconds
-    //   Hemodynamic instability: 60-300 seconds
-    window_size = get_window_size(waveform_type)  // in samples
-    windows = segment_into_windows(filtered, window_size, overlap=0.5)
+ // Step 2e: Segment into analysis windows.
+ // The classifier expects fixed-length input windows.
+ // Window size depends on what you're detecting:
+ // Arrhythmia: 10-30 seconds
+ // Seizure: 30-60 seconds
+ // Hemodynamic instability: 60-300 seconds
+ window_size = get_window_size(waveform_type) // in samples
+ windows = segment_into_windows(filtered, window_size, overlap=0.5)
 
-    RETURN {
-        session_id:    raw_record.session_id,
-        waveform_type: raw_record.waveform_type,
-        timestamp:     raw_record.timestamp,
-        windows:       windows,       // list of fixed-length clean signal segments
-        sqi_score:     sqi_score      // quality score for downstream confidence weighting
-    }
+ RETURN {
+ session_id: raw_record.session_id,
+ waveform_type: raw_record.waveform_type,
+ timestamp: raw_record.timestamp,
+ windows: windows, // list of fixed-length clean signal segments
+ sqi_score: sqi_score // quality score for downstream confidence weighting
+ }
 ```
 
 **Step 3: Model inference.** Clean, segmented waveform windows are sent to the classification model hosted on SageMaker. The model returns a classification (or set of classifications) with confidence scores for each window. For ECG, this might be rhythm classification (normal sinus, atrial fibrillation, ventricular tachycardia, etc.). For EEG, it might be seizure vs. non-seizure. The model is the core intelligence of the system, but it's only as good as the preprocessing that feeds it and the post-processing that interprets its output.
 
 ```pseudocode
 FUNCTION classify_waveform(preprocessed):
-    // Send each analysis window to the SageMaker endpoint for classification.
-    // The endpoint hosts a trained deep learning model (CNN or transformer).
-    results = empty list
+ // Send each analysis window to the SageMaker endpoint for classification.
+ // The endpoint hosts a trained deep learning model (CNN or transformer).
+ results = empty list
 
-    FOR each window in preprocessed.windows:
-        // Invoke the appropriate model endpoint based on waveform type.
-        // Each waveform type has its own dedicated endpoint for independent
-        // scaling, updates, and fault isolation.
-        endpoint_name = get_endpoint_for_waveform(preprocessed.waveform_type)
+ FOR each window in preprocessed.windows:
+ // Invoke the appropriate model endpoint based on waveform type.
+ // Each waveform type has its own dedicated endpoint for independent
+ // scaling, updates, and fault isolation.
+ endpoint_name = get_endpoint_for_waveform(preprocessed.waveform_type)
 
-        response = invoke SageMaker endpoint:
-            endpoint = endpoint_name
-            payload  = {
-                waveform_type: preprocessed.waveform_type,
-                sample_rate:   get_sample_rate(preprocessed.waveform_type),
-                values:        window,
-                // Include SQI so the model can weight its confidence accordingly
-                signal_quality: preprocessed.sqi_score
-            }
+ response = invoke SageMaker endpoint:
+ endpoint = endpoint_name
+ payload = {
+ waveform_type: preprocessed.waveform_type,
+ sample_rate: get_sample_rate(preprocessed.waveform_type),
+ values: window,
+ // Include SQI so the model can weight its confidence accordingly
+ signal_quality: preprocessed.sqi_score
+ }
 
-        // Response contains classification label(s) and confidence scores.
-        // Example for ECG: { "rhythm": "atrial_fibrillation", "confidence": 0.94,
-        //                     "secondary": [{"label": "pvc", "confidence": 0.12}] }
-        append to results: {
-            classification: response.classification,
-            confidence:     response.confidence,
-            window_start:   compute_window_timestamp(preprocessed.timestamp, window_index),
-            signal_quality: preprocessed.sqi_score
-        }
+ // Response contains classification label(s) and confidence scores.
+ // Example for ECG: { "rhythm": "atrial_fibrillation", "confidence": 0.94,
+ // "secondary": [{"label": "pvc", "confidence": 0.12}] }
+ append to results: {
+ classification: response.classification,
+ confidence: response.confidence,
+ window_start: compute_window_timestamp(preprocessed.timestamp, window_index),
+ signal_quality: preprocessed.sqi_score
+ }
 
-    // On inference failure (timeout, throttling), retry up to 3 times with
-    // exponential backoff. If still failing, route the preprocessed segment
-    // to a DLQ for manual review. Never silently drop waveform data.
+ // On inference failure (timeout, throttling), retry up to 3 times with
+ // exponential backoff. If still failing, route the preprocessed segment
+ // to a DLQ for manual review. Never silently drop waveform data.
 
-    RETURN {
-        session_id:    preprocessed.session_id,
-        waveform_type: preprocessed.waveform_type,
-        results:       results
-    }
+ RETURN {
+ session_id: preprocessed.session_id,
+ waveform_type: preprocessed.waveform_type,
+ results: results
+ }
 ```
 
 **Step 4: Post-processing and alert logic.** Raw model outputs are not clinical alerts. A single window classified as "atrial fibrillation" with 70% confidence is not actionable. This step applies clinical logic: requiring sustained detections (multiple consecutive windows agreeing), applying confidence thresholds, checking patient context (known conditions that should not re-alert), and enforcing cooldown periods. This is where you control your false alarm rate, and it's the difference between a system clinicians trust and one they disable. This Lambda function is triggered via SQS (not direct invocation), which provides built-in retry semantics and a DLQ for failed processing attempts.
 
 ```pseudocode
 FUNCTION apply_alert_logic(classification_results):
-    session_id = classification_results.session_id
-    results    = classification_results.results
+ session_id = classification_results.session_id
+ results = classification_results.results
 
-    // Load patient context: known conditions, active alerts, alert history.
-    // A patient with documented chronic atrial fibrillation should not get
-    // repeated AFib alerts. A patient post-cardiac surgery may have expected PVCs.
-    patient_context = load_patient_context(session_id)
+ // Load patient context: known conditions, active alerts, alert history.
+ // A patient with documented chronic atrial fibrillation should not get
+ // repeated AFib alerts. A patient post-cardiac surgery may have expected PVCs.
+ patient_context = load_patient_context(session_id)
 
-    // Count trailing consecutive windows with the same high-confidence classification.
-    // We count from the most recent window backward because that represents the
-    // current patient state. A historical run that has since resolved is not actionable.
-    FOR each unique classification in results:
-        consecutive_count = count_trailing_consecutive(results, classification, 
-                                                       min_confidence=ALERT_CONFIDENCE_THRESHOLD)
+ // Count trailing consecutive windows with the same high-confidence classification.
+ // We count from the most recent window backward because that represents the
+ // current patient state. A historical run that has since resolved is not actionable.
+ FOR each unique classification in results:
+ consecutive_count = count_trailing_consecutive(results, classification,
+ min_confidence=ALERT_CONFIDENCE_THRESHOLD)
 
-        // Check if this classification meets the sustained detection requirement.
-        // Different conditions have different persistence thresholds:
-        //   Ventricular tachycardia: 3 consecutive windows (urgent, short threshold)
-        //   Atrial fibrillation: 6 consecutive windows (less urgent, need more certainty)
-        //   Seizure: 4 consecutive windows
-        persistence_threshold = get_persistence_threshold(classification)
+ // Check if this classification meets the sustained detection requirement.
+ // Different conditions have different persistence thresholds:
+ // Ventricular tachycardia: 3 consecutive windows (urgent, short threshold)
+ // Atrial fibrillation: 6 consecutive windows (less urgent, need more certainty)
+ // Seizure: 4 consecutive windows
+ persistence_threshold = get_persistence_threshold(classification)
 
-        IF consecutive_count >= persistence_threshold:
-            // Check suppression rules before alerting.
-            IF classification in patient_context.known_conditions:
-                log_suppressed_alert(session_id, classification, "known_condition")
-                CONTINUE  // do not alert for known, documented conditions
+ IF consecutive_count >= persistence_threshold:
+ // Check suppression rules before alerting.
+ IF classification in patient_context.known_conditions:
+ log_suppressed_alert(session_id, classification, "known_condition")
+ CONTINUE // do not alert for known, documented conditions
 
-            IF is_in_cooldown(session_id, classification):
-                log_suppressed_alert(session_id, classification, "cooldown_active")
-                CONTINUE  // recently alerted for this; don't re-alert yet
+ IF is_in_cooldown(session_id, classification):
+ log_suppressed_alert(session_id, classification, "cooldown_active")
+ CONTINUE // recently alerted for this; don't re-alert yet
 
-            // This is a genuine, actionable alert. Generate it.
-            alert = {
-                session_id:     session_id,
-                classification: classification,
-                confidence:     average_confidence(results, classification),
-                onset_time:     first_detection_timestamp(results, classification),
-                severity:       get_clinical_severity(classification),
-                evidence_window: get_evidence_samples(results, classification)
-            }
+ // This is a genuine, actionable alert. Generate it.
+ alert = {
+ session_id: session_id,
+ classification: classification,
+ confidence: average_confidence(results, classification),
+ onset_time: first_detection_timestamp(results, classification),
+ severity: get_clinical_severity(classification),
+ evidence_window: get_evidence_samples(results, classification)
+ }
 
-            // Publish alert to clinical notification system.
-            // SNS topic uses SSE-KMS encryption. Alert contains session_id (opaque),
-            // not MRN. The receiving clinical app resolves patient identity locally.
-            publish to SNS topic "clinical-waveform-alerts":
-                message  = serialize(alert)
-                attributes = {
-                    severity:  alert.severity,    // enables filtering by urgency
-                    session:   session_id,
-                    condition: classification
-                }
+ // Publish alert to clinical notification system.
+ // SNS topic uses SSE-KMS encryption. Alert contains session_id (opaque),
+ // not MRN. The receiving clinical app resolves patient identity locally.
+ publish to SNS topic "clinical-waveform-alerts":
+ message = serialize(alert)
+ attributes = {
+ severity: alert.severity, // enables filtering by urgency
+ session: session_id,
+ condition: classification
+ }
 
-            // Set cooldown to prevent alert storms.
-            set_cooldown(session_id, classification, duration=COOLDOWN_MINUTES)
+ // Set cooldown to prevent alert storms.
+ set_cooldown(session_id, classification, duration=COOLDOWN_MINUTES)
 
-    // Store ALL classification results (alerting and non-alerting) for audit and research.
-    write_batch to Timestream:
-        FOR each result in results:
-            record = {
-                session_id:     session_id,
-                waveform_type:  classification_results.waveform_type,
-                classification: result.classification,
-                confidence:     result.confidence,
-                signal_quality: result.signal_quality,
-                timestamp:      result.window_start,
-                alerted:        was_alert_generated(result)
-            }
+ // Store ALL classification results (alerting and non-alerting) for audit and research.
+ write_batch to Timestream:
+ FOR each result in results:
+ record = {
+ session_id: session_id,
+ waveform_type: classification_results.waveform_type,
+ classification: result.classification,
+ confidence: result.confidence,
+ signal_quality: result.signal_quality,
+ timestamp: result.window_start,
+ alerted: was_alert_generated(result)
+ }
 ```
 
 **Step 5: Store and expose results.** Every classification, whether it triggered an alert or not, is stored in Timestream for retrospective analysis. This enables clinicians to review a patient's waveform analysis history ("show me all rhythm classifications for this patient over the last 24 hours"), supports model performance monitoring (tracking false positive rates over time), and provides the training data for model improvement. The storage layer also feeds dashboards that show unit-level alert rates, signal quality trends, and system health metrics.
 
 ```pseudocode
 FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
-    // Write detailed results to Timestream for time-based queries.
-    // Timestream's time-partitioned storage makes "last N hours" queries fast.
-    // Batch writes: up to 100 records per WriteRecords call for cost efficiency.
-    FOR each batch of 100 records in classification_results:
-        write_records to Timestream table "waveform-classifications":
-            records = [
-                {
-                    dimensions = {
-                        session_id:     session_id,
-                        waveform_type:  result.waveform_type,
-                        classification: result.classification
-                    },
-                    measures = {
-                        confidence:     result.confidence,
-                        signal_quality: result.signal_quality,
-                        alerted:        1 if result in alerts_generated else 0
-                    },
-                    timestamp = result.window_start
-                }
-                FOR each result in batch
-            ]
+ // Write detailed results to Timestream for time-based queries.
+ // Timestream's time-partitioned storage makes "last N hours" queries fast.
+ // Batch writes: up to 100 records per WriteRecords call for cost efficiency.
+ FOR each batch of 100 records in classification_results:
+ write_records to Timestream table "waveform-classifications":
+ records = [
+ {
+ dimensions = {
+ session_id: session_id,
+ waveform_type: result.waveform_type,
+ classification: result.classification
+ },
+ measures = {
+ confidence: result.confidence,
+ signal_quality: result.signal_quality,
+ alerted: 1 if result in alerts_generated else 0
+ },
+ timestamp = result.window_start
+ }
+ FOR each result in batch
+ ]
 
-    // Write summary metrics for operational dashboards.
-    write to Timestream table "waveform-system-metrics":
-        dimensions = { unit: get_patient_unit(session_id) }
-        measures = {
-            classifications_per_minute: count(classification_results) / window_duration_minutes,
-            alert_rate:                 count(alerts_generated) / count(classification_results),
-            mean_signal_quality:        average(result.signal_quality for result in classification_results)
-        }
-        timestamp = current_time()
+ // Write summary metrics for operational dashboards.
+ write to Timestream table "waveform-system-metrics":
+ dimensions = { unit: get_patient_unit(session_id) }
+ measures = {
+ classifications_per_minute: count(classification_results) / window_duration_minutes,
+ alert_rate: count(alerts_generated) / count(classification_results),
+ mean_signal_quality: average(result.signal_quality for result in classification_results)
+ }
+ timestamp = current_time()
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter12.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -325,35 +325,35 @@ FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
 
 ```json
 {
-  "session_id": "a3f7c291-4e82-4b1a-9d03-7f8e2c1b5a94",
-  "waveform_type": "ecg_lead_ii",
-  "analysis_window": {
-    "start": "2026-03-01T14:22:00Z",
-    "end": "2026-03-01T14:22:30Z",
-    "signal_quality": 0.91
-  },
-  "classifications": [
-    {
-      "window_index": 0,
-      "classification": "normal_sinus_rhythm",
-      "confidence": 0.96,
-      "heart_rate_bpm": 78
-    },
-    {
-      "window_index": 1,
-      "classification": "normal_sinus_rhythm",
-      "confidence": 0.94,
-      "heart_rate_bpm": 76
-    },
-    {
-      "window_index": 2,
-      "classification": "premature_ventricular_complex",
-      "confidence": 0.82,
-      "heart_rate_bpm": 81
-    }
-  ],
-  "alert_generated": false,
-  "suppression_reason": "isolated_pvc_below_persistence_threshold"
+ "session_id": "a3f7c291-4e82-4b1a-9d03-7f8e2c1b5a94",
+ "waveform_type": "ecg_lead_ii",
+ "analysis_window": {
+ "start": "2026-03-01T14:22:00Z",
+ "end": "2026-03-01T14:22:30Z",
+ "signal_quality": 0.91
+ },
+ "classifications": [
+ {
+ "window_index": 0,
+ "classification": "normal_sinus_rhythm",
+ "confidence": 0.96,
+ "heart_rate_bpm": 78
+ },
+ {
+ "window_index": 1,
+ "classification": "normal_sinus_rhythm",
+ "confidence": 0.94,
+ "heart_rate_bpm": 76
+ },
+ {
+ "window_index": 2,
+ "classification": "premature_ventricular_complex",
+ "confidence": 0.82,
+ "heart_rate_bpm": 81
+ }
+ ],
+ "alert_generated": false,
+ "suppression_reason": "isolated_pvc_below_persistence_threshold"
 }
 ```
 

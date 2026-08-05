@@ -22,20 +22,20 @@
 
 ```mermaid
 flowchart LR
-    A[📱 Kiosk / App / Telehealth] -->|Verify Request\nwith live photo| B[API Gateway]
-    B --> C[Lambda\nverification-handler]
-    C -.->|Liveness check\n-recommended-| L[Rekognition\nFace Liveness]
-    C -->|Fetch reference photo| D[S3 Bucket\npatient-photos/]
-    C -->|CompareFaces| E[Amazon Rekognition]
-    E -->|Similarity Score| C
-    C -->|Write audit record| F[DynamoDB\nverification-log]
-    C -->|Decision + Score| B
-    B -->|Result| A
+ A[Kiosk / App / Telehealth] -->|Verify Request\nwith live photo| B[API Gateway]
+ B --> C[Lambda\nverification-handler]
+ C -.->|Liveness check\n-recommended-| L[Rekognition\nFace Liveness]
+ C -->|Fetch reference photo| D[S3 Bucket\npatient-photos/]
+ C -->|CompareFaces| E[Amazon Rekognition]
+ E -->|Similarity Score| C
+ C -->|Write audit record| F[DynamoDB\nverification-log]
+ C -->|Decision + Score| B
+ B -->|Result| A
 
-    style D fill:#f9f,stroke:#333
-    style E fill:#ff9,stroke:#333
-    style F fill:#9ff,stroke:#333
-    style L fill:#ffe,stroke:#999,stroke-dasharray: 5 5
+ style D fill:#f9f,stroke:#333
+ style E fill:#ff9,stroke:#333
+ style F fill:#9ff,stroke:#333
+ style L fill:#ffe,stroke:#999,stroke-dasharray: 5 5
 ```
 
 ### Prerequisites
@@ -74,134 +74,134 @@ flowchart LR
 
 ```pseudocode
 FUNCTION handle_verification_request(request):
-    // Extract the two critical pieces: who they claim to be, and what they look like right now.
-    patient_id = request.patient_id
-    live_photo_bytes = request.photo  // base64-decoded image bytes from the requesting system
+ // Extract the two critical pieces: who they claim to be, and what they look like right now.
+ patient_id = request.patient_id
+ live_photo_bytes = request.photo // base64-decoded image bytes from the requesting system
 
-    // Basic validation: does this patient exist? Is the photo a real image?
-    IF patient_id is not found in patient index:
-        RETURN error: "Unknown patient ID"
+ // Basic validation: does this patient exist? Is the photo a real image?
+ IF patient_id is not found in patient index:
+ RETURN error: "Unknown patient ID"
 
-    IF live_photo_bytes is empty OR size > 5MB:
-        RETURN error: "Invalid photo: must be JPEG/PNG under 5MB"
+ IF live_photo_bytes is empty OR size > 5MB:
+ RETURN error: "Invalid photo: must be JPEG/PNG under 5MB"
 
-    // Retrieve the path to the stored reference photo for this patient.
-    reference_photo_key = lookup reference photo S3 key for patient_id
+ // Retrieve the path to the stored reference photo for this patient.
+ reference_photo_key = lookup reference photo S3 key for patient_id
 
-    IF reference_photo_key is null:
-        // Patient exists but has no photo on file. Can't verify.
-        // This is not an error; it's a "not enrolled" state. Fall back to manual ID check.
-        RETURN { status: "NOT_ENROLLED", message: "No reference photo on file" }
+ IF reference_photo_key is null:
+ // Patient exists but has no photo on file. Can't verify.
+ // This is not an error; it's a "not enrolled" state. Fall back to manual ID check.
+ RETURN { status: "NOT_ENROLLED", message: "No reference photo on file" }
 
-    // Inputs validated. Proceed to comparison.
-    RETURN compare_faces(reference_photo_key, live_photo_bytes, patient_id)
+ // Inputs validated. Proceed to comparison.
+ RETURN compare_faces(reference_photo_key, live_photo_bytes, patient_id)
 ```
 
 **Step 2: Call face comparison.** This is the core of the pipeline. Pass the stored reference image and the live photo to the face comparison service. The service detects faces in both images, extracts feature embeddings, and computes a similarity score. The key parameter here is the similarity threshold: you're asking the service to only return matches above a certain confidence level. Set this intentionally low (e.g., 0%) in the API call and apply your own business-logic thresholds afterward. This gives you the raw score to work with rather than a binary yes/no from the service.
 
 ```pseudocode
 FUNCTION compare_faces(reference_key, live_photo_bytes, patient_id):
-    // Call Rekognition's CompareFaces API.
-    // Source = the stored reference photo (from S3).
-    // Target = the live photo (from the request, passed as raw bytes).
-    // SimilarityThreshold = 0: return the score no matter how low,
-    //   so our business logic can make the decision, not Rekognition's default cutoff.
-    response = call Rekognition.CompareFaces with:
-        source_image = S3 object at bucket="patient-photos", key=reference_key
-        target_image = raw bytes of live_photo_bytes
-        similarity_threshold = 0  // get the raw score; we'll apply our own thresholds
+ // Call Rekognition's CompareFaces API.
+ // Source = the stored reference photo (from S3).
+ // Target = the live photo (from the request, passed as raw bytes).
+ // SimilarityThreshold = 0: return the score no matter how low,
+ // so our business logic can make the decision, not Rekognition's default cutoff.
+ response = call Rekognition.CompareFaces with:
+ source_image = S3 object at bucket="patient-photos", key=reference_key
+ target_image = raw bytes of live_photo_bytes
+ similarity_threshold = 0 // get the raw score; we'll apply our own thresholds
 
-    // Check if any face was detected in the live photo.
-    IF response.FaceMatches is empty AND response.UnmatchedFaces is empty:
-        // No face detected at all. Image might be blank, blurry, or not a face.
-        RETURN { status: "NO_FACE_DETECTED", similarity: 0 }
+ // Check if any face was detected in the live photo.
+ IF response.FaceMatches is empty AND response.UnmatchedFaces is empty:
+ // No face detected at all. Image might be blank, blurry, or not a face.
+ RETURN { status: "NO_FACE_DETECTED", similarity: 0 }
 
-    // If Rekognition found a match, extract the similarity score.
-    IF response.FaceMatches is not empty:
-        similarity = response.FaceMatches[0].Similarity  // 0.0 to 100.0
-    ELSE:
-        // Face was detected but didn't match. Similarity will be very low.
-        similarity = 0.0
+ // If Rekognition found a match, extract the similarity score.
+ IF response.FaceMatches is not empty:
+ similarity = response.FaceMatches[0].Similarity // 0.0 to 100.0
+ ELSE:
+ // Face was detected but didn't match. Similarity will be very low.
+ similarity = 0.0
 
-    // Pass the raw score to the decision engine.
-    decision = apply_decision_logic(similarity)
+ // Pass the raw score to the decision engine.
+ decision = apply_decision_logic(similarity)
 
-    // Log the verification attempt for audit and analytics.
-    log_verification(patient_id, similarity, decision)
+ // Log the verification attempt for audit and analytics.
+ log_verification(patient_id, similarity, decision)
 
-    RETURN { status: decision, similarity: similarity }
+ RETURN { status: decision, similarity: similarity }
 ```
 
 **Step 3: Apply decision logic.** This is where healthcare-specific judgment lives. A single threshold isn't sufficient. Healthcare identity verification needs a tiered approach because the cost of a false rejection (denying someone access to care) is very different from the cost of a false acceptance (billing or safety risk). Three tiers keep the system practical: high-confidence matches proceed without friction, medium-confidence matches trigger lightweight additional verification, and low-confidence matches route to staff. Never deny care. Always provide a fallback path.
 
 ```pseudocode
 // Three confidence tiers. Tune these based on your population and risk tolerance.
-HIGH_CONFIDENCE_THRESHOLD = 95.0   // auto-approve: very strong match
-MEDIUM_CONFIDENCE_THRESHOLD = 80.0  // step-up: ask for DOB or last 4 SSN
+HIGH_CONFIDENCE_THRESHOLD = 95.0 // auto-approve: very strong match
+MEDIUM_CONFIDENCE_THRESHOLD = 80.0 // step-up: ask for DOB or last 4 SSN
 // Below 80.0: route to staff for manual ID verification
 
 FUNCTION apply_decision_logic(similarity_score):
-    IF similarity_score >= HIGH_CONFIDENCE_THRESHOLD:
-        // Strong match. Proceed with check-in automatically.
-        RETURN "VERIFIED"
+ IF similarity_score >= HIGH_CONFIDENCE_THRESHOLD:
+ // Strong match. Proceed with check-in automatically.
+ RETURN "VERIFIED"
 
-    ELSE IF similarity_score >= MEDIUM_CONFIDENCE_THRESHOLD:
-        // Moderate match. Could be lighting, aging, glasses.
-        // Don't reject. Ask for one additional identity factor.
-        RETURN "STEP_UP_REQUIRED"
+ ELSE IF similarity_score >= MEDIUM_CONFIDENCE_THRESHOLD:
+ // Moderate match. Could be lighting, aging, glasses.
+ // Don't reject. Ask for one additional identity factor.
+ RETURN "STEP_UP_REQUIRED"
 
-    ELSE:
-        // Weak or no match. Could be wrong person, could be a bad photo.
-        // Route to front desk staff for manual verification.
-        // Critical: do NOT deny care. Manual verification is always available.
-        RETURN "MANUAL_REVIEW"
+ ELSE:
+ // Weak or no match. Could be wrong person, could be a bad photo.
+ // Route to front desk staff for manual verification.
+ // Critical: do NOT deny care. Manual verification is always available.
+ RETURN "MANUAL_REVIEW"
 ```
 
 **Step 4: Log the verification attempt.** Every verification produces an audit record, regardless of outcome. This serves three purposes: compliance (HIPAA requires access logs for PHI), dispute resolution (if a patient challenges a rejection, you have the data), and bias monitoring (you can analyze match rates across demographic groups to detect performance disparities). Include enough detail to reconstruct what happened, but don't store the live photo in the log (that's additional PHI you'd need to manage). Store the decision, the score, and a reference back to the request.
 
 ```pseudocode
 FUNCTION log_verification(patient_id, similarity, decision):
-    write record to database table "verification-log":
-        verification_id   = generate UUID          // unique ID for this attempt
-        patient_id        = patient_id             // who was being verified
-        timestamp         = current UTC time (ISO 8601)
-        similarity_score  = similarity             // raw score from comparison service
-        decision          = decision               // VERIFIED, STEP_UP_REQUIRED, or MANUAL_REVIEW
-        source            = "check-in-kiosk"       // which system initiated the request
-        // Do NOT store the live photo here. It's PHI. The reference photo in S3 is sufficient.
-        // If you need the live photo for dispute resolution, store it separately with auto-expiry.
+ write record to database table "verification-log":
+ verification_id = generate UUID // unique ID for this attempt
+ patient_id = patient_id // who was being verified
+ timestamp = current UTC time (ISO 8601)
+ similarity_score = similarity // raw score from comparison service
+ decision = decision // VERIFIED, STEP_UP_REQUIRED, or MANUAL_REVIEW
+ source = "check-in-kiosk" // which system initiated the request
+ // Do NOT store the live photo here. It's PHI. The reference photo in S3 is sufficient.
+ // If you need the live photo for dispute resolution, store it separately with auto-expiry.
 ```
 
 **Step 5: Handle enrollment (new patient or re-enrollment).** Before you can verify anyone, you need a reference photo on file. Enrollment happens at registration or when a patient's existing photo is too old. Capture a clear, frontal photo in good lighting. Store it encrypted in S3. Update the patient index with the photo's storage location. Consider a maximum photo age policy (re-enroll every 2-3 years) to account for natural appearance changes.
 
 ```pseudocode
 FUNCTION enroll_patient_photo(patient_id, photo_bytes):
-    // Validate: is there actually a detectable face in this photo?
-    // Reject photos with no face, multiple faces, or poor quality.
-    detection = call Rekognition.DetectFaces with:
-        image = raw bytes of photo_bytes
-        attributes = ["DEFAULT"]
+ // Validate: is there actually a detectable face in this photo?
+ // Reject photos with no face, multiple faces, or poor quality.
+ detection = call Rekognition.DetectFaces with:
+ image = raw bytes of photo_bytes
+ attributes = ["DEFAULT"]
 
-    IF detection.FaceDetails is empty:
-        RETURN error: "No face detected in enrollment photo"
+ IF detection.FaceDetails is empty:
+ RETURN error: "No face detected in enrollment photo"
 
-    IF length of detection.FaceDetails > 1:
-        RETURN error: "Multiple faces detected. Please capture one face only."
+ IF length of detection.FaceDetails > 1:
+ RETURN error: "Multiple faces detected. Please capture one face only."
 
-    // Check basic quality metrics.
-    face = detection.FaceDetails[0]
-    IF face.Quality.Brightness < 40 OR face.Quality.Sharpness < 40:
-        RETURN error: "Photo quality too low. Please retake in better lighting."
+ // Check basic quality metrics.
+ face = detection.FaceDetails[0]
+ IF face.Quality.Brightness < 40 OR face.Quality.Sharpness < 40:
+ RETURN error: "Photo quality too low. Please retake in better lighting."
 
-    // Store the enrollment photo, encrypted at rest.
-    s3_key = "patient-photos/{patient_id}/reference.jpg"
-    upload photo_bytes to S3 bucket "patient-photos" at key s3_key
-        with server-side encryption (KMS)
+ // Store the enrollment photo, encrypted at rest.
+ s3_key = "patient-photos/{patient_id}/reference.jpg"
+ upload photo_bytes to S3 bucket "patient-photos" at key s3_key
+ with server-side encryption (KMS)
 
-    // Update the patient index to point to this photo.
-    update patient record: reference_photo_key = s3_key, enrolled_date = now
+ // Update the patient index to point to this photo.
+ update patient record: reference_photo_key = s3_key, enrolled_date = now
 
-    RETURN { status: "ENROLLED", photo_key: s3_key }
+ RETURN { status: "ENROLLED", photo_key: s3_key }
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -212,12 +212,12 @@ FUNCTION enroll_patient_photo(patient_id, photo_bytes):
 
 ```json
 {
-  "verification_id": "a7f3b2c1-4e89-4d5a-b6c8-92f1d3e0a7b5",
-  "patient_id": "MRN-00482916",
-  "status": "VERIFIED",
-  "similarity_score": 97.8,
-  "timestamp": "2026-03-15T08:42:11Z",
-  "source": "check-in-kiosk"
+ "verification_id": "a7f3b2c1-4e89-4d5a-b6c8-92f1d3e0a7b5",
+ "patient_id": "MRN-00482916",
+ "status": "VERIFIED",
+ "similarity_score": 97.8,
+ "timestamp": "2026-03-15T08:42:11Z",
+ "source": "check-in-kiosk"
 }
 ```
 
@@ -225,12 +225,12 @@ FUNCTION enroll_patient_photo(patient_id, photo_bytes):
 
 ```json
 {
-  "verification_id": "c4d9e8f2-1a3b-4c5d-8e7f-6a0b2c3d4e5f",
-  "patient_id": "MRN-00391074",
-  "status": "STEP_UP_REQUIRED",
-  "similarity_score": 86.3,
-  "timestamp": "2026-03-15T09:15:44Z",
-  "source": "telehealth-session"
+ "verification_id": "c4d9e8f2-1a3b-4c5d-8e7f-6a0b2c3d4e5f",
+ "patient_id": "MRN-00391074",
+ "status": "STEP_UP_REQUIRED",
+ "similarity_score": 86.3,
+ "timestamp": "2026-03-15T09:15:44Z",
+ "source": "telehealth-session"
 }
 ```
 

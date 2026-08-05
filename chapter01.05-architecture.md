@@ -1,6 +1,6 @@
 # Recipe 1.5 Architecture and Implementation: Claims Attachment Processing
 
-*Companion to [Recipe 1.5: Claims Attachment Processing 🔶](chapter01.05-claims-attachment-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.5: Claims Attachment Processing ](chapter01.05-claims-attachment-processing). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -12,7 +12,7 @@
 
 **Amazon Bedrock (Nova Lite) for boundary detection and classification.** The Converse API introduced in Recipe 1.4 makes it easy to call any Bedrock model with the same code. Nova Lite (`us.amazon.nova-lite-v1:0`) is the right model for boundary detection: it's a well-defined binary question per page pair, and Nova Lite handles it reliably at $0.06 per million input tokens. At a 30-page package generating 29 page pair comparisons, the boundary detection cost is roughly three cents of tokens. The same model handles document classification, where it evaluates full document text against the taxonomy.
 
-**Amazon Bedrock (Claude Sonnet 4.6) for claim line matching.** Claim line matching requires genuine clinical reasoning: understanding what a CPT code describes, reading a procedure narrative, and making a judgment about whether they match. This is a Tier 3 task. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) handles it well and produces assessments with supporting evidence that the downstream assembler can surface to examiners. 
+**Amazon Bedrock (Claude Sonnet 4.6) for claim line matching.** Claim line matching requires genuine clinical reasoning: understanding what a CPT code describes, reading a procedure narrative, and making a judgment about whether they match. This is a Tier 3 task. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) handles it well and produces assessments with supporting evidence that the downstream assembler can surface to examiners.
 
 **Amazon Comprehend Medical for ICD-10 code validation on clinical documents.** The same hybrid approach as Recipe 1.4: the LLM extracts clinical concepts from operative reports, pathology reports, and discharge summaries. Comprehend Medical maps those concepts to high-confidence ICD-10 codes. LLMs are good at extracting clinical meaning. They're less reliable for producing exact, consistent medical codes. Keep `InferICD10CM` in the pipeline for code validation.
 
@@ -24,40 +24,40 @@
 
 ```mermaid
 flowchart TB
-    A[📠 Provider / Clearinghouse] -->|Claims Attachment PDF| B[S3 Bucket\nclaims-attachments/]
-    B -->|S3 Event| C[Lambda\nclaim-start]
-    C -->|StartDocumentAnalysis\nFORMS + TABLES + LAYOUT| D[Amazon Textract]
-    D -->|SNS Completion| E[SNS Topic\ntextract-jobs]
-    E -->|Trigger| F[Lambda\nclaim-retrieve]
-    F -->|Blocks → S3, Start SM| G[Step Functions\nclaims-pipeline]
+ A[Provider / Clearinghouse] -->|Claims Attachment PDF| B[S3 Bucket\nclaims-attachments/]
+ B -->|S3 Event| C[Lambda\nclaim-start]
+ C -->|StartDocumentAnalysis\nFORMS + TABLES + LAYOUT| D[Amazon Textract]
+ D -->|SNS Completion| E[SNS Topic\ntextract-jobs]
+ E -->|Trigger| F[Lambda\nclaim-retrieve]
+ F -->|Blocks → S3, Start SM| G[Step Functions\nclaims-pipeline]
 
-    G --> H[Lambda\ndoc-segmenter\nNova Lite Boundary Detection]
-    H --> I[Lambda\ndoc-classifier\nNova Lite Classification]
+ G --> H[Lambda\ndoc-segmenter\nNova Lite Boundary Detection]
+ H --> I[Lambda\ndoc-classifier\nNova Lite Classification]
 
-    I -->|Operative Report\nPathology Report\nDischarge Summary\nTherapy Notes| J[Lambda\nextract-clinical\nBedrock Claude Sonnet 4.6]
-    I -->|EOB| K[Lambda\nextract-eob\nTextract Tables]
-    I -->|Billing Statement| L[Lambda\nextract-billing\nTextract Tables]
-    I -->|Other| M[Pass-through\nraw text only]
+ I -->|Operative Report\nPathology Report\nDischarge Summary\nTherapy Notes| J[Lambda\nextract-clinical\nBedrock Claude Sonnet 4.6]
+ I -->|EOB| K[Lambda\nextract-eob\nTextract Tables]
+ I -->|Billing Statement| L[Lambda\nextract-billing\nTextract Tables]
+ I -->|Other| M[Pass-through\nraw text only]
 
-    J -->|LLM-extracted concepts| N[Comprehend Medical\nInferICD10CM\nCode Validation]
-    N --> O[Lambda\nclaim-matcher\nClaude Sonnet 4.6 Reasoning]
-    K --> O
-    L --> O
-    M --> O
+ J -->|LLM-extracted concepts| N[Comprehend Medical\nInferICD10CM\nCode Validation]
+ N --> O[Lambda\nclaim-matcher\nClaude Sonnet 4.6 Reasoning]
+ K --> O
+ L --> O
+ M --> O
 
-    O -->|Structured record| P[DynamoDB\nclaims-attachment-records\nS3 Object Lock]
-    O -->|Unmatched / Low-confidence| Q[SQS Review Queue\n→ Recipe 1.6]
-    O -->|Matched line items| R[→ Auto-adjudication\nor Examiner Workstation]
+ O -->|Structured record| P[DynamoDB\nclaims-attachment-records\nS3 Object Lock]
+ O -->|Unmatched / Low-confidence| Q[SQS Review Queue\n→ Recipe 1.6]
+ O -->|Matched line items| R[→ Auto-adjudication\nor Examiner Workstation]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style H fill:#e8d5f5,stroke:#6b46c1
-    style I fill:#e8d5f5,stroke:#6b46c1
-    style J fill:#e8d5f5,stroke:#6b46c1
-    style O fill:#e8d5f5,stroke:#6b46c1
-    style N fill:#f96,stroke:#333
-    style P fill:#9ff,stroke:#333
-    style G fill:#adf,stroke:#333
+ style B fill:#f9f,stroke:#333
+ style D fill:#ff9,stroke:#333
+ style H fill:#e8d5f5,stroke:#6b46c1
+ style I fill:#e8d5f5,stroke:#6b46c1
+ style J fill:#e8d5f5,stroke:#6b46c1
+ style O fill:#e8d5f5,stroke:#6b46c1
+ style N fill:#f96,stroke:#333
+ style P fill:#9ff,stroke:#333
+ style G fill:#adf,stroke:#333
 ```
 
 ### Prerequisites
@@ -109,22 +109,22 @@ flowchart TB
 
 ```pseudocode
 FUNCTION retrieve_and_handoff(textract_job_id, attachment_key, claim_id, state_machine_arn):
-    // Retrieve all Textract blocks (same paginated call as Recipe 1.4)
-    all_blocks = retrieve_all_textract_blocks(textract_job_id)
+ // Retrieve all Textract blocks (same paginated call as Recipe 1.4)
+ all_blocks = retrieve_all_textract_blocks(textract_job_id)
 
-    // Write raw blocks to S3. Step Functions has a 256 KB payload limit.
-    // A 40-page document's Textract output can easily exceed that.
-    textract_output_key = "textract-outputs/" + textract_job_id + "/blocks.json"
-    write all_blocks to S3 at textract_output_key
+ // Write raw blocks to S3. Step Functions has a 256 KB payload limit.
+ // A 40-page document's Textract output can easily exceed that.
+ textract_output_key = "textract-outputs/" + textract_job_id + "/blocks.json"
+ write all_blocks to S3 at textract_output_key
 
-    // Start the pipeline state machine.
-    // Pass references only, not raw data, through Step Functions.
-    // The claim_id links this attachment to the claim line items for matching.
-    start Step Functions execution at state_machine_arn with input:
-        attachment_key       = attachment_key
-        textract_output_key  = textract_output_key
-        textract_job_id      = textract_job_id
-        claim_id             = claim_id
+ // Start the pipeline state machine.
+ // Pass references only, not raw data, through Step Functions.
+ // The claim_id links this attachment to the claim line items for matching.
+ start Step Functions execution at state_machine_arn with input:
+ attachment_key = attachment_key
+ textract_output_key = textract_output_key
+ textract_job_id = textract_job_id
+ claim_id = claim_id
 ```
 
 **Step 3: Group Textract blocks by page.** Same grouping logic as Recipe 1.4: read blocks from S3, iterate, group by `Page` attribute, assemble page text from LINE blocks, note structural features per page. See Recipe 1.4 for the full pseudocode.
@@ -133,16 +133,16 @@ The one addition: extract the **header region** for each page. The header is the
 
 ```pseudocode
 FUNCTION extract_header_region(page_blocks):
-    // Textract bounding boxes are normalized: Top=0.0 is top of page, Top=1.0 is bottom.
-    // "Header region" = Top < 0.15 (the top 15% of the page).
-    header_lines = empty list
+ // Textract bounding boxes are normalized: Top=0.0 is top of page, Top=1.0 is bottom.
+ // "Header region" = Top < 0.15 (the top 15% of the page).
+ header_lines = empty list
 
-    FOR each block in page_blocks:
-        IF block.BlockType == "LINE":
-            IF block.Geometry.BoundingBox.Top < 0.15:
-                header_lines.append(block.Text)
+ FOR each block in page_blocks:
+ IF block.BlockType == "LINE":
+ IF block.Geometry.BoundingBox.Top < 0.15:
+ header_lines.append(block.Text)
 
-    RETURN join(header_lines, "\n")
+ RETURN join(header_lines, "\n")
 
 // Add this to group_blocks_by_page() from Recipe 1.4:
 // pages[page_num].header_text = extract_header_region(page's blocks)
@@ -166,24 +166,24 @@ and the next begins.
 
 Return ONLY a valid JSON object with these fields:
 {
-  "same_document": <true or false>,
-  "confidence": <0.0 to 1.0>,
-  "reasoning": "<one to two sentences explaining your determination>",
-  "signals_detected": ["<list any signals you used: title_change, header_change,
-                        page_restart, date_discontinuity, format_shift, content_type_change>"]
+ "same_document": <true or false>,
+ "confidence": <0.0 to 1.0>,
+ "reasoning": "<one to two sentences explaining your determination>",
+ "signals_detected": ["<list any signals you used: title_change, header_change,
+ page_restart, date_discontinuity, format_shift, content_type_change>"]
 }
 
 Common boundary signals to evaluate:
 - Title lines: Does either page have a document title (OPERATIVE REPORT, PATHOLOGY REPORT,
-  DISCHARGE SUMMARY, EXPLANATION OF BENEFITS) near the top? A title at the top of page 2
-  almost always means a new document started.
+ DISCHARGE SUMMARY, EXPLANATION OF BENEFITS) near the top? A title at the top of page 2
+ almost always means a new document started.
 - Header changes: Does the facility name, department, or document template change between
-  pages? "Memorial Hospital Surgery" to "Valley Pathology Lab" is a boundary.
+ pages? "Memorial Hospital Surgery" to "Valley Pathology Lab" is a boundary.
 - Page number restart: Does page 2 show "Page 1 of N"? That means a new document started.
 - Date discontinuity: Does the primary date change by more than a few days between pages?
-  (Allow multi-day spans for discharge summaries, which cover entire admissions.)
+ (Allow multi-day spans for discharge summaries, which cover entire admissions.)
 - Content type shift: Does the text shift from clinical narrative to financial tables
-  or from one clinical specialty to a completely different one?
+ or from one clinical specialty to a completely different one?
 
 Be conservative: when in doubt, return same_document: true. A missed boundary causes
 extraction errors. A false boundary causes a document to be split, which is less harmful
@@ -191,83 +191,83 @@ extraction errors. A false boundary causes a document to be split, which is less
 """
 
 FUNCTION detect_boundary_at_page_pair(page_n, page_n_plus_1, model_id):
-    // Sanitize OCR text before passing to LLM. External documents (provider submissions)
-    // are untrusted input. Strip control characters, null bytes, and anomalous Unicode
-    // sequences that could be used for prompt injection.
-    page_n_text   = strip_control_characters(page_n.text)
-    page_n_text   = remove_null_bytes(page_n_text)
-    page_np1_text = strip_control_characters(page_n_plus_1.text)
-    page_np1_text = remove_null_bytes(page_np1_text)
+ // Sanitize OCR text before passing to LLM. External documents (provider submissions)
+ // are untrusted input. Strip control characters, null bytes, and anomalous Unicode
+ // sequences that could be used for prompt injection.
+ page_n_text = strip_control_characters(page_n.text)
+ page_n_text = remove_null_bytes(page_n_text)
+ page_np1_text = strip_control_characters(page_n_plus_1.text)
+ page_np1_text = remove_null_bytes(page_np1_text)
 
-    // Build the user message with both pages' content.
-    // Include header text separately because it's the strongest boundary signal.
-    user_message = "Page " + page_n.page_num + ":\n"
-    user_message += "Header: " + (page_n.header_text if page_n.header_text else "(none)") + "\n"
-    user_message += "Text:\n" + first_1500_characters(page_n_text) + "\n\n"
-    user_message += "---\n\n"
-    user_message += "Page " + page_n_plus_1.page_num + ":\n"
-    user_message += "Header: " + (page_n_plus_1.header_text if page_n_plus_1.header_text else "(none)") + "\n"
-    user_message += "Text:\n" + first_1500_characters(page_np1_text) + "\n\n"
-    user_message += "Do these two pages belong to the same document?"
+ // Build the user message with both pages' content.
+ // Include header text separately because it's the strongest boundary signal.
+ user_message = "Page " + page_n.page_num + ":\n"
+ user_message += "Header: " + (page_n.header_text if page_n.header_text else "(none)") + "\n"
+ user_message += "Text:\n" + first_1500_characters(page_n_text) + "\n\n"
+ user_message += "---\n\n"
+ user_message += "Page " + page_n_plus_1.page_num + ":\n"
+ user_message += "Header: " + (page_n_plus_1.header_text if page_n_plus_1.header_text else "(none)") + "\n"
+ user_message += "Text:\n" + first_1500_characters(page_np1_text) + "\n\n"
+ user_message += "Do these two pages belong to the same document?"
 
-    response = call Bedrock Converse API with:
-        modelId         = model_id  // "us.amazon.nova-lite-v1:0"
-        system          = [{ text: BOUNDARY_DETECTION_SYSTEM_PROMPT }]
-        messages        = [{ role: "user", content: [{ text: user_message }] }]
-        inferenceConfig = { maxTokens: 256, temperature: 0 }
+ response = call Bedrock Converse API with:
+ modelId = model_id // "us.amazon.nova-lite-v1:0"
+ system = [{ text: BOUNDARY_DETECTION_SYSTEM_PROMPT }]
+ messages = [{ role: "user", content: [{ text: user_message }] }]
+ inferenceConfig = { maxTokens: 256, temperature: 0 }
 
-    response_text = response.output.message.content[0].text
-    result        = parse JSON from response_text
+ response_text = response.output.message.content[0].text
+ result = parse JSON from response_text
 
-    RETURN result
+ RETURN result
 
 FUNCTION detect_all_boundaries(pages, boundary_model_id):
-    // Walk the page stream in order, testing each consecutive pair.
-    // Result: list of { start_page, end_page, boundary_signals, confidence }
-    segments       = empty list
-    seg_start      = 1
-    sorted_page_nums = sort(keys of pages)
+ // Walk the page stream in order, testing each consecutive pair.
+ // Result: list of { start_page, end_page, boundary_signals, confidence }
+ segments = empty list
+ seg_start = 1
+ sorted_page_nums = sort(keys of pages)
 
-    FOR i from 0 to len(sorted_page_nums) - 2:
-        page_n        = pages[sorted_page_nums[i]]
-        page_n_plus_1 = pages[sorted_page_nums[i + 1]]
+ FOR i from 0 to len(sorted_page_nums) - 2:
+ page_n = pages[sorted_page_nums[i]]
+ page_n_plus_1 = pages[sorted_page_nums[i + 1]]
 
-        result = detect_boundary_at_page_pair(page_n, page_n_plus_1, boundary_model_id)
+ result = detect_boundary_at_page_pair(page_n, page_n_plus_1, boundary_model_id)
 
-        log: "Pages " + page_n.page_num + "/" + page_n_plus_1.page_num
-             + ": same=" + result.same_document
-             + " (conf=" + result.confidence + ")"
-             // [EDITOR: review fix P1-5] Removed result.reasoning from log.
-             // Boundary reasoning for healthcare documents routinely echoes clinical content
-             // from the page text (facility names, document titles, clinical terms).
-             // In Lambda, stdout writes to CloudWatch Logs. Omit reasoning to prevent PHI exposure.
+ log: "Pages " + page_n.page_num + "/" + page_n_plus_1.page_num
+ + ": same=" + result.same_document
+ + " (conf=" + result.confidence + ")"
+ // [EDITOR: review fix P1-5] Removed result.reasoning from log.
+ // Boundary reasoning for healthcare documents routinely echoes clinical content
+ // from the page text (facility names, document titles, clinical terms).
+ // In Lambda, stdout writes to CloudWatch Logs. Omit reasoning to prevent PHI exposure.
 
-        // If the model says these are from different documents, close the current segment
-        // and start a new one at page_n_plus_1.
-        IF NOT result.same_document:
-            segments.append({
-                start_page:       seg_start,
-                end_page:         page_n.page_num,
-                boundary_signals: result.signals_detected,
-                split_confidence: result.confidence,
-                split_reasoning:  result.reasoning
-            })
-            seg_start = page_n_plus_1.page_num
+ // If the model says these are from different documents, close the current segment
+ // and start a new one at page_n_plus_1.
+ IF NOT result.same_document:
+ segments.append({
+ start_page: seg_start,
+ end_page: page_n.page_num,
+ boundary_signals: result.signals_detected,
+ split_confidence: result.confidence,
+ split_reasoning: result.reasoning
+ })
+ seg_start = page_n_plus_1.page_num
 
-    // Close the final segment
-    segments.append({
-        start_page:       seg_start,
-        end_page:         sorted_page_nums[-1],
-        boundary_signals: ["end_of_document"],
-        split_confidence: 1.0,
-        split_reasoning:  "Final segment in package"
-    })
+ // Close the final segment
+ segments.append({
+ start_page: seg_start,
+ end_page: sorted_page_nums[-1],
+ boundary_signals: ["end_of_document"],
+ split_confidence: 1.0,
+ split_reasoning: "Final segment in package"
+ })
 
-    log: "Detected " + len(segments) + " document segments in " + len(pages) + " pages"
-    FOR each segment in segments:
-        log: "  Segment: pages " + segment.start_page + "-" + segment.end_page
+ log: "Detected " + len(segments) + " document segments in " + len(pages) + " pages"
+ FOR each segment in segments:
+ log: " Segment: pages " + segment.start_page + "-" + segment.end_page
 
-    RETURN segments
+ RETURN segments
 ```
 
 A few notes on the design. We use 1,500 characters of each page's text (not the full page) to keep token costs low. The first 1,500 characters of a page almost always contain the signals that distinguish a new document from a continuation: title lines, headers, page numbers, and the opening sentence that establishes the document type. We ask the model to be conservative toward `same_document: true`. A missed boundary (two documents merged into one segment) causes extraction errors downstream, but those errors are detectable. A false boundary (one document split into two) causes the segment to classify and extract as a partial document, which is less harmful and usually still produces useful output.
@@ -285,29 +285,29 @@ document is contained in a claims attachment segment.
 
 Return ONLY a valid JSON object with these fields:
 {
-  "doc_type": "<one of: operative_report, pathology_report, eob, discharge_summary,
-               therapy_notes, billing_statement, other>",
-  "confidence": <0.0 to 1.0>,
-  "primary_date": "<most prominent date in this document, in YYYY-MM-DD format,
-                   or null if not found>",
-  "reasoning": "<one sentence explaining your classification>"
+ "doc_type": "<one of: operative_report, pathology_report, eob, discharge_summary,
+ therapy_notes, billing_statement, other>",
+ "confidence": <0.0 to 1.0>,
+ "primary_date": "<most prominent date in this document, in YYYY-MM-DD format,
+ or null if not found>",
+ "reasoning": "<one sentence explaining your classification>"
 }
 
 Document types:
 - operative_report: surgical procedure narrative. Has sections: preoperative diagnosis,
-  postoperative diagnosis, procedure performed, anesthesia, findings, operative technique,
-  specimens. Written by a surgeon.
+ postoperative diagnosis, procedure performed, anesthesia, findings, operative technique,
+ specimens. Written by a surgeon.
 - pathology_report: specimen analysis results. Has sections: gross description, microscopic
-  description, diagnosis. Written by a pathologist. Often references specimens from surgery.
+ description, diagnosis. Written by a pathologist. Often references specimens from surgery.
 - eob: Explanation of Benefits from a payer. Financial document with service lines showing
-  billed amounts, allowed amounts, plan paid, and patient responsibility. Table-heavy layout.
+ billed amounts, allowed amounts, plan paid, and patient responsibility. Table-heavy layout.
 - discharge_summary: covers a full hospital episode. Has sections: admitting diagnosis,
-  hospital course, procedures performed, discharge diagnosis, discharge medications,
-  follow-up instructions.
+ hospital course, procedures performed, discharge diagnosis, discharge medications,
+ follow-up instructions.
 - therapy_notes: physical, occupational, or speech therapy visit documentation. Usually
-  shorter (1-2 pages per visit). May include multiple visit notes in sequence.
+ shorter (1-2 pages per visit). May include multiple visit notes in sequence.
 - billing_statement: provider-generated itemized charges. Shows service dates, procedure
-  codes, charges, and account balance. Financial document from the provider side.
+ codes, charges, and account balance. Financial document from the provider side.
 - other: consent forms, referral letters, face sheets, administrative documents.
 
 Use confidence 0.9 or higher only when the classification is unambiguous (clear title,
@@ -316,58 +316,58 @@ Below 0.7 for genuinely uncertain documents.
 """
 
 FUNCTION classify_segment_with_llm(segment, all_pages, classification_model_id):
-    // Aggregate text from all pages in this segment
-    segment_text = empty string
-    has_tables   = false
+ // Aggregate text from all pages in this segment
+ segment_text = empty string
+ has_tables = false
 
-    FOR each page_num from segment.start_page to segment.end_page:
-        segment_text += all_pages[page_num].text + "\n"
-        IF all_pages[page_num].has_tables:
-            has_tables = true
+ FOR each page_num from segment.start_page to segment.end_page:
+ segment_text += all_pages[page_num].text + "\n"
+ IF all_pages[page_num].has_tables:
+ has_tables = true
 
-    // Include a note about table presence; it's a strong EOB and billing statement signal
-    table_note = ""
-    IF has_tables:
-        table_note = "Note: This document contains one or more tables.\n\n"
+ // Include a note about table presence; it's a strong EOB and billing statement signal
+ table_note = ""
+ IF has_tables:
+ table_note = "Note: This document contains one or more tables.\n\n"
 
-    user_message = table_note + "Document text (pages "
-                 + segment.start_page + " to " + segment.end_page + "):\n\n"
-                 + first_4000_characters(segment_text)
+ user_message = table_note + "Document text (pages "
+ + segment.start_page + " to " + segment.end_page + "):\n\n"
+ + first_4000_characters(segment_text)
 
-    response = call Bedrock Converse API with:
-        modelId         = classification_model_id  // "us.amazon.nova-lite-v1:0"
-        system          = [{ text: DOCUMENT_CLASSIFICATION_SYSTEM_PROMPT }]
-        messages        = [{ role: "user", content: [{ text: user_message }] }]
-        inferenceConfig = { maxTokens: 256, temperature: 0 }
+ response = call Bedrock Converse API with:
+ modelId = classification_model_id // "us.amazon.nova-lite-v1:0"
+ system = [{ text: DOCUMENT_CLASSIFICATION_SYSTEM_PROMPT }]
+ messages = [{ role: "user", content: [{ text: user_message }] }]
+ inferenceConfig = { maxTokens: 256, temperature: 0 }
 
-    response_text = response.output.message.content[0].text
-    result        = parse JSON from response_text
+ response_text = response.output.message.content[0].text
+ result = parse JSON from response_text
 
-    log: "Segment pages " + segment.start_page + "-" + segment.end_page
-         + " → " + result.doc_type
-         + " (conf=" + result.confidence + ")"
-         // [EDITOR: review fix P1-5] Removed reasoning from log. Classification reasoning
-         // can include document title text that contains facility name or patient identifiers.
-         // Log doc_type and confidence only; omit reasoning to keep CloudWatch Logs PHI-free.
+ log: "Segment pages " + segment.start_page + "-" + segment.end_page
+ + " → " + result.doc_type
+ + " (conf=" + result.confidence + ")"
+ // [EDITOR: review fix P1-5] Removed reasoning from log. Classification reasoning
+ // can include document title text that contains facility name or patient identifiers.
+ // Log doc_type and confidence only; omit reasoning to keep CloudWatch Logs PHI-free.
 
-    RETURN {
-        start_page:      segment.start_page,
-        end_page:        segment.end_page,
-        doc_type:        result.doc_type,
-        confidence:      result.confidence,
-        primary_date:    result.primary_date,
-        reasoning:       result.reasoning,
-        boundary_signals: segment.boundary_signals
-    }
+ RETURN {
+ start_page: segment.start_page,
+ end_page: segment.end_page,
+ doc_type: result.doc_type,
+ confidence: result.confidence,
+ primary_date: result.primary_date,
+ reasoning: result.reasoning,
+ boundary_signals: segment.boundary_signals
+ }
 
 FUNCTION classify_all_segments(segments, all_pages, classification_model_id):
-    classified = empty list
-    FOR each segment in segments:
-        classified_segment = classify_segment_with_llm(
-            segment, all_pages, classification_model_id
-        )
-        classified.append(classified_segment)
-    RETURN classified
+ classified = empty list
+ FOR each segment in segments:
+ classified_segment = classify_segment_with_llm(
+ segment, all_pages, classification_model_id
+ )
+ classified.append(classified_segment)
+ RETURN classified
 ```
 
 **Step 6: Fan out to type-specific extractors.** Each classified document segment routes to the appropriate extractor. The routing follows two main paths, mirroring Recipe 1.4's two-path fan-out.
@@ -385,17 +385,17 @@ Extract all clinically and administratively relevant information.
 
 Return ONLY a valid JSON object with this structure:
 {
-  "document_summary": "<one to two sentences describing what this document is>",
-  "diagnoses": ["<primary and secondary diagnoses as documented>"],
-  "procedures_performed": ["<procedures or treatments documented, with laterality if present>"],
-  "explicit_cpt_codes": ["<any CPT codes explicitly written in the document>"],
-  "service_dates": ["<all dates of service mentioned, in YYYY-MM-DD format>"],
-  "provider_name": "<treating or performing provider name if present>",
-  "provider_npi": "<NPI number if present>",
-  "facility": "<facility or practice name if present>",
-  "specimens_sent": ["<any specimens sent to pathology, if operative report>"],
-  "clinical_findings": "<key clinical findings, lab values, or imaging results>",
-  "confidence": <0.0 to 1.0>
+ "document_summary": "<one to two sentences describing what this document is>",
+ "diagnoses": ["<primary and secondary diagnoses as documented>"],
+ "procedures_performed": ["<procedures or treatments documented, with laterality if present>"],
+ "explicit_cpt_codes": ["<any CPT codes explicitly written in the document>"],
+ "service_dates": ["<all dates of service mentioned, in YYYY-MM-DD format>"],
+ "provider_name": "<treating or performing provider name if present>",
+ "provider_npi": "<NPI number if present>",
+ "facility": "<facility or practice name if present>",
+ "specimens_sent": ["<any specimens sent to pathology, if operative report>"],
+ "clinical_findings": "<key clinical findings, lab values, or imaging results>",
+ "confidence": <0.0 to 1.0>
 }
 
 Extract only what is explicitly stated. Do not infer or add information not present
@@ -405,52 +405,52 @@ not procedure names.
 """
 
 FUNCTION extract_clinical_document(segment, all_pages, clinical_model_id):
-    // Aggregate full text across all pages in the segment
-    segment_text = aggregate text from segment.start_page to segment.end_page in all_pages
+ // Aggregate full text across all pages in the segment
+ segment_text = aggregate text from segment.start_page to segment.end_page in all_pages
 
-    response = call Bedrock Converse API with:
-        modelId         = clinical_model_id  // "us.anthropic.claude-sonnet-4-6-v1:0"
-        system          = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
-        messages        = [{
-            role:    "user",
-            content: [{ text: "Extract clinical information from this "
-                              + segment.doc_type + " document:\n\n"
-                              + first_8000_characters(segment_text) }]
-        }]
-        inferenceConfig = { maxTokens: 1024, temperature: 0 }
+ response = call Bedrock Converse API with:
+ modelId = clinical_model_id // "us.anthropic.claude-sonnet-4-6-v1:0"
+ system = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
+ messages = [{
+ role: "user",
+ content: [{ text: "Extract clinical information from this "
+ + segment.doc_type + " document:\n\n"
+ + first_8000_characters(segment_text) }]
+ }]
+ inferenceConfig = { maxTokens: 1024, temperature: 0 }
 
-    response_text  = response.output.message.content[0].text
-    llm_extraction = parse JSON from response_text
+ response_text = response.output.message.content[0].text
+ llm_extraction = parse JSON from response_text
 
-    // Validate ICD-10 codes on the extracted diagnoses
-    // LLMs extract the concept; Comprehend Medical maps the high-confidence code.
-    icd10_accepted = empty list
-    icd10_flagged  = empty list
-    IF llm_extraction.diagnoses is not empty:
-        diagnosis_text = join(llm_extraction.diagnoses, ". ")
-        icd10_accepted, icd10_flagged = infer_icd10_codes(diagnosis_text)
-        // See Recipe 1.3 for infer_icd10_codes implementation
+ // Validate ICD-10 codes on the extracted diagnoses
+ // LLMs extract the concept; Comprehend Medical maps the high-confidence code.
+ icd10_accepted = empty list
+ icd10_flagged = empty list
+ IF llm_extraction.diagnoses is not empty:
+ diagnosis_text = join(llm_extraction.diagnoses, ". ")
+ icd10_accepted, icd10_flagged = infer_icd10_codes(diagnosis_text)
+ // See Recipe 1.3 for infer_icd10_codes implementation
 
-    RETURN {
-        doc_type:        segment.doc_type,
-        start_page:      segment.start_page,
-        end_page:        segment.end_page,
-        primary_date:    segment.primary_date,
-        llm_extraction:  llm_extraction,
-        icd10_codes:     icd10_accepted,
-        icd10_flagged:   icd10_flagged,
-        confidence:      llm_extraction.confidence * 100
-    }
+ RETURN {
+ doc_type: segment.doc_type,
+ start_page: segment.start_page,
+ end_page: segment.end_page,
+ primary_date: segment.primary_date,
+ llm_extraction: llm_extraction,
+ icd10_codes: icd10_accepted,
+ icd10_flagged: icd10_flagged,
+ confidence: llm_extraction.confidence * 100
+ }
 
 // EOB extraction uses Textract table parsing, not the LLM.
 // See the original Recipe 1.5 pseudocode for the full EOB column mapping
 // and table normalization logic. The EOB extractor is unchanged:
 // it's financial tabular data that Textract handles better than an LLM.
 FUNCTION extract_financial_document(segment, all_pages, block_map):
-    // Aggregate table blocks from all pages in this segment
-    // Parse tables, normalize column headers, return structured service lines
-    // (Same pattern as before; financial tables don't benefit from LLM reasoning)
-    ... (same Textract table parsing as original recipe's extract_eob / extract_billing_statement)
+ // Aggregate table blocks from all pages in this segment
+ // Parse tables, normalize column headers, return structured service lines
+ // (Same pattern as before; financial tables don't benefit from LLM reasoning)
+ ... (same Textract table parsing as original recipe's extract_eob / extract_billing_statement)
 ```
 
 **Step 7: Claim line item matching via LLM reasoning.** This is the capstone of the recipe and where the LLM approach provides the most dramatic improvement over rule-based matching.
@@ -466,31 +466,31 @@ are supported by the clinical documentation in a given document.
 
 A claim line item is "supported" by a document when:
 1. The document describes a procedure, service, or diagnosis consistent with the CPT code
-   on that claim line, AND
+ on that claim line, AND
 2. The date of service in the document is consistent with the date on the claim line
-   (within 1 day for single-day services; within the admission span for inpatient services).
+ (within 1 day for single-day services; within the admission span for inpatient services).
 
 Return ONLY a valid JSON object with this structure:
 {
-  "line_assessments": [
-    {
-      "line_number": <integer>,
-      "cpt_code": "<CPT code from the claim>",
-      "supported": <true or false>,
-      "confidence": <0.0 to 1.0>,
-      "match_type": "<exact_cpt | procedure_match | date_only | no_match>",
-      "match_reasoning": "<your reasoning about why this document supports or does not
-                          support this line item, based on the extracted document summary>",
-      "evidence_type": "llm_synthesis",
-      "date_consistent": <true, false, or null if date not determinable>
-    }
-  ]
-} 
+ "line_assessments": [
+ {
+ "line_number": <integer>,
+ "cpt_code": "<CPT code from the claim>",
+ "supported": <true or false>,
+ "confidence": <0.0 to 1.0>,
+ "match_type": "<exact_cpt | procedure_match | date_only | no_match>",
+ "match_reasoning": "<your reasoning about why this document supports or does not
+ support this line item, based on the extracted document summary>",
+ "evidence_type": "llm_synthesis",
+ "date_consistent": <true, false, or null if date not determinable>
+ }
+ ]
+}
 
 match_type values:
 - exact_cpt: the CPT code number appears explicitly in the document
 - procedure_match: the document describes a procedure consistent with the CPT code
-  (based on clinical knowledge), even if the code number is not written
+ (based on clinical knowledge), even if the code number is not written
 - date_only: date matches but procedure link is uncertain
 - no_match: this document does not appear to support this claim line
 
@@ -501,242 +501,242 @@ If a claim line is not supported, state what documentation would be needed.
 """
 
 FUNCTION match_clinical_document_to_claim_lines(
-    extraction, claim_lines, clinical_model_id
+ extraction, claim_lines, clinical_model_id
 ):
-    // Build the prompt: the clinical document summary + all claim lines
-    doc_summary = "Document type: " + extraction.doc_type + "\n"
-    doc_summary += "Pages: " + extraction.start_page + "-" + extraction.end_page + "\n"
-    doc_summary += "Primary date: " + (extraction.primary_date or "unknown") + "\n\n"
-    doc_summary += "Document content summary:\n"
-    doc_summary += "- Diagnoses: " + join(extraction.llm_extraction.diagnoses, "; ") + "\n"
+ // Build the prompt: the clinical document summary + all claim lines
+ doc_summary = "Document type: " + extraction.doc_type + "\n"
+ doc_summary += "Pages: " + extraction.start_page + "-" + extraction.end_page + "\n"
+ doc_summary += "Primary date: " + (extraction.primary_date or "unknown") + "\n\n"
+ doc_summary += "Document content summary:\n"
+ doc_summary += "- Diagnoses: " + join(extraction.llm_extraction.diagnoses, "; ") + "\n"
 
-    doc_summary += "- Procedures: " + join(extraction.llm_extraction.procedures_performed, "; ") + "\n"
-    doc_summary += "- Explicit CPT codes: " + join(extraction.llm_extraction.explicit_cpt_codes, ", ") + "\n"
-    doc_summary += "- Provider: " + (extraction.llm_extraction.provider_name or "unknown") + "\n"
-    doc_summary += "- Service dates: " + join(extraction.llm_extraction.service_dates, ", ") + "\n"
-    doc_summary += "- Key findings: " + extraction.llm_extraction.clinical_findings + "\n"
+ doc_summary += "- Procedures: " + join(extraction.llm_extraction.procedures_performed, "; ") + "\n"
+ doc_summary += "- Explicit CPT codes: " + join(extraction.llm_extraction.explicit_cpt_codes, ", ") + "\n"
+ doc_summary += "- Provider: " + (extraction.llm_extraction.provider_name or "unknown") + "\n"
+ doc_summary += "- Service dates: " + join(extraction.llm_extraction.service_dates, ", ") + "\n"
+ doc_summary += "- Key findings: " + extraction.llm_extraction.clinical_findings + "\n"
 
-    claim_lines_text = "\nClaim line items to evaluate:\n"
-    FOR each line in claim_lines:
-        claim_lines_text += "Line " + line.line_number + ": CPT " + line.cpt_code
-                          + " (" + line.procedure_desc + ")"
-                          + " Date: " + line.date_of_service
-                          + " Provider NPI: " + line.billing_npi + "\n"
+ claim_lines_text = "\nClaim line items to evaluate:\n"
+ FOR each line in claim_lines:
+ claim_lines_text += "Line " + line.line_number + ": CPT " + line.cpt_code
+ + " (" + line.procedure_desc + ")"
+ + " Date: " + line.date_of_service
+ + " Provider NPI: " + line.billing_npi + "\n"
 
-    user_message = doc_summary + claim_lines_text
-                 + "\n\nFor each claim line, assess whether this document supports it."
+ user_message = doc_summary + claim_lines_text
+ + "\n\nFor each claim line, assess whether this document supports it."
 
-    response = call Bedrock Converse API with:
-        modelId         = clinical_model_id  // "us.anthropic.claude-sonnet-4-6-v1:0"
-        system          = [{ text: CLAIM_MATCHING_SYSTEM_PROMPT }]
-        messages        = [{ role: "user", content: [{ text: user_message }] }]
-        inferenceConfig = { maxTokens: 1024, temperature: 0 }
+ response = call Bedrock Converse API with:
+ modelId = clinical_model_id // "us.anthropic.claude-sonnet-4-6-v1:0"
+ system = [{ text: CLAIM_MATCHING_SYSTEM_PROMPT }]
+ messages = [{ role: "user", content: [{ text: user_message }] }]
+ inferenceConfig = { maxTokens: 1024, temperature: 0 }
 
-    response_text = response.output.message.content[0].text
-    result        = parse JSON from response_text
+ response_text = response.output.message.content[0].text
+ result = parse JSON from response_text
 
-    RETURN result.line_assessments
+ RETURN result.line_assessments
 
 FUNCTION match_all_documents_to_claim_lines(
-    classified_segments, extraction_results, claim_id, clinical_model_id
+ classified_segments, extraction_results, claim_id, clinical_model_id
 ):
-    // Retrieve claim line items from the claims database
-    claim_lines = get_claim_lines_from_database(claim_id)
+ // Retrieve claim line items from the claims database
+ claim_lines = get_claim_lines_from_database(claim_id)
 
-    // Accumulate support evidence per claim line across all clinical documents
-    line_support = empty map  // line_number -> { assessments: [], final_status: "" }
-    FOR each line in claim_lines:
-        line_support[line.line_number] = { assessments: [], final_status: "no_documentation" }
+ // Accumulate support evidence per claim line across all clinical documents
+ line_support = empty map // line_number -> { assessments: [], final_status: "" }
+ FOR each line in claim_lines:
+ line_support[line.line_number] = { assessments: [], final_status: "no_documentation" }
 
-    FOR each extraction in extraction_results:
-        // Only run LLM matching on clinical documents.
-        // EOBs and billing statements are matched differently
-        // (they may contain CPT codes directly; check those without LLM).
-        IF extraction.doc_type in ("operative_report", "pathology_report",
-                                    "discharge_summary", "therapy_notes"):
-            assessments = match_clinical_document_to_claim_lines(
-                extraction, claim_lines, clinical_model_id
-            )
-            FOR each assessment in assessments:
-                line_num = assessment.line_number
-                line_support[line_num].assessments.append({
-                    doc_type:           extraction.doc_type,
-                    pages:              extraction.start_page + "-" + extraction.end_page,
-                    supported:          assessment.supported,
-                    confidence:         to_decimal(assessment.confidence),
-                    // [EDITOR: review fix P0-1] Apply Decimal conversion at append time.
-                    // assessment.confidence is a float from LLM JSON output.
-                    // DynamoDB rejects float; convert via string (to_decimal uses str() internally).
-                    // _to_decimal() is defined in the Python companion; wrap all float fields here.
-                    match_type:         assessment.match_type,
-                    match_reasoning:    assessment.match_reasoning,
-                    evidence_type:      assessment.evidence_type,
-                    date_consistent:    assessment.date_consistent
-                })
+ FOR each extraction in extraction_results:
+ // Only run LLM matching on clinical documents.
+ // EOBs and billing statements are matched differently
+ // (they may contain CPT codes directly; check those without LLM).
+ IF extraction.doc_type in ("operative_report", "pathology_report",
+ "discharge_summary", "therapy_notes"):
+ assessments = match_clinical_document_to_claim_lines(
+ extraction, claim_lines, clinical_model_id
+ )
+ FOR each assessment in assessments:
+ line_num = assessment.line_number
+ line_support[line_num].assessments.append({
+ doc_type: extraction.doc_type,
+ pages: extraction.start_page + "-" + extraction.end_page,
+ supported: assessment.supported,
+ confidence: to_decimal(assessment.confidence),
+ // [EDITOR: review fix P0-1] Apply Decimal conversion at append time.
+ // assessment.confidence is a float from LLM JSON output.
+ // DynamoDB rejects float; convert via string (to_decimal uses str() internally).
+ // _to_decimal() is defined in the Python companion; wrap all float fields here.
+ match_type: assessment.match_type,
+ match_reasoning: assessment.match_reasoning,
+ evidence_type: assessment.evidence_type,
+ date_consistent: assessment.date_consistent
+ })
 
-        ELSE IF extraction.doc_type in ("eob", "billing_statement"):
-            // Financial documents: check for explicit CPT matches in service lines
-            FOR each service_line in extraction.get("service_lines", []):
-                IF service_line.get("procedure_code") is not null:
-                    FOR each claim_line in claim_lines:
-                        IF service_line.procedure_code == claim_line.cpt_code:
-                            line_support[claim_line.line_number].assessments.append({
-                                doc_type:           extraction.doc_type,
-                                pages:              extraction.start_page + "-" + extraction.end_page,
-                                supported:          true,
-                                confidence:         to_decimal(0.95),
-                                match_type:         "exact_cpt",
-                                match_reasoning:    "EOB service line shows CPT "
-                                                     + service_line.procedure_code,
-                                evidence_type:      "structured_data",
-                                date_consistent:    true
-                            })
+ ELSE IF extraction.doc_type in ("eob", "billing_statement"):
+ // Financial documents: check for explicit CPT matches in service lines
+ FOR each service_line in extraction.get("service_lines", []):
+ IF service_line.get("procedure_code") is not null:
+ FOR each claim_line in claim_lines:
+ IF service_line.procedure_code == claim_line.cpt_code:
+ line_support[claim_line.line_number].assessments.append({
+ doc_type: extraction.doc_type,
+ pages: extraction.start_page + "-" + extraction.end_page,
+ supported: true,
+ confidence: to_decimal(0.95),
+ match_type: "exact_cpt",
+ match_reasoning: "EOB service line shows CPT "
+ + service_line.procedure_code,
+ evidence_type: "structured_data",
+ date_consistent: true
+ })
 
-    // Determine final status for each claim line based on accumulated assessments
-    FOR each line_num, support_data in line_support:
-        assessments = support_data.assessments
+ // Determine final status for each claim line based on accumulated assessments
+ FOR each line_num, support_data in line_support:
+ assessments = support_data.assessments
 
-        high_confidence_support = [a for a in assessments where a.supported and a.confidence >= 0.80]
-        medium_confidence_support = [a for a in assessments where a.supported and a.confidence >= 0.60]
+ high_confidence_support = [a for a in assessments where a.supported and a.confidence >= 0.80]
+ medium_confidence_support = [a for a in assessments where a.supported and a.confidence >= 0.60]
 
-        IF high_confidence_support is not empty:
-            support_data.final_status = "supported"
-        ELSE IF medium_confidence_support is not empty:
-            support_data.final_status = "needs_review"
-        ELSE IF assessments is not empty:
-            support_data.final_status = "documentation_insufficient"
-        ELSE:
-            support_data.final_status = "no_documentation"
+ IF high_confidence_support is not empty:
+ support_data.final_status = "supported"
+ ELSE IF medium_confidence_support is not empty:
+ support_data.final_status = "needs_review"
+ ELSE IF assessments is not empty:
+ support_data.final_status = "documentation_insufficient"
+ ELSE:
+ support_data.final_status = "no_documentation"
 
-    RETURN line_support
+ RETURN line_support
 ```
 
-Notice what changes compared to the lookup table approach. The LLM returns `match_reasoning` explaining its assessment: for example, it might describe a procedure as consistent with CPT 27447 because the document summary lists a right total knee arthroplasty with cemented components. That reasoning is what the claims examiner needs to see. The `evidence_type: "llm_synthesis"` field makes it explicit that this is the matching model's interpretation of the extracted document summary, not a verbatim quote from the original document. The matching step receives a structured extraction (diagnoses, procedures, dates), not raw page text; any evidence it surfaces is reconstructed from that summary. When the examiner reviews a "needs_review" line, they see the model's reasoning and can pull the original document if they need the source text. 
+Notice what changes compared to the lookup table approach. The LLM returns `match_reasoning` explaining its assessment: for example, it might describe a procedure as consistent with CPT 27447 because the document summary lists a right total knee arthroplasty with cemented components. That reasoning is what the claims examiner needs to see. The `evidence_type: "llm_synthesis"` field makes it explicit that this is the matching model's interpretation of the extracted document summary, not a verbatim quote from the original document. The matching step receives a structured extraction (diagnoses, procedures, dates), not raw page text; any evidence it surfaces is reconstructed from that summary. When the examiner reviews a "needs_review" line, they see the model's reasoning and can pull the original document if they need the source text.
 
 **Step 8: Assemble the unified claims attachment record.** The assembler collects all extraction results and the claim line matching output, deduplicates clinical entities across documents, and writes the final record.
 
 ```pseudocode
 FUNCTION assemble_claims_attachment_record(
-    attachment_key, claim_id, page_count,
-    classified_segments, extraction_results, line_support
+ attachment_key, claim_id, page_count,
+ classified_segments, extraction_results, line_support
 ):
-    record = {
-        attachment_key:     attachment_key,
-        claim_id:           claim_id,
-        extracted_at:       current UTC timestamp (ISO 8601),
-        page_count:         page_count,
-        needs_review:       false,
+ record = {
+ attachment_key: attachment_key,
+ claim_id: claim_id,
+ extracted_at: current UTC timestamp (ISO 8601),
+ page_count: page_count,
+ needs_review: false,
 
-        // Document inventory
-        documents_found:    count of classified_segments,
-        document_inventory: empty list,
+ // Document inventory
+ documents_found: count of classified_segments,
+ document_inventory: empty list,
 
-        // Aggregated clinical data
-        all_icd10_codes:    empty list,
-        all_conditions:     empty list,
-        all_procedures:     empty list,
+ // Aggregated clinical data
+ all_icd10_codes: empty list,
+ all_conditions: empty list,
+ all_procedures: empty list,
 
-        // Financial data
-        eob_data:           empty list,
+ // Financial data
+ eob_data: empty list,
 
-        // Claim support (from LLM matching step)
-        claim_line_support: line_support,
+ // Claim support (from LLM matching step)
+ claim_line_support: line_support,
 
-        // Review routing
-        unclassified_segments:    empty list,
-        low_confidence_segments:  empty list,
-        unsupported_lines:        empty list
-    }
+ // Review routing
+ unclassified_segments: empty list,
+ low_confidence_segments: empty list,
+ unsupported_lines: empty list
+ }
 
-    seen_icd10_codes = empty map  // code -> entry with highest confidence
+ seen_icd10_codes = empty map // code -> entry with highest confidence
 
-    FOR each classified_segment, extraction in zip(classified_segments, extraction_results):
-        // Populate document inventory
-        record.document_inventory.append({
-            doc_type:        classified_segment.doc_type,
-            pages:           classified_segment.start_page + "-" + classified_segment.end_page,
-            confidence:      classified_segment.confidence,
-            primary_date:    classified_segment.primary_date,
-            classification_reasoning: classified_segment.reasoning
-        })
+ FOR each classified_segment, extraction in zip(classified_segments, extraction_results):
+ // Populate document inventory
+ record.document_inventory.append({
+ doc_type: classified_segment.doc_type,
+ pages: classified_segment.start_page + "-" + classified_segment.end_page,
+ confidence: classified_segment.confidence,
+ primary_date: classified_segment.primary_date,
+ classification_reasoning: classified_segment.reasoning
+ })
 
-        // Aggregate ICD-10 codes (deduplicated; highest confidence per code)
-        IF extraction has icd10_codes:
-            FOR each code_entry in extraction.icd10_codes:
-                code = code_entry.icd10_code
-                IF code not in seen_icd10_codes OR
-                   code_entry.confidence > seen_icd10_codes[code].confidence:
-                    seen_icd10_codes[code] = code_entry
+ // Aggregate ICD-10 codes (deduplicated; highest confidence per code)
+ IF extraction has icd10_codes:
+ FOR each code_entry in extraction.icd10_codes:
+ code = code_entry.icd10_code
+ IF code not in seen_icd10_codes OR
+ code_entry.confidence > seen_icd10_codes[code].confidence:
+ seen_icd10_codes[code] = code_entry
 
-        // Aggregate clinical concepts
-        IF extraction has llm_extraction:
-            FOR each diagnosis in extraction.llm_extraction.diagnoses:
-                IF diagnosis not in record.all_conditions:
-                    record.all_conditions.append(diagnosis)
-            FOR each procedure in extraction.llm_extraction.procedures_performed:
-                IF procedure not in record.all_procedures:
-                    record.all_procedures.append(procedure)
+ // Aggregate clinical concepts
+ IF extraction has llm_extraction:
+ FOR each diagnosis in extraction.llm_extraction.diagnoses:
+ IF diagnosis not in record.all_conditions:
+ record.all_conditions.append(diagnosis)
+ FOR each procedure in extraction.llm_extraction.procedures_performed:
+ IF procedure not in record.all_procedures:
+ record.all_procedures.append(procedure)
 
-        // Collect EOB data
-        IF classified_segment.doc_type in ("eob", "billing_statement"):
-            record.eob_data.append(extraction)
+ // Collect EOB data
+ IF classified_segment.doc_type in ("eob", "billing_statement"):
+ record.eob_data.append(extraction)
 
-        // Route low-confidence or unclassified segments to review
-        IF classified_segment.doc_type == "other":
-            record.unclassified_segments.append({
-                pages:   classified_segment.start_page + "-" + classified_segment.end_page,
-                reason:  classified_segment.reasoning
-            })
-            record.needs_review = true
+ // Route low-confidence or unclassified segments to review
+ IF classified_segment.doc_type == "other":
+ record.unclassified_segments.append({
+ pages: classified_segment.start_page + "-" + classified_segment.end_page,
+ reason: classified_segment.reasoning
+ })
+ record.needs_review = true
 
-        IF classified_segment.confidence < 0.70:
-            record.low_confidence_segments.append({
-                pages:    classified_segment.start_page + "-" + classified_segment.end_page,
-                doc_type: classified_segment.doc_type,
-                confidence: classified_segment.confidence
-            })
-            record.needs_review = true
+ IF classified_segment.confidence < 0.70:
+ record.low_confidence_segments.append({
+ pages: classified_segment.start_page + "-" + classified_segment.end_page,
+ doc_type: classified_segment.doc_type,
+ confidence: classified_segment.confidence
+ })
+ record.needs_review = true
 
-    // Flag claim lines with insufficient documentation
-    FOR each line_num, support_data in line_support:
-        IF support_data.final_status in ("no_documentation", "documentation_insufficient"):
-            record.unsupported_lines.append(line_num)
-            record.needs_review = true
+ // Flag claim lines with insufficient documentation
+ FOR each line_num, support_data in line_support:
+ IF support_data.final_status in ("no_documentation", "documentation_insufficient"):
+ record.unsupported_lines.append(line_num)
+ record.needs_review = true
 
-    record.all_icd10_codes = list of values in seen_icd10_codes, sorted by confidence desc
+ record.all_icd10_codes = list of values in seen_icd10_codes, sorted by confidence desc
 
-    RETURN record
+ RETURN record
 
 FUNCTION store_attachment_record(record):
-    // Write to DynamoDB. Partition key: claim_id. Sort key: attachment_key.
-    write record to DynamoDB table "claims-attachment-records":
-        partition_key = record.claim_id
-        sort_key      = record.attachment_key
-        item          = record
+ // Write to DynamoDB. Partition key: claim_id. Sort key: attachment_key.
+ write record to DynamoDB table "claims-attachment-records":
+ partition_key = record.claim_id
+ sort_key = record.attachment_key
+ item = record
 
-    // Lock the S3 object (the original PDF) for retention compliance.
-    // CMS requires 10-year retention for Medicare claims records.
-    // GOVERNANCE mode during development; COMPLIANCE mode in production only.
-    set_s3_object_retention(
-        bucket      = "claims-attachments",
-        key         = record.attachment_key,
-        mode        = "COMPLIANCE",
-        retain_until = current date + 10 years
-    )
+ // Lock the S3 object (the original PDF) for retention compliance.
+ // CMS requires 10-year retention for Medicare claims records.
+ // GOVERNANCE mode during development; COMPLIANCE mode in production only.
+ set_s3_object_retention(
+ bucket = "claims-attachments",
+ key = record.attachment_key,
+ mode = "COMPLIANCE",
+ retain_until = current date + 10 years
+ )
 
-    IF record.needs_review:
-        send message to SQS review queue:
-            claim_id       = record.claim_id
-            attachment_key = record.attachment_key
-            reason         = summarize review flags (unsupported lines, low-confidence segments, etc.)
-    ELSE:
-        publish to event bus:
-            event_type     = "attachment_processed"
-            claim_id       = record.claim_id
-            attachment_key = record.attachment_key
+ IF record.needs_review:
+ send message to SQS review queue:
+ claim_id = record.claim_id
+ attachment_key = record.attachment_key
+ reason = summarize review flags (unsupported lines, low-confidence segments, etc.)
+ ELSE:
+ publish to event bus:
+ event_type = "attachment_processed"
+ claim_id = record.claim_id
+ attachment_key = record.attachment_key
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment. 
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
@@ -744,99 +744,99 @@ FUNCTION store_attachment_record(record):
 
 ```json
 {
-  "attachment_key": "claims-attachments/2026/03/15/CLM-2026-0847291-attach-001.pdf",
-  "claim_id": "CLM-2026-0847291",
-  "extracted_at": "2026-03-15T14:33:21Z",
-  "page_count": 34,
-  "needs_review": false,
-  "documents_found": 5,
-  "document_inventory": [
-    {
-      "doc_type": "operative_report",
-      "pages": "1-6",
-      "primary_date": "2026-03-15",
-      "confidence": 0.96,
-      "classification_reasoning": "Document contains preoperative diagnosis, operative technique section, and surgeon attestation consistent with operative report format."
-    },
-    {
-      "doc_type": "pathology_report",
-      "pages": "7-9",
-      "primary_date": "2026-03-15",
-      "confidence": 0.93,
-      "classification_reasoning": "Document contains gross description, microscopic findings, and pathologist signature consistent with pathology report."
-    },
-    {
-      "doc_type": "discharge_summary",
-      "pages": "10-17",
-      "primary_date": "2026-03-16",
-      "confidence": 0.91,
-      "classification_reasoning": "Document contains admitting diagnosis, hospital course, and discharge medications consistent with inpatient discharge summary."
-    },
-    {
-      "doc_type": "eob",
-      "pages": "18-23",
-      "primary_date": "2026-03-28",
-      "confidence": 0.97,
-      "classification_reasoning": "Document contains explanation of benefits table with billed, allowed, and plan paid columns; consistent with payer EOB."
-    },
-    {
-      "doc_type": "billing_statement",
-      "pages": "24-34",
-      "primary_date": "2026-03-20",
-      "confidence": 0.88,
-      "classification_reasoning": "Document contains itemized service charges with revenue codes and account balance; consistent with provider billing statement."
-    }
-  ],
-  "all_icd10_codes": [
-    { "icd10_code": "M17.11", "description": "Primary osteoarthritis, right knee", "confidence": 0.956 },
-    { "icd10_code": "Z96.651", "description": "Presence of right artificial knee joint", "confidence": 0.918 },
-    { "icd10_code": "Z79.1",   "description": "Long-term use of non-steroidal anti-inflammatories", "confidence": 0.871 }
-  ],
-  "claim_line_support": {
-    "1": {
-      "final_status": "supported",
-      "assessments": [
-        {
-          "doc_type": "operative_report",
-          "pages": "1-6",
-          "supported": true,
-          "confidence": 0.97,
-          "match_type": "procedure_match",
-          "match_reasoning": "Document summary describes right total knee arthroplasty with cemented tibial and femoral components, consistent with CPT 27447. Procedure date aligns with claim line date of service.",
-          "evidence_type": "llm_synthesis",
-          "date_consistent": true
-        },
-        {
-          "doc_type": "eob",
-          "pages": "18-23",
-          "supported": true,
-          "confidence": 0.95,
-          "match_type": "exact_cpt",
-          "match_reasoning": "EOB service line shows CPT 27447",
-          "evidence_type": "structured_data",
-          "date_consistent": true
-        }
-      ]
-    },
-    "2": {
-      "final_status": "supported",
-      "assessments": [
-        {
-          "doc_type": "pathology_report",
-          "pages": "7-9",
-          "supported": true,
-          "confidence": 0.89,
-          "match_type": "procedure_match",
-          "match_reasoning": "Document summary includes specimen from right knee medial and lateral condyle and tibial plateau, consistent with surgical pathology at CPT 88305 (level IV). Specimen date aligns with operative date.",
-          "evidence_type": "llm_synthesis",
-          "date_consistent": true
-        }
-      ]
-    }
-  },
-  "unclassified_segments": [],
-  "low_confidence_segments": [],
-  "unsupported_lines": []
+ "attachment_key": "claims-attachments/2026/03/15/CLM-2026-0847291-attach-001.pdf",
+ "claim_id": "CLM-2026-0847291",
+ "extracted_at": "2026-03-15T14:33:21Z",
+ "page_count": 34,
+ "needs_review": false,
+ "documents_found": 5,
+ "document_inventory": [
+ {
+ "doc_type": "operative_report",
+ "pages": "1-6",
+ "primary_date": "2026-03-15",
+ "confidence": 0.96,
+ "classification_reasoning": "Document contains preoperative diagnosis, operative technique section, and surgeon attestation consistent with operative report format."
+ },
+ {
+ "doc_type": "pathology_report",
+ "pages": "7-9",
+ "primary_date": "2026-03-15",
+ "confidence": 0.93,
+ "classification_reasoning": "Document contains gross description, microscopic findings, and pathologist signature consistent with pathology report."
+ },
+ {
+ "doc_type": "discharge_summary",
+ "pages": "10-17",
+ "primary_date": "2026-03-16",
+ "confidence": 0.91,
+ "classification_reasoning": "Document contains admitting diagnosis, hospital course, and discharge medications consistent with inpatient discharge summary."
+ },
+ {
+ "doc_type": "eob",
+ "pages": "18-23",
+ "primary_date": "2026-03-28",
+ "confidence": 0.97,
+ "classification_reasoning": "Document contains explanation of benefits table with billed, allowed, and plan paid columns; consistent with payer EOB."
+ },
+ {
+ "doc_type": "billing_statement",
+ "pages": "24-34",
+ "primary_date": "2026-03-20",
+ "confidence": 0.88,
+ "classification_reasoning": "Document contains itemized service charges with revenue codes and account balance; consistent with provider billing statement."
+ }
+ ],
+ "all_icd10_codes": [
+ { "icd10_code": "M17.11", "description": "Primary osteoarthritis, right knee", "confidence": 0.956 },
+ { "icd10_code": "Z96.651", "description": "Presence of right artificial knee joint", "confidence": 0.918 },
+ { "icd10_code": "Z79.1", "description": "Long-term use of non-steroidal anti-inflammatories", "confidence": 0.871 }
+ ],
+ "claim_line_support": {
+ "1": {
+ "final_status": "supported",
+ "assessments": [
+ {
+ "doc_type": "operative_report",
+ "pages": "1-6",
+ "supported": true,
+ "confidence": 0.97,
+ "match_type": "procedure_match",
+ "match_reasoning": "Document summary describes right total knee arthroplasty with cemented tibial and femoral components, consistent with CPT 27447. Procedure date aligns with claim line date of service.",
+ "evidence_type": "llm_synthesis",
+ "date_consistent": true
+ },
+ {
+ "doc_type": "eob",
+ "pages": "18-23",
+ "supported": true,
+ "confidence": 0.95,
+ "match_type": "exact_cpt",
+ "match_reasoning": "EOB service line shows CPT 27447",
+ "evidence_type": "structured_data",
+ "date_consistent": true
+ }
+ ]
+ },
+ "2": {
+ "final_status": "supported",
+ "assessments": [
+ {
+ "doc_type": "pathology_report",
+ "pages": "7-9",
+ "supported": true,
+ "confidence": 0.89,
+ "match_type": "procedure_match",
+ "match_reasoning": "Document summary includes specimen from right knee medial and lateral condyle and tibial plateau, consistent with surgical pathology at CPT 88305 (level IV). Specimen date aligns with operative date.",
+ "evidence_type": "llm_synthesis",
+ "date_consistent": true
+ }
+ ]
+ }
+ },
+ "unclassified_segments": [],
+ "low_confidence_segments": [],
+ "unsupported_lines": []
 }
 ```
 
@@ -864,7 +864,7 @@ The 78-90% overall pipeline accuracy looks similar to the upper end of what rule
 
 ## Why This Isn't Production-Ready
 
-> **⚠️ Regulatory Caution: Claims Adjudication Requirements**
+> ** Regulatory Caution: Claims Adjudication Requirements**
 >
 > The `final_status: "supported"` determination from claim line matching is a documentation adequacy signal, not an adjudication decision. CMS and state insurance regulations require that claims determinations be made by qualified personnel. An LLM assessment of whether an operative report supports a CPT code is a structured input to the adjudication process, not a substitute for it.
 >
@@ -879,9 +879,9 @@ The 78-90% overall pipeline accuracy looks similar to the upper end of what rule
 
 The LLM-powered architecture and pseudocode above get you to a working claims attachment pipeline. Production requires addressing the gaps that will find you in month two.
 
-**Retry logic on every Bedrock and Comprehend Medical client.** This pipeline makes approximately 40 Bedrock calls per package. At that volume, `ThrottlingException` is not a theoretical failure; it happens during burst processing. Configure `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})` on every boto3 client initialization. `adaptive` mode implements exponential backoff with jitter automatically. Apply this to the `bedrock-runtime`, `comprehendmedical`, and any other clients. The Python companion shows the pattern. 
+**Retry logic on every Bedrock and Comprehend Medical client.** This pipeline makes approximately 40 Bedrock calls per package. At that volume, `ThrottlingException` is not a theoretical failure; it happens during burst processing. Configure `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})` on every boto3 client initialization. `adaptive` mode implements exponential backoff with jitter automatically. Apply this to the `bedrock-runtime`, `comprehendmedical`, and any other clients. The Python companion shows the pattern.
 
-**PHI in logs.** The `reasoning` fields from Bedrock responses can contain clinical content drawn from the input page text. Do not log them. In Lambda, stdout goes to CloudWatch Logs, and CloudWatch Logs is not PHI-safe by default. Log structural metadata only: page numbers, doc type, confidence values, error types. Encrypt all Lambda CloudWatch log groups with a customer-managed KMS key; Lambda does not encrypt log groups by default. Never log `response_text`, `reasoning`, or any extracted clinical field directly. 
+**PHI in logs.** The `reasoning` fields from Bedrock responses can contain clinical content drawn from the input page text. Do not log them. In Lambda, stdout goes to CloudWatch Logs, and CloudWatch Logs is not PHI-safe by default. Log structural metadata only: page numbers, doc type, confidence values, error types. Encrypt all Lambda CloudWatch log groups with a customer-managed KMS key; Lambda does not encrypt log groups by default. Never log `response_text`, `reasoning`, or any extracted clinical field directly.
 
 **LLM output validation everywhere.** Every Bedrock call in this pipeline returns structured JSON that we parse. Language models don't guarantee valid JSON. Wrap every JSON parse in exception handling. On parse failure, retry once with an explicit "you must return only valid JSON" suffix. On second failure, route the segment or page pair to human review. A malformed boundary detection response that crashes the segmenter takes down the entire package. Build defensive parsing from day one.
 
@@ -889,7 +889,7 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 
 **Build the boundary detection feedback loop from day one.** When a claims examiner corrects a segmentation error, that correction should be logged with the two page pairs involved and what the correct answer was. Over time, you want to know: which document type transitions cause the most missed boundaries? (Answer: therapy notes followed immediately by billing statements, because both can look like continuous text.) Are there specific payer workflows that produce systematic failures? Log the model's reasoning alongside the correction; it helps you understand why it made the wrong call.
 
-**Model versioning.** Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) and Nova Lite (`us.amazon.nova-lite-v1:0`) will be superseded. Pin to specific model version ARNs in production. Build a regression test suite on a set of labeled packages and run it against any model change before deploying. Claim line matching quality is particularly sensitive to model version; a subtle change in how the model handles clinical terminology can shift accuracy by several percentage points. 
+**Model versioning.** Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) and Nova Lite (`us.amazon.nova-lite-v1:0`) will be superseded. Pin to specific model version ARNs in production. Build a regression test suite on a set of labeled packages and run it against any model change before deploying. Claim line matching quality is particularly sensitive to model version; a subtle change in how the model handles clinical terminology can shift accuracy by several percentage points.
 
 **Prompt injection risks.** Claims attachments are untrusted documents from external parties. A provider could include text designed to manipulate the classification or matching model. Apply Bedrock Guardrails to Converse API calls. Sanitize extracted page text before passing it to the model. Add output validation to flag structurally inconsistent responses (a boundary detection response that returns `supported: true` when the schema expects `same_document: boolean` tells you something went wrong).
 
