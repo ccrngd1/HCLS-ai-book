@@ -69,33 +69,47 @@ on whatever happens to be installed. (Measured: python-markdown and markdown-it-
 both produce 229 pages here, so the engine is not the cause of the discrepancy
 described next.)
 
-## KNOWN BLOCKER: fonts are not print-valid on the Linux host
+## Fonts are embedded (resolved 2026-08-05)
 
-`print.css` sets the body face to `Georgia, "Times New Roman", serif`. Neither
-Georgia nor Times New Roman is installed on the cloud desktop, so Chrome
-substitutes Nimbus Roman. Two consequences, both disqualifying for KDP:
+`print.css` embeds its own faces via `@font-face`, so the interior renders
+identically on any host and every glyph is embedded in the PDF, which KDP
+requires. Assets live in `print/assets/fonts/`:
 
-1. **The page count is wrong.** Nimbus Roman is more compact than Georgia, so the
-   interior renders at **229 pages** here versus the **268** recorded at Phase C
-   close on a machine that had Georgia. Spine width is a function of page count,
-   so do not compute a cover from a build made on this host.
-2. **Fonts are not embedded.** The only `/BaseFont` in the rendered PDF is
-   `DejaVuSansMono`. The body serif is not embedded at all. KDP requires all fonts
-   embedded.
+- **Gelasio** (body serif) in regular, italic, bold, bold-italic. Metric-compatible
+  with Georgia and licensed under the SIL Open Font License (`OFL.txt`).
+- **DejaVu Sans Mono** (code) in regular, bold, oblique (`DejaVu-LICENSE.txt`).
 
-Pick one before generating the cover:
+Georgia remains only as a CSS fallback after Gelasio. **Do not remove Gelasio and
+fall back to a bare `Georgia` reference.** Georgia is not installed on the Linux
+build host; Chrome silently substitutes a more compact serif, the body font ends
+up unembedded, and the page count shifts without warning. That failure cost 39
+pages of drift (229 rendered versus 268 recorded) before it was caught.
 
-- **Render on the machine that has Georgia** (where the 268-page figure came from).
-  Cheapest path to a valid interior; leaves the build non-reproducible.
-- **Stop depending on a system font** (recommended). Add an openly-licensed serif
-  as a repo asset and reference it with `@font-face` in `print.css`. Gelasio is
-  metric-compatible with Georgia and OFL-licensed, so it should preserve pagination
-  closely while guaranteeing embedding and making the build reproducible on any
-  host. This changes the typeface slightly and needs a visual check plus a fresh
-  page-count baseline.
+Verify after any font or CSS change:
 
-Until one of those is done, treat `--pdf` output from this host as a layout smoke
-test, not a print master.
+```bash
+python3 - <<'EOF'
+import re
+d=open("print/build/book.pdf","rb").read()
+print(sorted(set(m.group(1).decode() for m in re.finditer(rb'/BaseFont\s*/([\w+#,.-]+)', d))))
+print("embedded programs:", len(re.findall(rb'/FontFile2', d)))
+print("pages:", len(re.findall(rb'/Type\s*/Page[^s]', d)))
+EOF
+```
+
+Expect Gelasio and DejaVuSansMono subsets, and a non-zero `/FontFile2` count.
+
+## Current interior: 251 pages
+
+Rendered with embedded fonts and `--engine markdown-it-py`, 6.00 x 9.00in trim,
+0 reference warnings. This supersedes the 268-page figure recorded at Phase C
+close, which was produced with a substituted system font on another machine and
+is not reproducible.
+
+Spine width at 251 pages: **0.6275in** on cream 60# stock, **0.5653in** on white
+50#. Confirm against KDP's calculator for the stock you select, and note the count
+is currently odd, so add a trailing blank if you want the interior to end on a
+verso.
 
 ## Transforms applied (plan_docs/physical-book-plan.md §2b)
 1. **Strip the web nav footer** (`*← … →*`).

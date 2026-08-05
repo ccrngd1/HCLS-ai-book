@@ -2,11 +2,57 @@
    Grayscale interior (color interiors ~3x KDP/IngramSpark cost).
    Honored by headless-Chrome print with preferCSSPageSize:true. */
 
+/* ---- Embedded fonts ----
+   Gelasio is metric-compatible with Georgia and licensed under the SIL Open
+   Font License, so the interior is reproducible on any host and every glyph is
+   embedded in the PDF. Do NOT swap this back to a bare `Georgia` system-font
+   reference: Georgia is not installed on the Linux build host, Chrome silently
+   substitutes a more compact serif, and the page count (and therefore the cover
+   spine width) changes without warning. Paths are relative to book.html in
+   print/build/, since build.py inlines this stylesheet.
+   License: print/assets/fonts/OFL.txt */
+@font-face {
+  font-family: "Gelasio";
+  src: url("../assets/fonts/Gelasio-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "Gelasio";
+  src: url("../assets/fonts/Gelasio-Italic.ttf") format("truetype");
+  font-weight: 400; font-style: italic; font-display: block;
+}
+@font-face {
+  font-family: "Gelasio";
+  src: url("../assets/fonts/Gelasio-Bold.ttf") format("truetype");
+  font-weight: 700; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "Gelasio";
+  src: url("../assets/fonts/Gelasio-BoldItalic.ttf") format("truetype");
+  font-weight: 700; font-style: italic; font-display: block;
+}
+/* Mono for code, embedded for the same reason. License: DejaVu-LICENSE.txt */
+@font-face {
+  font-family: "DejaVu Sans Mono";
+  src: url("../assets/fonts/DejaVuSansMono.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "DejaVu Sans Mono";
+  src: url("../assets/fonts/DejaVuSansMono-Bold.ttf") format("truetype");
+  font-weight: 700; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "DejaVu Sans Mono";
+  src: url("../assets/fonts/DejaVuSansMono-Oblique.ttf") format("truetype");
+  font-weight: 400; font-style: italic; font-display: block;
+}
+
 /* ---- Page geometry: mirrored margins with a binding gutter ---- */
 @page {
   size: 6in 9in;
   margin: 0.85in 0.65in 0.9in 0.8in;     /* top right bottom left */
-  @bottom-center { content: counter(page); font-family: Georgia, serif; font-size: 9pt; color: #777; }
+  @bottom-center { content: counter(page); font-family: "Gelasio", Georgia, serif; font-size: 9pt; color: #777; }
 }
 @page :left  { margin-left: 0.65in; margin-right: 0.8in; }   /* verso: gutter on the right edge */
 @page :right { margin-left: 0.8in;  margin-right: 0.65in; }  /* recto: gutter on the left edge */
@@ -14,7 +60,7 @@
 
 html, body { margin: 0; padding: 0; }
 body {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Gelasio", Georgia, "Times New Roman", serif;
   font-size: 10.5pt;
   line-height: 1.52;                     /* airier leading (was 1.46) */
   color: #1b1b1b;
