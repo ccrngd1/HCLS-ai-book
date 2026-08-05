@@ -116,7 +116,7 @@ The caching layer pays for itself quickly. Standard procedure discharge instruct
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `comprehend-medical` · `text-simplification` · `patient-education` · `health-literacy` · `guardrails` · `simple` · `mvp` · `lambda` · `dynamodb` · `hipaa`
+`llm` · `generative-ai` · `bedrock` · `comprehend-medical` · `text-simplification` · `patient-education` · `health-literacy` · `guardrails` · `lambda` · `dynamodb` · `hipaa`
 
 ---
 

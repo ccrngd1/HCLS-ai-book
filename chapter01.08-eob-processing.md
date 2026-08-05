@@ -247,7 +247,7 @@ One thing I'm genuinely uncertain about: Bedrock schema mapping accuracy on the 
 
 ## Tags
 
-`document-intelligence` · `ocr` · `textract` · `bedrock` · `nova-pro` · `haiku` · `tables` · `eob` · `financial` · `coordination-of-benefits` · `claims` · `schema-mapping` · `llm-normalization` · `financial-validation` · `hybrid-architecture` · `moderate` · `phase-2` · `hipaa` · `lambda` · `dynamodb` · `sqs`
+`document-intelligence` · `ocr` · `textract` · `bedrock` · `nova-pro` · `haiku` · `tables` · `eob` · `financial` · `coordination-of-benefits` · `claims` · `schema-mapping` · `llm-normalization` · `financial-validation` · `hybrid-architecture` · `hipaa` · `lambda` · `dynamodb` · `sqs`
 
 ---
 

@@ -119,7 +119,7 @@ The CPT lookup table is honestly the most maintenance-intensive part of this pip
 
 ## Tags
 
-`document-intelligence` · `ocr` · `nlp` · `textract` · `comprehend-medical` · `icd-10` · `cpt` · `lab-requisition` · `clinical-nlp` · `medical-coding` · `medical-necessity` · `two-stage-pipeline` · `moderate` · `phase-2` · `lambda` · `s3` · `dynamodb` · `sns` · `hipaa`
+`document-intelligence` · `ocr` · `nlp` · `textract` · `comprehend-medical` · `icd-10` · `cpt` · `lab-requisition` · `clinical-nlp` · `medical-coding` · `medical-necessity` · `two-stage-pipeline` · `lambda` · `s3` · `dynamodb` · `sns` · `hipaa`
 
 ---
 

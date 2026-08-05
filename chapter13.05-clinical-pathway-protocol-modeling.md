@@ -125,7 +125,7 @@ The condition evaluation layer is where performance problems hide. If evaluating
 
 ## Tags
 
-`knowledge-graph` · `clinical-pathways` · `decision-support` · `neptune` · `graph-database` · `protocol-modeling` · `compliance` · `cds` · `medium` · `eventbridge` · `dynamodb` · `hipaa`
+`knowledge-graph` · `clinical-pathways` · `decision-support` · `neptune` · `graph-database` · `protocol-modeling` · `compliance` · `cds` · `eventbridge` · `dynamodb` · `hipaa`
 
 ---
 

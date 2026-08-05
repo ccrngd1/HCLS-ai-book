@@ -352,7 +352,7 @@ Last point, because it is specific to this use case: treatment response predicti
 
 ## Tags
 
-`personalization` · `treatment-response-prediction` · `causal-inference` · `heterogeneous-treatment-effects` · `cate-estimation` · `target-trial-emulation` · `propensity-score` · `meta-learners` · `causal-forest` · `bart` · `doubly-robust` · `sensitivity-analysis` · `calibration` · `equity` · `cohort-analysis` · `fda-samd` · `clinical-decision-support` · `smart-on-fhir` · `cds-hooks` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `healthlake` · `complex` · `research-to-production` · `hipaa`
+`personalization` · `treatment-response-prediction` · `causal-inference` · `heterogeneous-treatment-effects` · `cate-estimation` · `target-trial-emulation` · `propensity-score` · `meta-learners` · `causal-forest` · `bart` · `doubly-robust` · `sensitivity-analysis` · `calibration` · `equity` · `cohort-analysis` · `fda-samd` · `clinical-decision-support` · `smart-on-fhir` · `cds-hooks` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `healthlake` · `hipaa`
 
 ---
 

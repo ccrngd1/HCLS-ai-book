@@ -124,7 +124,7 @@ The part that works better than expected: pathologist acceptance. Unlike radiolo
 
 ## Tags
 
-`computer-vision` · `pathology` · `whole-slide-imaging` · `deep-learning` · `multiple-instance-learning` · `sagemaker` · `gpu` · `complex` · `fda-regulated` · `cancer-detection` · `digital-pathology` · `hipaa`
+`computer-vision` · `pathology` · `whole-slide-imaging` · `deep-learning` · `multiple-instance-learning` · `sagemaker` · `gpu` · `fda-regulated` · `cancer-detection` · `digital-pathology` · `hipaa`
 
 ---
 

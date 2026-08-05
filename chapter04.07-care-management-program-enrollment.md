@@ -404,7 +404,7 @@ Last point, because it's specific to this use case: care management is rationing
 
 ## Tags
 
-`personalization` · `recommendation` · `care-management` · `program-enrollment` · `uplift-modeling` · `causal-inference` · `propensity-matching` · `capacity-constrained-allocation` · `equity` · `cohort-analysis` · `longitudinal-state-tracking` · `engagement-prediction` · `disenrollment-governance` · `cross-program-transitions` · `post-graduation-observation` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `connect` · `medium-complex` · `production` · `hipaa`
+`personalization` · `recommendation` · `care-management` · `program-enrollment` · `uplift-modeling` · `causal-inference` · `propensity-matching` · `capacity-constrained-allocation` · `equity` · `cohort-analysis` · `longitudinal-state-tracking` · `engagement-prediction` · `disenrollment-governance` · `cross-program-transitions` · `post-graduation-observation` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `connect` · `hipaa`
 
 ---
 

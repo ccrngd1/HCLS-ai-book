@@ -141,7 +141,7 @@ The part that's genuinely hard to communicate to operations: the prediction inte
 
 ## Tags
 
-`time-series` · `forecasting` · `ed` · `emergency-department` · `arrival-forecasting` · `acuity` · `esi` · `prophet` · `deepar` · `sagemaker` · `kinesis` · `dynamodb` · `step-functions` · `staffing` · `simple-medium` · `mvp` · `hipaa`
+`time-series` · `forecasting` · `ed` · `emergency-department` · `arrival-forecasting` · `acuity` · `esi` · `prophet` · `deepar` · `sagemaker` · `kinesis` · `dynamodb` · `step-functions` · `staffing` · `hipaa`
 
 ---
 

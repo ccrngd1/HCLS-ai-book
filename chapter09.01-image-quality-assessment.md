@@ -117,7 +117,7 @@ The part that surprised me: the biggest ROI is not in radiology. It's in clinica
 
 ## Tags
 
-`computer-vision` · `medical-imaging` · `quality-assessment` · `image-processing` · `dicom` · `radiology` · `simple` · `mvp` · `hipaa`
+`computer-vision` · `medical-imaging` · `quality-assessment` · `image-processing` · `dicom` · `radiology` · `hipaa`
 
 ---
 

@@ -352,7 +352,7 @@ Lives are saved here too, just less dramatically than in Recipe 3.7. The signal 
 
 ## Tags
 
-`anomaly-detection` · `readmission-risk` · `post-discharge-monitoring` · `transitions-of-care` · `remote-patient-monitoring` · `rpm` · `patient-reported-outcomes` · `pro` · `heart-failure` · `copd` · `hrrp` · `cms-readmission-program` · `lace` · `hospital-score` · `time-series` · `xgboost` · `lightgbm` · `survival-analysis` · `feature-store` · `clarify` · `model-monitor` · `model-registry` · `bedrock` · `comprehend-medical` · `kinesis` · `timestream` · `dynamodb` · `opensearch` · `eventbridge` · `sagemaker` · `appsync` · `step-functions` · `care-management` · `local-validation` · `subgroup-performance` · `equity` · `sdoh` · `calibration` · `shap` · `engagement-decay` · `cold-start` · `causal-inference` · `fda-cds` · `samd` · `hipaa` · `complex` · `production` · `provider`
+`anomaly-detection` · `readmission-risk` · `post-discharge-monitoring` · `transitions-of-care` · `remote-patient-monitoring` · `rpm` · `patient-reported-outcomes` · `pro` · `heart-failure` · `copd` · `hrrp` · `cms-readmission-program` · `lace` · `hospital-score` · `time-series` · `xgboost` · `lightgbm` · `survival-analysis` · `feature-store` · `clarify` · `model-monitor` · `model-registry` · `bedrock` · `comprehend-medical` · `kinesis` · `timestream` · `dynamodb` · `opensearch` · `eventbridge` · `sagemaker` · `appsync` · `step-functions` · `care-management` · `local-validation` · `subgroup-performance` · `equity` · `sdoh` · `calibration` · `shap` · `engagement-decay` · `cold-start` · `causal-inference` · `fda-cds` · `samd` · `hipaa` · `provider`
 
 ---
 

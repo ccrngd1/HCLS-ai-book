@@ -441,7 +441,7 @@ Last point, because it is specific to this use case: dynamic treatment regime re
 
 ## Tags
 
-`personalization` · `dynamic-treatment-regime` · `sequential-decision-making` · `reinforcement-learning` · `offline-rl` · `q-learning` · `causal-inference` · `target-trial-emulation` · `off-policy-evaluation` · `clinical-decision-support` · `samd` · `equity` · `cohort-analysis` · `fhir` · `smart-on-fhir` · `bedrock` · `sagemaker` · `dynamodb` · `feature-store` · `step-functions` · `lambda` · `healthlake` · `complex` · `research-to-production` · `hipaa`
+`personalization` · `dynamic-treatment-regime` · `sequential-decision-making` · `reinforcement-learning` · `offline-rl` · `q-learning` · `causal-inference` · `target-trial-emulation` · `off-policy-evaluation` · `clinical-decision-support` · `samd` · `equity` · `cohort-analysis` · `fhir` · `smart-on-fhir` · `bedrock` · `sagemaker` · `dynamodb` · `feature-store` · `step-functions` · `lambda` · `healthlake` · `hipaa`
 
 ---
 

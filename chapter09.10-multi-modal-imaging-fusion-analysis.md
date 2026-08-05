@@ -130,7 +130,7 @@ One last thing that surprised me: DICOM-RT Structure Set generation is harder th
 
 ## Tags
 
-`computer-vision` · `medical-imaging` · `multi-modal` · `image-fusion` · `registration` · `segmentation` · `radiation-oncology` · `treatment-planning` · `sagemaker` · `step-functions` · `dicom` · `complex` · `research`
+`computer-vision` · `medical-imaging` · `multi-modal` · `image-fusion` · `registration` · `segmentation` · `radiation-oncology` · `treatment-planning` · `sagemaker` · `step-functions` · `dicom` · `research`
 
 ---
 

@@ -258,7 +258,7 @@ Final thought: this is one of the highest-leverage applications of medical AI I'
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `knowledge-bases` · `opensearch` · `comprehend-medical` · `rag` · `retrieval-augmented-generation` · `hybrid-search` · `vector-search` · `re-ranking` · `medical-literature` · `pubmed` · `evidence-synthesis` · `evidence-grading` · `citation-verification` · `grounded-generation` · `clinical-qa` · `medium-complex` · `hipaa` · `provenance`
+`llm` · `generative-ai` · `bedrock` · `knowledge-bases` · `opensearch` · `comprehend-medical` · `rag` · `retrieval-augmented-generation` · `hybrid-search` · `vector-search` · `re-ranking` · `medical-literature` · `pubmed` · `evidence-synthesis` · `evidence-grading` · `citation-verification` · `grounded-generation` · `clinical-qa` · `hipaa` · `provenance`
 
 ---
 

@@ -351,7 +351,7 @@ The last thing, because it's specific to healthcare: the IVR is, for many patien
 
 ## Tags
 
-`speech-voice-ai` · `ivr` · `natural-language-ivr` · `conversational-ivr` · `call-routing` · `intent-classification` · `slot-filling` · `dialog-management` · `streaming-asr` · `telephony-ivr` · `narrowband-audio` · `endpointing` · `confidence-thresholding` · `urgency-escalation` · `caller-verification` · `ani-prefill` · `dtmf-fallback` · `clinical-triage-routing` · `self-service-fulfillment` · `containment-rate` · `subgroup-accuracy` · `multilingual-ivr` · `voice-biometrics` · `connect` · `lex` · `polly` · `transcribe-medical` · `lambda` · `dynamodb` · `s3` · `kinesis` · `eventbridge` · `kms` · `secrets-manager` · `contact-lens` · `cloudwatch` · `cloudtrail` · `simple` · `mvp` · `hipaa` · `patient-experience` · `accessibility` · `equity-monitoring`
+`speech-voice-ai` · `ivr` · `natural-language-ivr` · `conversational-ivr` · `call-routing` · `intent-classification` · `slot-filling` · `dialog-management` · `streaming-asr` · `telephony-ivr` · `narrowband-audio` · `endpointing` · `confidence-thresholding` · `urgency-escalation` · `caller-verification` · `ani-prefill` · `dtmf-fallback` · `clinical-triage-routing` · `self-service-fulfillment` · `containment-rate` · `subgroup-accuracy` · `multilingual-ivr` · `voice-biometrics` · `connect` · `lex` · `polly` · `transcribe-medical` · `lambda` · `dynamodb` · `s3` · `kinesis` · `eventbridge` · `kms` · `secrets-manager` · `contact-lens` · `cloudwatch` · `cloudtrail` · `hipaa` · `patient-experience` · `accessibility` · `equity-monitoring`
 
 ---
 

@@ -315,7 +315,7 @@ Last point, because it is specific to the regulatory context: provider directory
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `provider-matching` · `npi` · `nppes` · `credentialing` · `provider-directory` · `network-adequacy` · `fellegi-sunter` · `probabilistic-linkage` · `blocking` · `string-similarity` · `drift-detection` · `re-verification` · `splink` · `simple` · `mvp` · `hipaa` · `no-surprises-act`
+`entity-resolution` · `record-linkage` · `provider-matching` · `npi` · `nppes` · `credentialing` · `provider-directory` · `network-adequacy` · `fellegi-sunter` · `probabilistic-linkage` · `blocking` · `string-similarity` · `drift-detection` · `re-verification` · `splink` · `hipaa` · `no-surprises-act`
 
 ---
 

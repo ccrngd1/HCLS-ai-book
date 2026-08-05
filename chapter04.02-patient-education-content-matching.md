@@ -229,7 +229,7 @@ One last point, because it's specific to this use case: be careful with the fram
 
 ## Tags
 
-`personalization` · `recommendation` · `content-based-filtering` · `semantic-search` · `vector-search` · `learning-to-rank` · `patient-education` · `health-literacy` · `bedrock` · `opensearch` · `dynamodb` · `sagemaker` · `lambda` · `simple` · `mvp` · `hipaa`
+`personalization` · `recommendation` · `content-based-filtering` · `semantic-search` · `vector-search` · `learning-to-rank` · `patient-education` · `health-literacy` · `bedrock` · `opensearch` · `dynamodb` · `sagemaker` · `lambda` · `hipaa`
 
 ---
 

@@ -145,7 +145,7 @@ The feedback loop is where the real value emerges. When you track which suggesti
 
 ## Tags
 
-`nlp` `icd-10` `medical-coding` `comprehend-medical` `clinical-nlp` `code-suggestion` `revenue-cycle` `classification` `assertion-detection` `negation` `hipaa` `lambda` `dynamodb` `api-gateway` `simple-medium` `phase-1-2`
+`nlp` · `icd-10` · `medical-coding` · `comprehend-medical` · `clinical-nlp` · `code-suggestion` · `revenue-cycle` · `classification` · `assertion-detection` · `negation` · `hipaa` · `lambda` · `dynamodb` · `api-gateway`
 
 ---
 

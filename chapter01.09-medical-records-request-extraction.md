@@ -176,7 +176,7 @@ One operational lesson worth sharing: build the review queue carefully before yo
 
 ## Tags
 
-`document-intelligence` · `ocr` · `textract` · `forms` · `signatures` · `medical-records` · `hipaa-authorization` · `privacy` · `release-of-information` · `routing` · `bedrock` · `claude-sonnet` · `nova-pro` · `llm-screening` · `compliance-tension` · `moderate` · `phase-2` · `hipaa` · `payer`
+`document-intelligence` · `ocr` · `textract` · `forms` · `signatures` · `medical-records` · `hipaa-authorization` · `privacy` · `release-of-information` · `routing` · `bedrock` · `claude-sonnet` · `nova-pro` · `llm-screening` · `compliance-tension` · `hipaa` · `payer`
 
 ---
 

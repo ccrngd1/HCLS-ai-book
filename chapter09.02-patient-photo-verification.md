@@ -101,7 +101,7 @@ The bias question is real and you can't hand-wave it. Test your system. Publish 
 
 ## Tags
 
-`computer-vision` · `face-comparison` · `identity-verification` · `rekognition` · `patient-safety` · `fraud-prevention` · `biometrics` · `simple` · `mvp` · `lambda` · `s3` · `dynamodb` · `hipaa`
+`computer-vision` · `face-comparison` · `identity-verification` · `rekognition` · `patient-safety` · `fraud-prevention` · `biometrics` · `lambda` · `s3` · `dynamodb` · `hipaa`
 
 ---
 

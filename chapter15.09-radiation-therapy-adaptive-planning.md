@@ -202,7 +202,7 @@ One more thing: patient informed consent for AI-assisted treatment planning is a
 
 ## Tags
 
-`reinforcement-learning` · `radiation-therapy` · `adaptive-planning` · `offline-rl` · `treatment-optimization` · `safety-critical` · `complex` · `research-stage` · `sagemaker` · `step-functions` · `clinical-decision-support` · `hipaa` · `fda`
+`reinforcement-learning` · `radiation-therapy` · `adaptive-planning` · `offline-rl` · `treatment-optimization` · `safety-critical` · `research-stage` · `sagemaker` · `step-functions` · `clinical-decision-support` · `hipaa` · `fda`
 
 ---
 

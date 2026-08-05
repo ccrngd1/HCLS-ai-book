@@ -124,7 +124,7 @@ The cost model also catches people off guard. Cloud NLP services charge per char
 
 ## Tags
 
-`nlp` · `phenotyping` · `research` · `cohort-identification` · `comprehend-medical` · `step-functions` · `complex` · `entity-extraction` · `assertion-classification` · `clinical-research` · `hipaa` · `reproducibility`
+`nlp` · `phenotyping` · `research` · `cohort-identification` · `comprehend-medical` · `step-functions` · `entity-extraction` · `assertion-classification` · `clinical-research` · `hipaa` · `reproducibility`
 
 ---
 

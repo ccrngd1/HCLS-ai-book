@@ -287,7 +287,7 @@ Final thought. Clinical decision support synthesis is one of the genuinely high-
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `knowledge-bases` · `guardrails` · `opensearch` · `aurora-pgvector` · `healthlake` · `comprehend-medical` · `rag` · `clinical-decision-support` · `cds` · `fhir` · `smart-on-fhir` · `cds-hooks` · `drug-interactions` · `guidelines` · `grounded-generation` · `citation-verification` · `fda-cds` · `alert-fatigue` · `evidence-synthesis` · `complex` · `hipaa` · `regulatory` · `provenance`
+`llm` · `generative-ai` · `bedrock` · `knowledge-bases` · `guardrails` · `opensearch` · `aurora-pgvector` · `healthlake` · `comprehend-medical` · `rag` · `clinical-decision-support` · `cds` · `fhir` · `smart-on-fhir` · `cds-hooks` · `drug-interactions` · `guidelines` · `grounded-generation` · `citation-verification` · `fda-cds` · `alert-fatigue` · `evidence-synthesis` · `hipaa` · `regulatory` · `provenance`
 
 ---
 

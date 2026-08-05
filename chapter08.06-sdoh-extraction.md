@@ -123,7 +123,7 @@ One thing that surprised me: the highest-value output isn't the individual extra
 
 ## Tags
 
-`nlp` · `sdoh` · `social-determinants` · `text-classification` · `entity-extraction` · `population-health` · `care-management` · `medium-complex` · `hipaa`
+`nlp` · `sdoh` · `social-determinants` · `text-classification` · `entity-extraction` · `population-health` · `care-management` · `hipaa`
 
 ---
 

@@ -121,7 +121,7 @@ The incremental refresh pattern that actually works in production looks like thi
 
 ## Tags
 
-`clustering` · `geospatial` · `DBSCAN` · `facility-planning` · `network-adequacy` · `population-health` · `simple` · `mvp`
+`clustering` · `geospatial` · `DBSCAN` · `facility-planning` · `network-adequacy` · `population-health`
 
 ---
 

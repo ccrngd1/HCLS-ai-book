@@ -156,7 +156,7 @@ On the federal side, CMS finalized rule CMS-0057-F (effective January 2026) mand
 
 ## Tags
 
-`predictive-analytics` · `risk-scoring` · `revenue-cycle` · `claim-denial` · `prior-authorization` · `binary-classification` · `xgboost` · `shap` · `explainability` · `sagemaker` · `batch-transform` · `real-time-inference` · `class-imbalance` · `fairness` · `hipaa` · `medium-complex`
+`predictive-analytics` · `risk-scoring` · `revenue-cycle` · `claim-denial` · `prior-authorization` · `binary-classification` · `xgboost` · `shap` · `explainability` · `sagemaker` · `batch-transform` · `real-time-inference` · `class-imbalance` · `fairness` · `hipaa`
 
 ---
 

@@ -124,7 +124,7 @@ One more thing: be careful about who sees the raw comments. Patient experience t
 
 ## Tags
 
-`nlp` · `sentiment-analysis` · `comprehend` · `patient-experience` · `hcahps` · `aspect-extraction` · `simple` · `mvp` · `lambda` · `s3` · `dynamodb` · `quicksight` · `hipaa`
+`nlp` · `sentiment-analysis` · `comprehend` · `patient-experience` · `hcahps` · `aspect-extraction` · `lambda` · `s3` · `dynamodb` · `quicksight` · `hipaa`
 
 ---
 

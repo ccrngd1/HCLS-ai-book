@@ -331,7 +331,7 @@ Last point, because it's specific to this use case: medication non-adherence is 
 
 ## Tags
 
-`personalization` · `recommendation` · `medication-adherence` · `pdc` · `barrier-classification` · `uplift-modeling` · `causal-inference` · `heterogeneous-allocation` · `star-ratings` · `pharmacy` · `equity` · `cohort-analysis` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `medium` · `production` · `hipaa`
+`personalization` · `recommendation` · `medication-adherence` · `pdc` · `barrier-classification` · `uplift-modeling` · `causal-inference` · `heterogeneous-allocation` · `star-ratings` · `pharmacy` · `equity` · `cohort-analysis` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `hipaa`
 
 ---
 

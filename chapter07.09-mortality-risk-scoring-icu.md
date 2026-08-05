@@ -145,7 +145,7 @@ Start with quality benchmarking (risk-adjusted mortality rates for your ICU) bef
 
 ## Tags
 
-`predictive-analytics` · `risk-scoring` · `mortality` · `icu` · `sagemaker` · `healthlake` · `calibration` · `complex` · `production` · `clinical-decision-support` · `hipaa` · `xgboost` · `shap` · `explainability`
+`predictive-analytics` · `risk-scoring` · `mortality` · `icu` · `sagemaker` · `healthlake` · `calibration` · `clinical-decision-support` · `hipaa` · `xgboost` · `shap` · `explainability`
 
 ---
 

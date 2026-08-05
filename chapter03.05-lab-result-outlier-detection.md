@@ -256,7 +256,7 @@ The politics: the lab and the clinical teams view alerts differently. A lab dire
 
 ## Tags
 
-`anomaly-detection` · `laboratory` · `clinical-decision-support` · `autoverification` · `critical-value-callback` · `delta-check` · `specimen-quality` · `hemolysis` · `reference-range` · `patient-baseline` · `cohort-baseline` · `statistical-process-control` · `cusum` · `isolation-forest` · `kinesis` · `lambda` · `dynamodb` · `sagemaker` · `feature-store` · `opensearch` · `comprehend-medical` · `bedrock` · `hl7` · `fhir` · `loinc` · `clia` · `medium` · `mvp-plus` · `hipaa` · `provider`
+`anomaly-detection` · `laboratory` · `clinical-decision-support` · `autoverification` · `critical-value-callback` · `delta-check` · `specimen-quality` · `hemolysis` · `reference-range` · `patient-baseline` · `cohort-baseline` · `statistical-process-control` · `cusum` · `isolation-forest` · `kinesis` · `lambda` · `dynamodb` · `sagemaker` · `feature-store` · `opensearch` · `comprehend-medical` · `bedrock` · `hl7` · `fhir` · `loinc` · `clia` · `hipaa` · `provider`
 
 ---
 

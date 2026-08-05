@@ -172,7 +172,7 @@ One more thing: the contextual bandit approach (mentioned in the Technology sect
 
 ## Tags
 
-`reinforcement-learning` · `alert-fatigue` · `threshold-optimization` · `contextual-bandit` · `clinical-alerting` · `patient-safety` · `sagemaker` · `kinesis` · `dynamodb` · `simple` · `mvp` · `hipaa`
+`reinforcement-learning` · `alert-fatigue` · `threshold-optimization` · `contextual-bandit` · `clinical-alerting` · `patient-safety` · `sagemaker` · `kinesis` · `dynamodb` · `hipaa`
 
 ---
 

@@ -136,7 +136,7 @@ Disease progression modeling is one of those problems where the concept is intui
 
 ## Tags
 
-`predictive-analytics` `disease-progression` `survival-analysis` `longitudinal-modeling` `chronic-disease` `CKD` `time-to-event` `uncertainty-quantification` `complex`
+`predictive-analytics` · `disease-progression` · `survival-analysis` · `longitudinal-modeling` · `chronic-disease` · `CKD` · `time-to-event` · `uncertainty-quantification`
 
 ---
 

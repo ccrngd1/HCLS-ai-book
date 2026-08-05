@@ -116,7 +116,7 @@ One more thing: the "competitive advantage" concern is real but often overstated
 
 ## Tags
 
-`knowledge-graphs` · `federation` · `distributed-systems` · `neptune` · `sparql` · `ontology` · `cross-institutional` · `governance` · `privatelink` · `multi-account` · `complex` · `hipaa` · `interoperability`
+`knowledge-graphs` · `federation` · `distributed-systems` · `neptune` · `sparql` · `ontology` · `cross-institutional` · `governance` · `privatelink` · `multi-account` · `hipaa` · `interoperability`
 
 ---
 

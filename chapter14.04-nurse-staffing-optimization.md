@@ -144,7 +144,7 @@ Start with a single unit. Prove it works. Then expand. Trying to optimize across
 
 ## Tags
 
-`optimization` · `operations-research` · `constraint-programming` · `nurse-scheduling` · `workforce-management` · `mixed-integer-programming` · `real-time` · `sagemaker` · `lambda` · `dynamodb` · `eventbridge` · `medium` · `hipaa`
+`optimization` · `operations-research` · `constraint-programming` · `nurse-scheduling` · `workforce-management` · `mixed-integer-programming` · `real-time` · `sagemaker` · `lambda` · `dynamodb` · `eventbridge` · `hipaa`
 
 ---
 

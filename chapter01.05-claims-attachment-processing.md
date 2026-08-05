@@ -190,7 +190,7 @@ The path from this recipe to production runs through measurement, feedback loops
 
 ## Tags
 
-`document-intelligence` · `ocr` · `llm` · `bedrock` · `textract` · `comprehend-medical` · `claims-attachment` · `document-segmentation` · `document-classification` · `boundary-detection` · `claim-line-matching` · `step-functions` · `multi-document` · `eob` · `operative-report` · `icd-10` · `model-tiering` · `nova-lite` · `claude-sonnet` · `complex` · `phase-2` · `hipaa` · `payer` · `claims-processing`
+`document-intelligence` · `ocr` · `llm` · `bedrock` · `textract` · `comprehend-medical` · `claims-attachment` · `document-segmentation` · `document-classification` · `boundary-detection` · `claim-line-matching` · `step-functions` · `multi-document` · `eob` · `operative-report` · `icd-10` · `model-tiering` · `nova-lite` · `claude-sonnet` · `hipaa` · `payer` · `claims-processing`
 
 ---
 

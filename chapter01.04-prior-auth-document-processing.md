@@ -271,7 +271,7 @@ The architectural principle that carries forward: Textract extracts structure. L
 
 ## Tags
 
-`document-intelligence` · `ocr` · `llm` · `bedrock` · `textract` · `comprehend-medical` · `prior-authorization` · `multi-page` · `page-classification` · `fan-out` · `step-functions` · `icd-10` · `model-tiering` · `nova-lite` · `claude-sonnet` · `moderate` · `mvp` · `hipaa` · `payer` · `utilization-management`
+`document-intelligence` · `ocr` · `llm` · `bedrock` · `textract` · `comprehend-medical` · `prior-authorization` · `multi-page` · `page-classification` · `fan-out` · `step-functions` · `icd-10` · `model-tiering` · `nova-lite` · `claude-sonnet` · `hipaa` · `payer` · `utilization-management`
 
 ---
 

@@ -160,7 +160,7 @@ The thing I would do differently if I were starting over: build the per-payer ba
 
 ## Tags
 
-`time-series` · `revenue-cycle` · `cash-flow-forecasting` · `payer-mix` · `survival-analysis` · `kaplan-meier` · `monte-carlo` · `denial-management` · `appeals` · `contract-modeling` · `self-pay-ar` · `sagemaker` · `dynamodb` · `step-functions` · `glue` · `medium` · `production` · `hipaa` · `837` · `835` · `277`
+`time-series` · `revenue-cycle` · `cash-flow-forecasting` · `payer-mix` · `survival-analysis` · `kaplan-meier` · `monte-carlo` · `denial-management` · `appeals` · `contract-modeling` · `self-pay-ar` · `sagemaker` · `dynamodb` · `step-functions` · `glue` · `hipaa` · `837` · `835` · `277`
 
 ---
 

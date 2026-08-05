@@ -144,7 +144,7 @@ One more thing. Problem list extraction is inherently a clinician-in-the-loop wo
 
 ## Tags
 
-`nlp` · `ner` · `clinical-nlp` · `problem-list` · `comprehend-medical` · `snomed` · `icd-10` · `assertion-detection` · `negation` · `reconciliation` · `medium` · `lambda` · `dynamodb` · `hipaa`
+`nlp` · `ner` · `clinical-nlp` · `problem-list` · `comprehend-medical` · `snomed` · `icd-10` · `assertion-detection` · `negation` · `reconciliation` · `lambda` · `dynamodb` · `hipaa`
 
 ---
 

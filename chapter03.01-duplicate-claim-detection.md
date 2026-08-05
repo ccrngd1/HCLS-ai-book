@@ -207,7 +207,7 @@ What I recommend to any team looking to embark on this project, start with a det
 
 ## Tags
 
-`anomaly-detection` · `duplicate-detection` · `record-linkage` · `fuzzy-matching` · `claims-processing` · `edi-837` · `blocking` · `similarity-scoring` · `dynamodb` · `opensearch` · `sagemaker` · `lambda` · `sqs` · `eventbridge` · `simple` · `mvp` · `hipaa` · `payer`
+`anomaly-detection` · `duplicate-detection` · `record-linkage` · `fuzzy-matching` · `claims-processing` · `edi-837` · `blocking` · `similarity-scoring` · `dynamodb` · `opensearch` · `sagemaker` · `lambda` · `sqs` · `eventbridge` · `hipaa` · `payer`
 
 ---
 

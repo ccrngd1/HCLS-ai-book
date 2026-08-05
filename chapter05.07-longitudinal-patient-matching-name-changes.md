@@ -392,7 +392,7 @@ Last point, because it is specific to the regulatory context: the information-bl
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `longitudinal-matching` · `name-change` · `temporal-identity` · `time-varying-name` · `master-patient-index` · `mpi` · `empi` · `gender-affirming-care` · `sensitivity-classification` · `access-control-envelope` · `fhir` · `humanname` · `patient-resource` · `event-driven` · `complex` · `production` · `hipaa` · `information-blocking` · `cures-act` · `equity-monitoring` · `cohort-stratified-accuracy` · `vital-records` · `patient-portal` · `audit-archive`
+`entity-resolution` · `record-linkage` · `longitudinal-matching` · `name-change` · `temporal-identity` · `time-varying-name` · `master-patient-index` · `mpi` · `empi` · `gender-affirming-care` · `sensitivity-classification` · `access-control-envelope` · `fhir` · `humanname` · `patient-resource` · `event-driven` · `hipaa` · `information-blocking` · `cures-act` · `equity-monitoring` · `cohort-stratified-accuracy` · `vital-records` · `patient-portal` · `audit-archive`
 
 ---
 
