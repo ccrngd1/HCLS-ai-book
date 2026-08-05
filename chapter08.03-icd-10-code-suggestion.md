@@ -1,6 +1,6 @@
 # Recipe 8.3: ICD-10 Code Suggestion
 
-**Effort:** 2 of 5
+**Effort:** 2 of 5 · **Maturity:** Commodity · **Oversight:** Every output
 
 ---
 

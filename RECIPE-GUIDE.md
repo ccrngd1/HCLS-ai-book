@@ -25,7 +25,7 @@ The main file is entirely vendor-agnostic except for the closing sections. **No 
 Immediately under the H1, every main recipe carries exactly one metadata line:
 
 ```
-**Effort:** 3 of 5
+**Effort:** 3 of 5 · **Maturity:** Commodity · **Oversight:** Every output
 ```
 
 That is the whole line. There is no Phase field and no Estimated Cost field; both
@@ -33,6 +33,11 @@ were removed in 2026-08 (Phase had drifted to 41 distinct values across 152
 recipes and could not be used to compare anything, and cost estimates mixed
 non-comparable units and could only go stale in a printed book). Complexity was
 folded into Effort, because they were the same idea under two names.
+
+Three fields, chosen because each answers a question the others cannot: how hard
+is this, how settled is the technology, and how much human review does the output
+need. Each is deliberately **single-valued**. Anything genuinely plural, such as
+which risks apply or which teams you need, belongs in Tags, not here.
 
 **The scale.** Effort is total effort to get to a trustworthy production system,
 not just the modeling difficulty. Weigh the data plumbing, the clinical
@@ -52,6 +57,31 @@ Do not use star characters or any other symbol: the embedded print font (Gelasio
 has no star, circle, or geometric-shape glyph, so symbols either drop out of the
 PDF or silently fall back to a monospace face. Plain text renders everywhere and
 stays greppable.
+
+**Maturity.** How settled the underlying technology is, across the industry. This
+describes the field, not your deployment.
+
+| Value | Meaning |
+|-------|---------|
+| Commodity | Solved. Managed services or licensed products do this well and cheaply. |
+| Proven | Deployed at scale by many institutions, with known failure modes. |
+| Emerging | Real products exist, but practice and regulation are still consolidating. |
+| Research | Compelling literature, no routine clinical use. |
+
+**Oversight.** How much human review each prediction needs before it can act.
+This is a property of the design, so it is checkable rather than a judgment call.
+
+| Value | Meaning |
+|-------|---------|
+| Autonomous | Output acts with no per-case review. A score that ranks a worklist, a forecast that feeds a huddle. |
+| Exception review | Auto-accept above a confidence threshold; humans see only the rest. The workhorse pattern in this book. |
+| Every output | A human reviews and signs each one before it takes effect. |
+| Dual review | Two independent reviewers, or committee sign-off, per case. Rare. |
+
+Note that Oversight is not a proxy for difficulty. Recipe 11.6 is Effort 4 with
+Autonomous oversight, because a triage disposition reaches the patient in real
+time with nobody in the loop, and that is exactly what makes it the highest-stakes
+recipe in the book. Rating it any other way would hide the point.
 
 **No emoji in headings**, at any level, for the same font reason plus the fact
 that decorative ratings in titles duplicate this field.

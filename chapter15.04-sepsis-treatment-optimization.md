@@ -1,6 +1,6 @@
 # Recipe 15.4: Sepsis Treatment Optimization
 
-**Effort:** 3 of 5
+**Effort:** 3 of 5 · **Maturity:** Research · **Oversight:** Every output
 
 ---
 

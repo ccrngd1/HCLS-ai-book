@@ -1,6 +1,6 @@
 # Recipe 2.5: After-Visit Summary Generation
 
-**Effort:** 3 of 5
+**Effort:** 3 of 5 · **Maturity:** Proven · **Oversight:** Every output
 
 ---
 

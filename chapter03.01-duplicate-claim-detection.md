@@ -1,6 +1,6 @@
 # Recipe 3.1: Duplicate Claim Detection
 
-**Effort:** 1 of 5
+**Effort:** 1 of 5 · **Maturity:** Commodity · **Oversight:** Exception review
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 5.1: Internal Duplicate Patient Detection
 
-**Effort:** 1 of 5
+**Effort:** 1 of 5 · **Maturity:** Proven · **Oversight:** Exception review
 
 ---
 

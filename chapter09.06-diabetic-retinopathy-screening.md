@@ -1,6 +1,6 @@
 # Recipe 9.6: Diabetic Retinopathy Screening
 
-**Effort:** 4 of 5
+**Effort:** 4 of 5 · **Maturity:** Proven · **Oversight:** Every output
 
 ---
 

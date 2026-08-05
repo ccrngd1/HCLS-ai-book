@@ -1,6 +1,6 @@
 # Recipe 13.4: Drug-Drug Interaction Knowledge Base
 
-**Effort:** 3 of 5
+**Effort:** 3 of 5 · **Maturity:** Commodity · **Oversight:** Every output
 
 ---
 

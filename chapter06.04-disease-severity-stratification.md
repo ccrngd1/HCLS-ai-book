@@ -1,6 +1,6 @@
 # Recipe 6.4: Disease Severity Stratification
 
-**Effort:** 3 of 5
+**Effort:** 3 of 5 · **Maturity:** Proven · **Oversight:** Autonomous
 
 ---
 

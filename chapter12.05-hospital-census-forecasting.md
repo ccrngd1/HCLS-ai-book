@@ -1,6 +1,6 @@
 # Recipe 12.5: Hospital Census Forecasting
 
-**Effort:** 3 of 5
+**Effort:** 3 of 5 · **Maturity:** Proven · **Oversight:** Autonomous
 
 ---
 

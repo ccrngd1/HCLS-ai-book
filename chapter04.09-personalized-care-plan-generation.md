@@ -1,6 +1,6 @@
 # Recipe 4.9: Personalized Care Plan Generation
 
-**Effort:** 5 of 5
+**Effort:** 5 of 5 · **Maturity:** Emerging · **Oversight:** Every output
 
 ---
 

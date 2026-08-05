@@ -1,6 +1,6 @@
 # Recipe 1.1: Insurance Card Scanning
 
-**Effort:** 1 of 5
+**Effort:** 1 of 5 · **Maturity:** Commodity · **Oversight:** Exception review
 
 ---
 

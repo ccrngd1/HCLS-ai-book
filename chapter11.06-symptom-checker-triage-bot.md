@@ -1,6 +1,6 @@
 # Recipe 11.6: Symptom Checker / Triage Bot
 
-**Effort:** 4 of 5
+**Effort:** 4 of 5 · **Maturity:** Emerging · **Oversight:** Autonomous
 
 ---
 

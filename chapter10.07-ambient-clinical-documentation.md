@@ -1,6 +1,6 @@
 # Recipe 10.7: Ambient Clinical Documentation
 
-**Effort:** 5 of 5
+**Effort:** 5 of 5 · **Maturity:** Proven · **Oversight:** Every output
 
 ---
 
