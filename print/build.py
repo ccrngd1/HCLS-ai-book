@@ -30,9 +30,12 @@ Usage:
   python3 build.py --pdf           # also render the 6x9 PDF (needs puppeteer/Chrome)
   python3 build.py --out DIR       # override output dir (default: print/build)
 
-Run with the md-to-html venv python if you want a Markdown engine on PATH, e.g.
-  "/.../projects/md-to-html/.venv/bin/python" print/build.py
+Needs a Markdown engine: pip install --user "markdown-it-py<4" (preferred, matches
+the site build) or markdown. See print/README.md for the full setup, including
+Chrome for --pdf and the known font blocker. Example:
+  python3 print/build.py --pdf
 """
+
 from __future__ import annotations
 
 import argparse
@@ -368,9 +371,17 @@ def back_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
 # --------------------------------------------------------------------------- #
 # Rendering (Markdown -> HTML -> PDF)
 # --------------------------------------------------------------------------- #
-def get_md_renderer():
-    """Return a function md(str)->html(str) using whatever engine is available."""
-    try:
+def get_md_renderer(prefer: str = "markdown-it-py"):
+    """Return a function md(str)->html(str) using the requested engine.
+
+    The engine matters: different Markdown engines emit different HTML, which
+    changes pagination, which changes the printed page count and therefore the
+    cover spine width. Default to markdown-it-py because that is what the
+    md-to-html site generator uses, so print and web stay consistent and the
+    recorded page-count baseline remains comparable. Pass prefer="auto" for the
+    old first-available behaviour.
+    """
+    def _python_markdown():
         import markdown  # python-markdown
         def render(md_text: str) -> str:
             return markdown.markdown(
@@ -378,20 +389,33 @@ def get_md_renderer():
                 extensions=["extra", "sane_lists", "codehilite", "toc"],
             )
         return render, "python-markdown"
-    except Exception:
-        pass
-    try:
+
+    def _markdown_it():
         from markdown_it import MarkdownIt
         mdit = MarkdownIt("commonmark", {"html": True}).enable("table")
         return (lambda t: mdit.render(t)), "markdown-it-py"
-    except Exception:
-        pass
-    try:
+
+    def _mistune():
         import mistune
         r = mistune.create_markdown(plugins=["table", "strikethrough"])
         return (lambda t: r(t)), "mistune"
-    except Exception:
-        pass
+
+    builders = {
+        "markdown-it-py": _markdown_it,
+        "python-markdown": _python_markdown,
+        "mistune": _mistune,
+    }
+
+    if prefer in builders:
+        order = [prefer] + [k for k in builders if k != prefer]
+    else:  # "auto"
+        order = ["python-markdown", "markdown-it-py", "mistune"]
+
+    for name in order:
+        try:
+            return builders[name]()
+        except Exception:
+            continue
     return None, None
 
 
@@ -455,6 +479,10 @@ def main() -> int:
     ap.add_argument("--all", action="store_true",
                     help="include all 15 recipes (default: approved only)")
     ap.add_argument("--pdf", action="store_true", help="also render 6x9 PDF")
+    ap.add_argument("--engine", default="markdown-it-py",
+                    choices=["markdown-it-py", "python-markdown", "mistune", "auto"],
+                    help="Markdown engine (default: markdown-it-py, matching the "
+                         "site build; engine choice changes pagination)")
     ap.add_argument("--out", default=os.path.join(HERE, "build"),
                     help="output directory (default: print/build)")
     args = ap.parse_args()
@@ -496,7 +524,7 @@ def main() -> int:
               f"tags-{c['tags']} warn-{len(warns)}")
 
     # assemble book.md + book.html (re-callable so the TOC two-pass can rebuild)
-    render, engine = get_md_renderer()
+    render, engine = get_md_renderer(args.engine)
 
     def _assemble() -> bool:
         sections: list[tuple[str, str]] = []
