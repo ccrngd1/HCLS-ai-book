@@ -1,5 +1,15 @@
 # Recipe 6.8: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the disease subtype discovery pipeline from Recipe 6.8. It demonstrates the core workflow (synthetic patient data generation, preprocessing, multi-algorithm clustering, consensus analysis, and clinical validation) using scikit-learn and boto3. It is not production-ready. Real subtype discovery requires clinical collaboration, rigorous statistical validation, and months of iterative refinement. Think of this as the sketch that helps you understand the shape of the problem, not something you'd publish in The Lancet.
 
 ---

@@ -1,5 +1,15 @@
 # Recipe 15.5: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the RL concepts from Recipe 15.5. It demonstrates the shape of a ventilator weaning RL system: environment definition, state construction, reward shaping, safety constraints, and offline policy learning. It is not production-ready. Real offline RL for clinical decisions requires extensive validation, IRB approval, and prospective evaluation before any patient-facing deployment. Consider this a learning tool, not a deployment artifact.
 
 ---

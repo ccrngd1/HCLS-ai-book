@@ -24,17 +24,17 @@
 
 ```mermaid
 flowchart LR
-    A[EHR / CDI System] -->|Clinical Note\nFHIR/HL7| B[API Gateway]
-    B -->|Invoke| C[Lambda\nicd10-suggest]
-    C -->|Full Note Text| D[Comprehend Medical\nInferICD10CM]
-    C -->|Section Text| E[Comprehend Medical\nDetectEntitiesV2]
-    D -->|ICD-10 Candidates\n+ Confidence| C
+    A[EHR / CDI System] -->|"Clinical Note (FHIR/HL7)"| B[API Gateway]
+    B -->|Invoke| C[Lambda<br/>icd10-suggest]
+    C -->|Full Note Text| D[Comprehend Medical<br/>InferICD10CM]
+    C -->|Section Text| E[Comprehend Medical<br/>DetectEntitiesV2]
+    D -->|"ICD-10 Candidates + Confidence"| C
     E -->|Entities + Traits| C
-    C -->|Ranked Suggestions| F[DynamoDB\nsuggestions]
+    C -->|Ranked Suggestions| F[DynamoDB<br/>suggestions]
     C -->|Response| B
     B -->|Suggestion List| A
-    F -->|Coder Feedback| G[Lambda\nfeedback-collector]
-    G -->|Training Data| H[S3\ntraining-data/]
+    F -->|Coder Feedback| G[Lambda<br/>feedback-collector]
+    G -->|Training Data| H[S3<br/>training-data/]
 
     style D fill:#f96,stroke:#333
     style E fill:#f96,stroke:#333

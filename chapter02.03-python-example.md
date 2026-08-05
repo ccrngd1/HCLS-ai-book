@@ -1,5 +1,15 @@
 # Recipe 2.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.3. It shows one way you could translate those CDI concepts into working Python code using Amazon Bedrock. It is not production-ready. There's no EHR integration, no real-time streaming, no compliance-reviewed query templates. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a CDI workqueue on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline follows the six steps from the main recipe: receive a clinical note, extract clinical elements via LLM, retrieve coding guidelines from a knowledge base, generate CDI suggestions, prioritize and filter, then store results. Each step maps 1:1 to the pseudocode.
@@ -64,7 +74,7 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 # Claude 3 Opus is more accurate but slower and more expensive per token.
 # For CDI, Sonnet is the sweet spot: fast enough for near-real-time, smart enough
 # for clinical reasoning about specificity gaps.
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Knowledge Base Configuration ---
 # This is the Bedrock Knowledge Base ID containing your ICD-10-CM guidelines,

@@ -1,5 +1,15 @@
 # Recipe 9.6: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 9.6. It shows one way you could translate those concepts into working Python code using boto3 and a few standard libraries. It is not production-ready. There's no real deep learning model here (we mock the inference), no EHR integration, no FDA-validated decision logic, and the "fundus images" are synthetic numpy arrays. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a screening program on Monday morning. Consider it a starting point, not a destination.
 
 ---
@@ -14,7 +24,7 @@ pip install boto3 numpy Pillow scipy
 
 `Pillow` handles image loading and basic manipulation. `numpy` handles array operations for preprocessing. `scipy` provides signal processing functions used in the image quality assessment (Laplacian convolution for sharpness detection). In a real deployment, you'd also need a deep learning framework (PyTorch or TensorFlow) for local preprocessing and potentially for running the quality assessment model locally. For this example, we keep it to standard libraries and let SageMaker handle the classification model.
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, and `sns:Publish`.
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `sagemaker:InvokeEndpoint`, `s3:GetObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, and `sns:Publish`, each scoped to the specific endpoint, bucket, table, and topic ARNs. Because the S3 bucket and DynamoDB tables use customer-managed KMS keys, the role also needs `kms:Decrypt` and `kms:GenerateDataKey` on the relevant key ARN.
 
 ---
 
@@ -942,3 +952,5 @@ This example demonstrates the shape of a DR screening pipeline. Here's what you'
 ## Navigation
 
 [← 9.5: Chest X-Ray Triage (Python)](chapter09.05-python-example) | [Chapter 9 Index](chapter09-preface) | [9.7: Radiology AI Triage (Python) →](chapter09.07-python-example)
+
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter09.06-architecture) for the walkthrough and pseudocode, and [Recipe 9.6](chapter09.06-diabetic-retinopathy-screening) for the problem framing and honest take.*

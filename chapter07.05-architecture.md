@@ -29,7 +29,7 @@
 ```mermaid
 flowchart TD
     subgraph Data Sources
-        A[ADT Feed\nHL7/FHIR]
+        A[ADT Feed<br/>HL7/FHIR]
         B[EHR Clinical Data]
         C[Claims History]
         D[Lab Results]
@@ -37,35 +37,35 @@ flowchart TD
     end
 
     subgraph Event Processing
-        A -->|Discharge Event| F[EventBridge\nDischarge Filter]
-        F -->|Qualified Discharge| G[Step Functions\nScoring Workflow]
+        A -->|Discharge Event| F[EventBridge<br/>Discharge Filter]
+        F -->|Qualified Discharge| G[Step Functions<br/>Scoring Workflow]
         G -->|On Failure| DLQ[SQS Dead Letter Queue]
         DLQ -->|Daily Retry| RETRY[Retry Lambda]
         RETRY -->|Reprocess| G
     end
 
     subgraph Feature Assembly
-        G -->|Current Encounter| H[HealthLake\nFHIR Store]
-        G -->|Historical Features| I[DynamoDB\nFeature Store]
-        H --> J[Feature Vector\nAssembly]
+        G -->|Current Encounter| H[HealthLake<br/>FHIR Store]
+        G -->|Historical Features| I[DynamoDB<br/>Feature Store]
+        H --> J[Feature Vector<br/>Assembly]
         I --> J
     end
 
     subgraph Model Scoring
-        J -->|Feature Vector| K[SageMaker Endpoint\nXGBoost Model]
-        K -->|Probability| L[Risk Stratification\nLambda]
+        J -->|Feature Vector| K[SageMaker Endpoint<br/>XGBoost Model]
+        K -->|Probability| L[Risk Stratification<br/>Lambda]
     end
 
     subgraph Action
-        L -->|High Risk| M[SNS\nCare Team Alert]
-        L -->|All Scores| N[DynamoDB\nRisk Score Store]
-        L -->|Dashboard| O[QuickSight\nReadmission Analytics]
+        L -->|High Risk| M[SNS<br/>Care Team Alert]
+        L -->|All Scores| N[DynamoDB<br/>Risk Score Store]
+        L -->|Dashboard| O[QuickSight<br/>Readmission Analytics]
     end
 
     subgraph Model Lifecycle
-        P[Glue\nNightly Feature Compute] -->|Pre-computed Features| I
-        P -->|Training Data| Q[S3\nTraining Dataset]
-        Q --> R[SageMaker Training\nMonthly Retrain]
+        P[Glue<br/>Nightly Feature Compute] -->|Pre-computed Features| I
+        P -->|Training Data| Q[S3<br/>Training Dataset]
+        Q --> R[SageMaker Training<br/>Monthly Retrain]
         R -->|New Model| K
     end
 
@@ -80,7 +80,7 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon EventBridge, AWS Step Functions, Amazon DynamoDB, Amazon SQS, Amazon SNS, Amazon S3, Amazon QuickSight |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `healthlake:SearchWithGet`, `healthlake:ReadResource`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`. All permissions should be scoped to specific resource ARNs (e.g., `sagemaker:InvokeEndpoint` targeting `arn:aws:sagemaker:{region}:{account}:endpoint/readmission-risk-*`). Use separate IAM roles for the scoring Lambda, training pipeline, and monitoring functions with distinct permission boundaries. |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `healthlake:SearchWithGet`, `healthlake:ReadResource`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, plus `kms:Decrypt` and `kms:GenerateDataKey` scoped to the customer-managed keys protecting the feature store, model artifacts, and risk score table. All permissions should be scoped to specific resource ARNs (e.g., `sagemaker:InvokeEndpoint` targeting `arn:aws:sagemaker:{region}:{account}:endpoint/readmission-risk-*`). Use separate IAM roles for the scoring Lambda, training pipeline, and monitoring functions with distinct permission boundaries. |
 | **BAA** | Required. All services handling PHI must be covered under your AWS BAA. HealthLake, SageMaker, DynamoDB, S3, Glue, Step Functions, EventBridge, SNS, and QuickSight are all HIPAA-eligible. |
 | **Encryption** | S3: SSE-KMS for feature stores and model artifacts. DynamoDB: encryption at rest (default). HealthLake: AWS-managed or customer-managed KMS keys. SageMaker: KMS encryption for training data, model artifacts, and endpoint traffic. All inter-service communication over TLS. |
 | **VPC** | Production: SageMaker endpoints, Glue jobs, and Lambda functions in VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), CloudWatch Logs (interface), Step Functions/states (interface), and SNS (interface). HealthLake accessed via interface endpoint (verify regional availability; HealthLake has more limited regional availability than other services in this architecture). |

@@ -1,5 +1,15 @@
 # Recipe 2.8: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.8. It shows one way you could translate the ambient-clinical-documentation concepts into working Python using AWS HealthScribe, Amazon Bedrock, Amazon Comprehend Medical, AWS HealthLake, S3, DynamoDB, and Step Functions. It is not production-ready. There is no exam-room audio device integration, no real-time streaming via Kinesis Video Streams, no EHR-embedded clinician UI, no Step Functions orchestration wired up end-to-end (we call the steps sequentially for clarity), no real two-party-consent workflow, no jurisdiction-aware policy engine, and no case-review or quality-evaluation program. Think of it as a sketchpad: useful for understanding the shape of the pipeline, not something you'd deploy on Monday morning.
 >
 > The pipeline maps to the ten pseudocode steps from the main recipe: start the encounter and capture consent, finalize audio and launch HealthScribe, fetch HealthScribe output, extract transcript entities with Comprehend Medical, render the institutional-template note with Bedrock, validate the note against the transcript, present for clinician review and capture sign-off, write back to the EHR via HealthLake, apply retention policies, and emit quality metrics. Validation failures trigger regeneration up to a cap, then route to human review.
@@ -92,9 +102,9 @@ cloudwatch = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
 # step produces the content the clinician actually reads.
 #
 # If your region requires cross-region inference, use the inference profile ID:
-#   e.g., "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+#   e.g., "us.anthropic.claude-sonnet-4-6-v1:0"
 # TODO: verify the exact model IDs available in your region and account.
-GENERATION_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+GENERATION_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 
 # Optional Bedrock Guardrail for the generation step. Configure a Guardrail
 # in the Bedrock console with the contextual grounding check enabled. The

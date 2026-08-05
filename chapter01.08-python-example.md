@@ -1,5 +1,15 @@
 # Recipe 1.8: EOB Processing: Python Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **This is a trivial, illustrative implementation. Not production-ready.**
 > It demonstrates the patterns from Recipe 1.8 using real boto3 API calls. It won't handle edge cases, doesn't have full error handling, and isn't optimized for throughput. Use it as a starting point, not a destination.
 >

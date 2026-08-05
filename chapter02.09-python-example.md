@@ -1,5 +1,15 @@
 # Recipe 2.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.9. It shows one way you could translate the clinical-decision-support-synthesis concepts into working Python using Amazon Bedrock, Amazon OpenSearch Service, Amazon Aurora PostgreSQL (pgvector), Amazon HealthLake, Amazon Comprehend Medical, S3, DynamoDB, and Step Functions. It is not production-ready. There is no corpus ingestion pipeline (that's a significant project on its own), no drug-database license integration, no Step Functions orchestration wired end-to-end, no SMART-on-FHIR EHR launch, no CDS Hooks integration, no clinician-facing UI, no validated regulatory posture documentation, and no post-market surveillance plumbing. Think of it as a sketchpad: useful for understanding the shape of the synthesis pipeline, not something you'd route an ICU order through on Monday morning.
 >
 > The pipeline maps to the eleven pseudocode steps from the main recipe: trigger and fetch patient context, normalize and structure patient facts, scope determination, deterministic safety checks, scenario classification and retrieval planning, multi-source retrieval, rank and filter, grounded synthesis, post-generation validation, tier and suppress, and archive and log. Validation failures trigger regeneration up to a cap, then route to human review.
@@ -97,10 +107,10 @@ cloudwatch = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
 # options all matter, so use a capable model.
 #
 # If your region requires cross-region inference, use the inference profile ID:
-#   e.g., "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+#   e.g., "us.anthropic.claude-sonnet-4-6-v1:0"
 # TODO: verify the exact model IDs available in your region and account.
-SMALL_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
-GENERATION_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+SMALL_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
+GENERATION_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
 
 # Optional Bedrock Guardrail for the generation step. Configure one in the

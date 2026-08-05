@@ -1,5 +1,15 @@
 # Recipe 4.8: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.8. It shows one way you could translate the treatment response prediction pattern into working Python using AWS Glue / Athena for cohort construction (target trial emulation), Amazon SageMaker (Training, Pipelines, Model Registry, Real-Time Inference, Batch Transform, Feature Store) for the per-treatment-comparator propensity, outcome, and CATE-ensemble models, Amazon DynamoDB for the treatment catalog, the treatment-comparison-pair specifications, the scoring results, the decision records, the prediction-outcome pairs, and the clinician-facing briefings, Amazon S3 for the cohort archive and model evaluation outputs, AWS Step Functions for the weekly retraining and monthly surveillance pipelines, AWS Lambda for the per-stage glue, Amazon Bedrock for clinician-facing comparison briefings, patient-facing summaries, and disagreement-investigation narratives, Amazon Kinesis for scoring, decision, and outcome events, Amazon API Gateway and Cognito for the on-demand scoring API consumed by the EHR via SMART on FHIR or CDS Hooks, and AWS HealthLake for FHIR-native clinical data. It is not production-ready. There is no real claims, EHR, lab, pharmacy, or registry feed integration, no actual causal-inference modeling pipeline (the example uses rule-based proxies for the propensity, outcome, and CATE estimators), no real target trial emulation against historical data, no calibration drift detection against a longitudinal observation set, no clinical-informatics review of the model promotion gate, no FDA SaMD predetermined change control plan, no real EHR integration via SMART on FHIR or CDS Hooks, no live cohort fairness instrumentation tied to a quarterly review committee. Think of it as the sketchpad version: useful for understanding the shape of a per-treatment-comparator CATE pipeline that respects causal-inference rigor, uncertainty quantification, equity instrumentation, and the regulatory posture appropriate for clinical decision support, not something you'd wire into an EHR on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the six pseudocode steps from the main recipe: construct the cohort and outcome labels per treatment-comparator pair using target trial emulation, train per-pair propensity, outcome, and CATE-ensemble models, evaluate with calibration and fairness tests and gate model promotion through governance, score an index patient on demand at the point of care with similar-patient cohort retrieval and uncertainty quantification, generate the clinician-facing comparison briefing with strict validator enforcement, and capture the clinician's decision and the patient's subsequent outcome and feed the matched pair back into surveillance and retraining. All sample patients, treatments, cohorts, predictions, decisions, and outcomes are synthetic.
@@ -98,9 +108,9 @@ cloudwatch_client = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
 # model gives a better first-pass-pass rate. Patient-facing summaries
 # and disagreement-investigation narratives use a Haiku-class model
 # because they're shorter and cheaper at scale.
-COMPARISON_BRIEFING_MODEL_ID    = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-PATIENT_SUMMARY_MODEL_ID         = "anthropic.claude-3-5-haiku-20241022-v1:0"
-DISAGREEMENT_NARRATIVE_MODEL_ID  = "anthropic.claude-3-5-haiku-20241022-v1:0"
+COMPARISON_BRIEFING_MODEL_ID    = "anthropic.claude-sonnet-4-6-v1:0"
+PATIENT_SUMMARY_MODEL_ID         = "anthropic.claude-haiku-4-5-v1:0"
+DISAGREEMENT_NARRATIVE_MODEL_ID  = "anthropic.claude-haiku-4-5-v1:0"
 
 # --- DynamoDB Table Names ---
 # Nine tables. Keep them separate so access patterns stay clean and

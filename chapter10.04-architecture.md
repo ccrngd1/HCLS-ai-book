@@ -579,7 +579,7 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
     // is versioned and tracked per dictation:
     //
     // - Model identifiers: pinned Bedrock model version
-    //   (e.g., anthropic.claude-3-5-sonnet-20240620-v1:0)
+    //   (e.g., anthropic.claude-sonnet-4-6-v1:0)
     // - Prompt versions: formatter-prompt-v1.4,
     //   faithfulness-prompt-v1.2 (stored in source control)
     // - Rule-catalog versions: rule-formatter-v3.2,
@@ -1437,7 +1437,7 @@ radiation to the arm or jaw.
   "formatted_note_archive_ref": "s3://dictation-archive-bucket/notes/2026/05/23/dict-7e8f9a0b.md",
   "formatted_note_length_chars": 1389,
   "asr_version": "transcribe-medical-2026-q1",
-  "formatter_version": "rule-formatter-v3.2 + bedrock-claude-3-haiku-20240307",
+  "formatter_version": "rule-formatter-v3.2 + bedrock-claude-haiku-4-5",
   "comprehend_medical_version": "comprehend-medical-2024-12",
   "template_id": "primary-care-followup-v2",
   "corrections_count": 3,

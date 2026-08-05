@@ -1,5 +1,15 @@
 # Recipe 10.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.7 (in-person ambient clinical documentation). It shows one way you could translate the pipeline into working Python using boto3 against AWS HealthScribe (streaming and batch), Amazon Transcribe Medical (as the alternative ASR primitive), Amazon Bedrock (with Guardrails for institutional-template note rendering and faithfulness checking), Amazon Comprehend Medical (for medication and condition extraction with RxNorm and ICD-10 coding), AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon EventBridge, and Amazon CloudWatch. Optionally, Amazon Chime SDK or a vendor-managed in-room capture device sits in front of the audio path. The demo uses a `MockHealthScribeStreaming` standing in for the in-encounter streaming session, a `MockHealthScribeBatch` standing in for the post-encounter batch job, a `MockBedrock` standing in for the institutional-template rendering and faithfulness-checking LLM calls, a `MockComprehendMedical` standing in for the coded clinical-entity extraction, a `MockEHR` standing in for the FHIR-based note write-back and structured chart updates, and small helpers for the encounter-state table, the transcript-state table, the note-state table, the audio S3 bucket, the transcript S3 bucket, the audit S3 bucket, the EventBridge bus, and CloudWatch-style metrics. It is not production-ready. There is no real in-room device integration carrying audio frames through Chime SDK or a third-party capture appliance's API, no real Cognito authorizer, no real WebSocket-based streaming HealthScribe session, no real Bedrock invocation, no real Comprehend Medical inference, no real DynamoDB or S3 wiring, no Step Functions state machine, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-cohort accuracy disparity alerting, no behavioral-health profile with stricter retention, no production faithfulness-regression test suite, no real EHR FHIR write-back, no clinician-voiceprint enrollment store, and no production patient-portal release flow. Think of it as the sketchpad version: useful for understanding the shape of an in-room ambient documentation pipeline that respects the recording-consent discipline, the bystander-acknowledgement discipline, the audio-path engineering discipline, the diarization-with-movement discipline, the LLM-faithfulness discipline, the structured-extraction-with-explicit-confirmation discipline, the side-by-side-review discipline, and the cohort-stratified audit discipline this recipe demands. It is not something you would deploy to clinicians on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the seven core pseudocode steps from the main recipe: capture consent at encounter start, identify bystanders, and bootstrap the ambient session (Step 1), stream audio from the in-room device to HealthScribe streaming with VAD, beamforming, and movement-robust diarization (Step 2), run batch HealthScribe reprocessing for the canonical transcript and structured note draft (Step 3), render the institutional-template note from the HealthScribe draft using Bedrock with citation grounding and faithfulness checks (Step 4), extract structured clinical entities and present them for explicit clinician confirmation (Step 5), present the draft to the clinician for review-and-sign with side-by-side transcript display (Step 6), and audit, archive, retain audio per policy, and feed cohort-stratified accuracy monitoring (Step 7). The synthetic patients, providers, encounters, medications, and conversations in the demo are fictional; the names, MRNs, RxNorm codes, ICD-10 codes, and other identifiers are obviously made-up and should not match anyone real.
@@ -24,7 +34,7 @@ In production you would also configure the in-room audio capture device (a clini
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
-- `transcribe:StartMedicalScribeJob`, `transcribe:GetMedicalScribeJob`, `transcribe:ListMedicalScribeJobs` for batch HealthScribe; `transcribe:StartStreamTranscription` (via the streaming SDK) for streaming HealthScribe and streaming Transcribe Medical, with `transcribe:CreateVocabulary`, `transcribe:UpdateVocabulary`, `transcribe:GetVocabulary` for custom-vocabulary management
+- `transcribe:StartMedicalScribeJob`, `transcribe:GetMedicalScribeJob` for batch HealthScribe; `transcribe:StartStreamTranscription` (via the streaming SDK) for streaming HealthScribe and streaming Transcribe Medical, with `transcribe:CreateVocabulary`, `transcribe:UpdateVocabulary`, `transcribe:GetVocabulary` for custom-vocabulary management
 - `bedrock:InvokeModel` for the institutional-template rendering and faithfulness-checker models, scoped to the specific foundation-model ARNs and inference profiles in use
 - `bedrock:ApplyGuardrail` for the runtime guardrails check on generated content
 - `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `comprehendmedical:InferICD10CM` for coded clinical-entity extraction
@@ -152,14 +162,14 @@ OUTPUT_KMS_KEY_ARN = (
 # not silently change note-rendering behavior. The model and
 # region combination must be in your AWS BAA scope.
 BEDROCK_NOTE_RENDERING_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 BEDROCK_NOTE_RENDERING_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "ambient-doc-note-render-v1")
 # A smaller, cheaper model is appropriate for the faithfulness
 # check; the check is structurally simpler than the rendering.
 BEDROCK_FAITHFULNESS_MODEL_ID = (
-    "anthropic.claude-3-haiku-20240307-v1:0")
+    "anthropic.claude-haiku-4-5-v1:0")
 BEDROCK_FAITHFULNESS_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "ambient-doc-faithfulness-v1")
@@ -167,7 +177,7 @@ BEDROCK_FAITHFULNESS_PROFILE_ARN = (
 # note rendering, but with a different prompt and a strict
 # JSON-schema response format expressed via tool-use.
 BEDROCK_EXTRACTION_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 
 # Deploy-time guardrail. Any blank resource name is a deploy-
 # time bug, not a runtime surprise.
@@ -255,9 +265,9 @@ CONSENT_DISCLOSURE_BEHAVIORAL_HEALTH = (
 # changes over time as state law evolves; production maintains
 # this in a legal-team-reviewed configuration with an explicit
 # update cadence.
-# TODO (TechWriter): verify the current all-party-consent state
-# list against the Reporters Committee for Freedom of the Press
-# state-by-state recording-laws guide before deploying.
+# Verify the current all-party-consent state list against the
+# Reporters Committee for Freedom of the Press state-by-state
+# recording-laws guide before deploying.
 ALL_PARTY_CONSENT_STATES = {
     "CA", "CT", "FL", "IL", "MD", "MA",
     "MT", "NV", "NH", "PA", "WA",
@@ -3269,7 +3279,7 @@ This demo runs end-to-end and produces the right audit records, but the distance
 
 **Real custom-vocabulary management.** The demo records the vocabulary name and proceeds. Production maintains custom vocabularies per institution (the formulary, provider list), per language (different vocabulary lists for each supported language), and optionally per specialty (specialty-specific term sets curated by clinical operations). Vocabularies are created via `transcribe_batch.create_vocabulary` and updated as terms are added. Custom language models, when used, are trained on institutional clinical text via `transcribe_batch.create_language_model`; training takes hours and the resulting model is referenced by name in the streaming and batch ASR configurations.
 
-**Real Bedrock invocation, prompt management, and inference profile.** The demo's `MockBedrock` uses fixture lookups. Production calls `bedrock_runtime.invoke_model` with `modelId=BEDROCK_NOTE_RENDERING_PROFILE_ARN` (the inference profile ARN is what you pass for cross-region inference and per-profile rate limits). The `body` parameter is the model-specific JSON request: for Anthropic Claude on Bedrock, that is a `messages` API request with a `system` prompt (versioned, owned by clinical operations), a `tools` field that declares the structured-output schema as a tool definition (this is how you enforce JSON output), and the user message containing the canonical transcript, the HealthScribe SOAP draft, the EHR context, and the institutional template structure. The `guardrailIdentifier` and `guardrailVersion` parameters apply the runtime Guardrails policy. The faithfulness checker uses a smaller, cheaper model (Claude 3 Haiku is appropriate); the note generator uses the larger, more capable model. Both prompts are versioned and deployed alongside the rest of the pipeline; prompt changes go through clinical-operations review (the prompts are load-bearing safety artifacts, not config strings).
+**Real Bedrock invocation, prompt management, and inference profile.** The demo's `MockBedrock` uses fixture lookups. Production calls `bedrock_runtime.invoke_model` with `modelId=BEDROCK_NOTE_RENDERING_PROFILE_ARN` (the inference profile ARN is what you pass for cross-region inference and per-profile rate limits). The `body` parameter is the model-specific JSON request: for Anthropic Claude on Bedrock, that is a `messages` API request with a `system` prompt (versioned, owned by clinical operations), a `tools` field that declares the structured-output schema as a tool definition (this is how you enforce JSON output), and the user message containing the canonical transcript, the HealthScribe SOAP draft, the EHR context, and the institutional template structure. The `guardrailIdentifier` and `guardrailVersion` parameters apply the runtime Guardrails policy. The faithfulness checker uses a smaller, cheaper model (Claude 3.5 Haiku is appropriate); the note generator uses the larger, more capable model. Both prompts are versioned and deployed alongside the rest of the pipeline; prompt changes go through clinical-operations review (the prompts are load-bearing safety artifacts, not config strings).
 
 **Real Bedrock Guardrails configuration.** The demo references a guardrail ID but does not invoke it. Production configures a Guardrails policy that filters clinical-advice and harmful-content categories, applies the guardrail at runtime via the `guardrailIdentifier` parameter on `invoke_model`, and surfaces guardrail-trigger events to the audit pipeline. For ambient documentation, the contextual-grounding check is particularly useful: configure the canonical transcript and the EHR context as the grounding sources and any rendered claim that does not have grounding triggers a guardrail intervention. Guardrails is a defense-in-depth layer; the system-prompt constraints in the note-rendering prompt, the runtime faithfulness check, and the Guardrails filter all operate together.
 
@@ -3329,4 +3339,4 @@ This demo runs end-to-end and produces the right audit records, but the distance
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 10.7: Ambient Clinical Documentation](chapter10.07-ambient-clinical-documentation) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard. See [Recipe 2.8: Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation) for the LLM-focused companion that covers note generation, faithfulness, consent management, and EHR integration in deeper detail. See [Recipe 10.6: Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation) for the telehealth sibling, which shares the ASR core but has different audio-path engineering and consent design.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter10.07-architecture) for the walkthrough and pseudocode, and [Recipe 10.7](chapter10.07-ambient-clinical-documentation) for the problem framing and honest take. See [Recipe 2.8: Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation) for the LLM-focused companion that covers note generation, faithfulness, consent management, and EHR integration in deeper detail. See [Recipe 10.6: Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation) for the telehealth sibling, which shares the ASR core but has different audio-path engineering and consent design.*

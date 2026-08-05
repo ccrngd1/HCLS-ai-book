@@ -1,5 +1,15 @@
 # Recipe 13.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 13.7. It shows one way you could translate the disease-gene-drug relationship graph concepts into working Python code using boto3 and the Neptune openCypher endpoint. It is not production-ready. The real version of this system involves months of entity resolution work, clinical governance review, and integration testing against known pharmacogenomic cases. Consider this a starting point for understanding the shape of the solution, not something you'd connect to a clinical decision support system tomorrow.
 
 ---

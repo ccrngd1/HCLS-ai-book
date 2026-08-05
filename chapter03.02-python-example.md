@@ -1,5 +1,15 @@
 # Recipe 3.2: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.2. It shows one way you could translate the patient no-show pattern-detection recipe into working Python using scikit-learn (for the model), Amazon DynamoDB (for patient baselines and intervention queues), Amazon S3 (for label archives), Amazon SageMaker Feature Store (for consistent features between training and serving), and Amazon Pinpoint (for outreach). It is not production-ready. There is no real EHR scheduling integration, no Step Functions orchestration, no SageMaker Batch Transform infrastructure wrapping the scorer, no QuickSight dashboards, no subgroup fairness monitoring harness, no override/appeal workflow, and no care-coordinator UI. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a health system's scheduling operations on Monday morning.
 >
 > The code maps to the five core pseudocode steps from the main recipe: assemble features for an upcoming appointment, score the appointment with a trained model, compute the patient-baseline deviation and apply routing thresholds, execute the intervention and log what was done, and capture the outcome and update labels and baselines. A small `retrain_monthly` sketch is included at the end to close the loop. Everything else (monitoring, drift detection, alarm wiring, per-subgroup performance tracking) is covered in the Gap to Production section.

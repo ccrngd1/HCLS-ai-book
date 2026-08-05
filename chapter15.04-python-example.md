@@ -1,5 +1,15 @@
 # Recipe 15.4: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the sepsis treatment optimization system from Recipe 15.4. It demonstrates offline reinforcement learning (Conservative Q-Learning) with safety constraints using numpy for the core RL logic and boto3 for AWS integration. This is absolutely not production-ready. A real sepsis RL system requires years of validation, IRB approval, prospective studies, and likely FDA clearance before it touches a patient. Think of this as a learning tool for understanding the mechanics of offline RL in healthcare, not something you'd deploy to an ICU.
 
 ---
@@ -10,7 +20,7 @@
 pip install boto3 numpy
 ```
 
-Your environment needs credentials configured with permissions for `s3:GetObject`, `s3:PutObject`, `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `dynamodb:GetItem`, and `cloudwatch:PutMetricData`. You'll need a signed BAA because even de-identified ICU trajectory data is treated as PHI in most institutional policies.
+Your environment needs credentials configured with permissions for `s3:GetObject`, `s3:PutObject`, `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `cloudwatch:PutMetricData`, and `kms:Decrypt`/`kms:GenerateDataKey` for the CMK protecting trajectory and model data (the code writes to S3 with `ServerSideEncryption="aws:kms"`). You'll need a signed BAA because even de-identified ICU trajectory data is treated as PHI in most institutional policies.
 
 ---
 
@@ -19,7 +29,6 @@ Your environment needs credentials configured with permissions for `s3:GetObject
 These define the sepsis MDP (Markov Decision Process) parameters. The action discretization bins, state features, and reward structure are all clinical decisions that should be made with intensivists, not by an engineer alone. The values here follow the standard formulation from Komorowski et al. (2018) and subsequent literature.
 
 ```python
-import json
 import time
 import uuid
 from decimal import Decimal
@@ -1196,4 +1205,4 @@ The code above demonstrates the mechanics of offline RL for sepsis treatment. He
 
 ---
 
-*← [Recipe 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) · [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.5 →](chapter15.05-ventilator-weaning-protocols)*
+*← [Recipe 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) · [Architecture and Implementation companion](chapter15.04-architecture) · [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.5 →](chapter15.05-ventilator-weaning-protocols)*

@@ -1,5 +1,15 @@
 # Recipe 1.1: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 1.1. It's meant to show one way you could translate those concepts into working Python code. It is not production-ready. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a clinic on Monday morning. Consider it a starting point, not a destination.
 
 ---
@@ -12,7 +22,7 @@ You'll need the AWS SDK for Python installed:
 pip install boto3
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `textract:AnalyzeDocument`, `s3:GetObject`, `s3:PutObject`, and `dynamodb:PutItem`.
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `textract:AnalyzeDocument`, `s3:GetObject`, and `dynamodb:PutItem`, plus `kms:Decrypt`/`kms:GenerateDataKey` if your bucket and table use KMS customer-managed keys.
 
 ---
 
@@ -258,6 +268,8 @@ def parse_key_value_pairs(textract_response: dict) -> dict:
     return key_values
 ```
 
+> **Note on the confidence score.** This gates on the `KEY_VALUE_SET` block confidence, which is Textract's confidence that it correctly *paired* a label with a value. That is a fine signal for the quality gate in Step 4. If you need the strictest read on whether the *characters themselves* were legible, drop to the child `WORD` blocks' confidence and gate on the minimum across the value's words. For clean printed cards the two track closely; they diverge on glare and wear.
+
 ---
 
 ## Step 3: Normalize Field Names
@@ -371,7 +383,9 @@ import datetime
 from datetime import timezone
 
 # Create a DynamoDB resource. boto3 will use your configured credentials.
-dynamodb = boto3.resource("dynamodb")
+# Reuse the same adaptive-retry config as the Textract client so DynamoDB
+# throttling is also handled with exponential backoff and jitter.
+dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 # Replace this with your actual DynamoDB table name.
 TABLE_NAME = "card-extractions"
@@ -499,11 +513,11 @@ This example works. Run it against a real card image and it will return a struct
 
 **Error handling.** Right now, if Textract returns an error, the Lambda invocation crashes and the card is lost. A production system wraps every external call in try/except blocks with specific handling for throttling errors, service unavailability, and malformed responses. You want graceful degradation, not silent data loss.
 
-**Retries and backoff.** AWS services occasionally return throttling errors under load. boto3 has built-in retry logic, but you'll want to tune the retry configuration for Textract calls specifically. Exponential backoff with jitter is the standard pattern. The `botocore` config accepts a `retries` parameter.
+**Retries and backoff.** AWS services occasionally return throttling errors under load. Both clients here set adaptive retries (`max_attempts=3`, `mode="adaptive"`), which is exponential backoff with jitter. For production, tune `max_attempts` to your latency budget and confirm every AWS client or resource you add inherits the same `botocore` config.
 
 **Input validation.** This code trusts its inputs completely. A production system validates that the S3 object exists and is a supported image format before calling Textract, checks that the image size is within Textract's limits (10MB), and rejects requests with malformed bucket or key values.
 
-**Logging.** The `print()` calls here are placeholders. A real system uses structured logging (via the `logging` module or AWS Lambda Powertools) with consistent log levels. You want every invocation to produce a machine-parseable log entry with the image key, extraction timestamp, field counts, and any errors. This is what your on-call engineer will look at at 2am.
+**Logging.** The pipeline already uses Python's `logging` module; the lone `print()` is in the `__main__` demo block, not the pipeline itself. A production system builds on this with JSON-formatted output for CloudWatch Logs Insights, consistent log levels, and correlation IDs (AWS Lambda Powertools makes this easy), so every invocation emits a machine-parseable entry with the image key, extraction timestamp, and field counts. It never logs PHI field values. This is what your on-call engineer will look at at 2am.
 
 **IAM least-privilege.** The IAM role for this Lambda should have exactly the permissions it needs and nothing else: `textract:AnalyzeDocument` on all resources, `s3:GetObject` scoped to the specific bucket, `dynamodb:PutItem` scoped to the specific table. Not `s3:*`. Not `dynamodb:*`. Not `AdministratorAccess` because it was convenient during development.
 
@@ -521,4 +535,4 @@ The recipe in 1.1 mentions a human review queue for flagged fields. That's Recip
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 1.1](chapter01.01-insurance-card-scanning.md) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter01.01-architecture) for the walkthrough and pseudocode, and [Recipe 1.1](chapter01.01-insurance-card-scanning) for the problem framing and honest take.*

@@ -249,7 +249,7 @@ FUNCTION extract_summary_object(encounter_data):
     
     // Note on model IDs: Bedrock model IDs are versioned and, in most regions,
     // now require a regional inference-profile prefix (for example,
-    // "us.anthropic.claude-3-5-haiku-20241022-v1:0"). The family-style IDs used
+    // "us.anthropic.claude-haiku-4-5-v1:0"). The family-style IDs used
     // in this pseudocode are illustrative; the Python companion shows a current
     // working example.
     response = call Bedrock.InvokeModel with:
@@ -556,6 +556,8 @@ All identifiers, dates, and provider names below are synthetic. Never use real p
 | Reading level (Flesch-Kincaid Grade) | 6-8 when targeted; model naturally drifts to 10-12 without constraints |
 | Cost per summary | $0.03-0.10 |
 | Patient portal open rate | Practice-dependent; a well-written AVS materially increases portal engagement  |
+
+These figures are typical ranges observed across comparable deployments, not results from a single published study. Treat them as planning estimates and validate against your own data before citing them.
 
 **Where it struggles:**
 - **Very long encounters.** Multi-hour ED visits or extended discharge encounters produce long notes. Extraction quality drops; the generated summary becomes either overwhelming or under-inclusive.

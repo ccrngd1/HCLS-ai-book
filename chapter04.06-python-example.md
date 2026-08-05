@@ -1,5 +1,15 @@
 # Recipe 4.6: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.6. It shows one way you could translate the care-gap prioritization pattern into working Python using AWS Glue / Athena for daily gap evaluation against a measure registry, Amazon SageMaker (Feature Store, Batch Transform, Training) for the per-gap-type clinical urgency models and per-pathway engagement and closure-probability models, Amazon DynamoDB for the measure registry, per-(patient, gap) state machine, recommendation log, clinician briefings, and clinician overrides, Amazon S3 for the data lake and evaluation outputs, AWS Step Functions for the daily and pre-visit pipelines, AWS Lambda for the per-stage glue, Amazon Bedrock for candidate-gap surfacing, pre-visit clinician briefings, and patient-facing message tailoring, Amazon Kinesis for closure and engagement events, and Amazon SES / Amazon Pinpoint / Amazon Connect for outreach delivery. It is not production-ready. There is no real claims, EHR, or immunization-registry ingestion, no NCQA-parity testing against a HEDIS vendor, no validated supervised urgency model with confounding-adjustment, no live PCP-EHR integration via SMART-on-FHIR, no real outcome-evaluation methodology with pre-registration, no measure registry curated by clinical informatics, no actual cohort-aware fairness instrumentation. Think of it as the sketchpad version: useful for understanding the shape of a care-gap recommender that respects clinical urgency, visit context, and multi-source closure tracking, not something you'd wire into a 400,000-member health plan on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the six pseudocode steps from the main recipe: evaluate the measure registry against patient data to produce open-gap lists with a state machine (open / provisionally_closed / confirmed_closed / reopened / excluded), score clinical urgency and per-pathway engagement and closure probability and synthesize priority, rank gaps for tomorrow's encounters with visit-fit filtering and LLM-generated clinician briefings, orchestrate asynchronous closures across heterogeneous pathways (patient-driven pharmacy, home test kits, specialist referrals, chase-team calls, PCP inbox), track closures from multiple sources with canonical-source rules, and capture clinician overrides as structured retraining signals. All sample patients, measures, gaps, schedules, and engagement events are synthetic.
@@ -95,10 +105,10 @@ ses_client = boto3.client("ses", config=BOTO3_RETRY_CONFIG)
 # add cost without meaningfully better tailoring on these prompt
 # shapes. Production picks the model per use case based on observed
 # quality regressions, not a uniform default.
-CANDIDATE_GAP_MODEL_ID       = "anthropic.claude-3-5-haiku-20241022-v1:0"
-CLINICIAN_BRIEFING_MODEL_ID  = "anthropic.claude-3-5-haiku-20241022-v1:0"
-MESSAGE_MODEL_ID             = "anthropic.claude-3-5-haiku-20241022-v1:0"
-CHASE_BRIEF_MODEL_ID         = "anthropic.claude-3-5-haiku-20241022-v1:0"
+CANDIDATE_GAP_MODEL_ID       = "anthropic.claude-haiku-4-5-v1:0"
+CLINICIAN_BRIEFING_MODEL_ID  = "anthropic.claude-haiku-4-5-v1:0"
+MESSAGE_MODEL_ID             = "anthropic.claude-haiku-4-5-v1:0"
+CHASE_BRIEF_MODEL_ID         = "anthropic.claude-haiku-4-5-v1:0"
 
 # Names of the SageMaker model artifacts. The urgency model is
 # per-gap-type because the clinical risk dynamics for an overdue

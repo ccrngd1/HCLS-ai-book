@@ -1,5 +1,15 @@
 # Recipe 7.5: 30-Day Readmission Risk (Python Example)
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of a 30-day readmission risk scoring pipeline. It generates synthetic discharge data, trains a gradient boosted tree model, applies calibration, stratifies patients into risk tiers, and shows how you'd deploy the scoring endpoint via SageMaker. It is not production-ready. The feature engineering is minimal, the synthetic data lacks the messiness of real EHR extracts, and we skip the ADT integration, HealthLake queries, and Step Functions orchestration that a real deployment requires. Think of it as a sketch that shows the shape of the solution. A starting point, not a destination.
 
 ---
@@ -17,6 +27,7 @@ Your environment needs credentials configured (via environment variables, an ins
 - `sagemaker:InvokeEndpoint` for real-time scoring
 - `dynamodb:PutItem`, `dynamodb:GetItem` on your risk score table
 - `sns:Publish` on your high-risk alert topic
+- `kms:Decrypt`, `kms:GenerateDataKey` on the customer-managed keys protecting the DynamoDB table and S3 buckets (if you use CMKs rather than AWS-managed keys)
 
 For the SageMaker training path, you'll also need a SageMaker execution role with S3 access. This example runs the model locally with scikit-learn for clarity, then shows how you'd invoke a deployed SageMaker endpoint for production scoring.
 
@@ -270,7 +281,6 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, brier_score_loss
 from sklearn.calibration import calibration_curve
-import json
 
 def train_readmission_model(df: pd.DataFrame) -> tuple:
     """
@@ -893,7 +903,7 @@ This example demonstrates the scoring logic, but a real deployment needs substan
 
 **Structured logging.** Every scoring event should produce a structured log entry (JSON format for CloudWatch Logs Insights) with the patient ID, encounter ID, feature completeness, score, tier, and latency. Never log actual PHI values (lab results, diagnosis codes) in plain text. Log the feature names and whether they were present, not their values.
 
-**IAM least-privilege.** The scoring Lambda needs only `sagemaker:InvokeEndpoint` on the specific endpoint ARN, `dynamodb:PutItem` on the specific table, and `sns:Publish` on the specific topic. The training pipeline needs broader SageMaker and S3 permissions but runs in a separate role. Separate roles for scoring vs. training vs. monitoring.
+**IAM least-privilege.** The scoring Lambda needs only `sagemaker:InvokeEndpoint` on the specific endpoint ARN, `dynamodb:PutItem` on the specific table, `sns:Publish` on the specific topic, and `kms:Decrypt`/`kms:GenerateDataKey` on the customer-managed key protecting that table. The training pipeline needs broader SageMaker and S3 permissions but runs in a separate role. Separate roles for scoring vs. training vs. monitoring.
 
 **VPC and VPC endpoints.** In production, the scoring Lambda runs in a VPC with VPC endpoints for SageMaker Runtime, DynamoDB, S3, SNS, and CloudWatch Logs. This keeps PHI-adjacent traffic off the public internet. HealthLake access also goes through a VPC endpoint.
 
@@ -918,3 +928,7 @@ This example demonstrates the scoring logic, but a real deployment needs substan
 ---
 
 [← Recipe 7.5: 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.6: Rising Risk Identification →](chapter07.06-rising-risk-identification)
+
+---
+
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter07.05-architecture) for the walkthrough and pseudocode, and [Recipe 7.5](chapter07.05-30-day-readmission-risk) for the problem framing and honest take.*

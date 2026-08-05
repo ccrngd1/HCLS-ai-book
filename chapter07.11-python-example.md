@@ -1,5 +1,15 @@
 # Recipe 7.11: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the claim denial prediction pipeline from Recipe 7.11. It demonstrates the core concepts (synthetic claims generation, gradient-boosted classification with class imbalance handling, SHAP explainability, and SageMaker integration) using synthetic data and a locally-trained model. It is not production-ready. Real denial prediction systems require validated feature engineering against actual payer behavior, continuous retraining, and months of threshold calibration with your billing team. Think of this as the whiteboard sketch, not the deployment blueprint.
 
 ---

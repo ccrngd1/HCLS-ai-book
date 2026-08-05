@@ -65,7 +65,7 @@ flowchart LR
       A14[SDOH and Functional]
     end
 
-    A1 -->|Streaming| B1[Kinesis Firehose\ncp-source-events]
+    A1 -->|Streaming| B1[Kinesis Firehose<br/>cp-source-events]
     A2 -->|FHIR| HL1[AWS HealthLake]
     HL1 -->|Export| B1
     A3 -->|Streaming| B1
@@ -81,63 +81,63 @@ flowchart LR
     A13 -->|On change| B1
     A14 -->|Daily| B1
 
-    B1 --> S1[S3\ncp-data-lake]
+    B1 --> S1[S3<br/>cp-data-lake]
 
-    PR1[Lambda\ncontent-sync] --> D1[DynamoDB\ngoal-templates]
-    PR1 --> D2[DynamoDB\naction-templates]
-    S1 --> F1[SageMaker Feature Store\npatient features]
+    PR1[Lambda<br/>content-sync] --> D1[DynamoDB<br/>goal-templates]
+    PR1 --> D2[DynamoDB<br/>action-templates]
+    S1 --> F1[SageMaker Feature Store<br/>patient features]
 
-    EB1[EventBridge\nschedule + triggers] --> SF1[Step Functions\nplan-generation]
-    SF1 --> L1[Lambda\ninputs-aggregator]
+    EB1[EventBridge<br/>schedule + triggers] --> SF1[Step Functions<br/>plan-generation]
+    SF1 --> L1[Lambda<br/>inputs-aggregator]
     F1 --> L1
     HL1 --> L1
     D1 --> L1
     D2 --> L1
-    L1 --> L2[Lambda\ngoal-derivator]
-    L2 --> L3[Lambda\naction-assembler]
-    L3 --> L4[Lambda\ninteraction-filter]
-    L4 --> L5[Lambda\nburden-estimator]
-    L5 --> L6[Lambda\ncapacity-and-schedule\nreconciler]
-    L6 --> L7[Lambda\nplan-finalizer]
-    L7 --> P1[DynamoDB\nplan-records]
-    L7 --> S2[S3\nplan-archives]
+    L1 --> L2[Lambda<br/>goal-derivator]
+    L2 --> L3[Lambda<br/>action-assembler]
+    L3 --> L4[Lambda<br/>interaction-filter]
+    L4 --> L5[Lambda<br/>burden-estimator]
+    L5 --> L6[Lambda<br/>capacity-and-schedule<br/>reconciler]
+    L6 --> L7[Lambda<br/>plan-finalizer]
+    L7 --> P1[DynamoDB<br/>plan-records]
+    L7 --> S2[S3<br/>plan-archives]
 
-    L7 --> L8[Lambda\nnarrative-generator]
-    L8 --> BD1[Bedrock\nclinician + patient + internal]
-    BD1 --> VL1[Lambda\nvalidator]
-    VL1 --> P2[DynamoDB\nplan-narratives]
+    L7 --> L8[Lambda<br/>narrative-generator]
+    L8 --> BD1[Bedrock<br/>clinician + patient + internal]
+    BD1 --> VL1[Lambda<br/>validator]
+    VL1 --> P2[DynamoDB<br/>plan-narratives]
 
-    P2 --> AG1[API Gateway\nplan-review API]
+    P2 --> AG1[API Gateway<br/>plan-review API]
     AG1 --> AU1[Cognito or IdP]
-    AU1 --> EHR1[EHR via SMART on FHIR\nclinical-team review]
+    AU1 --> EHR1[EHR via SMART on FHIR<br/>clinical-team review]
 
-    P2 --> PI1[Amazon Pinpoint\npatient-facing delivery]
+    P2 --> PI1[Amazon Pinpoint<br/>patient-facing delivery]
     PI1 --> PORTAL[Patient portal / SMS / email / mail]
 
-    EHR1 -.Approval.-> KS1[Kinesis\ncp-events]
+    EHR1 -.Approval.-> KS1[Kinesis<br/>cp-events]
     PORTAL -.Acknowledgment.-> KS1
-    KS1 --> SM1[Lambda\nstate-machine-worker]
-    SM1 --> P3[DynamoDB\nplan-action-records]
-    SM1 --> P4[DynamoDB\nplan-feedback-records]
+    KS1 --> SM1[Lambda<br/>state-machine-worker]
+    SM1 --> P3[DynamoDB<br/>plan-action-records]
+    SM1 --> P4[DynamoDB<br/>plan-feedback-records]
 
-    SM1 --> ACT1[Lambda\nactivation-dispatcher]
+    SM1 --> ACT1[Lambda<br/>activation-dispatcher]
     ACT1 -.eRx.-> RX1[E-Prescribing system]
     ACT1 -.Schedule.-> SCH1[Scheduling system]
     ACT1 -.Program enroll.-> PR2[Program registry]
 
-    EB2[EventBridge\nrevision-triggers] --> SF2[Step Functions\nplan-revision]
+    EB2[EventBridge<br/>revision-triggers] --> SF2[Step Functions<br/>plan-revision]
     SF2 --> L1
 
-    SF3[Step Functions\nperiodic-review] --> RV1[Lambda\nreview-aggregator]
+    SF3[Step Functions<br/>periodic-review] --> RV1[Lambda<br/>review-aggregator]
     P3 --> RV1
     P4 --> RV1
-    RV1 --> S3[S3\nreview-outputs]
-    RV1 --> RV2[Lambda\nrevision-trigger]
+    RV1 --> S3[S3<br/>review-outputs]
+    RV1 --> RV2[Lambda<br/>revision-trigger]
     RV2 --> SF2
 
     KS1 --> KF1[Kinesis Firehose]
-    KF1 --> S4[S3\ncp-event-lake]
-    S4 --> QS1[QuickSight\ndashboards]
+    KF1 --> S4[S3<br/>cp-event-lake]
+    S4 --> QS1[QuickSight<br/>dashboards]
     S3 --> QS1
 
     style F1 fill:#9ff,stroke:#333
@@ -168,7 +168,7 @@ flowchart LR
 | **CloudTrail** | Enabled with data events on the `goal-templates`, `action-templates`, `plan-records`, `plan-narratives`, `plan-action-records`, and `plan-feedback-records` tables. Data events on the S3 buckets containing source feeds, plan archives, and review outputs. Plan-review API invocations logged at the API Gateway and Lambda layers. Plan activations logged through the activation-dispatcher Lambda. The audit posture for care-plan artifacts approaches clinical-record audit standards. |
 | **Clinical Content Governance** | Document the goal-template and action-template review process (clinical informatics, P&T, care management, quality, patient education). Establish a clinical-content review committee that approves new templates, template updates, and cohort overrides. Establish a parallel-evaluation policy for significant content changes (run new templates against the prior version's plans on a held-out cohort and surface differences for review). Document the cohort-override approval policy (who can approve a cohort-specific override and what evidence is required). |
 | **Sample Data** | A starter set of synthetic patients with realistic multi-condition profiles, medication lists, encounter histories, and goals-of-care preferences (Synthea provides good baseline data; augment with synthesized POLST / advance-directive structured data, SDOH attributes, and patient-portal preference data). A starter clinical-content library covering the most common chronic-condition combinations (diabetes + CKD, CHF + diabetes, CHF + CKD, depression + chronic pain) with goal templates and action templates that exercise the reconciliation logic. |
-| **Cost Estimate** | At a multi-specialty health system with ~500,000 active patients and ~50,000 active care plans (10 percent care-managed cohort), with monthly plan-review cycles for high-risk patients and quarterly cycles for the rest: DynamoDB on-demand: $400-1,200/month. SageMaker Feature Store: $200-500/month. HealthLake: $1,500-5,000/month depending on data volume. Lambda + Step Functions: $300-900/month. Bedrock for narratives (~50,000 plan narratives per month average across clinician, patient, and internal audiences), Sonnet-class for clinician and internal, Haiku-class for patient where reading-level allows: $5,000-15,000/month. API Gateway + Cognito: $200-500/month. Amazon Pinpoint: $300-1,000/month depending on channel mix. S3 + Glue + Athena: $800-2,000/month. QuickSight: $50/user/month authors plus reader fees. Estimated infrastructure total: $9,000-26,000/month for a regional system, before staff time, EHR integration, and the (substantial) clinical-content-curation costs that dominate this recipe.  |
+| **Cost Estimate** | At a multi-specialty health system with ~500,000 active patients and ~50,000 active care plans (10 percent care-managed cohort), with monthly plan-review cycles for high-risk patients and quarterly cycles for the rest: DynamoDB on-demand: $400-1,200/month. SageMaker Feature Store: $200-500/month. HealthLake: $1,500-5,000/month depending on data volume. Lambda + Step Functions: $300-900/month. Bedrock for narratives (~50,000 plan narratives per month average across clinician, patient, and internal audiences), Sonnet-class for clinician and internal, Haiku-class for patient where reading-level allows: $5,000-15,000/month. API Gateway + Cognito: $200-500/month. Amazon Pinpoint: $300-1,000/month depending on channel mix. S3 + Glue + Athena: $800-2,000/month. QuickSight: $50/user/month authors plus reader fees. Estimated infrastructure total: $9,000-26,000/month for a regional system, before staff time, EHR integration, and the (substantial) clinical-content-curation costs that dominate this recipe. These are planning-estimate ranges; validate against the AWS Pricing Calculator for your region and usage before relying on them.  |
 
 ### Ingredients
 

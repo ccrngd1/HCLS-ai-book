@@ -158,7 +158,7 @@ FUNCTION receive_question(request):
     // because Bedrock's versioned model IDs change periodically and cross-region
     // inference profiles (prefixed with `us.` or `eu.`) are the recommended
     // path in many regions. The Python companion pins the current versioned
-    // IDs (e.g., "anthropic.claude-3-5-haiku-20241022-v1:0"); verify against
+    // IDs (e.g., "anthropic.claude-haiku-4-5-v1:0"); verify against
     // the Bedrock console for your region before deploying.
     classification_prompt = """
     Classify the following clinical question into one of these categories:

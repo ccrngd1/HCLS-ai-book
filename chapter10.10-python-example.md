@@ -1,5 +1,15 @@
 # Recipe 10.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.10 (multilingual real-time medical interpretation). It shows one way you could translate the pipeline into working Python using boto3 against Amazon Transcribe and Transcribe Medical (streaming source-language ASR with medical-vocabulary customization), Amazon Translate (with Custom Terminology for institution-specific terms), Amazon Bedrock (with Guardrails for LLM-based translation on hard content categories and faithfulness verification), Amazon Polly (streaming neural and generative TTS with pronunciation lexicons), Amazon Connect (telephonic deployment), Amazon Chime SDK (in-person and telehealth deployment), AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon EventBridge, Amazon CloudWatch, AWS CloudTrail, and Amazon Kinesis Data Firehose. The demo uses `MockTranscribeStreaming` standing in for the per-language streaming ASR sessions, a `MockTranslate` standing in for the medical-domain MT path with Custom Terminology, a `MockBedrock` standing in for the LLM-translation and faithfulness-verification path, a `MockPolly` standing in for the per-language TTS path, a `MockConnect` and `MockChimeSDK` standing in for the audio infrastructure, a `MockHumanInterpreterPool` standing in for the human-interpreter handoff service, and small helpers for the encounter table, the per-utterance audit table, the audio S3 bucket, the audit S3 bucket, the EventBridge bus, and CloudWatch-style metrics. It is not production-ready. There is no real audio capture from a clinic device, telephony provider, or telehealth platform, no real Cognito authorizer, no real Transcribe streaming WebSocket session, no real Translate or Bedrock invocation, no real Polly streaming synthesis, no real Connect or Chime SDK wiring, no real DynamoDB or S3 wiring, no Step Functions state machine, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-language-pair quality monitoring or disparity alerting, no biometric-data deletion-on-request workflow, no real human-interpreter pool integration, and no language-access compliance dashboard. Think of it as the sketchpad version: useful for understanding the shape of a real-time medical interpretation pipeline that respects the per-pair validation discipline, the deployment-posture-per-topic-category framing, the number-and-unit verification as a hard gate, the faithfulness-checked LLM translation, the seamless human-interpreter handoff, the per-language consent disclosure, the audio-as-biometric data governance, and the language-access program integration this recipe demands. It is not something you would deploy to limited-English-proficient patients on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the seven core pseudocode steps from the main recipe: set up the encounter session with language pair, deployment posture, and consent capture (Step 1), route per-speaker audio streams to the appropriate ASR engine with channel separation (Step 2), translate finalized source-language transcripts with medical-domain configuration, faithfulness checks, and number-and-unit verification (Step 3), synthesize target-language audio with neural TTS and pronunciation lexicons (Step 4), manage turn-taking and barge-in with a conversational state machine (Step 5), escalate to a human interpreter on confidence-below-threshold and other triggers (Step 6), and close the encounter with audit, audio retention per consent, and per-pair quality monitoring (Step 7). The synthetic patients, clinicians, languages, dialects, transcripts, and translations in the demo are fictional; the names, MRNs, model versions, language codes, and other identifiers are obviously made-up and should not match anyone real.
@@ -156,12 +166,12 @@ INSTITUTION_ID               = "academic-medical-center-richmond"
 # not silently change translation behavior. The model and
 # region combination must be in your AWS BAA scope.
 BEDROCK_TRANSLATION_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 BEDROCK_TRANSLATION_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "medical-interpretation-translation-v1")
 BEDROCK_FAITHFULNESS_MODEL_ID = (
-    "anthropic.claude-3-haiku-20240307-v1:0")
+    "anthropic.claude-haiku-4-5-v1:0")
 TRANSLATION_GUARDRAIL_ID = "guardrail-medical-translation-v1"
 TRANSLATION_GUARDRAIL_VERSION = "2"
 

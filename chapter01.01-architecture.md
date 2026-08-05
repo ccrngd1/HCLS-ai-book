@@ -22,24 +22,24 @@ Let's get specific. Here's how I'd build this on AWS, and why each service is th
 
 ```mermaid
 flowchart LR
-    A[📱 Mobile App / Scanner] -->|Upload| B[S3 Bucket\ncards-inbox/]
-    B -->|S3 Event| C[Lambda\ncard-extractor]
-    C -->|AnalyzeDocument\nFORMS| D[Amazon Textract]
+    A[Mobile App / Scanner] -->|Upload| B["S3 Bucket<br/>cards-inbox/"]
+    B -->|S3 Event| C["Lambda<br/>card-extractor"]
+    C -->|AnalyzeDocument FORMS| D[Amazon Textract]
     D -->|Key-Value Pairs| C
-    C -->|Normalize & Store| E[DynamoDB\ncard-extractions]
-    C -->|Structured JSON| F[API Response\nto Caller]
-
+    C -->|Normalize & Store| E["DynamoDB<br/>card-extractions"]
     style B fill:#f9f,stroke:#333
     style D fill:#ff9,stroke:#333
     style E fill:#9ff,stroke:#333
 ```
+
+*The base pattern is the asynchronous S3-triggered pipeline: the caller uploads and the result lands in DynamoDB. For synchronous point-of-care use, front the Lambda with API Gateway instead (see Variations and Extensions).*
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Textract, Amazon S3, AWS Lambda, Amazon DynamoDB |
-| **IAM Permissions** | `textract:AnalyzeDocument`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem` |
+| **IAM Permissions** | `textract:AnalyzeDocument`; `s3:GetObject` (scoped to `arn:aws:s3:::cards-inbox/*`); `dynamodb:PutItem` (scoped to the table ARN); `kms:Decrypt` (S3 image key) plus `kms:GenerateDataKey`+`kms:Decrypt` (DynamoDB CMK). The extractor reads the image and writes DynamoDB; it does not need `s3:PutObject`. |
 | **BAA** | AWS BAA signed (required: insurance cards contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest enabled (default); Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; logs can contain extracted field values); all API calls over TLS |
 | **DynamoDB PITR** | Enable DynamoDB Point-in-Time Recovery (PITR) for PHI tables; it provides continuous backup and supports disaster recovery and incident response. |

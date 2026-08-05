@@ -1,5 +1,15 @@
 # Recipe 3.5: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.5. It shows one way you could translate the lab-result-outlier-detection pattern into working Python using Amazon DynamoDB (for the patient-context cache and the reference-range library), Amazon SageMaker Feature Store (for analyte-cohort baseline statistics), Amazon S3 (for the versioned clinical-rules library, model artifacts, and label storage), Amazon EventBridge (for fan-out of outlier events to callback, tech review, autoverify, audit, and feedback consumers), Amazon SNS (for critical-value callback notifications to the pharmacist and clinician paging channels), Amazon OpenSearch Service (for the outlier audit index), and Amazon CloudWatch (for operational metrics). It is not production-ready. There is no real HL7 v2 or FHIR parser (those are maintained libraries and projects in themselves, not teaching-example code), no real LIS middleware integration, no CLIA-compliant callback workflow with timing and read-back tracking, no Step Functions orchestration of the batch pipelines, no POCT data manager ingress, and no pathologist or lab tech UI. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a hospital's result-release pipeline on Monday morning.
 >
 > The code maps to the eight core pseudocode steps from the main recipe: normalize a raw result into a canonical representation with LOINC identifiers and canonical units, enrich the result with the patient-context cache including recent history, run the rule-based screen (critical values, reference range, specimen-quality gates, collection-site gates), compute delta checks and patient-history robust z-scores, compute cohort z-scores against the Feature Store baselines, route the combined flags by severity tier, run batch panel-level Isolation Forest and patient-trajectory CUSUM, and capture tech review decisions plus recollect outcomes as labels for eventual rule tuning and supervised retraining. The LLM-assisted interpretation path, the blood bank extension, and the POCT-specific logic from the main recipe are not in this file; they are covered in the Variations section of the main recipe and share infrastructure with other chapter recipes (3.4 for the per-event real-time path, Chapter 8 for text normalization of clinical notes).

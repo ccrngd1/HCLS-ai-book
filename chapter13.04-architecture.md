@@ -32,21 +32,21 @@ flowchart TD
     end
 
     subgraph Ingestion
-        B1[S3 Bucket\nsource-data/]
-        B2[EventBridge\nSchedule Rules]
-        B3[Lambda\nsource-parsers]
-        B4[Comprehend Medical\nLabel Extraction]
-        B5[Lambda\nnormalizer]
+        B1[S3 Bucket<br/>source-data/]
+        B2[EventBridge<br/>Schedule Rules]
+        B3[Lambda<br/>source-parsers]
+        B4[Comprehend Medical<br/>Label Extraction]
+        B5[Lambda<br/>normalizer]
     end
 
     subgraph "Knowledge Graph"
-        C1[Neptune\nInteraction Graph]
+        C1[Neptune<br/>Interaction Graph]
     end
 
     subgraph "Query Path"
-        D1[API Gateway\n/interactions/*]
-        D2[Lambda\ninteraction-engine]
-        D3[ElastiCache Redis\nResult Cache]
+        D1[API Gateway<br/>/interactions/*]
+        D2[Lambda<br/>interaction-engine]
+        D3[ElastiCache Redis<br/>Result Cache]
     end
 
     subgraph Consumers
@@ -86,7 +86,7 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Neptune, Amazon S3, AWS Lambda, Amazon API Gateway, Amazon ElastiCache (Redis), Amazon Comprehend Medical, Amazon EventBridge, AWS KMS |
-| **IAM Permissions** | Interaction engine Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN), `secretsmanager:GetSecretValue` (scoped to Redis AUTH secret ARN). Ingestion Lambdas: `neptune-db:WriteDataViaQuery`, `neptune-db:ReadDataViaQuery`, `s3:GetObject` (source bucket), `comprehend:DetectEntitiesV2`, `comprehend:InferRxNorm`. Normalizer Lambda: `neptune-db:WriteDataViaQuery`, `neptune-db:GetLoaderStatus`. All: `kms:Decrypt`, `kms:GenerateDataKey` (scoped to encryption keys). |
+| **IAM Permissions** | Interaction engine Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN), `secretsmanager:GetSecretValue` (scoped to Redis AUTH secret ARN). Ingestion Lambdas: `neptune-db:WriteDataViaQuery`, `neptune-db:ReadDataViaQuery`, `s3:GetObject` (source bucket), `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`. Normalizer Lambda: `neptune-db:WriteDataViaQuery`, `neptune-db:GetLoaderStatus`. All: `kms:Decrypt`, `kms:GenerateDataKey` (scoped to encryption keys). |
 | **BAA** | Required. Drug interaction checks are performed in the context of patient care and reference patient medication lists (PHI). |
 | **Encryption** | Neptune: encryption at rest enabled at cluster creation. S3: SSE-KMS for source data and staging buckets. ElastiCache: in-transit and at-rest encryption. All API traffic over TLS 1.2+. |
 | **VPC** | Neptune requires VPC deployment. Lambda functions in same VPC. Security groups: Lambda SG allows outbound to Neptune (8182), ElastiCache (6379), and VPC endpoints (443). Neptune SG allows inbound from Lambda SG on 8182. VPC endpoints: S3 (gateway), Comprehend (interface), CloudWatch Logs (interface), KMS (interface). Ingestion Lambdas access source data via the S3 gateway endpoint. If direct API access to external data sources is needed (e.g., DrugBank API), add a NAT Gateway or download source files to S3 outside the VPC first. |

@@ -1,5 +1,15 @@
 # Recipe 3.4: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.4. It shows one way you could translate the medication-dispensing-anomaly pattern into working Python using Amazon DynamoDB (for the patient-context cache), Amazon SageMaker Feature Store (for drug-class baseline statistics), Amazon S3 (for the versioned clinical-rules library, raw dispense archives, and label storage), Amazon EventBridge (for fan-out of anomaly events to alerting, audit, and feedback consumers), Amazon SNS (for interrupt-severity alerts to pharmacist workstations), Amazon OpenSearch Service (for the alert-audit index), and Amazon CloudWatch (for operational metrics). It is not production-ready. There is no real HL7 v2 or FHIR parser (those are maintained libraries and projects in themselves, not teaching-example code), no real drug knowledge base integration (the commercial vendors charge for that content and it is the backbone of a real system), no SageMaker Processing wrapper around the batch trajectory job, no Neptune graph build for the controlled-substance diversion module, no Step Functions orchestration of the batch pipelines, no BCMA integration, and no pharmacist UI. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a hospital's dispensing workflow on Monday morning.
 >
 > The code maps to the seven core pseudocode steps from the main recipe: normalize a raw dispense event into a canonical representation with RxNorm identifiers and canonical units, enrich the event with the patient-context cache and compute derived features, run the rule-based screen against the clinical rules library, compute population-level z-scores against the Feature Store baselines, route the combined flags by severity tier, run a batch trajectory scoring pass (CUSUM on continuous-dose drugs plus Isolation Forest on per-patient-day vectors), and capture pharmacist responses plus confirmed adverse drug events as labels for eventual rule tuning and supervised retraining. The diversion graph analytics, BCMA administration integration, and LLM-assisted triage paths from the main recipe are not in this file; they are covered in the Variations section of the main recipe and share infrastructure with other chapter recipes (3.9 for the graph analytics pattern, Chapter 8 for text normalization).

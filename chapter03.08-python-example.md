@@ -1,5 +1,15 @@
 # Recipe 3.8: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.8. It shows one way you could translate the post-discharge readmission-risk anomaly-detection pattern into working Python using Amazon API Gateway plus AWS Lambda (for RPM device webhooks), Amazon Kinesis (for the canonical patient-event stream), Amazon DynamoDB (for the patient-state and worklist-state stores), Amazon Timestream (for the trajectory history of weights, blood pressures, glucoses, and symptom scores), Amazon SageMaker (for the composite anomaly model endpoint, Feature Store, and Clarify SHAP explanations), Amazon Bedrock (for outreach-narrative generation), Amazon EventBridge (for scoring and worklist fan-out), Amazon OpenSearch Service (for the worklist audit index), Amazon S3 (for the raw-event lake and training labels), and Amazon CloudWatch (for operational metrics). It is not production-ready. There is no real RPM-vendor webhook validator (BodyTrace, A&D Medical, iHealth, Withings each have their own signature schemes), no FHIR R4 ingestion for the EHR feed (HL7 ADT, ORU, encounter resources), no HIE or claims integration, no care-management workflow integration (Salesforce Health Cloud, Epic Healthy Planet, Innovaccer), no SMS or IVR patient-communication vendor wiring, and no Step Functions retraining orchestration. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a hospital's transitions-of-care workflow next week.
 >
 > The code maps to the eight core pseudocode steps from the main recipe: enroll a patient at discharge, ingest RPM measurements and patient-reported outcomes, update the patient-state store and trajectory history, run the daily scoring pipeline, compute the feature vector with patient-specific baselines and cohort priors for cold-start, score the feature vector and apply calibration plus tier assignment, build the per-prediction explanation (SHAP plus Bedrock outreach narrative), build the worklist with suppression and de-duplication, and capture interventions plus eventual outcomes for the retraining loop. The LSTM/transformer time-series variant, the closed-loop pharmacist-titration extension, the conversational-AI patient check-in path, and the multi-cohort orchestration layer are not in this file; they are covered in the Variations and Why-This-Isn't-Production-Ready sections of the main recipe and share infrastructure with other chapter recipes (3.5 for lab features, 3.7 for the inpatient-deterioration analog, 12.x for time-series modeling, 2.x for LLM-assisted explanations).
@@ -122,7 +132,7 @@ MODEL_ARTIFACTS_BUCKET = "my-post-discharge-model-artifacts"
 POST_DISCHARGE_SCORING_BUS = "post-discharge-scoring"
 POST_DISCHARGE_EVENTS_BUS = "post-discharge-events"
 SAGEMAKER_ENDPOINT_NAME = "post-discharge-anomaly-model-prod"
-BEDROCK_MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Tracked Metric Codes ---
 # LOINC codes are the canonical reference. Real deployments load these from

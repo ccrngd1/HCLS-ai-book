@@ -1,5 +1,15 @@
 # Recipe 11.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 11.7. It shows one way you could translate the chronic-disease management coach pipeline into working Python using boto3 against Amazon Bedrock (LLM with function-calling), Amazon Bedrock Knowledge Bases (managed RAG over the clinical-guideline corpus and the patient-education library), Amazon Bedrock Guardrails, AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon DynamoDB, Amazon S3, Amazon Pinpoint, and Amazon EventBridge. The demo uses a `MockBedrockRuntime` standing in for LLM-driven message composition and structured response generation, a `MockEHR` standing in for the chart-context system and FHIR CarePlan/Goal store, a `MockKnowledgeBase` standing in for the clinical-guideline corpus and patient-education library retrieval, a `MockBiometricVendor` standing in for the connected-device vendor APIs (CGM, BP cuff, scale, peak flow, smartwatch), a `MockCareTeamWorkflow` standing in for the alert-and-digest delivery system, a `MockPharmacy` standing in for the prescription-fill data source, a `MockTriagePathway` for the recipe 11.6 hand-off, a `MockMentalHealthPathway` for the recipe 11.8 hand-off, a `MockTable` for each DynamoDB table (longitudinal-store, conversation-state, conversation-metadata, tool-call-ledger, coaching-decision-record-journal, engagement-schedule, biometric-event-store, care-team-alert-queue, outcome-correlation-pending), a `MockEventBus` for EventBridge, a `MockPinpoint` for engagement-message dispatch, a `MockDecisionJournal` standing in for the S3 coaching-decision-record archive, and a `MockCloudWatch` for the metric emissions. It is not production-ready. There is no real Bedrock Agents action group configured, no real Knowledge Base ingestion, no real Guardrail configuration, no API Gateway plumbing, no Step Functions workflow definition, no WAF rule tuning, no per-Lambda IAM least privilege, no KMS customer-managed keys, no VPC endpoints to the EHR or biometric-vendor systems, no Object-Lock-protected decision-record journal, no Pinpoint campaign configuration, no SageMaker-hosted behavior-change-stage classifier, and no Secrets Manager wiring for the upstream-system credentials. Think of it as the sketchpad version: useful for understanding the shape of a chronic-coach AI pipeline that respects the longitudinal-memory discipline, the care-plan-as-code discipline, the biometric-data-with-clinical-thresholds discipline, the engagement-policy-with-attrition-mitigation discipline, the behavior-change-stage-tracking discipline, the citation-grounding discipline, the continuous-emergency-screening discipline, the care-team-reporting discipline, the outcome-correlation discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a health system's chronic-disease panel on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the eight pseudocode steps from the main recipe: enroll the patient and instantiate the longitudinal store (Step 1); ingest biometric data and evaluate against care-plan thresholds (Step 2); schedule and deliver proactive engagement (Step 3); handle a patient-initiated or patient-responding conversation with longitudinal-context loading (Step 4); generate the response with care-plan-grounded reasoning and behavior-change-stage adaptation (Step 5); run output safety screening with citation grounding, scope verification, and stage-tone check (Step 6); persist the durable coaching-decision record and longitudinal updates (Step 7); generate care-team reports and run outcome correlation (Step 8). The synthetic patients, care plans, biometric streams, and recommendations in the demo are fictional; nothing in this file should be interpreted as clinical guidance from any real institution.
@@ -218,8 +228,8 @@ INSTITUTION_DISPLAY_NAME         = "Acme Health"
 # inference profile ID. Verify the exact model IDs
 # available in your region and account; Bedrock model
 # availability evolves over time.
-SMALL_MODEL_ID                   = "anthropic.claude-3-5-haiku-20241022-v1:0"
-ORCHESTRATION_MODEL_ID           = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+SMALL_MODEL_ID                   = "anthropic.claude-haiku-4-5-v1:0"
+ORCHESTRATION_MODEL_ID           = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Pipeline Tuning ---
 # Below this confidence on intent classification, ask a

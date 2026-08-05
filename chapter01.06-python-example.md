@@ -1,5 +1,15 @@
 # Recipe 1.6: Handwritten Clinical Note Digitization: Python Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **This is a simplified, illustrative implementation.** It is not production-ready. It demonstrates the patterns from Recipe 1.6 using boto3 and the Bedrock Converse API. Think of it as a working sketch: the right shape, the right API calls, the right logic flow. What you'd need to add for a real deployment is covered in the "Gap to Production" section at the end.
 
 ---

@@ -1,5 +1,15 @@
 # Recipe 3.6: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.6. It shows one way you could translate the healthcare-fraud-waste-abuse-detection pattern into working Python using pandas and scikit-learn (for the statistics and the Isolation Forest), NetworkX (as an in-process stand-in for Amazon Neptune so the graph analytics are runnable without a Neptune cluster), Amazon DynamoDB (for the resolved-entity registry, the case state store, and the suppression registry), Amazon S3 (for the claims lake, resolved-entity snapshots, case-outcome labels, model artifacts, and subgraph exports), Amazon SageMaker Feature Store (for per-provider and per-peer-group feature vectors), Amazon EventBridge (for fan-out of flags to the evidence aggregator, notification, audit, and feedback consumers), Amazon OpenSearch Service (for the case index and subgraph search), Amazon Comprehend Medical and Amazon Bedrock (for LLM-assisted documentation review), Amazon SNS (for investigator notifications), and Amazon CloudWatch (for operational metrics). It is not production-ready. There is no real 837/835 parser (those are maintained libraries, not teaching-example code), no real LIS, PBM, or clearinghouse integration, no Neptune cluster, no Neptune ML GNN training, no CLIA/HIPAA-compliant referral packaging to OIG/CMS/state Medicaid Fraud Control Units, no investigator UI, no legal-privilege-isolated environment, and no provider appeals workflow. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into an SIU's case pipeline on Monday morning.
 >
 > The code maps to the nine core pseudocode steps from the main recipe: normalize a raw claim into a canonical representation, resolve providers and organizations across claims plus external reference data (NPPES, LEIE, SAM, Sunshine Act), build and refresh the relationship graph (providers, organizations, patients, claims, payments, ownerships, co-location), run the rules layer (CCI edits, MUE, exclusion checks, post-mortem billing, medical necessity gates), run the statistical layer (peer z-scores on E&M distribution and modifier rates, self-history CUSUM, multivariate Isolation Forest on provider feature vectors), run the graph analytics layer (community detection, referral concentration, ownership cascades, embedding-based similarity search), aggregate flags into per-entity case bundles with ranked evidence, run LLM-assisted documentation review, and capture case outcomes as structured labels for the retraining loop. The GNN training path, the Clean Rooms cross-payer path, and the real-time pre-payment integration from the main recipe are not in this file; they are covered in the Variations section of the main recipe and share infrastructure with other chapter recipes (3.1 for claim-level eligibility checks, 3.3 for the billing-code-drift detectors, 5.x for entity resolution, 13.x for the relationship-graph construction, 2.x for the LLM-assisted documentation review).
@@ -144,7 +154,7 @@ FWA_WORKFLOW_BUS = "fwa-workflow"
 INVESTIGATOR_NOTIFICATION_TOPIC_ARN = (
     "arn:aws:sns:us-east-1:123456789012:fwa-investigator-notifications"
 )
-BEDROCK_MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Thresholds ---
 # These are teaching defaults. Real deployments tune them with SIU leadership

@@ -1,5 +1,15 @@
 # Recipe 4.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.3. It shows one way you could translate those provider-directory-search concepts into working Python using Amazon OpenSearch Service for hybrid keyword + filter + vector search, Amazon DynamoDB for the provider catalog and patient context, Amazon Bedrock for query understanding and embeddings, Amazon Location Service for geocoding, and Amazon Kinesis for engagement events. It is not production-ready. There is no real credentialing-system integration, no NPPES verification loop, no Step Functions ingestion orchestration, no learned LTR ranker (we use a hand-tuned scoring function with the same shape XGBoost-Ranker would have), no exposure-cap calibration, no audit-log access workflow. Think of it as the sketchpad version: useful for understanding the shape of a directory search pipeline, not something you'd wire into a member portal on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the eight pseudocode steps from the main recipe: ingest a provider record and validate it, parse the patient's search query into structured intent, apply eligibility filters and retrieve candidates, join personalization features, score and rank, re-rank for fairness and diversity, assemble results with explanations and log the search, capture engagement events. All sample providers, patients, and engagement signals are synthetic.
@@ -86,7 +96,7 @@ EMBEDDING_DIMENSION = 1024
 # A small, fast LLM for query parsing. Haiku-class models hit the
 # latency budget; larger frontier models do not. The same model is
 # used for the explanation rendering step.
-QUERY_PARSER_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
+QUERY_PARSER_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
 
 # --- DynamoDB Table Names ---
 # Six tables. Keep them separate so access patterns stay clean and

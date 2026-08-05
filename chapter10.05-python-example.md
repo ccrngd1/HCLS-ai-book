@@ -1,5 +1,15 @@
 # Recipe 10.5: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.5. It shows one way you could translate the patient-facing voice assistant pipeline into working Python using boto3 against Amazon Connect, Amazon Lex V2, Amazon Bedrock (with Knowledge Bases and Guardrails), Amazon Comprehend Medical, Amazon Transcribe, Amazon Polly, AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon Cognito, Amazon Pinpoint, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon EventBridge, and Amazon CloudWatch. The demo uses a `MockLex` standing in for the conversational core, a `MockBedrock` standing in for LLM-driven intent fallback and RAG-grounded informational responses, a `MockBedrockKB` standing in for the institutional knowledge base, a `MockComprehendMedical` standing in for the coded clinical-entity extraction, a `MockPinpoint` standing in for OTP delivery, a `MockConnect` standing in for the contact-center transfer pathway, a `MockEHR` standing in for the appointment-lookup and refill-request integrations, a `MockPatientRegistry` for caller-ID and DOB matching, and small helpers for the conversation-state table, the identity-verification table, the conversation-metadata table, the audio S3 bucket, the audit S3 bucket, the EventBridge bus, and CloudWatch-style metrics. It is not production-ready. There is no real Amazon Connect contact flow carrying audio frames, no real Lex bot configured with intents and slots, no real OTP SMS delivery, no real Bedrock invocation, no real Comprehend Medical inference, no real DynamoDB or S3 wiring, no Step Functions state machine, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-cohort accuracy disparity alerting, no smart-speaker or app channel, and no production warm-handoff screen-pop integration with the contact-center agent desktop. Think of it as the sketchpad version: useful for understanding the shape of a patient-facing voice pipeline that respects the recording-consent discipline, the parallel crisis-detection discipline, the layered identity-verification discipline, the scope-containment discipline, the warm-handoff discipline, and the cohort-stratified audit discipline this recipe demands. It is not something you would deploy to patients on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the eight core pseudocode steps from the main recipe: receive the channel entry and play the recording-consent disclosure (Step 1), stream audio to ASR and run the parallel crisis detector (Step 2), classify the intent and extract slots (Step 3), verify identity at the assurance level the intent requires (Step 4), fulfill the intent through the appropriate integration (Step 5), generate the response and render it through TTS (Step 6), escalate with a warm-handoff packet when needed (Step 7), and audit, archive, and feed cohort-stratified accuracy monitoring (Step 8). The synthetic patients, providers, appointments, medications, and dictated transcripts in the demo are fictional; the names, MRNs, RxNorm codes, and other identifiers are obviously made-up and should not match anyone real.
@@ -161,9 +171,9 @@ POLLY_LEXICON_NAMES = [
 # version and inference profile so a model upgrade does not
 # silently change response generation behavior. The model and
 # region combination must be in your AWS BAA scope.
-BEDROCK_INTENT_FALLBACK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+BEDROCK_INTENT_FALLBACK_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
 BEDROCK_RESPONSE_GENERATION_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 BEDROCK_RESPONSE_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "patient-assistant-response-v1")

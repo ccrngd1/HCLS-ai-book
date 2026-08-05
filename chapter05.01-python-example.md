@@ -1,5 +1,15 @@
 # Recipe 5.1: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 5.1. It shows one way you could translate the internal-duplicate-patient-detection pattern into working Python using `jellyfish` for string-similarity functions (Jaro-Winkler, Damerau-Levenshtein), `metaphone` for double-metaphone phonetic encoding, `python-dateutil` for permissive date parsing, Amazon DynamoDB for the master patient identity tables and the review queue, Amazon S3 for the audit archive, Amazon EventBridge for downstream merge events, and Amazon CloudWatch for operational metrics. It is not production-ready. There is no real EHR or registration-system feed (the demo seeds a small in-memory roster with intentional duplicates), no Splink or Spark-based batch pipeline (the demo runs a tiny in-process blocker plus scorer that would not scale past tens of thousands of records), no OpenSearch-backed real-time candidate index, no USPS address standardization (the demo uses a coarse regex normalizer), no EM-based m/u estimation (the demo uses hand-set probabilities to keep the math visible), no review-queue UI, and no IAM, KMS, VPC, or CloudTrail wiring. Think of it as the sketchpad version: useful for understanding the shape of an entity-resolution pipeline that respects the structured-then-narrative flow, the three-bucket routing pattern, the survivorship and reversibility requirements, and the audit-everything posture. It is not something you would point at a live patient registration system on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the five core pseudocode steps from the main recipe: normalize each patient record (case-fold, strip diacritics, parse dates, USPS-style address cleanup, phonetic encoding); generate candidate pairs through multiple blocking passes that union into a deduplicated candidate set; score each candidate pair with per-field comparators and a hand-rolled Fellegi-Sunter combiner; route each scored pair into auto-match, auto-non-match, or human review based on configurable thresholds; and apply the merge with field-level survivorship rules and a complete audit record that supports unmerge. All sample patients in the demo are synthetic, including the three "Maria Garcia" variants from the recipe's opening narrative; do not treat any specific patient_id, mpi_id, or merge_id in the sample output as real.
@@ -18,10 +28,11 @@ pip install boto3 jellyfish python-dateutil metaphone
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
-- `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `dynamodb:BatchWriteItem` on the `mpi-master`, `mpi-xref`, and `review-queue` tables (and on the `mpi-id-index` GSI on `mpi-xref` that supports cluster-member lookups)
+- `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` on the `mpi-master`, `mpi-xref`, and `review-queue` tables (and on the `mpi-id-index` GSI on `mpi-xref` that supports cluster-member lookups)
 - `s3:PutObject` on the audit-archive bucket
 - `events:PutEvents` on the merge-events bus
 - `cloudwatch:PutMetricData` for the queue-depth, auto-match-rate, and cohort-disparity metrics
+- `kms:GenerateDataKey` and `kms:Decrypt` on the customer-managed CMKs behind the SSE-KMS audit bucket and the encrypted DynamoDB tables (writing a KMS-encrypted S3 object needs `GenerateDataKey`; reads and DynamoDB CMK access need `Decrypt`)
 
 Scope each Lambda's IAM role to the specific resource ARNs it touches. The tutorial-level permissions above are fine for learning and will fail any serious IAM review. In production, the normalize, candidate-generate, score, route, and merge-application stages each get their own role with the minimum permissions for its job.
 
@@ -41,7 +52,6 @@ A few things worth knowing upfront:
 Everything that is configuration rather than logic lives here. Field weights, m/u probabilities, blocking-pass definitions, and routing thresholds are the knobs you would change between environments.
 
 ```python
-import hashlib
 import json
 import logging
 import math
@@ -1813,11 +1823,11 @@ What the demo intentionally skips, and what you would add for a real deployment:
 
 **Active-learning for gold-set construction.** The demo seeds an in-memory roster; a production deployment builds a labeled gold set of 1,000 to 5,000 candidate pairs reviewed by HIM specialists. Random sampling produces an unbiased gold set but covers the boundary slowly; active-learning samples (prioritizing pairs near the decision boundary) reduce the labeling effort substantially. `dedupe` implements this pattern directly.
 
-**Threshold tuning against the gold set.** The demo's `HIGH_THRESHOLD = 8.0` and `LOW_THRESHOLD = -2.0` are placeholders. Production tunes these against the gold set's score distribution, picks a high threshold that produces the auto-match precision the institution can defend (typically 99.0% to 99.9%), picks a low threshold that excludes obvious non-matches without burdening the queue, and re-tunes at least annually and after any major data-quality change.
+**Threshold tuning against the gold set.** The demo's `HIGH_THRESHOLD = 20.0` and `LOW_THRESHOLD = -2.0` are placeholders. Production tunes these against the gold set's score distribution, picks a high threshold that produces the auto-match precision the institution can defend (typically 99.0% to 99.9%), picks a low threshold that excludes obvious non-matches without burdening the queue, and re-tunes at least annually and after any major data-quality change.
 
 **Drift monitoring and re-tuning automation.** Score distributions drift as the underlying data drifts (registration system upgrades, new acquisitions, change in nickname dictionary). Production runs a monitoring job that compares current score distributions against the baseline at last tuning, alerts when drift exceeds a threshold, and triggers an out-of-cycle re-tuning. The model version updates on promotion and downstream consumers can react via EventBridge.
 
-**Unmerge implementation.** The `unmerge` function above raises `NotImplementedError`; a production implementation fetches the audit record from S3 by `merge_id`, restores the pre-merge masters, re-points cross-references to their pre-merge `mpi_id`, marks the surviving master as no-longer-active-as-survivor, writes an unmerge audit record, and emits an `EventBridge` unmerge event so downstream consumers (EHR chart linkage, data warehouse, billing) can react. Reversibility is non-negotiable; build it from day one.
+**Unmerge implementation.** The `unmerge` function above is implemented but its `_fetch_audit_record` helper is a stub that returns `None`, so the function raises `ValueError` until you wire up the audit-record lookup; a production implementation fetches the audit record from S3 by `merge_id`, restores the pre-merge masters, re-points cross-references to their pre-merge `mpi_id`, marks the surviving master as no-longer-active-as-survivor, writes an unmerge audit record, and emits an `EventBridge` unmerge event so downstream consumers (EHR chart linkage, data warehouse, billing) can react. Reversibility is non-negotiable; build it from day one.
 
 **Identity-fraud detection branch.** The same techniques that detect duplicate records also detect potential identity-fraud cases (same demographics with very different SSNs or different DOBs). Production routes suspected fraud cases to the institution's fraud-investigation team rather than to the standard merge flow. Define the fraud-detection rules in consultation with compliance and security teams.
 
@@ -1831,4 +1841,4 @@ The pipeline is the easy part. The operational discipline (thresholds, survivors
 
 ---
 
-*← [Recipe 5.1: Internal Duplicate Patient Detection](chapter05.01-internal-duplicate-patient-detection)*
+*← [Recipe 5.1: Internal Duplicate Patient Detection](chapter05.01-internal-duplicate-patient-detection) · [Architecture and Implementation companion](chapter05.01-architecture)*

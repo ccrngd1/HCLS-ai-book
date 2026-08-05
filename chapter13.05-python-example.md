@@ -1,5 +1,15 @@
 # Recipe 13.5: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 13.5. It shows one way you could translate clinical pathway graph modeling into working Python code using boto3, Neptune's openCypher endpoint, and DynamoDB for patient state tracking. It is not production-ready. There's no connection pooling, no retry logic beyond boto3 defaults, no input validation, no proper error handling. Think of it as the sketchpad version: useful for understanding how clinical pathways become traversable graphs and how patient state advances through them, not something you'd deploy to a hospital CDS system on Monday morning. A starting point, not a destination.
 
 ---

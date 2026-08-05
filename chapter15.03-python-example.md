@@ -1,5 +1,15 @@
 # Recipe 15.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the adaptive randomization system from Recipe 15.3. It demonstrates Thompson Sampling for clinical trial allocation using boto3 for AWS integration. This is not production-ready. A real adaptive trial system requires validated statistical software, regulatory review, and months of simulation studies. Think of this as a learning tool, not something you'd submit to the FDA.
 
 ---

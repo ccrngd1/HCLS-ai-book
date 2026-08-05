@@ -1,5 +1,15 @@
 # Recipe 4.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.10. It shows one way you could translate the dynamic treatment regime recommendation pattern into working Python using a synthetic longitudinal trajectory generator (in lieu of real EHR / claims feeds), scikit-learn for the Q-learning function approximation and the behavior policy estimator, NumPy for the doubly-robust off-policy evaluation, Amazon DynamoDB for the regime catalog, trajectory metadata, recommendation records, and surveillance metrics, Amazon S3 for trajectory archives and OPE outputs, Amazon SageMaker Model Registry for regime versioning, AWS Step Functions for orchestration semantics (illustrated, not invoked), AWS Lambda boundaries (illustrated, not invoked), Amazon Bedrock for clinician-facing regime briefings with the four-layer validator from prior recipes, Amazon Kinesis for the regime event stream, Amazon EventBridge for decision-point triggers and surveillance schedules, and Amazon API Gateway and Cognito for the SMART on FHIR clinician decision-support surface (illustrated). It is not production-ready. There is no real EHR, claims, lab, pharmacy, or registry feed, no real upstream-recipe signal aggregation from Recipes 4.5 through 4.9, no clinically curated regime catalog (the example ships a synthetic diabetes / CKD stepwise-therapy regime), no real interaction database integration, no validated reward function, no methodologically rigorous offline RL or A-learning implementation (Q-learning with gradient-boosted regression is the only estimator), no SMART on FHIR plan-review surface, no real OOD detector beyond a coarse k-NN distance heuristic, no real federated or consortium estimation, no regulatory analysis. Think of it as the sketchpad version: useful for understanding the shape of a sequential-causal-inference pipeline that respects the structured-then-narrative direction, multi-method estimator triangulation (sketched), cohort-stratified off-policy evaluation, the four-layer LLM validator on the clinician briefing, and the structured recommendation as the system of record. It is not something you would wire into an EHR on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the six pseudocode steps from the main recipe: build longitudinal trajectories from source data and freeze them with explicit decision points and rewards; estimate the behavior policy with calibration on cohort-stratified held-out data; train candidate regimes with Q-learning (with placeholders for offline RL and A-learning); run off-policy evaluation with doubly-robust, importance-sampling, and fitted-Q-evaluation estimators plus cohort-stratified results and a simple sensitivity analysis; serve a recommendation at a decision point with eligibility, OOD detection, similar-trajectory retrieval, and a validator-protected clinician narrative; capture the clinician's eventual action and run a periodic-surveillance sweep that watches adherence, calibration drift, and cohort fairness. All sample patients, conditions, medications, actions, narratives, and feedback events are synthetic. The patient in the demo is Sara from the recipe's opening narrative.
@@ -93,8 +103,8 @@ sagemaker_client = boto3.client("sagemaker", config=BOTO3_RETRY_CONFIG)
 # and the fact-grounding validator is strict; the larger model gives a
 # better first-pass-pass rate. Patient-facing summaries can use a
 # Haiku-class model for cost efficiency where reading-level allows.
-CLINICIAN_NARRATIVE_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-PATIENT_NARRATIVE_MODEL_ID    = "anthropic.claude-3-5-haiku-20241022-v1:0"
+CLINICIAN_NARRATIVE_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
+PATIENT_NARRATIVE_MODEL_ID    = "anthropic.claude-haiku-4-5-v1:0"
 # TODO (TechWriter): Code review NOTE Finding 10.
 # PATIENT_NARRATIVE_MODEL_ID is defined but never referenced
 # because the patient-facing narrative path is not implemented in

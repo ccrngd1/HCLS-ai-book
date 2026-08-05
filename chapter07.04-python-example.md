@@ -1,5 +1,15 @@
 # Recipe 7.4: ED Visit Prediction (Python Example)
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of an ED visit prediction pipeline. It generates synthetic patient data, trains a gradient boosted tree model, and scores patients for 30-day ED visit risk. It is not production-ready. The feature engineering is minimal, the synthetic data is unrealistically clean, and the model evaluation skips half the things you'd need for a real deployment (fairness audits, calibration curves, clinical validation). Think of it as a sketch that shows the shape of the solution. A starting point, not a destination.
 
 ---

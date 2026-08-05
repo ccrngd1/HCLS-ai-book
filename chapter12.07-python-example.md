@@ -1,5 +1,15 @@
 # Recipe 12.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 12.7. It shows one way you could translate the vital sign trajectory monitoring pipeline into working Python using boto3 for Kinesis ingestion, DynamoDB for patient state, Timestream for trajectory history, and SNS for alert routing. The demo uses synthetic vital sign data for a small set of patients with realistic deterioration patterns (a gradual sepsis trajectory with coordinated HR/RR rise and BP decline, a stable patient with normal variation, and a patient experiencing measurement artifact) so you can see the ingestion normalization, the per-patient baseline computation, the slope and deviation calculations, the multi-parameter pattern matching, the alert suppression logic, and the persistence and routing work end-to-end without provisioning real bedside monitors. It is not production-ready. There is no real Kinesis stream, no real Apache Flink application, no real Timestream database, no real SNS topic, no real HL7/FHIR interface, no medication administration record integration, no VPC endpoints, no KMS customer-managed keys, no per-Lambda IAM least privilege, and no clinical display integration. Think of it as the sketchpad version: useful for understanding the shape of a trajectory pipeline that respects the patient-specific-baseline discipline, the multi-parameter-correlation discipline, the suppression-before-alerting discipline, and the clinical-actionability discipline this recipe demands. Consider it a starting point, not a destination.
 >
 > The code maps to the six pseudocode steps from the main recipe: normalize and ingest an incoming vital sign reading (Step 1); retrieve and update the patient's rolling state including exponential moving average baselines (Step 2); compute trajectory features including slope, acceleration, deviation from baseline, and variability (Step 3); check multi-parameter correlation against known deterioration signatures (Step 4); evaluate alert conditions with suppression logic for baseline stabilization, cooldown periods, medication effects, and artifacts (Step 5); persist trajectory metrics and route alerts to the appropriate clinical channels (Step 6).

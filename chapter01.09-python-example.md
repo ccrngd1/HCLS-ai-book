@@ -1,5 +1,15 @@
 # Recipe 1.9: Medical Records Request Extraction: Python Example 
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **This is an illustrative implementation, not a production-ready deployment.**
 > It demonstrates the patterns from the Recipe 1.9 pseudocode using boto3 and real
 > AWS API calls. Treat it as a starting point, not a destination. See the
@@ -73,14 +83,14 @@ sns      = boto3.client("sns", region_name=REGION, config=_retry_config)
 # These are cross-region inference profile IDs that provide regional failover
 # across us-east-1, us-east-2, and us-west-2. For strict version pinning
 # in production (recommended), replace with full foundation model ARNs:
-#   Sonnet: arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-20240229-v1:0
+#   Sonnet: arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-v1:0
 #   Nova Pro: arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0
 # See: https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
 #
 # Store the model ID used for each LLM call in the DynamoDB record alongside
 # the findings. This lets you reproduce the inference configuration for audit
 # purposes if a compliance review requires explaining a specific validation decision.
-SONNET_MODEL_ID   = "us.anthropic.claude-sonnet-4-6-v1"   # HIPAA consistency check
+SONNET_MODEL_ID   = "us.anthropic.claude-sonnet-4-6-v1:0"   # HIPAA consistency check
 NOVA_PRO_MODEL_ID = "us.amazon.nova-pro-v1:0"             # Request classification
 
 # ---

@@ -1,5 +1,15 @@
 # Recipe 3.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.9. It shows one way you could translate the cybersecurity / access-pattern anomaly detection pattern into working Python using Amazon Kinesis (for the canonical audit-event stream), Amazon DynamoDB (for the workforce-identity, patient-context, user-state, and case-state stores), Amazon Neptune (for the relationship graph; here represented by a tiny in-process NetworkX graph so the demo runs without a deployed cluster), Amazon Timestream (for per-user behavioral baselines), Amazon SageMaker (for the composite anomaly endpoint and Clarify SHAP explanations), Amazon Bedrock (for case-narrative generation), Amazon EventBridge (for case fan-out), Amazon OpenSearch Service (for the case audit index), Amazon S3 (for the raw-event lake and training labels), and Amazon CloudWatch (for operational metrics). It is not production-ready. There is no real EHR audit-log connector (Epic Audit Log API, Cerner Behavior Tracker, MEDITECH audit reports, athenahealth audit feeds each have their own authentication, schema, and pagination quirks), no FHIR R4 AuditEvent ingestion, no IdP integration (Okta, Azure AD, Active Directory each emit different token and event formats), no HRIS integration (Workday, UKG, SAP SuccessFactors), no scheduling-system integration (Kronos, Symplr, API Healthcare), no SIEM connector (Splunk HEC, Microsoft Sentinel Log Analytics, IBM QRadar, Chronicle), and no privacy-office case-management UI integration (Protenus, Imprivata FairWarning, Iatric, or a custom AppSync front end). Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a hospital's privacy-monitoring program next week.
 >
 > The code maps to the eight core pseudocode steps from the main recipe: ingest and normalize an audit event from the EHR feed, enrich the event with identity and patient context, run the rules-engine detector for the policy-defined patterns (same-name, VIP, self-access, break-glass, off-hours), compute per-user behavioral baselines and per-feature deviation scores, run the graph-based relationship detector against the workforce-patient-encounter graph, combine detector outputs into a calibrated composite case score, build the investigator-facing case package with SHAP drivers and a Bedrock-generated narrative, and capture investigator outcomes for the retraining loop. The sequence-model variant (LSTM/Transformer over per-session click streams), the GNN-based representation-learning variant, the privileged-user monitoring program, and the patient-portal access monitoring path are not in this file; they are covered in the Variations and Why-This-Isn't-Production-Ready sections of the main recipe and share infrastructure with several other chapter recipes (3.6 for graph-based fraud patterns, 3.7 for calibration and tier mapping, 3.8 for engagement-decay and outcome-capture patterns, 13.x for knowledge-graph foundations).
@@ -125,7 +135,7 @@ MODEL_ARTIFACTS_BUCKET = "my-access-monitoring-model-artifacts"
 
 CASE_BUS                  = "access-anomaly-events"
 SAGEMAKER_ENDPOINT_NAME    = "access-anomaly-composite-prod"
-BEDROCK_MODEL_ID           = "anthropic.claude-3-sonnet-20240229-v1:0"
+BEDROCK_MODEL_ID           = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Detector Weights ---
 # The composite scorer is a weighted sum of per-detector outputs. Per-cohort

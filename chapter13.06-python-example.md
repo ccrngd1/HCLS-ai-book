@@ -1,5 +1,15 @@
 # Recipe 13.6: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 13.6. It shows one way you could translate the care gap reasoning concepts into working Python code using Amazon Neptune (via SPARQL) and boto3. It is not production-ready. The ontology here covers a handful of guidelines to demonstrate the pattern. A real deployment would have hundreds of measures, complex exclusion logic, and significantly more robust error handling. Consider it a starting point, not a destination.
 
 ---

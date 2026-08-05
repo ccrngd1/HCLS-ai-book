@@ -1,5 +1,15 @@
 # Recipe 15.2: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the contextual bandit concepts from Recipe 15.2. It shows one way you could translate notification timing optimization into working Python. It is not production-ready. The bandit algorithm here is a basic LinUCB implementation for educational purposes. In production, you'd use Amazon Personalize (which handles the algorithm, exploration, and scaling for you) rather than rolling your own. Think of this as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a patient engagement platform on Monday morning.
 
 ---

@@ -1,5 +1,15 @@
 # Recipe 3.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.7. It shows one way you could translate the patient-deterioration-early-warning pattern into working Python using Amazon Kinesis (for the clinical-event stream), Amazon DynamoDB (for the patient-state store, the alert-state table, and the suppression registry), Amazon Timestream (for vitals and lab time-series history), Amazon SageMaker (for the deterioration model endpoint, Feature Store, and Clarify SHAP explanations), Amazon Bedrock (for narrative explanation generation), Amazon EventBridge (for scoring fan-out), Amazon SNS (for pager-tier notifications), Amazon OpenSearch Service (for the alert audit index), Amazon S3 (for the raw-event lake and training labels), and Amazon CloudWatch (for operational metrics). It is not production-ready. There is no real HL7 v2 / FHIR / bedside monitor parser (those are maintained libraries and projects in themselves, not teaching-example code), no SageMaker Training Job wrapper for monthly retraining, no Step Functions retraining orchestration, no clinical-governance dashboard, no real EHR banner integration, and no paging-system integration (Vocera, TigerConnect, Spok, Mobile Heartbeat each have their own SDKs and contracts). Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a hospital's rapid response workflow on Monday morning.
 >
 > The code maps to the eight core pseudocode steps from the main recipe: normalize a raw clinical event into a canonical representation, update the patient-state store, trigger scoring on event or periodic schedule, compute the feature vector (current vitals, trajectory features, patient-specific baselines, lab features, medication context), score the feature vector and apply post-hoc calibration, build the per-prediction explanation (SHAP plus Bedrock narrative), route alerts through tiered destinations with suppression rules, and capture clinician acknowledgments plus eventual clinical outcomes for the retraining loop. The bedside-monitor integration, the LSTM/transformer time-series model variant, the phenotype-specific (sepsis-only, respiratory-failure-only) models, and the multi-AZ failover topology are not in this file; they are covered in the Variations and Why-This-Isn't-Production-Ready sections of the main recipe and share infrastructure with other chapter recipes (3.5 for lab features, 12.x for time-series modeling, 2.x for LLM-assisted explanations).
@@ -125,7 +135,7 @@ RAPID_RESPONSE_TOPIC_ARN = (
     "arn:aws:sns:us-east-1:123456789012:rapid-response-notifications"
 )
 SAGEMAKER_ENDPOINT_NAME = "deterioration-model-prod"
-BEDROCK_MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Vital Sign Codes ---
 # LOINC codes are the canonical reference. Real deployments load these from a

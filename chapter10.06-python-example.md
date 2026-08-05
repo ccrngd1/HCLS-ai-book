@@ -1,5 +1,15 @@
 # Recipe 10.6: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.6. It shows one way you could translate the telehealth speech-to-text pipeline into working Python using boto3 against Amazon Transcribe (streaming and batch with channel identification and diarization), Amazon Bedrock (with Guardrails for the note-generation and faithfulness-checking models), Amazon Comprehend Medical (for medication and condition extraction with RxNorm and ICD-10 coding), Amazon Polly (for optional patient-facing audio summaries), AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon EventBridge, and Amazon CloudWatch. Optionally, Amazon Chime SDK and Amazon Kinesis Video Streams sit in front of the audio path when the institution runs its own telehealth video infrastructure. The demo uses a `MockTranscribeStreaming` standing in for the streaming ASR session, a `MockTranscribeBatch` standing in for the batch ASR job, a `MockBedrock` standing in for the LLM-driven note generation and faithfulness checking, a `MockComprehendMedical` standing in for the coded clinical-entity extraction, a `MockEHR` standing in for the FHIR-based note write-back and structured chart updates, and small helpers for the visit-state table, the transcript-state table, the note-state table, the audio S3 bucket, the transcript S3 bucket, the audit S3 bucket, the EventBridge bus, and CloudWatch-style metrics. It is not production-ready. There is no real telehealth platform integration carrying audio frames through Chime SDK or a third-party platform's API, no real Cognito authorizer, no real WebSocket-based streaming Transcribe session, no real Bedrock invocation, no real Comprehend Medical inference, no real DynamoDB or S3 wiring, no Step Functions state machine, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-cohort accuracy disparity alerting, no behavioral-health profile with stricter retention, no production faithfulness-regression test suite, no real EHR FHIR write-back, and no production patient-portal release flow. Think of it as the sketchpad version: useful for understanding the shape of a telehealth speech-to-text pipeline that respects the recording-consent discipline, the per-channel-audio discipline, the streaming-and-batch-reconciliation discipline, the LLM-faithfulness discipline, the structured-extraction-with-explicit-confirmation discipline, the side-by-side-review discipline, and the cohort-stratified audit discipline this recipe demands. It is not something you would deploy to clinicians on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the seven core pseudocode steps from the main recipe: capture consent at visit start and bootstrap the speech-to-text session (Step 1), run streaming ASR per channel and update the live display (Step 2), run batch ASR after the visit ends and reconcile with the streaming transcript (Step 3), generate the structured note draft with grounded citations and run faithfulness checks (Step 4), extract structured fields with explicit clinician confirmation gates (Step 5), present the draft to the clinician for review-and-sign with side-by-side transcript display (Step 6), and audit, archive, and feed cohort-stratified accuracy monitoring (Step 7). The synthetic patients, providers, encounters, medications, and conversations in the demo are fictional; the names, MRNs, RxNorm codes, ICD-10 codes, and other identifiers are obviously made-up and should not match anyone real.
@@ -150,14 +160,14 @@ TELEHEALTH_NOTE_GUARDRAIL_VERSION = "2"
 # silently change note-generation behavior. The model and
 # region combination must be in your AWS BAA scope.
 BEDROCK_NOTE_GENERATION_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 BEDROCK_NOTE_GENERATION_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "telehealth-note-gen-v1")
 # A smaller, cheaper model is appropriate for the faithfulness
 # check; the check is structurally simpler than the generation.
 BEDROCK_FAITHFULNESS_MODEL_ID = (
-    "anthropic.claude-3-haiku-20240307-v1:0")
+    "anthropic.claude-haiku-4-5-v1:0")
 BEDROCK_FAITHFULNESS_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "telehealth-faithfulness-v1")
@@ -165,7 +175,7 @@ BEDROCK_FAITHFULNESS_PROFILE_ARN = (
 # note generation, but with a different prompt and a strict
 # JSON-schema response format.
 BEDROCK_EXTRACTION_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 
 # Polly TTS voice persona for optional patient-facing audio
 # summaries. Pick one consistent voice per language.

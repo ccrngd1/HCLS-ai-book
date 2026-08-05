@@ -11,9 +11,10 @@ An O'Reilly-style technical cookbook covering AI/ML applications in healthcare. 
 
 ## Structure
 
-### Per Recipe (2 files)
-1. **Main recipe** (`chapterNN.RR-name.md`) — Problem → Technology (vendor-agnostic) → General Architecture → AWS-specific implementation
-2. **Python companion** (`chapterNN.RR-python-example.md`) — Working boto3 code with generous comments
+### Per Recipe (3 files)
+1. **Main recipe** (`chapterNN.RR-name.md`) — Problem → Technology (vendor-agnostic) → General Architecture → the Honest Take
+2. **Architecture companion** (`chapterNN.RR-architecture.md`) — AWS services, architecture diagram, prerequisites, pseudocode walkthrough
+3. **Python companion** (`chapterNN.RR-python-example.md`) — Illustrative boto3 sketches, not production code. Deliberately excluded from site navigation and reachable only from the architecture companion; see the banner on each page.
 
 ### Per Chapter
 - Chapter preface (`chapterNN-preface.md`)

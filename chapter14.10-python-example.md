@@ -1,5 +1,15 @@
 # Recipe 14.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the network design optimization from Recipe 14.10. It demonstrates the mathematical formulation, solver invocation, and result interpretation using a small synthetic health system. It is not production-ready. A real network design model would have thousands of variables, validated demand forecasts, and calibrated gravity model parameters. Think of this as the sketch on the whiteboard that shows you the shape of the problem. A starting point, not a destination.
 
 ---

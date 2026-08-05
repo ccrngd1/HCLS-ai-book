@@ -30,34 +30,34 @@
 
 ```mermaid
 flowchart TB
-    A[837 EDI Files\nClearinghouse / Trading Partner] -->|PUT| B[S3 Bucket\nraw-837/]
-    B -->|ObjectCreated Event| C[AWS Lambda\n837-parser]
-    C -->|Parsed claim JSON| D[S3 Bucket\nnormalized-claims/]
-    C -->|Blocking hash + metadata| E[AWS Lambda\ndetector]
+    A[837 EDI Files<br/>Clearinghouse / Trading Partner] -->|PUT| B[S3 Bucket<br/>raw-837/]
+    B -->|ObjectCreated Event| C[AWS Lambda<br/>837-parser]
+    C -->|Parsed claim JSON| D[S3 Bucket<br/>normalized-claims/]
+    C -->|Blocking hash + metadata| E[AWS Lambda<br/>detector]
 
-    E -->|Lookup by blocking hash| F[(Amazon DynamoDB\nclaim-history)]
-    E -->|Score candidate pairs\nrule-based inline\nor learned model| H[SageMaker Endpoint\nscoring-model\nreplaces inline scorer\nonce labels accumulate]
+    E -->|Lookup by blocking hash| F[(Amazon DynamoDB<br/>claim-history)]
+    E -->|"Score candidate pairs (rule-based inline or learned model)"| H["SageMaker Endpoint<br/>scoring-model; replaces inline scorer once labels accumulate"]
 
-    E -->|High score: auto-suspend| I[Adjudication System\nduplicate denial]
-    E -->|Mid score: review| J[Amazon SQS\nreview-queue]
-    E -->|Low score: auto-accept| K[Adjudication System\nprocess claim]
+    E -->|High score: auto-suspend| I[Adjudication System<br/>duplicate denial]
+    E -->|Mid score: review| J[Amazon SQS<br/>review-queue]
+    E -->|Low score: auto-accept| K[Adjudication System<br/>process claim]
 
-    B -->|Parse failure| PDLQ[SQS\nparser-dlq]
-    E -->|Detection failure| DDLQ[SQS\ndetector-dlq]
+    B -->|Parse failure| PDLQ[SQS<br/>parser-dlq]
+    E -->|Detection failure| DDLQ[SQS<br/>detector-dlq]
 
     J --> L[Examiner Workstation]
-    L -->|Verdict + reasoning| M[Amazon EventBridge\nclaim-events bus]
-    M -->|Label event| N[AWS Lambda\nlabel-writer]
-    N -->|Append| O[(DynamoDB\nclaim-labels)]
-    N -->|Append| P[S3 Bucket\nlabels-parquet/]
-    N -.->|Write failure| LDLQ[SQS\nlabel-writer-dlq]
+    L -->|Verdict + reasoning| M[Amazon EventBridge<br/>claim-events bus]
+    M -->|Label event| N[AWS Lambda<br/>label-writer]
+    N -->|Append| O[(DynamoDB<br/>claim-labels)]
+    N -->|Append| P[S3 Bucket<br/>labels-parquet/]
+    N -.->|Write failure| LDLQ[SQS<br/>label-writer-dlq]
 
-    Q[EventBridge Scheduler\nweekly] -->|Trigger| R[SageMaker Training Job]
+    Q[EventBridge Scheduler<br/>weekly] -->|Trigger| R[SageMaker Training Job]
     R -->|Read labels| P
-    R -->|Read features| S[DynamoDB Export to S3\nclaim-history-parquet/]
+    R -->|Read features| S[DynamoDB Export to S3<br/>claim-history-parquet/]
     R -->|New model| H
 
-    E -->|Metrics| T[Amazon CloudWatch\nScorer metrics + alarms]
+    E -->|Metrics| T[Amazon CloudWatch<br/>Scorer metrics + alarms]
     O -->|Metrics| T
 
     style B fill:#f9f,stroke:#333

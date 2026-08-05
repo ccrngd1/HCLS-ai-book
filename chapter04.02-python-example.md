@@ -1,5 +1,15 @@
 # Recipe 4.2: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.2. It shows one way you could translate those patient-education-content-matching concepts into working Python using Amazon Bedrock for embeddings, Amazon OpenSearch Service for vector search, Amazon DynamoDB for catalog and patient metadata, S3 for content bodies, and Amazon Kinesis for engagement events. It is not production-ready. There is no real CMS integration, no SMART-on-FHIR feed for the patient profile, no Step Functions ingestion orchestration, no learned re-ranker (we use a hand-tuned scoring function), no clinician approval workflow, no fairness dashboard. Think of it as the sketchpad version: useful for understanding the shape of a content recommender, not something you'd wire into a portal on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the six pseudocode steps from the main recipe: ingest content and build the searchable index, build the patient query context, apply hard filters and run candidate generation, re-rank with personalization signals, log the recommendation and return, capture engagement and update aggregates. All sample content, patients, and engagement signals are synthetic.

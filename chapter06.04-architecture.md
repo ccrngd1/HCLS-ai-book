@@ -24,19 +24,19 @@
 
 ```mermaid
 flowchart TD
-    A[EHR Extract\nS3 Landing] --> D[AWS Glue\nFeature Assembly]
-    B[Claims Feed\nS3 Landing] --> D
-    C[Lab Results\nS3 Landing] --> D
+    A[EHR Extract<br/>S3 Landing] --> D[AWS Glue<br/>Feature Assembly]
+    B[Claims Feed<br/>S3 Landing] --> D
+    C[Lab Results<br/>S3 Landing] --> D
 
-    D --> E[S3 Data Lake\nFeature Matrix]
-    E --> F[SageMaker\nClustering Job]
-    F --> G[S3\nTier Assignments]
-    G --> H[DynamoDB\nOperational Lookups]
-    G --> I[QuickSight\nDashboards]
-    G --> J[Athena\nAd-hoc Analysis]
+    D --> E[S3 Data Lake<br/>Feature Matrix]
+    E --> F[SageMaker<br/>Clustering Job]
+    F --> G[S3<br/>Tier Assignments]
+    G --> H[DynamoDB<br/>Operational Lookups]
+    G --> I[QuickSight<br/>Dashboards]
+    G --> J[Athena<br/>Ad-hoc Analysis]
 
-    H --> K[Care Management\nPlatform]
-    H --> L[EHR Registry\nIntegration]
+    H --> K[Care Management<br/>Platform]
+    H --> L[EHR Registry<br/>Integration]
 
     style E fill:#f9f,stroke:#333
     style F fill:#ff9,stroke:#333
@@ -48,7 +48,7 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, AWS Glue, Amazon S3, Amazon DynamoDB, Amazon Athena, Amazon QuickSight |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `athena:StartQueryExecution` |
+| **IAM Permissions** | Pipeline role: `sagemaker:CreateProcessingJob`, `sagemaker:CreateTrainingJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `athena:StartQueryExecution`, plus `kms:Decrypt` and `kms:GenerateDataKey` for the CMK protecting the S3 buckets and SageMaker volumes. Care management read role: `dynamodb:GetItem` only (see Step 6). Scope every action to specific resource ARNs (this pipeline's buckets/prefixes, the `severity-tiers` table, and the CMK), never `*`. |
 | **BAA** | AWS BAA signed (required: patient clinical data is PHI) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted training volumes and model artifacts; all API calls over TLS |
 | **VPC** | Production: SageMaker training jobs and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. No public internet access for compute touching PHI. Apply endpoint policies to restrict access to only the specific buckets and tables used by this pipeline. |

@@ -18,7 +18,7 @@
 
 **Claude Haiku 4.5 (`us.anthropic.claude-haiku-4-5-20251022-v1:0`)** is an alternative Tier 2 model: slightly more expensive than Nova Pro but faster response times for latency-sensitive sub-pipelines. For chart migration batch processing, Nova Pro and Haiku are roughly interchangeable. The recipe shows both; your choice depends on latency requirements within the batch job.
 
-**Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-20260217-v1:0`)** handles Tier 3 complex extraction and the FHIR mapping stage. This is where clinical reasoning happens: interpreting ambiguous clinical text, handling complex multi-section documents, generating structured FHIR resources from messy clinical narratives. Sonnet also handles vision extraction for most handwritten and degraded pages: it is capable enough for the middle tier of image quality. At $3.00/MTok input (on-demand), its cost is justified only where lower tiers fail. Budget that 20 to 30% of clinical pages reach this tier.
+**Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`)** handles Tier 3 complex extraction and the FHIR mapping stage. This is where clinical reasoning happens: interpreting ambiguous clinical text, handling complex multi-section documents, generating structured FHIR resources from messy clinical narratives. Sonnet also handles vision extraction for most handwritten and degraded pages: it is capable enough for the middle tier of image quality. At $3.00/MTok input (on-demand), its cost is justified only where lower tiers fail. Budget that 20 to 30% of clinical pages reach this tier.
 
 **Claude Opus 4.6 (`us.anthropic.claude-opus-4-6-20260204-v1:0`)** is the Tier 4 last resort. Severely degraded documents, illegible third-generation fax images of dense clinical handwriting, highly ambiguous content where Sonnet's confidence scores fall below threshold. Opus is the most capable model in the pipeline and the most expensive ($5.00/MTok input). In a well-tuned pipeline, 3 to 7% of pages reach Tier 4. Anything above 10% is a signal that your Tier 3 thresholds are too low.
 
@@ -656,7 +656,7 @@ Return JSON in this format:
 Return ONLY valid JSON.
 """
 
-    model_id = "us.anthropic.claude-sonnet-4-6-20260217-v1:0"
+    model_id = "us.anthropic.claude-sonnet-4-6-v1:0"
     IF model_tier == 4:
         model_id = "us.anthropic.claude-opus-4-6-20260204-v1:0"
 
@@ -1202,7 +1202,7 @@ The pseudocode captures the core logic. A production chart migration program req
 
 **Comprehend Medical regional availability.** Comprehend Medical is available in approximately eight AWS regions. Before finalizing your deployment region, verify availability at the Comprehend Medical regional endpoints documentation. If your target region is unsupported, cross-region calls or a Bedrock-based code validation fallback are the options. LLMs are less reliable than Comprehend Medical for exact code lookup, so the fallback has accuracy implications.
 
-**Model version pinning.** The cross-region inference profile IDs used in this recipe (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-20260217-v1:0`) are AWS-managed mappings that can be updated to new underlying model versions. For a migration program where consistent extraction behavior matters across six to twelve months of processing, pin to explicit model version ARNs (e.g., `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-20240229-v1:0`). Test your extraction quality after any model update before continuing bulk processing.
+**Model version pinning.** The cross-region inference profile IDs used in this recipe (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1:0`) are AWS-managed mappings that can be updated to new underlying model versions. For a migration program where consistent extraction behavior matters across six to twelve months of processing, pin to explicit model version ARNs (e.g., `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-v1:0`). Test your extraction quality after any model update before continuing bulk processing.
 
 **Vision JSONL file sizes.** Embedding base64-encoded page images in batch JSONL creates very large files: a 300 DPI PNG page runs 1 to 3 MB raw, which becomes 1.3 to 4 MB per request line after base64 encoding. A wave of 10,000 vision-path pages produces an input JSONL of 13 to 40 GB. Split vision batches into smaller JSONL files before submission (2,000 to 3,000 pages per file is a manageable chunk). Use S3 multipart upload for files larger than 5 GB (boto3's `TransferConfig` handles this automatically when configured). Validate that each individual request line stays within Bedrock's current per-request payload limit for your region. Consider downsampling very high-resolution source images from 600 DPI to 300 DPI before embedding -- 300 DPI is sufficient for vision model performance per Recipe 1.6's benchmarks and cuts file sizes by approximately 75%.  
 

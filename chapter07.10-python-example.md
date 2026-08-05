@@ -1,5 +1,15 @@
 # Recipe 7.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the optimal intervention timing pipeline from Recipe 7.10. It demonstrates the core concepts (longitudinal feature engineering, survival modeling, intervention window scoring) using synthetic data and a basic hazard model. It is not production-ready. Real intervention timing systems require validated causal models, clinical oversight, and months of calibration against actual outcomes. Think of this as the sketch on the whiteboard, not the blueprint for construction.
 
 ---

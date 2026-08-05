@@ -24,15 +24,15 @@
 
 ```mermaid
 flowchart TD
-    A[📷 Fundus Camera] -->|DICOM/JPEG Upload| B[S3 Bucket\nretinal-images/]
-    B -->|S3 Event| C[Step Functions\nScreening Workflow]
-    C -->|Step 1| D[Lambda\nImage Quality Check]
-    D -->|Pass| E[SageMaker Endpoint\nDR Classification Model]
-    D -->|Fail| F[SNS Notification\nRecapture Required]
-    E -->|Prediction| G[Lambda\nClinical Decision Logic]
-    G -->|Store| H[DynamoDB\nscreening-results]
-    G -->|Refer| I[SNS Notification\nOphthalmology Referral]
-    G -->|No Refer| J[Patient Portal\nNormal Result Letter]
+    A[📷 Fundus Camera] -->|DICOM/JPEG Upload| B[S3 Bucket<br/>retinal-images/]
+    B -->|S3 Event| C[Step Functions<br/>Screening Workflow]
+    C -->|Step 1| D[Lambda<br/>Image Quality Check]
+    D -->|Pass| E[SageMaker Endpoint<br/>DR Classification Model]
+    D -->|Fail| F[SNS Notification<br/>Recapture Required]
+    E -->|Prediction| G[Lambda<br/>Clinical Decision Logic]
+    G -->|Store| H[DynamoDB<br/>screening-results]
+    G -->|Refer| I[SNS Notification<br/>Ophthalmology Referral]
+    G -->|No Refer| J[Patient Portal<br/>Normal Result Letter]
 
     style B fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
@@ -44,7 +44,7 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon SNS |
-| **IAM Permissions** | **Lambda execution role:** `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`. **Step Functions execution role:** `lambda:InvokeFunction` (scoped to screening Lambda ARNs). **EventBridge rule role:** `states:StartExecution` (S3 event triggers Step Functions via EventBridge; EventBridge rules execute in the AWS service plane, so the rule's IAM role needs this permission, not Lambda). |
+| **IAM Permissions** | **Lambda execution role:** `sagemaker:InvokeEndpoint` (scoped to the DR endpoint ARN), `s3:GetObject` (scoped to the retinal-images bucket ARN; the fundus camera writes the images, so the Lambda only reads), `dynamodb:PutItem` and `dynamodb:GetItem` (scoped to the screening-results and reading-queue table ARNs), `sns:Publish` (scoped to the referral topic ARNs), plus `kms:Decrypt` and `kms:GenerateDataKey` (scoped to the customer-managed key ARN) because the S3 bucket and DynamoDB tables use CMK encryption. **Step Functions execution role:** `lambda:InvokeFunction` (scoped to screening Lambda ARNs). **EventBridge rule role:** `states:StartExecution` (S3 event triggers Step Functions via EventBridge; EventBridge rules execute in the AWS service plane, so the rule's IAM role needs this permission, not Lambda). |
 | **BAA** | AWS BAA signed (required: retinal images are PHI) |
 | **Encryption** | S3: SSE-KMS with bucket policy enforcing encryption on all uploads (`aws:SecureTransport` condition) and restricting access to authorized principals; DynamoDB: encryption at rest with customer-managed KMS key (CMK) for CloudTrail audit visibility; SageMaker endpoint: KMS encryption for model artifacts and inference data; all API calls over TLS |
 | **VPC** | Production: SageMaker endpoint in VPC, Lambda in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, Step Functions (`com.amazonaws.{region}.states`), SNS, and CloudWatch Logs. If EHR integration requires outbound HTTPS to external endpoints, configure a NAT Gateway or place the integration Lambda in a subnet with internet access. |
@@ -69,7 +69,7 @@ flowchart TD
 
 ### Pseudocode Walkthrough
 
-**Step 1: Image quality assessment.** Before the classification model ever sees an image, we need to confirm it's actually gradable. A blurry, poorly-centered, or underexposed fundus image will produce unreliable predictions. This step runs a lightweight quality check: field of view coverage, focus sharpness, illumination uniformity, and artifact detection. If the image fails, the system immediately notifies the capture site to retake. This prevents the most common source of false negatives in screening programs: making a "no retinopathy" call on an image where you simply couldn't see the retinopathy because the image was garbage. In practice, 5-15% of images from non-mydriatic cameras in primary care settings fail quality assessment.
+**Step 1: Image quality assessment.** Before the classification model ever sees an image, we need to confirm it's actually gradable. A blurry, poorly-centered, or underexposed fundus image will produce unreliable predictions. This step runs a lightweight quality check: field of view coverage, focus sharpness, illumination uniformity, and artifact detection. If the image fails, the system immediately notifies the capture site to retake. This prevents the most common source of false negatives in screening programs: making a "no retinopathy" call on an image where you simply couldn't see the retinopathy because the image was garbage. In practice, 5-20% of images from non-mydriatic cameras in primary care settings fail quality assessment.
 
 ```pseudocode
 FUNCTION assess_image_quality(bucket, image_key):
@@ -276,7 +276,7 @@ FUNCTION store_and_act(patient_id, image_key, quality_result, predictions, decis
 | End-to-end latency | 5-10 seconds (including quality check) |
 | Sensitivity (referable DR) | 87-97% (depends on model and threshold) |
 | Specificity (referable DR) | 85-95% |
-| Ungradable rate | 5-15% (population and camera dependent) |
+| Ungradable rate | 5-20% (population and camera dependent) |
 | Cost per screening | $0.50-$2.00 (dominated by SageMaker endpoint) |
 | Throughput | ~200 images/hour per endpoint |
 

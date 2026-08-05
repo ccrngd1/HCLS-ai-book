@@ -1,5 +1,15 @@
 # Recipe 4.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.7. It shows one way you could translate the care management program enrollment pattern into working Python using AWS Glue / Athena for nightly eligibility evaluation against the program registry, Amazon SageMaker (Feature Store, Batch Transform, Training) for the per-program response (uplift), enrollment-likelihood, and engagement-prediction models, Amazon DynamoDB for the program registry, the per-(patient, program) state machine, the recommendation log, the outreach state, the engagement state, the enrollment briefings, and the disenrollment decisions, Amazon S3 for the data lake and evaluation outputs, AWS Step Functions for the daily eligibility, weekly enrollment-decision, and monthly outcome-evaluation pipelines, AWS Lambda for the per-stage glue, Amazon Bedrock for enrollment briefings, patient-facing message tailoring, mid-program engagement summaries, and disenrollment-decision rationales, Amazon Kinesis for outreach, engagement, clinical, and disenrollment events, Amazon Connect for care-manager telephonic outreach, and Amazon SES / Amazon Pinpoint for member-facing email and SMS. It is not production-ready. There is no real claims, EHR, lab, pharmacy, discharge feed, or care management system integration, no validated propensity-matched difference-in-differences evaluation, no causal-inference-grade response models, no live randomized hold-out cohort, no Connect contact-flow integration, no real consent capture and HIPAA authorization workflow, no actual cohort-aware fairness instrumentation tied to a quarterly review committee. Think of it as the sketchpad version: useful for understanding the shape of a multi-stage care management enrollment recommender that respects program semantics, capacity constraints, equity floors, longitudinal state, and engagement tracking, not something you'd wire into a 250,000-member health plan on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the six pseudocode steps from the main recipe: evaluate the program registry against patient data to produce per-(patient, program) eligibility records, score per-program response (uplift), enrollment likelihood, and program-fit and synthesize priority, run multi-stage capacity-and-equity-constrained allocation across time-sensitive, disease-specific, complex-care, and add-on programs, generate care-manager-facing enrollment briefings and dispatch outreach, track in-program engagement and trigger retention attempts when engagement declines, and process the human disenrollment decision plus cross-program transitions and post-graduation observation. All sample patients, programs, eligibility records, engagement events, and outcome events are synthetic.
@@ -97,10 +107,10 @@ ses_client = boto3.client("ses", config=BOTO3_RETRY_CONFIG)
 # add cost without meaningfully better tailoring on these prompt
 # shapes. Production picks the model per use case based on observed
 # quality regressions, not a uniform default.
-ENROLLMENT_BRIEFING_MODEL_ID    = "anthropic.claude-3-5-haiku-20241022-v1:0"
-PATIENT_MESSAGE_MODEL_ID        = "anthropic.claude-3-5-haiku-20241022-v1:0"
-ENGAGEMENT_SUMMARY_MODEL_ID     = "anthropic.claude-3-5-haiku-20241022-v1:0"
-DISENROLLMENT_RATIONALE_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
+ENROLLMENT_BRIEFING_MODEL_ID    = "anthropic.claude-haiku-4-5-v1:0"
+PATIENT_MESSAGE_MODEL_ID        = "anthropic.claude-haiku-4-5-v1:0"
+ENGAGEMENT_SUMMARY_MODEL_ID     = "anthropic.claude-haiku-4-5-v1:0"
+DISENROLLMENT_RATIONALE_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
 
 # Names of the SageMaker model artifacts. Three model families per
 # program: response (uplift), enrollment-likelihood, engagement-

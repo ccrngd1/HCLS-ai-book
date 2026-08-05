@@ -1,5 +1,15 @@
 # Recipe 12.1: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 12.1. It shows one way you could translate the appointment-volume-forecasting pipeline into working Python using boto3, Prophet, and pandas. The demo generates synthetic appointment-volume data with realistic weekly seasonality, annual seasonality, holiday effects, and noise so you can see the data prep, model training, forecast generation, and DynamoDB loading work end-to-end without provisioning anything. It is not production-ready. There is no real SageMaker training job, no real Step Functions orchestration, no real EventBridge schedule, no real VPC configuration, no per-Lambda IAM least privilege, no KMS customer-managed keys, no forecast-drift monitoring, no cold-start handling for new clinics, and no hierarchical reconciliation across providers. Think of it as the sketchpad version: useful for understanding the shape of a daily-volume forecasting pipeline that respects the calendar-feature discipline, the prediction-interval-not-point-estimate discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a clinic staffing system on Monday morning. Consider it a starting point, not a destination.
 
 ---

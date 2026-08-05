@@ -1,5 +1,15 @@
 # Recipe 8.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 8.3. It shows one way you could translate those concepts into working Python using boto3. It is not production-ready. Think of it as the sketchpad version: useful for understanding how the pieces fit together, not something you'd wire into a CDI workflow on Monday morning. Consider it a starting point, not a destination.
 >
 > The main recipe describes a Lambda-backed API Gateway architecture. This example implements the same logic as a callable function you can run locally against the Comprehend Medical API. The extraction, filtering, and coding rule logic is identical to what you'd deploy in Lambda. The difference is operational plumbing, not core logic.
@@ -15,10 +25,8 @@ pip install boto3
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `comprehend:InferICD10CM`
+- `comprehendmedical:InferICD10CM`
 - `dynamodb:PutItem`
-- `dynamodb:GetItem`
-- `dynamodb:Query`
 
 No BAA-covered data in development. Use synthetic clinical notes only. The MIMIC-IV dataset on PhysioNet provides de-identified clinical text if you need realistic content for testing.
 
@@ -47,7 +55,7 @@ BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
 # boto3 clients at module level for Lambda container reuse.
 comprehend_medical = boto3.client("comprehendmedical", config=BOTO3_RETRY_CONFIG)
-dynamodb = boto3.resource("dynamodb")
+dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 # --- Thresholds ---
 
@@ -59,8 +67,10 @@ CONFIDENCE_THRESHOLD = 0.30
 # Maximum suggestions to return. Top N by confidence.
 MAX_SUGGESTIONS = 15
 
-# Comprehend Medical's per-request character limit.
-MAX_TEXT_LENGTH = 20_000
+# Comprehend Medical InferICD10CM accepts a string of 1 to 10,000 characters
+# (measured in characters, not bytes; DetectEntitiesV2 differs at 20,000
+# bytes). Truncate on characters with a small safety margin below the limit.
+MAX_TEXT_LENGTH = 9_500
 
 # --- DynamoDB Tables ---
 
@@ -148,10 +158,15 @@ def preprocess_note(raw_note_text: str) -> str:
 
     combined = "\n\n".join(priority_text + remaining_text)
 
-    # Truncate to API limit. Priority content is safe because it's first.
+    # Truncate to the InferICD10CM limit, which is measured in characters
+    # (the API accepts 1 to 10,000). Priority content is safe because it
+    # appears first.
     if len(combined) > MAX_TEXT_LENGTH:
+        original_len = len(combined)
         combined = combined[:MAX_TEXT_LENGTH]
-        logger.info("Note truncated from %d to %d characters", len(raw_note_text), MAX_TEXT_LENGTH)
+        logger.info(
+            "Note truncated from %d to %d characters", original_len, MAX_TEXT_LENGTH
+        )
 
     return combined
 ```
@@ -657,4 +672,4 @@ This example works: point it at a clinical note and it returns ranked ICD-10 sug
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter08.03-architecture) for the walkthrough and pseudocode, and [Recipe 8.3](chapter08.03-icd-10-code-suggestion) for the problem framing and honest take.*

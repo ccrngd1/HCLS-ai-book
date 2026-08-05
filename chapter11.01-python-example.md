@@ -1,5 +1,15 @@
 # Recipe 11.1: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 11.1. It shows one way you could translate the FAQ-chatbot pipeline into working Python using boto3 against Amazon Bedrock (LLM and embeddings), Amazon Bedrock Knowledge Bases (the managed RAG layer), Amazon Bedrock Guardrails, AWS Lambda, Amazon API Gateway, Amazon DynamoDB, and Amazon EventBridge. The demo uses a `MockKnowledgeBase` standing in for `bedrock-agent-runtime.retrieve`, a `MockBedrockRuntime` standing in for the LLM-generation calls, a small in-memory `MockTable` for the conversation-state and conversation-metadata DynamoDB tables, a `MockEventBus` for EventBridge, and a `MockCloudWatch` for the metric emissions. It is not production-ready. There is no real Bedrock Knowledge Base ingestion, no real Guardrail configuration, no API Gateway WebSocket plumbing, no WAF rule tuning, no per-Lambda IAM least privilege, no KMS customer-managed keys, no VPC endpoints, no Object-Lock-protected audit archive, no Connect contact-center handoff, and no Secrets Manager wiring for any of the integrations. Think of it as the sketchpad version: useful for understanding the shape of an FAQ-chatbot pipeline that respects the input-screening discipline, the scope-classification discipline, the grounded-generation discipline, the output-screening discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a hospital website on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the eight pseudocode steps from the main recipe: receive the message and bootstrap the session with greeting and disclosure (Step 1), screen the input for crisis signals, prompt-injection patterns, and inadvertent PHI (Step 2), classify the user's intent against the bot's scope and route out-of-scope categories to refusal-and-handoff (Step 3), retrieve relevant chunks from the institutional knowledge base with hybrid search and a relevance threshold (Step 4), generate the grounded response with citation discipline and explicit no-information handling (Step 5), screen the output for scope drift and unsupported claims (Step 6), deliver the response, append the follow-up affordance, and log everything (Step 7), and close the conversation, archive the durable audit record, and feed cohort-stratified containment monitoring (Step 8). The synthetic patient questions, the institutional knowledge-base content, and the policy snippets in the demo are fictional; nothing in this file should be interpreted as advice from any real institution.
@@ -163,11 +173,11 @@ INSTITUTION_DISPLAY_NAME      = "Riverside Clinic"
 # pattern matter, so use a capable instruction-following model.
 #
 # If your region requires cross-region inference, use the inference
-# profile ID (e.g., "us.anthropic.claude-3-5-haiku-20241022-v1:0").
+# profile ID (e.g., "us.anthropic.claude-haiku-4-5-v1:0").
 # NOTE: verify the exact model IDs available in your region and
 # account; Bedrock model availability evolves over time.
-SCOPE_CLASSIFIER_MODEL_ID     = "anthropic.claude-3-5-haiku-20241022-v1:0"
-RESPONSE_GENERATION_MODEL_ID  = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+SCOPE_CLASSIFIER_MODEL_ID     = "anthropic.claude-haiku-4-5-v1:0"
+RESPONSE_GENERATION_MODEL_ID  = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Pipeline Tuning ---
 # Below this confidence, we ask a clarifying question rather than

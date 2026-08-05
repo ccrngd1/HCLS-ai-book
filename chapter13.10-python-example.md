@@ -1,5 +1,15 @@
 # Recipe 13.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the federated clinical knowledge network concepts from Recipe 13.10. It demonstrates the mechanics of federation (source registration, ontology mapping, query decomposition, result assembly) using boto3 calls against Neptune, DynamoDB, and S3. It is not production-ready. Real federation involves governance frameworks, legal agreements, and multi-account networking that take months to establish. Think of this as the technical skeleton, not the finished building.
 
 ---

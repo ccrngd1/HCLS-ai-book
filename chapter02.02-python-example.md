@@ -1,5 +1,15 @@
 # Recipe 2.2: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.2. It shows one way you could translate those concepts into working Python using boto3, Amazon Bedrock, and Amazon Comprehend Medical. It is not production-ready. Error handling is minimal, there's no retry-on-validation-failure loop, and there's no real integration with an EHR or patient portal. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a discharge workflow on Monday morning. Consider it a starting point, not a destination.
 
 ---
@@ -56,10 +66,10 @@ comprehend_medical_client = boto3.client("comprehendmedical", config=BOTO3_RETRY
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 # Model configuration.
-MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
 # If you get a ValidationException about model access, your region may
 # require a cross-region inference profile ID instead:
-# MODEL_ID = "us.anthropic.claude-3-haiku-20240307-v1:0"
+# MODEL_ID = "us.anthropic.claude-haiku-4-5-v1:0"
 
 # Guardrail configuration. Replace with your actual guardrail.
 GUARDRAIL_ID = "your-guardrail-id-here"

@@ -1,5 +1,15 @@
 # Recipe 10.2: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.2. It shows one way you could translate the natural-language voicemail-triage pipeline into working Python using boto3 against Amazon Transcribe Medical, Amazon Comprehend Medical, Amazon Bedrock, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon SNS, and Amazon EventBridge. The demo uses a `MockTranscribeMedical` standing in for the async ASR job submission and result delivery, a `MockBedrock` standing in for the foundation-model classifier, a `MockComprehendMedical` standing in for the medical-entity extractor, a `MockS3` standing in for the audio and transcript buckets, a `MockEHR` standing in for the patient-index lookup, and small helpers for the voicemail records table, the triage queue, the SNS topic, the EventBridge bus, and CloudWatch-style metrics. It is not production-ready. There is no real Step Functions state machine, no real Transcribe Medical job submission, no real Bedrock invocation, no real Comprehend Medical call, no real S3 wiring, no real DynamoDB or EventBridge wiring, no real on-call paging integration, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-jurisdiction recording-disclosure logic, no voicemail-greeting playback, and no staff triage UI. Think of it as the sketchpad version: useful for understanding the shape of a voicemail-triage pipeline that respects the urgency-rule-layer-first discipline, the per-axis confidence-threshold discipline, the ASR-confidence-gate-on-classification discipline, the structured-triage-record discipline, and the audit-everything discipline this recipe demands. It is not something you would point at the practice's voicemail box on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the seven core pseudocode steps from the main recipe: ingest the voicemail audio and create the voicemail record (Step 1), pre-process the audio with length filter and VAD (Step 2), submit the ASR job and handle the result with confidence-based gating (Step 3), classify with the urgency-rule-layer-first pattern and run the LLM classifier and entity extractor in parallel (Step 4), enrich with patient context and detect repeat callers (Step 5), route to the appropriate queue with priority and emit emergent notifications (Step 6), and capture staff actions for the disagreement-and-improvement dataset (Step 7). The synthetic patients, medications, phone numbers, transcripts, and intents in the demo are fictional; the names, DOBs, and other identifiers are obviously made-up and should not match anyone real.
@@ -119,7 +129,7 @@ CLOUDWATCH_NAMESPACE          = "VoicemailTriage"
 # version and inference profile so a model upgrade doesn't
 # silently change classifier behavior. The model and region
 # combination must be in your AWS BAA scope.
-BEDROCK_CLASSIFIER_MODEL_ID    = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+BEDROCK_CLASSIFIER_MODEL_ID    = "anthropic.claude-sonnet-4-6-v1:0"
 BEDROCK_INFERENCE_PROFILE_ARN  = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "voicemail-classifier-v1")

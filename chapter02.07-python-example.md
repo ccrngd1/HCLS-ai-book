@@ -1,5 +1,15 @@
 # Recipe 2.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.7. It shows one way you could translate those literature-search-and-evidence-synthesis concepts into working Python using Amazon Bedrock, Amazon OpenSearch Service, Amazon Comprehend Medical, S3, and DynamoDB. It is not production-ready. There is no corpus ingestion pipeline (that's a significant project on its own), no SMART-on-FHIR or EHR integration, no Step Functions orchestration, no clinician-facing UI, no cross-encoder re-ranker (we use a small-LLM re-ranker stand-in, which is cheaper but less accurate), and no fine-grained evidence-grading beyond publication-type tiers. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire up to a health system on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the ten pseudocode steps from the main recipe: receive and classify the question, expand the query and extract entities, multi-source retrieval with hybrid search, re-rank candidates, tag evidence tiers, fetch full-text context, grounded generation with citation discipline, validate citations and claims, render with bibliography, archive for audit. Unverifiable claims trigger regeneration up to a cap, then escalate for clinician review.
@@ -83,10 +93,10 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 # and preserved uncertainty all matter, so use a capable model.
 #
 # If your region requires cross-region inference, use the inference profile ID:
-#   e.g., "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+#   e.g., "us.anthropic.claude-haiku-4-5-v1:0"
 # TODO: verify the exact model IDs available in your region and account.
-SMALL_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
-GENERATION_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+SMALL_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
+GENERATION_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
 
 # Optional Bedrock Guardrail for the generation step. Configure one in the

@@ -1,5 +1,15 @@
 # Recipe 7.12: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the cohort matching and case-based reasoning pipeline from Recipe 7.12. It demonstrates the core concepts (synthetic claims with novelty scenarios, feature embedding, k-nearest-neighbors retrieval, distance-based confidence scoring, denial archetype clustering, and OpenSearch k-NN integration via boto3) using synthetic data. It is not production-ready. Real case-based reasoning systems require validated embedding models trained on actual adjudication outcomes, continuously refreshed vector indexes, and careful calibration of novelty thresholds against your actual payer landscape. Think of this as the whiteboard sketch that shows you the shape of each piece, not the deployment blueprint.
 
 ---

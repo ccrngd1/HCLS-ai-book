@@ -187,7 +187,7 @@ FUNCTION build_prompt(message_text, intent, context, provider_preferences):
 FUNCTION generate_draft(system_prompt, user_prompt):
     // Call the foundation model via the managed LLM service
     response = call LLM service with:
-        model_id     = "anthropic.claude-3-haiku"  // fast, cost-effective for routine messages
+        model_id     = "anthropic.claude-haiku-4-5"  // fast, cost-effective for routine messages
         system       = system_prompt
         messages     = [{ role: "user", content: user_prompt }]
         max_tokens   = 300          // cap response length; routine messages don't need novels
@@ -226,7 +226,7 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
         draft_text       = draft_result.draft_text           // the generated response
         draft_status     = "pending_review"                  // awaiting provider action
         generation_ts    = current UTC timestamp (ISO 8601)  // when the draft was created
-        model_id         = "anthropic.claude-3-haiku"        // which model generated it
+        model_id         = "anthropic.claude-haiku-4-5"        // which model generated it
         prompt_version   = "v2"                              // which prompt template was used
         guardrail_id     = "healthcare-message-guardrail"    // which safety config was applied
     
@@ -257,7 +257,7 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
   "draft_text": "Hi Sarah, I've sent a refill for your lisinopril 10mg to CVS on Main St. It should be ready for pickup within 24-48 hours. If you have any issues picking it up, just let us know. Take care, Dr. Martinez",
   "draft_status": "pending_review",
   "generation_ts": "2026-05-01T14:22:08Z",
-  "model_id": "anthropic.claude-3-haiku",
+  "model_id": "anthropic.claude-haiku-4-5",
   "prompt_version": "v2"
 }
 ```

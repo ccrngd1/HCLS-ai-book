@@ -1,5 +1,15 @@
 # Recipe 7.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 7.9. It demonstrates how you might build an ICU mortality risk scoring pipeline using boto3, synthetic data, and a gradient boosted tree model. It is not production-ready. Real ICU mortality models require extensive validation, clinical oversight, IRB approval, and calibration against your specific patient population before anyone should act on their outputs. Consider this a starting point for understanding the architecture, not something you'd deploy to a unit on Monday morning.
 
 ---

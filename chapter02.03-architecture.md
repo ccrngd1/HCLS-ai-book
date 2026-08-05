@@ -46,7 +46,7 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Bedrock, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon OpenSearch Serverless (for Knowledge Bases), Amazon CloudWatch |
-| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`. Scope each action to specific resource ARNs (your notes bucket, your suggestions table, the specific model ARN such as `arn:aws:bedrock:{region}::foundation-model/anthropic.claude-3-sonnet*`, and your knowledge base ARN) rather than `*`. If you use a customer-managed KMS key for DynamoDB or S3, also grant `kms:Decrypt` and `kms:GenerateDataKey` scoped to that key ARN. |
+| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`. Scope each action to specific resource ARNs (your notes bucket, your suggestions table, the specific model ARN such as `arn:aws:bedrock:{region}::foundation-model/anthropic.claude-sonnet-4-6*`, and your knowledge base ARN) rather than `*`. If you use a customer-managed KMS key for DynamoDB or S3, also grant `kms:Decrypt` and `kms:GenerateDataKey` scoped to that key ARN. |
 | **BAA** | AWS BAA signed (required: clinical notes contain PHI) |
 | **Bedrock Model Access** | Request access to Claude models (or your preferred model) in the Bedrock console |
 | **Encryption** | S3: SSE-KMS with a customer-managed key; DynamoDB: encryption at rest with a customer-managed KMS key (the AWS-owned default key does not appear in CloudTrail and cannot be revoked, which fails most HIPAA auditability requirements); Bedrock: data encrypted in transit and at rest; CloudWatch Logs: KMS encryption configured |
@@ -113,7 +113,7 @@ FUNCTION extract_clinical_elements(note_content):
     """
     
     response = call Bedrock.InvokeModel with:
-        model_id = "anthropic.claude-3-sonnet"    // good balance of speed and accuracy
+        model_id = "anthropic.claude-sonnet-4-6"    // good balance of speed and accuracy
         prompt   = prompt
         max_tokens = 4096
         temperature = 0.1    // low temperature for factual extraction
@@ -199,7 +199,7 @@ FUNCTION generate_cdi_suggestions(note_content, clinical_elements, guidelines):
     """
     
     response = call Bedrock.InvokeModel with:
-        model_id    = "anthropic.claude-3-sonnet"
+        model_id    = "anthropic.claude-sonnet-4-6"
         prompt      = prompt
         max_tokens  = 4096
         temperature = 0.2    // slightly higher for natural query phrasing

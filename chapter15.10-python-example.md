@@ -1,5 +1,15 @@
 # Recipe 15.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the RL concepts from Recipe 15.10. It demonstrates the shape of a hospital resource allocation RL system: environment definition, state construction, reward shaping, constrained policy optimization, and decision support output. It is not production-ready. A real hospital resource allocator requires months of simulator calibration, extensive offline evaluation, IRB-level review of the reward function, and careful pilot deployment with human oversight at every step. Consider this a learning tool, not a deployment artifact.
 
 ---

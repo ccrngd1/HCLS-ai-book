@@ -1,5 +1,15 @@
 # Recipe 6.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the clinical trial patient matching pipeline from Recipe 6.7. It demonstrates the multi-stage filtering approach (structured pre-screen, NLP deep screen, scoring) using synthetic data and boto3 calls. It is not production-ready. Real trial matching requires validated criteria parsers, IRB-approved workflows, and integration with your EHR. Think of this as the sketch on the whiteboard, not the blueprint you'd hand to a contractor.
 
 ---

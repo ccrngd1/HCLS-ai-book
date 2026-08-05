@@ -1,5 +1,15 @@
 # Recipe 15.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the RL concepts from Recipe 15.7. It demonstrates the shape of a chronic disease treatment personalization system: patient environment modeling, multi-year state tracking, offline policy learning with batch-constrained Q-learning, safety constraint enforcement, and treatment recommendation generation. This is absolutely not production-ready. Chronic disease RL operates over months and years, requires extensive retrospective validation, prospective clinical trials, and likely FDA clearance before influencing any treatment decision. Consider this a learning tool for understanding how RL applies to long-horizon treatment optimization, not something you'd connect to a prescribing system.
 
 ---

@@ -1,5 +1,15 @@
 # Recipe 14.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the inventory reorder optimization from Recipe 14.3. It demonstrates the core concepts (problem formulation, constraint definition, solver invocation, solution interpretation) using an open-source MIP solver. It is not production-ready. The item catalog is tiny, the demand model is static, and there's no ERP integration. Think of it as the whiteboard sketch that helps you understand the shape of the real system. A starting point, not a destination.
 >
 > The main recipe uses ECS Fargate for the solver and SageMaker for demand forecasting. This example runs everything locally with the HiGHS solver (via the `highspy` Python bindings) and hardcoded demand parameters. The optimization math is identical; the infrastructure is stripped away so you can focus on the model.

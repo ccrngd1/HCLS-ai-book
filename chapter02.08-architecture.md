@@ -414,7 +414,7 @@ FUNCTION render_institutional_note(session, healthscribe_note, transcript_json,
     """
 
     response = call Bedrock.InvokeModel with:
-        model_id     = GENERATION_MODEL_ID  // e.g. anthropic.claude-3-5-sonnet-20241022-v2:0
+        model_id     = GENERATION_MODEL_ID  // e.g. anthropic.claude-sonnet-4-6-v1:0
                                             // Bedrock model IDs include a date and version
                                             // suffix. Verify the current ID in your region.
                                             // Cross-region inference profiles

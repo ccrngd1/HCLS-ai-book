@@ -1,5 +1,15 @@
 # Recipe 11.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the patterns described in Recipe 11.10. It shows one way you could translate the clinical-trial-recruitment-conversationalist pipeline into working Python using boto3 against Amazon Bedrock (LLM with function-calling), Amazon Bedrock Knowledge Bases (managed RAG over the IRB-approved trial corpus and the IRB-approved recruitment-FAQ library), Amazon Bedrock Guardrails, AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon DynamoDB, Amazon S3 with Object Lock, Amazon Pinpoint, Amazon Connect, and Amazon EventBridge. The demo uses mock implementations standing in for the real services so you can see the shape of the pipeline without provisioning anything. It is not production-ready. There is no real Bedrock Agent action group configured, no real Knowledge Base ingestion against an IRB-approved-content S3 source, no real Guardrail wired to restricted-topic filters tuned for recruitment-recommendation language, no real CTMS integration, no real coordinator-queue routing through Connect, no real per-trial IRB-amendment-tracking workflow, no real per-Lambda IAM least privilege, no real KMS customer-managed keys for the recruitment-decision-record store and the conversation-archive bucket, no real Object-Lock-protected research-data journal sized to the institutional research-data-retention floor, no real Secrets Manager wiring for the upstream-system credentials, no real per-trial protocol-content-versioning state machine, and no real per-cohort representativeness instrumentation tied to the sponsor's diversity-action-plan reporting. Think of it as the sketchpad version: useful for understanding the shape of a clinical-trial-recruitment conversationalist that respects the IRB-approved-content-as-only-source discipline, the per-trial-isolation discipline, the deterministic-eligibility-evaluation discipline, the coordinator-handoff-as-production-scope discipline, the trial-state-tracking discipline, the representativeness-instrumentation discipline, the vulnerable-populations-aware-identity discipline, the research-data-as-distinct-record-class discipline, the citation-grounding discipline, the scope-discipline-across-adjacent-recipes discipline, the per-cohort-monitoring discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a real prospective-participant population on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to ten logical steps that operationalize the recipe: load and version the IRB-approved trial corpus and the deterministic eligibility-evaluation rules (Step 1); track trial-state and IRB-amendment status (Step 2); receive a conversation turn with input safety, continuous emergency screening, identity classification, and trial-context loading (Step 3); run the agent's tool-use loop with strict IRB-citation discipline (Step 4); execute the conversational eligibility prescreen with deterministic per-criterion logic and clinical-leadership-flagged items (Step 5); run output safety with IRB-language faithfulness verification (Step 6); orchestrate the coordinator handoff with structured prescreen summary and queue routing (Step 7); capture per-cohort representativeness instrumentation across the recruitment funnel (Step 8); persist the recruitment-decision record to research-grade retention (Step 9); generate per-trial reporting and outcome correlation (Step 10). The synthetic trials, principal investigators, sites, IRBs, and prospective participants in the demo are fictional; nothing in this file should be interpreted as recruitment material from any real trial or institution. **If you or someone you know is in crisis: in the United States, call or text 988 to reach the Suicide and Crisis Lifeline, or call 911 for an active emergency.**
@@ -218,11 +228,11 @@ for _name, _value in [
 
 # --- Bedrock Models ---
 ORCHESTRATION_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 PREFILTER_MODEL_ID     = (
-    "anthropic.claude-3-5-haiku-20241022-v1:0")
+    "anthropic.claude-haiku-4-5-v1:0")
 SUMMARY_MODEL_ID       = (
-    "anthropic.claude-3-5-haiku-20241022-v1:0")
+    "anthropic.claude-haiku-4-5-v1:0")
 
 # --- Conversation tuning ---
 MAX_AGENT_ITERATIONS         = 8

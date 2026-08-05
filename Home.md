@@ -1,6 +1,6 @@
 # Healthcare AI/ML Cookbook
 
-A practical guide to AI and machine learning patterns in healthcare — architecture-focused, no code.
+A practical guide to AI and machine learning patterns in healthcare. Architecture-first: the emphasis is on how systems fit together and where they fail, not on shipping code.
 
 ## What This Is
 
@@ -10,6 +10,17 @@ An O'Reilly-style cookbook covering AI/ML applications in healthcare. Each secti
 - **Architecture patterns** for real-world implementation
 - **Hidden challenges** that aren't obvious until you're in production
 - **Limitations and assumptions** to understand before you start
+
+### A note on code
+
+Each recipe has an architecture companion covering AWS services, prerequisites, and a
+pseudocode walkthrough. Some also have a Python companion. Those Python pages are
+**illustrative sketches, not a deployable asset**: they are not exercised by any test
+suite, they pin no dependency versions, and cloud APIs and model identifiers move
+faster than a book does. They exist to make the architecture concrete, and they are
+deliberately kept out of the site navigation so nobody mistakes them for a starting
+point for production work. Read them to understand the shape of a solution; build from
+current vendor documentation.
 
 ## Who This Is For
 

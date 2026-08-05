@@ -1,5 +1,15 @@
 # Recipe 1.5: Claims Attachment Processing: Python Example 
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **This is an illustrative implementation, not a production-ready deployment.**
 > It demonstrates the patterns from the pseudocode walkthrough using boto3.
 > A real deployment needs the additions listed in the "Gap to Production" section at the end.

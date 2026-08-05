@@ -1,5 +1,15 @@
 # Recipe 2.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative sketch of the pseudocode walkthrough from Recipe 2.10. It shows one way you could translate the multi-modal clinical reasoning pipeline into working Python using Amazon Bedrock, Amazon HealthLake, Amazon HealthImaging, Amazon Comprehend Medical, Amazon OpenSearch Service, Amazon Aurora PostgreSQL (pgvector), S3, DynamoDB, and Step Functions. It is NOT production-ready. There is no cleared imaging AI vendor integration, no ECG foundation model endpoint, no real HealthImaging DICOM workflow, no Step Functions orchestration wired end-to-end, no SMART-on-FHIR EHR launch, no PACS deep-linking, no validated regulatory posture, no clinical validation against expert-reviewed scenarios, and no post-market surveillance plumbing. Think of it as a whiteboard diagram in code: useful for seeing the shape of the reasoning pipeline, not something you'd route real ED patients through.
 >
 > The pipeline maps to the nine pseudocode steps from the main recipe: start the reasoning run, parallel modality ingestion (imaging, ECG, labs+vitals, notes, structured context), normalize and build the modality inventory, scope gate, deterministic safety checks (reused from Recipe 2.9's pattern), multi-source retrieval, the reasoning layer with grounded multi-hypothesis synthesis, post-generation validation, and tier+render+archive. Validation failures trigger regeneration up to a cap, then route to human review.
@@ -98,9 +108,9 @@ cloudwatch = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
 # --- Model Configuration ---
 # TODO: verify the exact model IDs available in your region and account. If your
 # region requires cross-region inference, use the inference profile ID
-# (e.g., "us.anthropic.claude-3-5-sonnet-20241022-v2:0").
-SMALL_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
-REASONING_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+# (e.g., "us.anthropic.claude-sonnet-4-6-v1:0").
+SMALL_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
+REASONING_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
 
 # Bedrock Guardrail for the reasoning generation step. Configure one in the

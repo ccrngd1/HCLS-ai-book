@@ -1,5 +1,15 @@
 # Recipe 10.4: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.4. It shows one way you could translate the medical-dictation pipeline into working Python using boto3 against Amazon Transcribe Medical (streaming and batch), Amazon Bedrock, Amazon Comprehend Medical, AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS Secrets Manager, Amazon EventBridge, and Amazon CloudWatch. The demo uses a `MockTranscribeMedical` standing in for the streaming clinical ASR session, a `MockBedrock` standing in for the LLM-driven formatting and faithfulness check, a `MockComprehendMedical` standing in for the coded clinical-entity extraction, a `MockEHR` standing in for the SMART on FHIR-launched note-creation API, and small helpers for the session-state table, the dictation-metadata table, the per-clinician configuration table, the audio S3 bucket, the audit S3 bucket, the EventBridge bus, and CloudWatch-style metrics. It is not production-ready. There is no real API Gateway WebSocket carrying audio frames, no real Cognito authorizer, no real SMART on FHIR launch, no real streaming Transcribe Medical session over WebSocket, no real Bedrock invocation, no real Comprehend Medical inference, no real DynamoDB or S3 wiring, no Step Functions state machine, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-clinician acoustic-model adaptation, no critical-error detection deployed at clinical-quality-officer review, and no production audit-overlay integration with the EHR's native audit log. Think of it as the sketchpad version: useful for understanding the shape of a dictation pipeline that respects the per-clinician-vocabulary discipline, the command-versus-content discipline, the LLM-faithfulness discipline, the structured-field-suggestion-with-explicit-confirmation discipline, the read-edit-sign discipline, and the audit-everything discipline this recipe demands. It is not something you would deploy to clinicians on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the eight core pseudocode steps from the main recipe: open the dictation session and load per-clinician configuration (Step 1), stream audio to Transcribe Medical and capture the verbatim transcript with per-word confidence (Step 2), disambiguate commands from content and apply structural events (Step 3), format the verbatim content into the note template with optional LLM post-processing and faithfulness checking (Step 4), extract structured-field suggestions with cross-checks against the patient's chart (Step 5), render the read-edit-sign view and capture clinician corrections (Step 6), hand off the signed note to the EHR and apply confirmed structured updates (Step 7), and audit, archive, and feed adaptation (Step 8). The synthetic clinicians, patients, schedules, medications, and dictated transcripts in the demo are fictional; the names, MRNs, RxNorm codes, and other identifiers are obviously made-up and should not match anyone real.
@@ -140,11 +150,11 @@ INSTITUTION_ID              = "academic-medical-center-richmond"
 # version and inference profile so a model upgrade does not
 # silently change formatter behavior. The model and region
 # combination must be in your AWS BAA scope.
-BEDROCK_FORMATTER_MODEL_ID    = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+BEDROCK_FORMATTER_MODEL_ID    = "anthropic.claude-sonnet-4-6-v1:0"
 BEDROCK_FORMATTER_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "dictation-formatter-v1")
-BEDROCK_FAITHFULNESS_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+BEDROCK_FAITHFULNESS_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
 BEDROCK_FAITHFULNESS_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "dictation-faithfulness-v1")

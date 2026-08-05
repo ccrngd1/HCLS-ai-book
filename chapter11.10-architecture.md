@@ -304,7 +304,7 @@ Sample structured output from a completed recruitment prescreen conversation:
   "out_of_scope_routed": false,
   "conversation_turns": 14,
   "elapsed_minutes": 11.3,
-  "model_version": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+  "model_version": "anthropic.claude-sonnet-4-6-v1:0",
   "guardrail_version": "1",
   "timestamp_utc": "2026-03-15T14:32:07Z"
 }

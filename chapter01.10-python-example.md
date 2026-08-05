@@ -1,5 +1,15 @@
 # Recipe 1.10: Python Example: Historical Chart Migration
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **This is an illustrative sample, not a production-ready implementation.**
 >
 > The code below demonstrates the patterns from Recipe 1.10 using boto3. It walks through
@@ -84,7 +94,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------------
 MODEL_TIER1_CLASSIFY = "us.amazon.nova-lite-v1:0"
 MODEL_TIER2_EXTRACT  = "us.amazon.nova-pro-v1:0"
-MODEL_TIER3_SONNET   = "us.anthropic.claude-sonnet-4-6-20260217-v1:0"
+MODEL_TIER3_SONNET   = "us.anthropic.claude-sonnet-4-6-v1:0"
 MODEL_TIER4_OPUS     = "us.anthropic.claude-opus-4-6-20260204-v1:0"
 
 # Confidence thresholds for tier routing

@@ -1,5 +1,15 @@
 # Recipe 14.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the OR case sequencing optimization from Recipe 14.7. It demonstrates the core concepts (case data modeling, constraint formulation, solver invocation, schedule extraction, and intraday replanning) using Google OR-Tools' CP-SAT solver. It is not production-ready. The case list is small, durations are deterministic, and there's no EHR integration or real-time event stream. Think of it as the whiteboard sketch that helps you understand how the optimization model actually works. A starting point, not a destination.
 >
 > The main recipe uses ECS Fargate for solver hosting and EventBridge for real-time surgical events. This example runs everything locally with OR-Tools and writes results to DynamoDB. The optimization math is identical; the infrastructure is stripped away so you can focus on the model.

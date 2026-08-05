@@ -250,7 +250,7 @@ FUNCTION simplify_segment(segment, must_preserve, reading_level):
     
     // Call the foundation model
     response = call LLM service with:
-        model_id     = "anthropic.claude-3-haiku"   // fast and cost-effective for transformation
+        model_id     = "anthropic.claude-haiku-4-5"   // fast and cost-effective for transformation
         system       = system_prompt
         messages     = [{ role: "user", content: segment.text }]
         max_tokens   = length(segment.text) * 2     // allow expansion for explanations
@@ -367,7 +367,7 @@ FUNCTION assemble_and_store(original_text, simplified_segments, validation_resul
         segments_reviewed  = segments_needing_review
         needs_review       = (length of segments_needing_review > 0)
         created_at         = current UTC timestamp (ISO 8601)
-        model_id           = "anthropic.claude-3-haiku"
+        model_id           = "anthropic.claude-haiku-4-5"
         prompt_version     = "v1"
     
     // Emit metrics

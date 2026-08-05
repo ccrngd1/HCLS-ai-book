@@ -1,5 +1,15 @@
 # Recipe 11.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 11.3. It shows one way you could translate the prescription-refill-bot pipeline into working Python using boto3 against Amazon Bedrock (LLM with function-calling), Amazon Bedrock Knowledge Bases (managed RAG over the medication-information corpus and patient-facing protocol phrasings), Amazon Bedrock Guardrails, Amazon Comprehend Medical (for medication entity extraction with RxNorm coding), AWS Lambda, Amazon API Gateway, Amazon DynamoDB, Amazon S3, and Amazon EventBridge. The demo uses a `MockBedrockRuntime` standing in for LLM-driven intent classification and medication resolution, a `MockEHR` standing in for the institution's EHR (FHIR MedicationRequest, Observation, AllergyIntolerance, Condition resources), a `MockEPrescribingPlatform` standing in for the institution's Surescripts-routed e-prescribing setup, a `MockKnowledgeBase` standing in for the medication-information and protocol-language retrieval, a `MockTable` for each of the four DynamoDB tables (conversation-state, conversation-metadata, tool-call-ledger, co-signature-queue), a `MockEventBus` for EventBridge, a `MockRefillJournal` standing in for the S3 refill-event journal, and a `MockCloudWatch` for the metric emissions. It is not production-ready. There is no real Bedrock Agents action group configured, no real Knowledge Base ingestion, no real Guardrail configuration, no API Gateway plumbing, no WAF rule tuning, no per-Lambda IAM least privilege, no KMS customer-managed keys, no VPC endpoints to the EHR or e-prescribing network, no Object-Lock-protected refill-event journal, no Connect contact-center handoff, no real interaction-screening against the institutional CDS layer, and no Secrets Manager wiring for the EHR and e-prescribing credentials. Think of it as the sketchpad version: useful for understanding the shape of a transactional medication-management conversational AI pipeline that respects the input-screening discipline, the higher identity-verification floor refills demand, the medication-resolution-against-the-list discipline, the protocol-as-code discipline, the controlled-substance triple-defense discipline, the e-prescribe transactional discipline, the prescriber co-signature discipline, the refill-claim verification discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a hospital website on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the ten pseudocode steps from the main recipe: receive the message and bootstrap the session with greeting and disclosure plus input safety screening including refill-context crisis detection (Step 1), classify intent and route in-scope refill actions or hand off out-of-scope clinical questions and dose-change requests (Step 2), verify identity at the higher assurance floor refill actions require (Step 3), pull the patient's structured medication list and resolve the patient's free-text descriptor against it (Step 4), evaluate the practice's refill protocol against the resolved medication and chart context including lab reconciliation and interaction screening (Step 5), execute the disposition through the appropriate transactional tool with controlled-substance triple-defense (Step 6), handle status-check, cancel, and medication-question intents through their own paths (Step 7), handle e-prescribe transmission failures and partial-success cases without losing the patient's trust (Step 8), screen the output for scope drift and unsupported refill claims and medication-list-integrity violations (Step 9), and close the conversation, archive the durable audit record, and feed the refill-event journal (Step 10). The synthetic patients, medications, lab values, prescribers, pharmacies, and prescription IDs in the demo are fictional; nothing in this file should be interpreted as advice from any real institution.
@@ -185,11 +195,11 @@ INSTITUTION_DISPLAY_NAME      = "Riverside Clinic"
 # stronger model with strong tool-use support.
 #
 # If your region requires cross-region inference, use the inference
-# profile ID (e.g., "us.anthropic.claude-3-5-haiku-20241022-v1:0").
+# profile ID (e.g., "us.anthropic.claude-haiku-4-5-v1:0").
 # TODO: verify the exact model IDs available in your region and
 # account; Bedrock model availability evolves over time.
-INTENT_CLASSIFIER_MODEL_ID    = "anthropic.claude-3-5-haiku-20241022-v1:0"
-ORCHESTRATION_MODEL_ID        = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+INTENT_CLASSIFIER_MODEL_ID    = "anthropic.claude-haiku-4-5-v1:0"
+ORCHESTRATION_MODEL_ID        = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Pipeline Tuning ---
 # Below this confidence, we ask a clarifying question rather than

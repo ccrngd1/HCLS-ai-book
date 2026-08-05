@@ -1,5 +1,15 @@
 # Recipe 3.10: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.10. It shows one way you could translate the epidemic / outbreak detection pattern into working Python using Amazon Kinesis (for the canonical surveillance-event stream), Amazon DynamoDB (for the cell-state, cluster-state, address-geocode-cache, and suppression-rule stores), Amazon Aurora PostgreSQL with PostGIS (for geographic reference data and point-in-polygon assignment; here represented by a tiny in-process Shapely lookup so the demo runs without a database), Amazon Timestream (for per-cell time-series counts; here represented by a small in-memory store), Amazon Comprehend Medical (for free-text chief-complaint NLP), Amazon SageMaker (for the syndrome-classifier endpoint and the regression-detector processing job), Amazon Bedrock (for cluster-narrative generation), Amazon EventBridge (for cluster fan-out), Amazon OpenSearch Service (for the line-list search and cluster index), Amazon S3 (for the raw-event lake, baseline store, and training labels), Amazon Location Service (for address geocoding), and Amazon CloudWatch (for operational metrics). It is not production-ready. There is no real EHR audit-feed connector, no HL7 v2 ADT or ORU parser, no FHIR Encounter or Observation ingestion, no NWSS wastewater feed integration, no eCR / NEDSS / NHSN / NORS / NMI reporting connector, no SaTScan invocation (the spatial-scan detector is sketched as a stub), no real PostGIS database, and no surveillance-team UI integration (Protenus, Maven, Trisano, ESSENCE through NSSP, or a custom AppSync front end). Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a state public health surveillance program next week.
 >
 > The code maps to the nine core pseudocode steps from the main recipe: ingest a clinical encounter and produce a canonical event, geocode the encounter and assign it to multi-resolution geographies, classify the encounter into syndromic categories using NLP plus structured-data rules, update per-cell counters across the geography x demographic x syndrome x time grid, compute baseline expected counts per cell with seasonality and trend, run the detector bank (control charts, regression-based aberration, spatial scan), run auxiliary-source detectors and fuse signals, build cluster candidates with line lists and Bedrock narratives, and capture investigation outcomes for the retraining loop. The wastewater integration, the genomic-cluster detector, the wearable-aggregate signal path, and the LLM-assisted investigator copilot variant are not in this file; they are covered in the Variations and Why-This-Isn't-Production-Ready sections of the main recipe and share infrastructure with several other chapter recipes (3.6 for case-management patterns, 3.7 for calibration and tier mapping, 3.8 for engagement-decay and outcome-capture patterns, 3.9 for cluster-builder and Bedrock-narrative patterns, 12.x for time-series forecasting, 13.x for knowledge-graph foundations).
@@ -121,7 +131,7 @@ TRAINING_LABELS_BUCKET       = "my-surveillance-training-labels"
 
 CLUSTER_BUS                  = "surveillance-events"
 SYNDROME_CLASSIFIER_ENDPOINT = "syndrome-classifier-v3"
-BEDROCK_MODEL_ID             = "anthropic.claude-3-sonnet-20240229-v1:0"
+BEDROCK_MODEL_ID             = "anthropic.claude-sonnet-4-6-v1:0"
 LOCATION_PLACE_INDEX         = "surveillance-place-index"
 
 # --- Syndromic Categories ---

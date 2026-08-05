@@ -1,5 +1,15 @@
 # Recipe 8.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 8.9. It shows one way you could translate temporal relationship extraction concepts into working Python code. It is not production-ready. The temporal expression parser is rule-based and covers common clinical patterns but not all of them, the relation classifier is simulated via a SageMaker endpoint call pattern, and the graph construction uses basic transitivity without full Allen's interval algebra. Think of it as a sketch: useful for understanding the shape of the solution, not something you'd deploy against a live clinical NLP pipeline on Monday morning. Consider it a starting point, not a destination.
 >
 > This recipe uses Amazon Comprehend Medical for entity/event detection, a custom SageMaker endpoint for temporal relation classification, and DynamoDB for timeline storage. The pipeline follows the six-step architecture from the main recipe: preprocess, detect temporal entities, generate candidate pairs, classify relations, build graph, and generate timeline.

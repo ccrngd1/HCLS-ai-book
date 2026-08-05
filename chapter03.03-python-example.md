@@ -1,5 +1,15 @@
 # Recipe 3.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.3. It shows one way you could translate the billing-code-anomaly-detection pattern into working Python using pandas and scikit-learn (for the statistics and the Isolation Forest), Amazon DynamoDB (for peer-group statistics and the case registry), Amazon S3 (for feature snapshots, anomaly-signal outputs, and labels), Amazon SageMaker Feature Store (for consistent provider features across scoring and training), Amazon SNS (for analyst notifications), and Amazon Athena (for evidence-claim retrieval). It is not production-ready. There is no real claims warehouse integration, no Glue job wrapping around the aggregation code, no Step Functions orchestration, no SageMaker Processing wrapper around the scorer, no QuickSight dashboards, no subgroup fairness monitoring harness, no case-lineage across periods, no Isolation Forest retraining pipeline, and no analyst UI. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you would wire into a payer's payment-integrity pipeline on Monday morning.
 >
 > The code maps to the five core pseudocode steps from the main recipe: roll up adjudicated claims into provider-period feature vectors, assign providers to peer groups and compute peer-distribution statistics, score each provider-period across three anomaly signal families (peer z-scores, self-history CUSUM, and multivariate Isolation Forest), consolidate the signals into cases with representative-claim evidence, and capture investigation outcomes so the labels store is populated for eventual supervised retraining. A small `retrain_supervised_quarterly` sketch is included at the end to close the loop. Everything else (monitoring, drift detection, alarm wiring, subgroup fairness dashboards, analyst tooling) is covered in the Gap to Production section.

@@ -1,5 +1,15 @@
 # Recipe 2.5: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.5. It shows one way you could translate those after-visit summary generation concepts into working Python using Amazon Bedrock, Amazon Comprehend Medical, and DynamoDB. It is not production-ready. There's no EHR integration, no portal publishing, no clinician review UI, no multi-language translation QA, and no SMS or email delivery. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire up to a health system on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the seven pseudocode steps from the main recipe: receive the note-signed event, pull encounter data, extract the structured summary object, generate the patient-facing draft, validate claims against source, apply a readability check, then render and deliver.
@@ -38,7 +48,6 @@ Everything that's configuration rather than logic lives here. Model IDs, reading
 import hashlib
 import json
 import logging
-import math
 import re
 import time
 import uuid
@@ -48,6 +57,7 @@ from decimal import Decimal
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 
 # Structured logging. In production, ship JSON-formatted records to CloudWatch
 # Logs Insights for query-friendly analysis. Never log PHI: no patient names,
@@ -78,10 +88,10 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 # (critically) multilingual quality all matter, so use a capable model.
 #
 # If your region requires cross-region inference, use the inference profile ID:
-#   e.g., "us.anthropic.claude-3-5-haiku-20241022-v1:0"
-# TODO: verify the exact model IDs available in your region and account.
-EXTRACTION_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
-GENERATION_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+#   e.g., "us.anthropic.claude-haiku-4-5-v1:0"
+# Verify the exact model IDs available in your region and account before deploying.
+EXTRACTION_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
+GENERATION_MODEL_ID = "anthropic.claude-sonnet-4-6-v1:0"
 
 # Optional Bedrock Guardrail for patient-facing output. Configure one in the
 # Bedrock console with content filters tuned for a patient-facing context and
@@ -357,11 +367,13 @@ def extract_summary_object(
     med_entities_from_note = []
     note_text = encounter_data.get("note_text", "")
     if note_text:
-        # Comprehend Medical has a per-call character limit (~20KB). For
-        # longer notes, you'd chunk and merge results. Keeping it simple here.
+        # Comprehend Medical enforces a 20,000-byte limit per call (bytes,
+        # not characters). Slice on UTF-8 bytes so multi-byte scripts don't
+        # blow past the limit. For longer notes, chunk and merge results.
         try:
+            safe_note = note_text.encode("utf-8")[:20000].decode("utf-8", errors="ignore")
             cm_response = comprehend_medical.detect_entities_v2(
-                Text=note_text[:20000]
+                Text=safe_note
             )
             for entity in cm_response.get("Entities", []):
                 if entity.get("Category") == "MEDICATION":
@@ -372,7 +384,7 @@ def extract_summary_object(
                             for a in entity.get("Attributes", [])
                         ],
                     })
-        except comprehend_medical.exceptions.ClientError as exc:
+        except ClientError as exc:
             # Comprehend Medical failure shouldn't block the whole pipeline.
             # Log and continue; the structured EHR data is still the source
             # of truth for medication facts.
@@ -670,12 +682,12 @@ def validate_summary(
     """
     Verify each factual claim against the structured summary object.
 
-    Numeric claims (doses, counts, dates) require exact match after
-    normalization. Text claims (warning signs, diagnoses) pass if the
-    claimed content substantively overlaps the source value. The overlap
-    check here uses simple substring matching. Production systems often
-    layer on semantic similarity (embedding-based) for a more forgiving
-    but still grounded check.
+    Each claim passes if its asserted value and the source value overlap by
+    substring in either direction after normalization (lowercase, collapsed
+    whitespace). That accepts "5 mg" claimed against a source "warfarin 5 mg
+    once daily" while still rejecting a dose mismatch like "10 mg" vs "5 mg".
+    Production systems often layer on semantic similarity (embedding-based)
+    for a more forgiving but still grounded check.
 
     Args:
         provenance:     The factual_claims map from the generation step.
@@ -1341,4 +1353,4 @@ Run this end-to-end against a synthetic encounter and you'll see the full patter
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 2.5: After-Visit Summary Generation](chapter02.05-after-visit-summary-generation) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter02.05-architecture) for the walkthrough and pseudocode, and [Recipe 2.5](chapter02.05-after-visit-summary-generation) for the problem framing and honest take.*

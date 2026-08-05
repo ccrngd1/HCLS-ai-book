@@ -1,5 +1,15 @@
 # Recipe 14.5: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 14.5. It demonstrates how to formulate and solve an OR block scheduling optimization problem using Python and an open-source solver. It is not production-ready. The optimization model here is intentionally small-scale so you can trace what's happening at each step. A real hospital implementation would have more constraints, messier data, and significantly more political complexity. Consider it a starting point, not a destination.
 
 ---

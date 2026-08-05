@@ -1,5 +1,15 @@
 # Recipe 6.4: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 6.4. It shows one way you could translate disease severity stratification into working Python code. It is not production-ready. There's no error handling, no retry logic, no input validation. Think of it as the whiteboard sketch: useful for understanding the shape of the solution, not something you'd deploy against your actual patient population on Monday morning. Consider it a starting point, not a destination.
 >
 > This example uses scikit-learn for clustering locally rather than SageMaker's built-in K-Means algorithm. For populations under 100K patients, scikit-learn is simpler and more flexible. The built-in SageMaker algorithm is better when you're clustering millions of records and need distributed compute. We'll show how to store results in DynamoDB for operational lookups.
@@ -14,11 +24,10 @@ You'll need the AWS SDK for Python and scikit-learn:
 pip install boto3 pandas numpy scikit-learn pyarrow
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `s3:GetObject`
-- `s3:PutObject`
-- `dynamodb:PutItem`
-- `dynamodb:GetItem`
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). This example only writes results (it never reads back from S3 or DynamoDB), so the IAM role or user needs:
+- `s3:PutObject` (scoped to the results bucket and prefix)
+- `dynamodb:PutItem` (scoped to the `severity-tiers` table)
+- `kms:GenerateDataKey` (on the CMK protecting the bucket; required to write objects with `aws:kms` encryption)
 
 ---
 
@@ -30,7 +39,6 @@ Everything that's really configuration rather than logic lives here. The feature
 import logging
 import json
 import datetime
-from datetime import timezone
 from decimal import Decimal
 
 import boto3
@@ -813,4 +821,4 @@ This example works. Run it locally and it will cluster a synthetic patient popul
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 6.4](chapter06.04-disease-severity-stratification.md) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter06.04-architecture) for the walkthrough and pseudocode, and [Recipe 6.4](chapter06.04-disease-severity-stratification) for the problem framing and honest take.*

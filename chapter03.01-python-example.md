@@ -1,5 +1,15 @@
 # Recipe 3.1: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 3.1. It shows one way you could translate the duplicate-claim-detection pattern into working Python using Amazon DynamoDB, Amazon SQS, Amazon EventBridge, and Amazon S3. It is not production-ready. There is no real 837 EDI parser here (that's a multi-week project on its own and belongs in a maintained library, not in a teaching example), no SageMaker-hosted learned scorer (the rule-based scorer below is the starting point the main recipe recommends; you graduate to SageMaker once labels accumulate), no OpenSearch fuzzy search integration, no retrospective recovery workflow, no CPT crosswalk or provider-hierarchy lookups, and no examiner UI. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire into a payer's adjudication pipeline on Monday morning.
 >
 > The code maps to the five core pseudocode steps from the main recipe: parse and normalize the claim, find candidates via exact-hash and blocking lookups, score each candidate pair with per-field fuzzy similarity, route the claim based on thresholds, and close the feedback loop when an examiner verdict comes in. Everything else (retraining, monitoring, drift detection, provider communication) is outside the scope of the example but covered in the Gap to Production section.
@@ -45,7 +55,6 @@ import re
 import uuid
 from datetime import datetime, timezone, date
 from decimal import Decimal
-from typing import Optional
 
 import boto3
 from botocore.config import Config
@@ -56,8 +65,10 @@ from boto3.dynamodb.conditions import Key
 # service is a re-identification risk even without a name), so we log
 # structural metadata only. Never log full claim bodies, member IDs, diagnosis
 # codes, or similarity score components in regular application logs.
-# logging.basicConfig is a no-op when Lambda configures the root logger, but
-# it makes structured log lines visible when running this file directly.
+# logging.basicConfig is a no-op when Lambda configures the root logger. Note
+# that the standard formatter below does not render the extra={...} fields used
+# in the logger calls; in production use a JSON formatter (for example AWS
+# Lambda Powertools) so those structured fields reach CloudWatch Logs Insights.
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -172,7 +183,7 @@ CPT_FAMILIES = {
 # or your claims processor's authoritative source before relying on any
 # specific entry.
 CPT_CROSSWALK = {
-    # TODO: populate with verified crosswalks from your claims processor.
+    # Populate with verified crosswalks from your claims processor.
     # Example shape only: {"OLD_CODE": "CURRENT_CODE"}.
 }
 
@@ -1034,4 +1045,4 @@ None of this is unique to duplicate detection. It's the cost of running any PHI-
 
 ---
 
-*← [Main Recipe 3.1](chapter03.01-duplicate-claim-detection) · [Chapter 3 Preface](chapter03-preface)*
+*← [Main Recipe 3.1](chapter03.01-duplicate-claim-detection) · [Architecture and Implementation](chapter03.01-architecture) · [Chapter 3 Preface](chapter03-preface)*

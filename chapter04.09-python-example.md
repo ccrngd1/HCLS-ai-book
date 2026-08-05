@@ -1,5 +1,15 @@
 # Recipe 4.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.9. It shows one way you could translate the personalized care plan generation pattern into working Python using AWS HealthLake for FHIR-native clinical state retrieval, Amazon SageMaker Feature Store for per-patient features, Amazon DynamoDB for the goal templates, action templates, plan-input records, plan records, plan narratives, plan-action records, and plan-feedback records, Amazon S3 for the plan archive, AWS Step Functions for the plan-generation orchestration, AWS Lambda for the per-stage glue, Amazon Bedrock for the clinician-facing, patient-facing, and care-team-internal disagreement narratives, Amazon Kinesis for plan generation, action completion, outcome, and feedback events, Amazon EventBridge for scheduled review and event-driven plan-revision triggers, Amazon API Gateway and Cognito for the clinician plan-review surface (typically a SMART on FHIR app), and Amazon Pinpoint for patient-facing delivery in the patient's preferred channel. It is not production-ready. There is no real EHR, claims, lab, pharmacy, or registry feed integration, no real upstream-recipe signal aggregation, no clinically curated goal-template or action-template library (the example ships a small synthetic catalog), no real drug-drug or drug-disease interaction database integration, no validated burden-scoring model, no real capacity-and-schedule reconciliation against staffing systems, no SMART on FHIR plan-review surface, no patient portal integration, no real activation dispatcher to e-prescribing or scheduling systems, no FHIR `CarePlan`-with-linked-`Goal`-`Task`-`ServiceRequest` persistence in HealthLake, no clinical-content-team-led template review, no regulatory analysis. Think of it as the sketchpad version: useful for understanding the shape of a structured-then-narrative care-plan generation pipeline that respects multi-condition reconciliation, goals-of-care alignment, therapeutic-burden compression, the four-layer LLM validator, and the structured plan as the system of record. It is not something you would wire into an EHR on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the six pseudocode steps from the main recipe: aggregate inputs and freeze them in a plan-input record, derive the goal set from condition-specific guidelines plus goals-of-care preferences plus quality-program requirements, assemble candidate actions and run multi-condition reconciliation (interactions, deprescribing, burden, capacity, schedule), finalize the structured plan record, generate the clinician-facing, patient-facing, and care-team-internal narratives with strict four-layer validator and templated fallback, and activate approved actions plus capture feedback plus trigger plan revisions. All sample patients, conditions, medications, goals, actions, narratives, and feedback events are synthetic. The patient in the demo is Linda from the recipe's opening narrative.
@@ -88,9 +98,9 @@ cloudwatch_client = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
 # first-pass-pass rate. Patient-facing narratives can use a
 # Haiku-class model for cost efficiency where reading-level allows;
 # disagreement narratives are internal-facing and short.
-CLINICIAN_NARRATIVE_MODEL_ID    = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-PATIENT_NARRATIVE_MODEL_ID       = "anthropic.claude-3-5-haiku-20241022-v1:0"
-INTERNAL_NARRATIVE_MODEL_ID      = "anthropic.claude-3-5-haiku-20241022-v1:0"
+CLINICIAN_NARRATIVE_MODEL_ID    = "anthropic.claude-sonnet-4-6-v1:0"
+PATIENT_NARRATIVE_MODEL_ID       = "anthropic.claude-haiku-4-5-v1:0"
+INTERNAL_NARRATIVE_MODEL_ID      = "anthropic.claude-haiku-4-5-v1:0"
 
 # --- DynamoDB Table Names ---
 # Eight tables. Keep them separate so access patterns stay clean and
@@ -2227,6 +2237,11 @@ def activate_plan(plan_id: str, activation_payload: dict) -> dict:
     """
     Activate approved actions from a plan. Identity-boundary check:
     approved_action_ids must be a subset of plan.final_actions.
+
+    Production also verifies that the approving clinician has a treatment
+    relationship to the patient before activating (see the architecture
+    companion's activate_plan security enforcement); the demo omits that
+    check for brevity.
     """
     plans_table = dynamodb.Table(PLAN_RECORDS_TABLE)
     plan = _safe_get_item(plans_table, {"plan_id": plan_id})
@@ -3067,4 +3082,4 @@ Run this end-to-end against a real EHR with a curated clinical-content library, 
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 4.9: Personalized Care Plan Generation](chapter04.09-personalized-care-plan-generation) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter04.09-architecture) for the walkthrough and pseudocode, and [Recipe 4.9](chapter04.09-personalized-care-plan-generation) for the problem framing and honest take.*

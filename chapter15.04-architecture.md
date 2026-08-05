@@ -26,18 +26,18 @@
 
 ```mermaid
 flowchart TD
-    A[EHR Data Source\nFHIR / HL7 / Database] -->|Extract| B[AWS Glue\nCohort Selection & ETL]
-    B -->|Trajectories| C[S3 Data Lake\nProcessed Trajectories]
-    C -->|Training Data| D[SageMaker Training Job\nOffline RL Algorithm]
+    A[EHR Data Source<br/>FHIR / HL7 / Database] -->|Extract| B[AWS Glue<br/>Cohort Selection & ETL]
+    B -->|Trajectories| C[S3 Data Lake<br/>Processed Trajectories]
+    C -->|Training Data| D[SageMaker Training Job<br/>Offline RL Algorithm]
     D -->|Model Artifact| E[S3 Model Registry]
-    E -->|Evaluate| F[SageMaker Processing Job\nOff-Policy Evaluation]
-    F -->|Metrics| G[CloudWatch Metrics\nPolicy Performance]
-    E -->|Deploy| H[SageMaker Endpoint\nPolicy Inference]
+    E -->|Evaluate| F[SageMaker Processing Job<br/>Off-Policy Evaluation]
+    F -->|Metrics| G[CloudWatch Metrics<br/>Policy Performance]
+    E -->|Deploy| H[SageMaker Endpoint<br/>Policy Inference]
     
-    I[Clinical System\nEHR / CDSS] -->|Patient State| H
-    H -->|Recommended Action\n+ Confidence| I
+    I[Clinical System<br/>EHR / CDSS] -->|Patient State| H
+    H -->|"Recommended action + confidence"| I
     
-    J[Step Functions\nPipeline Orchestration] --> B
+    J[Step Functions<br/>Pipeline Orchestration] --> B
     J --> D
     J --> F
 
@@ -53,9 +53,9 @@ flowchart TD
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Step Functions, Amazon CloudWatch |
 | **IAM Roles** | Separate role per pipeline stage (least-privilege): |
 
-| | *Glue ETL role:* `glue:StartJobRun`, `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/raw/*`, `s3:PutObject` on `arn:aws:s3:::sepsis-rl-trajectories/processed/*`, `kms:Decrypt`/`kms:GenerateDataKey` for the data KMS key |
-| | *SageMaker Training role:* `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/processed/*`, `s3:PutObject` on `arn:aws:s3:::sepsis-rl-trajectories/models/*`, `sagemaker:CreateTrainingJob`, `sagemaker:AddTags`, `kms:Decrypt`/`kms:GenerateDataKey` for training volume KMS key |
-| | *SageMaker Inference role:* `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/models/*` (read model artifact only), `sagemaker:InvokeEndpoint`, `dynamodb:PutItem` on the audit table, `cloudwatch:PutMetricData`. No access to raw patient data. |
+| | *Glue ETL role:* `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/raw/*`, `s3:PutObject` on `arn:aws:s3:::sepsis-rl-trajectories/processed/*`, `kms:Decrypt`/`kms:GenerateDataKey` for the data KMS key |
+| | *SageMaker Training role:* `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/processed/*`, `s3:PutObject` on `arn:aws:s3:::sepsis-rl-trajectories/models/*`, `kms:Decrypt`/`kms:GenerateDataKey` for training volume KMS key |
+| | *SageMaker Inference role:* `s3:GetObject` on `arn:aws:s3:::sepsis-rl-trajectories/models/*` (read model artifact only), `kms:Decrypt` for the model artifact KMS key, `dynamodb:PutItem` on the audit table, `cloudwatch:PutMetricData`. No access to raw patient data. |
 | | *Step Functions orchestration role:* `states:StartExecution`, `glue:StartJobRun`, `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`. Cannot read S3 data directly; delegates to the stage-specific roles. |
 
 | **BAA** | AWS BAA signed (required: patient physiological data is PHI) |

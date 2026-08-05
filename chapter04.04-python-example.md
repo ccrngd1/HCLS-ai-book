@@ -1,5 +1,15 @@
 # Recipe 4.4: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.4. It shows one way you could translate the wellness-program recommendation pattern into working Python using AWS Glue / Athena for eligibility filtering, Amazon SageMaker (Feature Store, Batch Transform, Training) for the model stack, Amazon DynamoDB for the program catalog and recommendation log, Amazon S3 for the data lake, AWS Step Functions for orchestration, AWS Lambda for the per-stage glue, Amazon Bedrock for outreach message tailoring, Amazon Kinesis for engagement events, and Amazon SES for outreach delivery. It is not production-ready. There is no real claims-data ingestion, no NPPES verification, no randomized-pilot infrastructure, no production propensity-score modeling, no LP-based capacity allocator, no live PCP-EHR integration, no real outcome-evaluation methodology with pre-registration. Think of it as the sketchpad version: useful for understanding the shape of an uplift-aware, capacity-aware wellness recommender, not something you'd wire into a 400,000-member health plan on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the eight pseudocode steps from the main recipe: build the eligible-member list per program, score clinical need / engagement / uplift, rank per-member, allocate capacity with equity floors, enforce contact-frequency caps and consent, tailor outreach with an LLM and dispatch, capture engagement events, and run long-horizon outcome evaluation. All sample members, programs, and engagement signals are synthetic.
@@ -85,7 +95,7 @@ ses_client = boto3.client("ses", config=BOTO3_RETRY_CONFIG)
 # A small, fast LLM for outreach message tailoring. Haiku-class hits
 # the cost target at scale; larger frontier models add cost without
 # meaningfully better tailoring on this prompt shape.
-OUTREACH_TAILORING_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
+OUTREACH_TAILORING_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
 
 # Names of the three model artifacts in SageMaker. The need scorer is
 # a single multi-output model across programs. The engagement predictor

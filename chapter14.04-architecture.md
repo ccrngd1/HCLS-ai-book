@@ -54,7 +54,7 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon S3, Amazon SNS, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `dynamodb:GetItem/PutItem/Query`, `s3:GetObject/PutObject`, `sns:Publish`, `events:PutEvents`. Production: scope DynamoDB permissions to specific table ARNs per function. Use separate IAM roles for assembly, solver invocation, and publication functions. |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `dynamodb:GetItem/PutItem/Query`, `s3:GetObject/PutObject`, `sns:Publish`, `events:PutEvents`, `kms:Decrypt/GenerateDataKey` (for the CMKs behind S3 SSE-KMS and DynamoDB encryption). Production: scope DynamoDB permissions to specific table ARNs, and KMS permissions to the specific key ARNs, per function. Use separate IAM roles for assembly, solver invocation, and publication functions. |
 | **BAA** | Required: staff schedules combined with unit assignments can constitute workforce PHI adjacent data; census/acuity data is PHI |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; all API calls over TLS; SNS messages encrypted in transit (note: SMS delivery beyond AWS is plaintext) |
 | **VPC** | Production: Lambda and SageMaker in VPC with endpoints: S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), EventBridge (interface), SNS (interface), CloudWatch Logs (interface), KMS (interface). Interface endpoints cost ~$7-8/month each in a 3-AZ deployment (~$35-50/month total). |
@@ -389,8 +389,8 @@ FUNCTION publish_schedule(schedule, schedule_type):
   "status": "solved",
   "metrics": {
     "optimality_gap": 0.014,
-    "total_shifts_filled": 294,
-    "total_shifts_required": 294,
+    "total_shifts_filled": 252,
+    "total_shifts_required": 252,
     "coverage_rate": 1.0,
     "overtime_hours": 36,
     "overtime_shifts": 3,

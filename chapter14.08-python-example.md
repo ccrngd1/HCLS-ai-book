@@ -1,5 +1,15 @@
 # Recipe 14.8: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the ambulance routing and dispatch optimization from Recipe 14.8. It demonstrates the core concepts (fleet state management, candidate scoring with coverage awareness, hospital destination selection, and background repositioning optimization) using a combination of boto3 and Google OR-Tools. It is not production-ready. The fleet is tiny, travel times are synthetic, and there's no real GPS stream or CAD integration. Think of it as the whiteboard sketch that helps you understand how the dispatch scoring and coverage optimization actually work under the hood. A starting point, not a destination.
 >
 > The main recipe uses Kinesis for GPS ingestion, ElastiCache for travel time caching, and SageMaker for demand forecasting. This example runs everything locally with in-memory state and a simple grid-based coverage model. The optimization math is identical; the infrastructure is stripped away so you can focus on the decision logic.

@@ -1,5 +1,15 @@
 # Recipe 11.6: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 11.6. It shows one way you could translate the symptom-checker triage-bot pipeline into working Python using boto3 against Amazon Bedrock (LLM with function-calling), Amazon Bedrock Knowledge Bases (managed RAG over the clinical-protocol corpus), Amazon Bedrock Guardrails, AWS Lambda, Amazon API Gateway, Amazon DynamoDB, Amazon S3, and Amazon EventBridge. The demo uses a `MockBedrockRuntime` standing in for LLM-driven question phrasing and structured response generation, a `MockEHR` standing in for the chart-context system, a `MockKnowledgeBase` standing in for the clinical-protocol corpus retrieval, a `MockClinicalRuleEngine` standing in for the deterministic clinical-decision-rule library (HEART, Wells, Centor, Ottawa), a `MockNurseLine` standing in for the nurse-line escalation system, a `MockTelehealthScheduler` standing in for the telehealth-booking system, a `MockUrgentCareDirectory` standing in for the urgent-care lookup, a `MockTable` for each DynamoDB table (conversation-state, conversation-metadata, tool-call-ledger, triage-decision-record-journal, protocol-version-registry, outcome-correlation-pending), a `MockEventBus` for EventBridge, a `MockDecisionJournal` standing in for the S3 triage-decision-record archive, and a `MockCloudWatch` for the metric emissions. It is not production-ready. There is no real Bedrock Agents action group configured, no real Knowledge Base ingestion, no real Guardrail configuration, no API Gateway plumbing, no WAF rule tuning, no per-Lambda IAM least privilege, no KMS customer-managed keys, no VPC endpoints to the EHR or nurse-line systems, no Object-Lock-protected decision-record journal, no Connect contact-center handoff, no SageMaker-hosted emergency-screening classifier, and no Secrets Manager wiring for the upstream-system credentials. Think of it as the sketchpad version: useful for understanding the shape of a triage-bot AI pipeline that respects the input-screening discipline, the continuous-emergency-screening discipline, the chart-context-loading discipline, the protocol-corpus-as-code discipline, the citation-grounding discipline, the conservative-bias-default discipline, the clinical-decision-rule-as-deterministic-tool discipline, the nurse-line-escalation-as-first-class-capability discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a health system's patient app on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the nine pseudocode steps from the main recipe: receive the message, bootstrap the session, run input safety screening with continuous-emergency-screening (Step 1); load the patient's chart context (Step 2); identify the presenting symptom and select the protocol (Step 3); conduct the structured protocol-driven questioning (Step 4); compute clinical-decision rules where the protocol calls for them (Step 5); compute the acuity recommendation with conservative-bias enforcement (Step 6); run output safety screening with citation verification and conservative-bias verification (Step 7); persist the durable triage-decision record alongside the conversation log (Step 8); close the conversation and archive the audit record (Step 9). The synthetic patients, protocols, clinical-decision-rule scores, and recommendations in the demo are fictional; nothing in this file should be interpreted as clinical guidance from any real institution.
@@ -190,11 +200,11 @@ INSTITUTION_DISPLAY_NAME        = "Acme Health"
 # the final response generation.
 #
 # If your region requires cross-region inference, use the
-# inference profile ID. TODO: verify the exact model IDs
+# inference profile ID. Note: verify the exact model IDs
 # available in your region and account; Bedrock model
 # availability evolves over time.
-INTENT_CLASSIFICATION_MODEL_ID  = "anthropic.claude-3-5-haiku-20241022-v1:0"
-ORCHESTRATION_MODEL_ID          = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+INTENT_CLASSIFICATION_MODEL_ID  = "anthropic.claude-haiku-4-5-v1:0"
+ORCHESTRATION_MODEL_ID          = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Pipeline Tuning ---
 # Below this confidence on intent classification, ask a
@@ -3524,4 +3534,4 @@ This demo runs end-to-end and produces the right disposition records, but the di
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 11.6: Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter11.06-architecture) for the walkthrough and pseudocode, and [Recipe 11.6](chapter11.06-symptom-checker-triage-bot) for the problem framing and honest take.*

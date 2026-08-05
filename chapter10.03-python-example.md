@@ -1,5 +1,15 @@
 # Recipe 10.3: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.3. It shows one way you could translate the voice-to-text-for-EHR-navigation pipeline into working Python using boto3 against Amazon Transcribe (streaming), Amazon Lex V2, Amazon Bedrock, AWS Lambda, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, AWS Secrets Manager, Amazon EventBridge, and Amazon CloudWatch. The demo uses a `MockTranscribeStreaming` standing in for the streaming ASR session, a `MockLex` standing in for intent classification and slot filling, a `MockBedrock` standing in for the foundation-model fallback classifier, a `MockEHR` standing in for the SMART on FHIR-launched EHR API, and small helpers for the session-state table, the command-audit table, the configuration table, the EventBridge bus, the SNS topic, and CloudWatch-style metrics. It is not production-ready. There is no real API Gateway WebSocket, no real Cognito authorizer, no real SMART on FHIR launch, no real streaming Transcribe session over WebSocket, no real Lex bot, no real Bedrock invocation, no real DynamoDB or EventBridge wiring, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no on-call paging integration, no clinician-training UI, and no production audit-overlay integration with the EHR's native audit log. Think of it as the sketchpad version: useful for understanding the shape of a voice-navigation pipeline that respects the activation-feedback discipline, the per-axis confidence-threshold discipline, the patient-slot-resolution-must-not-silently-pick discipline, the EHR-is-source-of-truth discipline, the read-write-boundary discipline, and the audit-everything discipline this recipe demands. It is not something you would deploy to clinicians on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the seven core pseudocode steps from the main recipe: activate the session and capture audio (Step 1), stream audio to ASR and finalize the transcript (Step 2), parse the command into intent and slots (Step 3), resolve context and disambiguate (Step 4), confirm write-class commands and execute read-class commands directly (Step 5), execute against the EHR and reflect the result (Step 6), and audit and emit telemetry (Step 7). The synthetic clinicians, patients, schedules, medications, and command transcripts in the demo are fictional; the names, MRNs, and other identifiers are obviously made-up and should not match anyone real.
@@ -119,7 +129,7 @@ LEX_LOCALE_ID               = "en_US"
 # version and inference profile so a model upgrade does not
 # silently change classifier behavior. The model and region
 # combination must be in your AWS BAA scope.
-BEDROCK_FALLBACK_MODEL_ID   = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+BEDROCK_FALLBACK_MODEL_ID   = "anthropic.claude-sonnet-4-6-v1:0"
 BEDROCK_INFERENCE_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "voice-nav-fallback-v1")

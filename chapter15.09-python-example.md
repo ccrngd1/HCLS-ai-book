@@ -1,5 +1,15 @@
 # Recipe 15.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the concepts from Recipe 15.9. It demonstrates the shape of a radiation therapy adaptive planning system using offline reinforcement learning. It is absolutely not production-ready, not clinically validated, and not something you would deploy anywhere near a treatment machine. The physics is simplified. The tumor dynamics are a toy model. The dose calculations are approximations of approximations. Think of it as a learning tool: code you can run to understand how the RL pieces fit together for sequential treatment adaptation. A starting point for research, not a destination for clinical use.
 
 ---

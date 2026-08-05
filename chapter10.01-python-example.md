@@ -1,5 +1,15 @@
 # Recipe 10.1: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.1. It shows one way you could translate the natural-language IVR pipeline into working Python using boto3 against Amazon Connect, Amazon Lex V2, AWS Lambda, Amazon DynamoDB, and Amazon EventBridge. The demo uses a `MockLexEvent` standing in for the Lex V2 fulfillment-hook payload that Connect would deliver, a `MockEHR` standing in for the EHR patient-index lookup, a `MockEPrescribing` standing in for the e-prescribing system that actually queues refill requests, and small helpers for the active-call-context store, the call-disposition log, the urgency-lexicon scanner, and CloudWatch-style metrics. It is not production-ready. There is no real Connect contact flow, no real Lex V2 bot definition, no real Polly TTS rendering, no real Step Functions orchestration, no real DynamoDB or EventBridge wiring, no Contact Lens integration, no Voice ID enrollment, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-state recording-consent disclosure logic, and no fraud-pattern detection on the call stream. Think of it as the sketchpad version: useful for understanding the shape of an IVR routing pipeline that respects the urgency-override discipline, the per-intent confidence-threshold discipline, the verification-before-fulfillment discipline, the eligibility-check-before-action discipline, and the audit-everything discipline this recipe demands. It is not something you would point at the practice's main number on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the five core pseudocode steps from the main recipe: answer the call and play the disclosure (Step 1, modeled here as session initialization), classify and route a Lex turn with urgency override and per-intent confidence thresholding (Step 2), verify the caller before any action that touches PHI (Step 3), fulfill a self-service refill request with eligibility checks (Step 4), and capture the call disposition for analytics (Step 5). The synthetic patients, medications, phone numbers, and intents in the demo are fictional; the names, DOBs, and other identifiers are obviously made-up and should not match anyone real.

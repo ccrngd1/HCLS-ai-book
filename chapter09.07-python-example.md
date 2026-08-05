@@ -1,5 +1,15 @@
 # Recipe 9.7: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the multi-modality radiology AI triage pipeline from Recipe 9.7. It demonstrates the orchestration patterns (study classification, model routing, inference invocation, priority assignment) using boto3 calls to SageMaker, S3, DynamoDB, and SNS. It does not include actual trained radiology AI models, DICOM parsing libraries, or real HL7/DICOM worklist integration. Think of it as the control plane skeleton: the part that decides what to run, runs it, and acts on the results. The actual deep learning inference is a black box behind a SageMaker endpoint. Consider it a starting point, not a destination.
 
 ---

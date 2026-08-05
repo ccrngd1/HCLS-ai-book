@@ -1,5 +1,15 @@
 # Recipe 7.6: Rising Risk Identification (Python Example)
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of a rising risk identification pipeline. It generates synthetic longitudinal patient data, computes trajectory metrics (slopes, deltas, acceleration), applies multi-signal detection rules, and shows how you'd store results in DynamoDB and emit alerts via EventBridge. It is not production-ready. The synthetic data is cleaner than real EHR extracts, the risk model is a placeholder (real systems use trained ML models), and we skip the Glue-based distributed processing that a 500K-patient population requires. Think of it as a sketch that shows the shape of the solution. A starting point, not a destination.
 
 ---

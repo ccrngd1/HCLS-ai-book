@@ -1,5 +1,15 @@
 # Recipe 4.5: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 4.5. It shows one way you could translate the medication-adherence intervention-targeting pattern into working Python using AWS Glue / Athena for adherence computation and eligibility filtering, Amazon SageMaker (Feature Store, Batch Transform, Training) for the model stack, Amazon DynamoDB for the intervention catalog, recommendation log, barrier classifications, and patient profile, Amazon S3 for the data lake, AWS Step Functions for orchestration, AWS Lambda for the per-stage glue, Amazon Bedrock for barrier-classification second opinion, message tailoring, and pharmacist pre-call briefs, Amazon Kinesis for engagement and pharmacy events, and Amazon SES / Amazon Pinpoint / Amazon Connect for outreach delivery. It is not production-ready. There is no real PBM ingestion, no NCPDP X12 parsing, no validated PDC methodology against PQA specifications, no randomized-pilot infrastructure, no production propensity-score modeling, no LP-based heterogeneous allocator, no live PCP-EHR integration, no real outcome-evaluation methodology with pre-registration. Think of it as the sketchpad version: useful for understanding the shape of an adherence recommender that respects barriers and heterogeneous interventions, not something you'd wire into a 400,000-member health plan on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the eight pseudocode steps from the main recipe: compute per-(patient, medication) adherence features (PDC done with carry-forward and lag awareness), classify barriers (rules + supervised + LLM second opinion), build the (patient, intervention, medication) candidate set with eligibility, score need / barrier-fit / engagement / uplift in parallel, combine into priority with cost-effectiveness, allocate under heterogeneous capacities with multi-intervention-per-patient and equity floors, orchestrate outreach across channels (member-facing reminders, pharmacist queues, cost-assistance staff queues, partner-pharmacy APIs, EHR care-team inbox), and capture engagement / fill / barrier-elicited events for short-, medium-, and long-horizon training. All sample patients, medications, fills, interventions, and engagement signals are synthetic.
@@ -93,10 +103,10 @@ ses_client = boto3.client("ses", config=BOTO3_RETRY_CONFIG)
 # add cost without meaningfully better tailoring on these prompt
 # shapes. Production picks the model per use case based on observed
 # quality regressions, not on a single uniform default.
-BARRIER_CLASSIFIER_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
-REMINDER_MODEL_ID           = "anthropic.claude-3-5-haiku-20241022-v1:0"
-PHARMACIST_BRIEF_MODEL_ID   = "anthropic.claude-3-5-haiku-20241022-v1:0"
-PCP_BRIEFING_MODEL_ID       = "anthropic.claude-3-5-haiku-20241022-v1:0"
+BARRIER_CLASSIFIER_MODEL_ID = "anthropic.claude-haiku-4-5-v1:0"
+REMINDER_MODEL_ID           = "anthropic.claude-haiku-4-5-v1:0"
+PHARMACIST_BRIEF_MODEL_ID   = "anthropic.claude-haiku-4-5-v1:0"
+PCP_BRIEFING_MODEL_ID       = "anthropic.claude-haiku-4-5-v1:0"
 
 # Names of the SageMaker model artifacts. The need scorer is per
 # therapeutic class (the clinical risk of continued non-adherence

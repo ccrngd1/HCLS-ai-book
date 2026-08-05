@@ -46,7 +46,7 @@ flowchart LR
     C --> F
     D --> F
     E --> F
-    F -->|Current state +<br/>per-patient features| G[S3 Bucket<br/>inference-features/]
+    F -->|"state + features"| G[S3 Bucket<br/>inference-features/]
     H[EventBridge Schedule<br/>every 15-60 min] -->|Trigger| I[Step Functions<br/>inference-pipeline]
     I -->|Invoke| J[SageMaker Endpoint<br/>inflow models]
     I -->|Invoke| K[SageMaker Endpoint<br/>outflow / survival model]
@@ -55,7 +55,7 @@ flowchart LR
     K --> M
     L --> M
     G --> M
-    M -->|Per-unit forecasts<br/>+ intervals| N[DynamoDB<br/>census-forecasts]
+    M -->|"forecasts + intervals"| N[DynamoDB<br/>census-forecasts]
     M -->|Sample trajectories| O[S3 Bucket<br/>forecast-samples/]
     N -->|Query| P[Bed Huddle Dashboard /<br/>Transfer Center /<br/>OR Scheduler /<br/>ED Diversion Tool]
     R[EventBridge Schedule<br/>weekly + monthly] -->|Trigger| S[Step Functions<br/>retraining-pipeline]
@@ -82,7 +82,7 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon HealthLake, Amazon S3, AWS Glue, Amazon SageMaker, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon EventBridge, AWS KMS, Amazon CloudWatch, optionally Amazon Bedrock |
-| **IAM Permissions** | Actions: `healthlake:SearchWithGet`, `healthlake:ReadResource`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `sagemaker:InvokeEndpoint`, `sagemaker:CreateTrainingJob`, `lambda:InvokeFunction`, `dynamodb:BatchWriteItem`, `dynamodb:Query`, `states:StartExecution`, `kms:Decrypt`, `kms:Encrypt`, `bedrock:InvokeModel` (if narrative summaries are enabled). Scoped per pipeline stage to match the per-data-class CMK boundaries: Snapshot Glue job gets HealthLake read, snapshot S3 prefix write, PHI-direct CMK decrypt/generate. Inflow/outflow SageMaker endpoints get inference-features S3 prefix read, forecast-samples S3 prefix write, model-artifacts CMK decrypt, PHI-derived CMK generate. Monte Carlo Lambda gets forecast-samples S3 prefix read, DynamoDB write, PHI-derived CMK decrypt/generate. Bedrock Lambda (if enabled) gets DynamoDB read, Bedrock invoke, Bedrock-logs CMK generate, PHI-derived CMK generate. No principal has decrypt access to all CMKs simultaneously. |
+| **IAM Permissions** | Actions: `healthlake:SearchWithGet`, `healthlake:ReadResource`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `sagemaker:InvokeEndpoint`, `sagemaker:CreateTrainingJob`, `lambda:InvokeFunction`, `dynamodb:BatchWriteItem`, `dynamodb:Query`, `events:PutEvents`, `cloudwatch:PutMetricData`, `states:StartExecution`, `kms:Decrypt`, `kms:GenerateDataKey`, `bedrock:InvokeModel` (if narrative summaries are enabled). Scoped per pipeline stage to match the per-data-class CMK boundaries: Snapshot Glue job gets HealthLake read, snapshot S3 prefix write, PHI-direct CMK decrypt/generate. Inflow/outflow SageMaker endpoints get inference-features S3 prefix read, forecast-samples S3 prefix write, model-artifacts CMK decrypt, PHI-derived CMK generate. Monte Carlo Lambda gets forecast-samples S3 prefix read, DynamoDB write, PHI-derived CMK decrypt/generate. Bedrock Lambda (if enabled) gets DynamoDB read, Bedrock invoke, Bedrock-logs CMK generate, PHI-derived CMK generate. No principal has decrypt access to all CMKs simultaneously. |
 | **BAA** | AWS BAA signed. ADT contains PHI directly (patient identifiers, demographics, locations). Per-patient features for the survival model contain PHI. Even aggregated census forecasts are derived from PHI and should be treated under the BAA. |
 | **Encryption** | S3: SSE-KMS with customer-managed CMKs split by data class. PHI-direct CMK: HealthLake datastore, raw ADT bucket, OR-schedule feeds, transfer-queue feeds, ED-board feeds, harmonized inference-features. PHI-derived CMK: inflow/outflow/forecast samples, Monte Carlo trajectory archives, DynamoDB serving table. Model-artifacts CMK: three model-artifact buckets (inflow, outflow, unit-assignment). Bedrock-logs CMK: Bedrock prompt-and-completion logs. Operational-logs CMK: CloudWatch log groups. Each CMK's key policy scopes `kms:Decrypt` and `kms:GenerateDataKey` to the specific IAM principals that need access to that data class, containing blast radius so a compromised Lambda role cannot decrypt data classes outside its pipeline stage. HealthLake: KMS-encrypted datastore at creation time using the PHI-direct CMK. DynamoDB: encryption at rest with the PHI-derived CMK. SageMaker training and inference: encrypted EBS volumes and KMS-encrypted output using the model-artifacts CMK. TLS 1.2 minimum (TLS 1.3 preferred) at every external boundary. |
 | **VPC** | Production: SageMaker training and inference in private subnets with VPC endpoints. Gateway endpoints: S3, DynamoDB. Interface endpoints: HealthLake, Step Functions, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, Secrets Manager, SageMaker (API), SageMaker (Runtime), EventBridge, and Bedrock (if narrative summaries are enabled). Budget approximately $50-$150/month for the per-AZ-per-endpoint cost across the interface endpoints. Required for HIPAA workloads handling PHI. |
@@ -97,7 +97,7 @@ flowchart LR
 | **Amazon HealthLake** | Stores FHIR Encounter resources for all inpatient encounters; provides FHIR API for current-state and historical queries |
 | **Amazon S3** | Stores raw ADT, OR schedule, transfer queue, ED board feeds, harmonized features, model artifacts, forecast outputs, and Monte Carlo sample trajectories |
 | **AWS Glue** | Hourly feature-engineering jobs (timestamp cleanup, unit normalization, LOS computation, per-patient feature build); weekly training-data builds |
-| **Amazon SageMaker** | Hosts inflow models (Poisson regression on ED admits, day-of-week and seasonality on direct admits and transfers), the outflow survival model (XGBoost-survival or DeepHit), and the unit-assignment classifier |
+| **Amazon SageMaker** | Hosts inflow models (Poisson regression on ED admits, negative binomial on the burstier direct admits and transfers), the outflow survival model (XGBoost-survival or DeepHit), and the unit-assignment classifier |
 | **AWS Lambda** | Monte Carlo composition step; OR-schedule deterministic input handler; pre- and post-processing wrappers around SageMaker invocations |
 | **Amazon DynamoDB** | Serves per-unit, per-hour census forecasts and prediction intervals to bed huddle dashboards, transfer center decision support, OR scheduler, and ED diversion tools at low latency |
 | **AWS Step Functions** | Orchestrates the inference pipeline (state snapshot → inflow models → outflow model → unit assignment → Monte Carlo → forecast write) and the retraining pipelines (weekly inflow, monthly outflow) with explicit retry semantics |
@@ -213,18 +213,19 @@ FUNCTION forecast_inflows(snapshot_ts, horizon_hours, n_samples = 1000):
                 target_unit:       post_op_unit
             })
 
-    // Direct admits: simple Poisson with day-of-week features.
+    // Direct admits: negative binomial with day-of-week features
+    // (bursty, over-dispersed demand).
     direct_admit_samples = sagemaker_invoke(
-        endpoint = "direct-admit-poisson-endpoint",
+        endpoint = "direct-admit-negbinom-endpoint",
         payload  = {features: build_direct_admit_features(snapshot_ts), n_samples: n_samples}
     )
 
     // Transfers in: read the transfer center queue for known near-term
-    // transfers, plus a Poisson model for unknown transfers beyond the
-    // queue's lead time.
+    // transfers, plus a negative binomial model for unknown transfers
+    // beyond the queue's lead time.
     queued_transfers = read_transfer_center_queue(snapshot_ts)
     transfer_in_samples = sagemaker_invoke(
-        endpoint = "transfer-in-poisson-endpoint",
+        endpoint = "transfer-in-negbinom-endpoint",
         payload  = {features: build_transfer_features(snapshot_ts), n_samples: n_samples}
     )
 
@@ -447,7 +448,7 @@ FUNCTION deliver_forecast(forecast, table_name, pipeline_run_id, generated_at_ts
     "scheduled_surgical_post_op_admits": 3,
     "current_ed_holds_likely_to_admit_to_unit": 2
   },
-  "explanation_text": "Telemetry projected to reach 94% occupancy by 14:00 with non-trivial probability (p90 = 29) of exceeding the 28-bed capacity. Drivers: 6 expected admits over the window (3 scheduled cardiac post-op, 2 ED holds, 1 from direct-admit Poisson), against 4 expected discharges peaking between 13:00 and 15:00. Recommend prioritizing the 2 medically-ready discharges currently held for SNF placement to free capacity before the 13:00 OR turnover.",
+  "explanation_text": "Telemetry projected to reach 94% occupancy by 14:00 with non-trivial probability (p90 = 29) of exceeding the 28-bed capacity. Drivers: 6 expected admits over the window (3 scheduled cardiac post-op, 2 ED holds, 1 from the direct-admit model), against 4 expected discharges peaking between 13:00 and 15:00. Recommend prioritizing the 2 medically-ready discharges currently held for SNF placement to free capacity before the 13:00 OR turnover.",
   "generated_at_ts": "2026-05-25T06:34:18Z",
   "model_version": "census-pipeline-v4:inflow-poisson-v3:survival-xgbse-v2:unit-assigner-v1"
 }

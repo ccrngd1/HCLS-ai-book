@@ -1,5 +1,15 @@
 # Recipe 11.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 11.9. It shows one way you could translate the care-coordination-assistant pipeline into working Python using boto3 against Amazon Bedrock (LLM with function-calling), Amazon Bedrock Knowledge Bases (managed RAG over the coordination-protocol corpus and the patient-education library), Amazon Bedrock Guardrails, AWS Lambda, AWS Step Functions, AWS HealthLake, Amazon API Gateway, Amazon DynamoDB, Amazon S3, Amazon Pinpoint, Amazon Connect, and Amazon EventBridge. The demo uses mock implementations standing in for the real services so you can see the shape of the pipeline without provisioning anything. It is not production-ready. There is no real Bedrock Agents action group configured, no real Knowledge Base ingestion, no real Guardrail configuration, no real HL7 listener, no real FHIR poller, no real claims-feed processor, no real pharmacy-API integration, no real home-health vendor adapter, no real HIE/TEFCA participation, no real Step Functions transition-of-care state machines with clinical-leadership signoff, no real Connect contact-center integration with the licensed care-management workforce, no real per-Lambda IAM least privilege, no real separately-keyed KMS for the provenance journal and coordination-decision-record store, no real Object-Lock-protected coordination-decision-record journal sized to state-specific medical-record retention, no Secrets Manager wiring for the upstream-system credentials, and no per-state caregiver-consent matrix encoded in policy. Think of it as the sketchpad version: useful for understanding the shape of a care-coordination-assistant pipeline that respects the cross-organizational-data-integration discipline, the longitudinal-coordination-state-as-system-of-record discipline, the provenance-as-architectural-primitive discipline, the seam-detection-rule-engine-with-clinical-leadership-ownership discipline, the referral-and-transition-of-care-state-machine discipline, the caregiver-as-first-class-participant discipline, the cross-organizational-consent discipline, the citation-grounding discipline, the scope-discipline-across-adjacent-recipes discipline, the per-cohort-monitoring discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a payer's chronic-multi-condition population on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the ten pseudocode steps from the main recipe: enroll the patient with cross-organizational consent and caregiver setup (Step 1); ingest cross-organizational data with provenance discipline (Step 2); run the seam-detection rule engine and protocol-trigger evaluator (Step 3); receive the conversation turn with input safety, identity, and coordination-context loading (Step 4); run the agent's tool-use loop with citation discipline (Step 5); run output safety with protocol-faithfulness verification (Step 6); orchestrate transitions of care with Step Functions (Step 7); track referral lifecycles to closure (Step 8); handle medication-reconciliation seams across pharmacies and clinicians (Step 9); generate care-team reporting and queue outcome correlation (Step 10). The synthetic patients, caregivers, clinicians, pharmacies, hospitals, and coordination protocols in the demo are fictional; nothing in this file should be interpreted as clinical guidance from any real institution. **If you or someone you know is in crisis: in the United States, call or text 988 to reach the Suicide and Crisis Lifeline, or call 911 for an active emergency.**
@@ -220,8 +230,8 @@ INSTITUTION_DISPLAY_NAME         = "Acme Health Coordination"
 # --- Model IDs ---
 # TODO: verify the exact model IDs available in your region
 # and account; Bedrock model availability evolves over time.
-SMALL_MODEL_ID                   = "anthropic.claude-3-5-haiku-20241022-v1:0"
-ORCHESTRATION_MODEL_ID           = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+SMALL_MODEL_ID                   = "anthropic.claude-haiku-4-5-v1:0"
+ORCHESTRATION_MODEL_ID           = "anthropic.claude-sonnet-4-6-v1:0"
 
 # --- Pipeline Tuning ---
 INTENT_CONFIDENCE_THRESHOLD      = Decimal("0.70")

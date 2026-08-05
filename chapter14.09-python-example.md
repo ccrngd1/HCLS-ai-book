@@ -1,5 +1,15 @@
 # Recipe 14.9: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the chemotherapy scheduling optimization from Recipe 14.9. It demonstrates the core concepts (resource modeling, constraint formulation, solver invocation, pharmacy coordination, and real-time disruption handling) using Google OR-Tools CP-SAT solver and boto3 for schedule persistence. It is not production-ready. The infusion center is small, durations are synthetic, and there's no real EHR integration or pharmacy system connection. Think of it as the whiteboard sketch that helps you understand how the constraint model and multi-resource scheduling actually work under the hood. A starting point, not a destination.
 >
 > The main recipe uses SageMaker for duration prediction, Step Functions for workflow orchestration, and EventBridge for disruption routing. This example runs the optimization locally with hardcoded patient data and a simple duration estimator. The constraint math is identical; the infrastructure is stripped away so you can focus on the scheduling logic.

@@ -1,5 +1,15 @@
 # Recipe 14.4: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simplified, illustrative implementation of the nurse staffing optimization from Recipe 14.4. It demonstrates the core concepts (problem formulation, constraint definition, solver invocation, schedule extraction, and real-time call-off handling) using Google OR-Tools' CP-SAT solver. It is not production-ready. The staff roster is tiny, the demand is static, and there's no integration with HR systems or mobile notifications. Think of it as the whiteboard sketch that helps you understand the shape of the real system. A starting point, not a destination.
 >
 > The main recipe uses SageMaker for solver hosting and EventBridge for real-time events. This example runs everything locally with OR-Tools and writes results to DynamoDB. The optimization math is identical; the infrastructure is stripped away so you can focus on the model.
@@ -16,11 +26,8 @@ pip install boto3 ortools
 
 `ortools` is Google's open-source optimization suite. The CP-SAT solver inside it handles the binary decision variables and complex constraints of nurse scheduling extremely well. It's free, actively maintained, and fast enough for hospital-scale problems (50-200 nurses, 2-4 week horizons) without a commercial license.
 
-Your environment needs AWS credentials configured (via environment variables, instance profile, or `~/.aws/credentials`). The IAM role or user needs:
+Your environment needs AWS credentials configured (via environment variables, instance profile, or `~/.aws/credentials`). This example only writes items, so the IAM role or user needs just:
 - `dynamodb:PutItem`
-- `dynamodb:GetItem`
-- `dynamodb:Query`
-- `dynamodb:Scan`
 
 For the full pipeline (with SageMaker hosting and EventBridge routing), you'd also need `sagemaker:InvokeEndpoint`, `events:PutEvents`, and `sns:Publish`, but this example keeps the focus on the optimization itself.
 
@@ -145,7 +152,7 @@ STAFF_ROSTER = [
 # Demand: how many nurses are needed per shift per day.
 # In production, this comes from a census forecasting model (Recipe 12.5).
 # For this small example roster (8 nurses), we use reduced demand.
-# A real 36-bed med-surg unit would need 5 day / 4 night with 40+ nurses.
+# A real 36-bed med-surg unit would need roughly 9 day / 9 night with 40+ nurses.
 DEMAND = {
     "day": 3,
     "night": 2,
@@ -677,7 +684,8 @@ def store_schedule(result, schedule_period_start):
                 "period_start": schedule_period_start,
             }
 
-            # DynamoDB requires Decimal for numbers, not float.
+            # This item's numbers are ints, which are DynamoDB-safe. Floats
+            # must be converted to Decimal, as done for the metrics record below.
             table.put_item(Item=item)
             items_written += 1
 
@@ -827,4 +835,4 @@ This example works. Run it and it will produce a valid nurse schedule that respe
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 14.4](chapter14.04-nurse-staffing-optimization.md) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See the [Architecture and Implementation companion](chapter14.04-architecture) for the walkthrough and pseudocode, and [Recipe 14.4](chapter14.04-nurse-staffing-optimization) for the problem framing and honest take.*

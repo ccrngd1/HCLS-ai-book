@@ -1,5 +1,15 @@
 # Recipe 10.8: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 10.8 (voice biomarker detection). It shows one way you could translate the pipeline into working Python using boto3 against Amazon SageMaker (per-indication model endpoints, with Asynchronous Inference for the longitudinal-monitoring path), Amazon Transcribe Medical (speech-to-text for linguistic-feature extraction in cognitive biomarkers), Amazon Comprehend Medical (clinical-entity extraction from spontaneous-speech samples), Amazon Bedrock (with Guardrails for clinician-facing and patient-facing communication packaging), AWS HealthLake (FHIR Observation write-back), AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon EventBridge, Amazon CloudWatch, AWS CloudTrail, and Amazon Kinesis Data Firehose. The demo uses `MockSageMakerRuntime` standing in for the per-indication scoring endpoints, a `MockTranscribeMedical` standing in for the speech-to-text path used by linguistic-feature extraction, a `MockComprehendMedical` standing in for clinical-entity extraction from spontaneous-speech transcripts, a `MockBedrock` standing in for the clinician-summary LLM, a `MockHealthLake` standing in for the FHIR Observation write-back, and small helpers for the capture-session table, the trajectory table, the feature-vector S3 bucket, the audio S3 bucket, the audit S3 bucket, the EventBridge bus, and CloudWatch-style metrics. It is not production-ready. There is no real audio capture from a clinical device or smartphone app, no real Cognito authorizer, no real SageMaker invocation, no real Bedrock invocation, no real DynamoDB or S3 wiring, no Step Functions state machine, no IAM least-privilege role per Lambda, no KMS customer-managed key configuration, no VPC endpoints, no per-cohort accuracy disparity alerting, no biometric-data deletion-on-request workflow, no FDA SaMD post-market surveillance integration, no clinician-feedback capture loop, and no real EHR FHIR Observation write-back. Think of it as the sketchpad version: useful for understanding the shape of a voice-biomarker pipeline that respects the per-indication-validation discipline, the per-cohort-calibration discipline, the eligibility-checking discipline, the indeterminate-result discipline, the recording-chain-awareness discipline, the longitudinal-trajectory discipline, the biometric-data-governance discipline, and the post-market-surveillance discipline this recipe demands. It is not something you would deploy to clinicians on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the seven core pseudocode steps from the main recipe: capture the audio sample with the indication-specific protocol, real-time quality assessment, and explicit biometric-data consent (Step 1), extract acoustic and linguistic features with bandwidth and codec-aware processing (Step 2), check eligibility for each candidate biomarker model based on the validation envelope (Step 3), score the eligible biomarkers with per-cohort calibration and indeterminate handling (Step 4), compute longitudinal trajectory and package the clinical interpretation with Bedrock-rendered clinician summary (Step 5), deliver the result to the clinical workflow with explicit indeterminate handling and clinician override capture (Step 6), and audit, retain audio per consent, and feed cohort-stratified post-market surveillance (Step 7). The synthetic patients, providers, indications, scores, and trajectories in the demo are fictional; the names, MRNs, model versions, calibration versions, and other identifiers are obviously made-up and should not match anyone real.
@@ -146,7 +156,7 @@ INSTITUTION_ID            = "academic-medical-center-richmond"
 # not silently change clinician-summary behavior. The model
 # and region combination must be in your AWS BAA scope.
 BEDROCK_SUMMARY_MODEL_ID = (
-    "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    "anthropic.claude-sonnet-4-6-v1:0")
 BEDROCK_SUMMARY_PROFILE_ARN = (
     "arn:aws:bedrock:us-east-1:000000000000:inference-profile/"
     "voice-biomarker-summary-v1")

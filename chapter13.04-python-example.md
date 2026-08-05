@@ -1,5 +1,15 @@
 # Recipe 13.4: Python Implementation Example
 
+<!-- illustrative-only-banner -->
+> **Illustrative only, and not maintained.** This page exists to show the *shape* of
+> an implementation and nothing more. It is not production code, it is not exercised by
+> any test suite, and it pins no dependency versions. Cloud APIs, SDK signatures, IAM
+> actions, and model identifiers all change frequently, so assume anything specific
+> below is already out of date. Verify every call, permission, and model identifier
+> against current vendor documentation before relying on it. Trust this page for
+> understanding how the pieces fit together, and for nothing else. It is intentionally
+> left out of the site navigation for this reason. Last reviewed 2026-08.
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 13.4. It shows one way you could translate drug interaction knowledge graph concepts into working Python code using boto3 and Neptune's openCypher endpoint. It is not production-ready. There's no connection pooling, no retry logic, no input validation, no proper error handling. Think of it as the sketchpad version: useful for understanding how drug interaction data flows into a graph and how mechanism-based traversal queries work, not something you'd deploy to a pharmacy system on Monday morning. A starting point, not a destination.
 
 ---
@@ -12,7 +22,7 @@ You'll need the AWS SDK for Python and a few supporting libraries:
 pip install boto3 requests redis
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs permissions for Neptune (`neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery` scoped to your cluster), S3 (`s3:GetObject` on the source data bucket), Comprehend Medical (`comprehend:DetectEntitiesV2`, `comprehend:InferRxNorm`), and network access to Neptune from within your VPC.
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs permissions for Neptune (`neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery` scoped to your cluster), S3 (`s3:GetObject` on the source data bucket), Comprehend Medical (`comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`), and network access to Neptune from within your VPC.
 
 Neptune doesn't use IAM for query authentication by default (it uses VPC-level network isolation). If you've enabled IAM auth on your cluster, you'll need to sign requests with SigV4. This example assumes VPC network access without IAM auth for simplicity.
 
@@ -569,7 +579,7 @@ def extract_fda_label_interactions(bucket: str, key: str) -> int:
         return 0
 
     # Use Comprehend Medical to find medication entities in the text.
-    # The API has a 20,000 character limit per call. Split if needed.
+    # The API has a 20,000 UTF-8 byte limit per call. Split if needed.
     medication_entities = _extract_medications_from_text(interaction_text)
 
     # Get the RxNorm CUI for the subject drug.
@@ -643,8 +653,10 @@ def _extract_medications_from_text(text: str) -> list[dict]:
     """
     medications = []
 
-    # Comprehend Medical has a 20,000 character limit per request.
-    # Split text into chunks if needed.
+    # Comprehend Medical enforces a 20,000 UTF-8 byte limit per request,
+    # not characters. Chunking by characters below stays safely under the
+    # limit for ASCII-heavy label text; multi-byte text needs byte-aware
+    # chunking.
     chunks = [text[i:i + 19000] for i in range(0, len(text), 19000)]
 
     for chunk in chunks:
@@ -1355,4 +1367,4 @@ This example demonstrates the shape of a drug interaction knowledge graph system
 
 ---
 
-*← [Recipe 13.4: Drug-Drug Interaction Knowledge Base](chapter13.04-drug-drug-interaction-knowledge-base) | [Chapter 13 Index](chapter13-preface) | [Recipe 13.5: Clinical Pathway / Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling) →*
+*← [Recipe 13.4: Drug-Drug Interaction Knowledge Base](chapter13.04-drug-drug-interaction-knowledge-base) | [Architecture and Implementation Companion](chapter13.04-architecture) | [Chapter 13 Index](chapter13-preface) | [Recipe 13.5: Clinical Pathway / Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling) →*
