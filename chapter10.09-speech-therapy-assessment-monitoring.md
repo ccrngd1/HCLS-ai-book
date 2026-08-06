@@ -431,7 +431,7 @@ Speech-therapy assessment and monitoring, done well, is one of the more rewardin
 
 ## Tags
 
-`speech-voice-ai` · `value-based-care` · `longitudinal` · `bipa` · `consent-management` · `fda-pathway` · `hipaa` · `privacy` · `clinical-validation` · `bedrock-guardrails` · `bedrock` · `healthlake` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `transcribe-medical`
+`speech-voice-ai` · `value-based-care` · `longitudinal` · `audit-trail` · `bipa` · `consent-management` · `fda-pathway` · `phi-handling` · `hipaa` · `privacy` · `clinical-validation` · `bedrock-guardrails` · `api-gateway` · `athena` · `bedrock` · `cloudtrail` · `cloudwatch` · `cognito` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `secrets-manager` · `step-functions` · `transcribe-medical`
 
 ---
 

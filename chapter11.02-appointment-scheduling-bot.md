@@ -479,7 +479,7 @@ The scheduling bot is the right second recipe in this chapter, after the FAQ bot
 
 ## Tags
 
-`conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `equity-monitoring` · `privacy` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `bedrock` · `bedrock-agents`
+`conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `privacy` · `bedrock-guardrails` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `comprehend-medical` · `connect` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `s3` · `secrets-manager` · `waf`
 
 ---
 

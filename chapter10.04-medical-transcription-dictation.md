@@ -462,7 +462,7 @@ The last thing, because it is the easiest one to get wrong: medical dictation pr
 
 ## Tags
 
-`speech-voice-ai` · `streaming-asr` · `clinical-documentation` · `ehr-integration` · `smart-on-fhir` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `faithfulness-checking` · `api-gateway` · `bedrock` · `comprehend-medical` · `lambda` · `step-functions` · `transcribe-medical`
+`speech-voice-ai` · `streaming-asr` · `clinical-documentation` · `ehr-integration` · `smart-on-fhir` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `faithfulness-checking` · `api-gateway` · `athena` · `bedrock` · `cloudtrail` · `cloudwatch` · `cognito` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `sagemaker` · `secrets-manager` · `step-functions` · `transcribe-medical`
 
 ---
 

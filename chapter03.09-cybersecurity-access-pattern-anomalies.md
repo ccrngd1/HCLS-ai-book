@@ -346,7 +346,7 @@ Patients matter most, even when they're invisible in the operational workflow. T
 
 ## Tags
 
-`anomaly-detection` · `knowledge-graph` · `predictive-analytics` · `time-series` · `calibration` · `explainability` · `gnn` · `statistical-process-control` · `care-management` · `equity-monitoring` · `hipaa` · `regulatory-strategy` · `feature-store` · `neptune` · `sagemaker-clarify` · `sagemaker-model-monitor`
+`anomaly-detection` · `knowledge-graph` · `predictive-analytics` · `recommendation` · `time-series` · `calibration` · `explainability` · `gnn` · `statistical-process-control` · `care-management` · `equity-monitoring` · `hipaa` · `regulatory-strategy` · `feature-store` · `appsync` · `bedrock` · `comprehend-medical` · `dynamodb` · `eventbridge` · `kinesis` · `neptune` · `opensearch` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `step-functions` · `timestream`
 
 ---
 

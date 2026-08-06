@@ -612,7 +612,7 @@ The last thing: the benefits navigator is the recipe most likely to be deployed 
 
 ## Tags
 
-`conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `multilingual` · `accessibility` · `equity-monitoring` · `no-surprises-act` · `hipaa` · `citation-grounding` · `prompt-injection-defense` · `scope-containment` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases`
+`conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `no-surprises-act` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `citation-grounding` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `opensearch-serverless` · `quicksight` · `s3` · `secrets-manager` · `waf`
 
 ---
 

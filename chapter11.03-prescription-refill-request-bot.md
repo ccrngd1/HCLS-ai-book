@@ -553,7 +553,7 @@ The refill bot is the right third recipe in this chapter, after the FAQ bot and 
 
 ## Tags
 
-`conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `clinical-decision-support` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `equity-monitoring` · `privacy` · `prompt-injection-defense` · `scope-containment` · `bedrock` · `bedrock-agents`
+`conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `clinical-decision-support` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `privacy` · `bedrock-guardrails` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `comprehend-medical` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `s3` · `secrets-manager` · `waf`
 
 ---
 

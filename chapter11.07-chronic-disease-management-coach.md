@@ -750,7 +750,7 @@ The last thing: the chronic disease coach is the recipe in this chapter where th
 
 ## Tags
 
-`causal-inference` · `conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `behavioral-health` · `patient-engagement` · `ehr-integration` · `fhir` · `accessibility` · `equity-monitoring` · `citation-grounding` · `scope-containment` · `bedrock` · `bedrock-agents`
+`causal-inference` · `conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `behavioral-health` · `crisis-detection` · `patient-engagement` · `remote-patient-monitoring` · `ehr-integration` · `fhir` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `fda-pathway` · `human-in-the-loop` · `mandatory-reporting` · `phi-handling` · `hipaa` · `regulatory-strategy` · `bedrock-guardrails` · `citation-grounding` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `opensearch-serverless` · `pinpoint` · `quicksight` · `s3` · `sagemaker` · `secrets-manager` · `sns` · `step-functions` · `waf`
 
 ---
 

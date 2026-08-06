@@ -509,7 +509,7 @@ Real-time medical interpretation, done responsibly, can extend language access t
 
 ## Tags
 
-`speech-voice-ai` · `streaming-asr` · `multilingual` · `audit-trail` · `phi-handling` · `hipaa` · `privacy` · `bedrock-guardrails` · `faithfulness-checking` · `prompt-injection-defense` · `api-gateway` · `dynamodb` · `lambda` · `s3` · `step-functions` · `transcribe-medical`
+`speech-voice-ai` · `streaming-asr` · `multilingual` · `audit-trail` · `phi-handling` · `hipaa` · `privacy` · `bedrock-guardrails` · `faithfulness-checking` · `prompt-injection-defense` · `api-gateway` · `athena` · `cloudtrail` · `cloudwatch` · `cognito` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `secrets-manager` · `step-functions` · `transcribe-medical`
 
 ---
 

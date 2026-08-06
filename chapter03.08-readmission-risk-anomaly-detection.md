@@ -352,7 +352,7 @@ Lives are saved here too, just less dramatically than in Recipe 3.7. The signal 
 
 ## Tags
 
-`anomaly-detection` · `predictive-analytics` · `time-series` · `calibration` · `explainability` · `remote-patient-monitoring` · `transitions-of-care` · `care-management` · `provider` · `sdoh` · `equity-monitoring` · `clinical-validation` · `feature-store` · `model-registry` · `sagemaker-clarify` · `sagemaker-model-monitor`
+`anomaly-detection` · `causal-inference` · `predictive-analytics` · `recommendation` · `survival-analysis` · `time-series` · `calibration` · `explainability` · `remote-patient-monitoring` · `transitions-of-care` · `care-management` · `provider` · `sdoh` · `equity-monitoring` · `fda-pathway` · `hipaa` · `clinical-validation` · `feature-store` · `model-registry` · `appsync` · `bedrock` · `comprehend-medical` · `dynamodb` · `eventbridge` · `kinesis` · `opensearch` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `step-functions` · `timestream`
 
 ---
 

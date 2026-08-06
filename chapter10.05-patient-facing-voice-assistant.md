@@ -508,7 +508,7 @@ The patient-facing voice assistant is the recipe in this chapter where the opera
 
 ## Tags
 
-`conversational-ai` · `rag` · `speech-voice-ai` · `intent-classification` · `crisis-detection` · `patient-engagement` · `multilingual` · `consent-management` · `equity-monitoring` · `privacy` · `bedrock-guardrails` · `scope-containment` · `warm-handoff` · `bedrock-knowledge-bases` · `connect` · `lex`
+`conversational-ai` · `rag` · `speech-voice-ai` · `intent-classification` · `crisis-detection` · `patient-engagement` · `multilingual` · `accessibility` · `audit-trail` · `bipa` · `consent-management` · `equity-monitoring` · `phi-handling` · `hipaa` · `privacy` · `bedrock-guardrails` · `scope-containment` · `warm-handoff` · `api-gateway` · `athena` · `bedrock` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `cognito` · `comprehend-medical` · `connect` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `pinpoint` · `polly` · `quicksight` · `s3` · `secrets-manager` · `step-functions` · `transcribe-medical`
 
 ---
 

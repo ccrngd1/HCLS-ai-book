@@ -351,7 +351,7 @@ The last thing, because it's specific to healthcare: the IVR is, for many patien
 
 ## Tags
 
-`conversational-ai` · `speech-voice-ai` · `confidence-thresholding` · `intent-classification` · `streaming-asr` · `patient-engagement` · `triage` · `accessibility` · `equity-monitoring` · `hipaa` · `connect` · `dynamodb` · `lambda` · `lex` · `polly` · `transcribe-medical`
+`conversational-ai` · `speech-voice-ai` · `confidence-thresholding` · `intent-classification` · `streaming-asr` · `patient-engagement` · `triage` · `accessibility` · `equity-monitoring` · `hipaa` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `kinesis` · `kms` · `lambda` · `lex` · `polly` · `s3` · `secrets-manager` · `transcribe-medical`
 
 ---
 

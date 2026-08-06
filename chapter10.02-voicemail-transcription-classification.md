@@ -431,7 +431,7 @@ The last thing, because it's specific to healthcare and to this recipe in partic
 
 ## Tags
 
-`speech-voice-ai` · `confidence-thresholding` · `intent-classification` · `streaming-asr` · `triage` · `multilingual` · `audit-trail` · `equity-monitoring` · `human-in-the-loop` · `phi-handling` · `hipaa` · `bedrock` · `comprehend-medical` · `lambda` · `step-functions` · `transcribe-medical`
+`speech-voice-ai` · `confidence-thresholding` · `intent-classification` · `streaming-asr` · `triage` · `multilingual` · `audit-trail` · `equity-monitoring` · `human-in-the-loop` · `phi-handling` · `hipaa` · `athena` · `bedrock` · `cloudtrail` · `cloudwatch` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `opensearch` · `quicksight` · `s3` · `secrets-manager` · `sns` · `step-functions` · `transcribe-medical`
 
 ---
 

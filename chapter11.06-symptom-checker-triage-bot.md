@@ -242,7 +242,7 @@ The fifth trap is shipping without an explicit equity commitment. Studies of nur
 
 ## Tags
 
-`causal-inference` · `conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `fhir` · `accessibility` · `equity-monitoring` · `citation-grounding` · `scope-containment` · `bedrock` · `bedrock-agents`
+`causal-inference` · `conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `fhir` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `fda-pathway` · `mandatory-reporting` · `phi-handling` · `hipaa` · `regulatory-strategy` · `bedrock-guardrails` · `citation-grounding` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `opensearch-serverless` · `quicksight` · `s3` · `sagemaker` · `secrets-manager` · `waf`
 
 ---
 

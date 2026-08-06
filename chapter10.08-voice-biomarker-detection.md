@@ -410,7 +410,7 @@ Voice biomarker detection, done well for the right indications, is one of the mo
 
 ## Tags
 
-`speech-voice-ai` · `clinical-decision-support` · `longitudinal` · `bipa` · `consent-management` · `fda-pathway` · `privacy` · `provenance` · `clinical-validation` · `bedrock-guardrails` · `bedrock` · `comprehend-medical` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `transcribe-medical`
+`speech-voice-ai` · `clinical-decision-support` · `longitudinal` · `audit-trail` · `bipa` · `consent-management` · `fda-pathway` · `phi-handling` · `hipaa` · `privacy` · `provenance` · `clinical-validation` · `bedrock-guardrails` · `api-gateway` · `athena` · `bedrock` · `cloudtrail` · `cloudwatch` · `cognito` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `secrets-manager` · `step-functions` · `transcribe-medical`
 
 ---
 

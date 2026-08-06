@@ -421,7 +421,7 @@ Last point, because it is specific to the regulatory context: information-blocki
 
 ## Tags
 
-`entity-resolution` · `statistical-process-control` · `cpt` · `fhir` · `icd-10` · `ncpdp` · `x12` · `cures-act` · `information-blocking` · `hipaa` · `event-driven` · `athena` · `dynamodb` · `glue` · `healthlake` · `lake-formation`
+`entity-resolution` · `statistical-process-control` · `cpt` · `fhir` · `icd-10` · `loinc` · `ncpdp` · `ndc` · `rxnorm` · `x12` · `cures-act` · `information-blocking` · `hipaa` · `event-driven` · `athena` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `lake-formation` · `step-functions`
 
 ---
 

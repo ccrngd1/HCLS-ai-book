@@ -320,7 +320,7 @@ Lives are saved sometimes. I want to say this clearly because it's easy to get l
 
 ## Tags
 
-`anomaly-detection` · `predictive-analytics` · `time-series` · `calibration` · `explainability` · `vital-signs` · `provider` · `alert-fatigue` · `equity-monitoring` · `fda-pathway` · `clinical-validation` · `feature-store` · `model-registry` · `bedrock` · `sagemaker-clarify` · `sagemaker-model-monitor`
+`anomaly-detection` · `predictive-analytics` · `time-series` · `calibration` · `explainability` · `vital-signs` · `provider` · `alert-fatigue` · `equity-monitoring` · `fda-pathway` · `hipaa` · `clinical-validation` · `feature-store` · `model-registry` · `bedrock` · `comprehend-medical` · `dynamodb` · `eventbridge` · `kinesis` · `opensearch` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `timestream`
 
 ---
 

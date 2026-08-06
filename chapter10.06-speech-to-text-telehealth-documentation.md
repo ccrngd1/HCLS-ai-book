@@ -526,7 +526,7 @@ Telehealth speech-to-text is the recipe in this chapter where the operational im
 
 ## Tags
 
-`speech-voice-ai` · `diarization` · `streaming-asr` · `structured-extraction` · `behavioral-health` · `clinical-documentation` · `ehr-integration` · `multilingual` · `42-cfr-part-2` · `consent-management` · `human-in-the-loop` · `bedrock-guardrails` · `citation-grounding` · `faithfulness-checking` · `bedrock` · `transcribe-medical`
+`speech-voice-ai` · `diarization` · `streaming-asr` · `structured-extraction` · `behavioral-health` · `clinical-documentation` · `ehr-integration` · `multilingual` · `42-cfr-part-2` · `audit-trail` · `consent-management` · `equity-monitoring` · `human-in-the-loop` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `citation-grounding` · `faithfulness-checking` · `api-gateway` · `athena` · `bedrock` · `chime-sdk` · `cloudtrail` · `cloudwatch` · `cognito` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `polly` · `quicksight` · `s3` · `secrets-manager` · `step-functions` · `transcribe-medical`
 
 ---
 

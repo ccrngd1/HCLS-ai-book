@@ -352,7 +352,7 @@ Last point, because it is specific to this use case: treatment response predicti
 
 ## Tags
 
-`clustering` · `causal-inference` · `personalization` · `calibration` · `clinical-decision-support` · `ehr-integration` · `smart-on-fhir` · `equity-monitoring` · `fda-pathway` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `lambda` · `sagemaker` · `step-functions`
+`clustering` · `causal-inference` · `personalization` · `calibration` · `clinical-decision-support` · `ehr-integration` · `smart-on-fhir` · `equity-monitoring` · `fda-pathway` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `healthlake` · `lambda` · `sagemaker` · `step-functions`
 
 ---
 

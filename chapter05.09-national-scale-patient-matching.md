@@ -458,7 +458,7 @@ Last point, because it is specific to the use case: TEFCA is the substrate for p
 
 ## Tags
 
-`entity-resolution` · `patient-safety` · `fhir` · `interoperability` · `42-cfr-part-2` · `consent-management` · `cures-act` · `equity-monitoring` · `information-blocking` · `hipaa` · `event-driven` · `api-gateway` · `dynamodb` · `elasticache` · `lambda` · `step-functions`
+`entity-resolution` · `patient-safety` · `fhir` · `interoperability` · `42-cfr-part-2` · `consent-management` · `cures-act` · `equity-monitoring` · `information-blocking` · `hipaa` · `event-driven` · `api-gateway` · `cognito` · `dynamodb` · `elasticache` · `eventbridge` · `kms` · `lake-formation` · `lambda` · `secrets-manager` · `step-functions`
 
 ---
 

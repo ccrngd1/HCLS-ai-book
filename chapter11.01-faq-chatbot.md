@@ -465,7 +465,7 @@ The FAQ chatbot is the right place to start in this chapter because it is the re
 
 ## Tags
 
-`conversational-ai` · `embeddings` · `rag` · `intent-classification` · `learning-to-rank` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `multilingual` · `accessibility` · `equity-monitoring` · `hipaa` · `prompt-injection-defense` · `scope-containment` · `bedrock` · `bedrock-knowledge-bases`
+`conversational-ai` · `embeddings` · `rag` · `intent-classification` · `learning-to-rank` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `opensearch` · `s3` · `secrets-manager` · `waf`
 
 ---
 

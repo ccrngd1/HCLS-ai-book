@@ -98,7 +98,12 @@ that decorative ratings in titles duplicate this field.
 
 **Tags.** Searchable labels drawn from a controlled vocabulary in
 `tag-vocabulary.json`. Only canonical tags may be used; add a new one to that
-file rather than inventing it inline, and cap a recipe at 16.
+file rather than inventing it inline. There is deliberately **no per-recipe
+cap**: tags are stripped from the print edition, so extra tags cost nothing but
+a longer chip list on a web page, and more canonical tags mean better discovery.
+An earlier revision capped at 16 and silently discarded 370 valid tags from the
+31 most complex recipes, including `hipaa`, `phi-handling`, `audit-trail` and
+`healthlake`. Density is a CSS problem, not a reason to delete data.
 
 This matters because it was got wrong once. Before the vocabulary existed there
 were 1,432 distinct tags, 75% of them used exactly once, and per-recipe counts

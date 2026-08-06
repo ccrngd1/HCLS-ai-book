@@ -441,7 +441,7 @@ Last point, because it is specific to this use case: dynamic treatment regime re
 
 ## Tags
 
-`clustering` · `causal-inference` · `personalization` · `reinforcement-learning` · `off-policy-evaluation` · `clinical-decision-support` · `fhir` · `smart-on-fhir` · `equity-monitoring` · `fda-pathway` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `sagemaker` · `step-functions`
+`clustering` · `causal-inference` · `personalization` · `reinforcement-learning` · `off-policy-evaluation` · `clinical-decision-support` · `fhir` · `smart-on-fhir` · `equity-monitoring` · `fda-pathway` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `healthlake` · `lambda` · `sagemaker` · `step-functions`
 
 ---
 
