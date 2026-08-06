@@ -248,7 +248,7 @@ One more thing, a personal note. The patients who benefit from this the most are
 
 ## Tags
 
-`llm` · `generative-ai` · `multi-modal` · `clinical-reasoning` · `bedrock` · `guardrails` · `healthlake` · `healthimaging` · `comprehend-medical` · `opensearch` · `aurora-pgvector` · `sagemaker` · `fhir` · `smart-on-fhir` · `cds-hooks` · `imaging-ai` · `ecg` · `pathology` · `differential-diagnosis` · `grounded-generation` · `citation-verification` · `fda-cds` · `fda-samd` · `evidence-synthesis` · `hipaa` · `regulatory` · `provenance`
+`generative-ai` · `llm` · `rag` · `pathology` · `vital-signs` · `ehr-integration` · `fhir` · `smart-on-fhir` · `fda-pathway` · `hipaa` · `regulatory-strategy` · `bedrock-guardrails` · `grounded-generation` · `multi-modal` · `bedrock` · `healthlake`
 
 ---
 

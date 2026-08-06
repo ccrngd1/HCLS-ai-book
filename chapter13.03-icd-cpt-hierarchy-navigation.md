@@ -124,7 +124,7 @@ One more thing: Neptune's openCypher support is good but not complete. If you're
 
 ## Tags
 
-`knowledge-graph` · `neptune` · `icd-10` · `cpt` · `medical-coding` · `hierarchy` · `ontology` · `opencypher` · `graph-database` · `cross-walk` · `coding-assistance` · `hipaa`
+`knowledge-graph` · `cpt` · `icd-10` · `ontology` · `hipaa` · `graph-database` · `neptune`
 
 ---
 

@@ -159,3 +159,9 @@ Retraining cadence matters more than you'd think. Hospital operations change sea
 - **Recipe 6.4 (Disease Severity Stratification):** Severity scores serve as features in LOS models
 
 ---
+
+---
+
+## Tags
+
+`forecasting` · `predictive-analytics` · `capacity-management` · `hospital-operations` · `hipaa` · `athena` · `dynamodb` · `healthlake` · `lambda` · `quicksight` · `sagemaker` · `step-functions`

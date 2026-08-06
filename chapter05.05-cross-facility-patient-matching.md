@@ -350,7 +350,7 @@ Last point, because it is specific to the regulatory context: the 21st Century C
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `cross-facility` · `hie` · `health-information-exchange` · `pix` · `pdq` · `fhir` · `patient-match` · `consent` · `sensitivity-filter` · `audit-log` · `tefca` · `carequality` · `event-driven` · `hipaa` · `42-cfr-part-2` · `information-blocking`
+`entity-resolution` · `fhir` · `interoperability` · `42-cfr-part-2` · `information-blocking` · `hipaa` · `event-driven`
 
 ---
 

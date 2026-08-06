@@ -129,7 +129,7 @@ Here's what will surprise you when you actually build this:
 
 ## Tags
 
-`computer-vision` · `dermatology` · `image-classification` · `triage` · `skin-cancer` · `cnn` · `bias-fairness` · `fda` · `samd` · `transfer-learning`
+`computer-vision` · `cnn` · `triage` · `fda-pathway`
 
 ---
 

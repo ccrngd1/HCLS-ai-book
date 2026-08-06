@@ -145,7 +145,7 @@ Operational monitoring is the other piece people underestimate. Track feature di
 
 ## Tags
 
-`reinforcement-learning` · `icu` · `ventilator` · `weaning` · `offline-rl` · `clinical-decision-support` · `sequential-decisions` · `safety-constraints` · `sagemaker`
+`reinforcement-learning` · `clinical-decision-support` · `icu` · `safety-constraints` · `sagemaker`
 
 ---
 

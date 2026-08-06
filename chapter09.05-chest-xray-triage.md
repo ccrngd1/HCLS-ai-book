@@ -105,7 +105,7 @@ That said, here's what will surprise you:
 
 ## Tags
 
-`computer-vision` · `medical-imaging` · `chest-xray` · `triage` · `cnn` · `sagemaker` · `dicom` · `pacs` · `radiology` · `fda` · `gpu`
+`computer-vision` · `cnn` · `medical-imaging` · `radiology` · `triage` · `dicom` · `fda-pathway` · `sagemaker`
 
 ---
 

@@ -301,7 +301,7 @@ Last point, because it is specific to this domain: duplicate patient records are
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `patient-matching` · `mpi` · `empi` · `deduplication` · `fellegi-sunter` · `probabilistic-linkage` · `blocking` · `string-similarity` · `survivorship` · `equity` · `health-information-management` · `dynamodb` · `opensearch` · `glue` · `splink` · `step-functions` · `lambda` · `hipaa`
+`entity-resolution` · `blocking` · `fellegi-sunter` · `string-similarity` · `equity-monitoring` · `hipaa` · `dynamodb` · `glue` · `lambda` · `opensearch` · `step-functions`
 
 ---
 

@@ -120,7 +120,7 @@ The ethical dimension is real. Churn models can inadvertently encode discriminat
 
 ## Tags
 
-`predictive-analytics` · `churn` · `disenrollment` · `retention` · `xgboost` · `classification` · `health-plan` · `member-engagement` · `hipaa`
+`classification` · `predictive-analytics` · `hipaa`
 
 ---
 

@@ -202,7 +202,7 @@ Let me be direct about what changed and what didn't.
 
 ## Tags
 
-`document-intelligence` · `ocr` · `handwriting` · `textract` · `bedrock` · `vision-models` · `claude` · `multimodal` · `a2i` · `human-in-the-loop` · `confidence-scoring` · `confidence-tiering` · `clinical-notes` · `step-functions` · `private-workforce` · `hipaa` · `prompt-engineering` · `few-shot` · `dual-path-architecture`
+`computer-vision` · `document-intelligence` · `ocr` · `clinical-notes` · `human-in-the-loop` · `hipaa` · `multi-modal` · `a2i` · `bedrock` · `step-functions` · `textract`
 
 ---
 

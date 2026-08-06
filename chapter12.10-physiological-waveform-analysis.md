@@ -125,7 +125,7 @@ The FDA question looms over everything. If your system makes diagnostic claims (
 
 ## Tags
 
-`time-series` · `waveform` · `ecg` · `eeg` · `streaming` · `real-time` · `kinesis` · `sagemaker` · `timestream` · `icu` · `monitoring` · `deep-learning` · `signal-processing` · `fda` · `hipaa`
+`time-series` · `cnn` · `icu` · `vital-signs` · `fda-pathway` · `hipaa` · `real-time` · `streaming` · `kinesis` · `sagemaker` · `timestream`
 
 ---
 

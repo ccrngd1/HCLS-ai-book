@@ -265,7 +265,7 @@ The trap to avoid: do not let the system drive toward "maximize cases generated.
 
 ## Tags
 
-`anomaly-detection` · `payment-integrity` · `billing-anomalies` · `provider-behavior` · `upcoding-detection` · `statistical-process-control` · `isolation-forest` · `cusum` · `peer-benchmarking` · `sagemaker` · `feature-store` · `glue` · `athena` · `dynamodb` · `step-functions` · `hipaa` · `payer`
+`anomaly-detection` · `statistical-process-control` · `payer` · `payment-integrity` · `hipaa` · `feature-store` · `athena` · `dynamodb` · `glue` · `sagemaker` · `step-functions`
 
 ---
 

@@ -185,7 +185,7 @@ Let's be real about what this approach can and can't do.
 
 ## Tags
 
-`predictive-analytics` `claims` `denial-prediction` `k-nearest-neighbors` `similarity-search` `case-based-reasoning` `novelty-detection` `cold-start` `vector-search` `opensearch` `embeddings` `revenue-cycle` `prior-authorization`
+`embeddings` · `predictive-analytics` · `recommendation` · `vector-search` · `prior-authorization` · `revenue-cycle` · `claims` · `opensearch`
 
 ---
 

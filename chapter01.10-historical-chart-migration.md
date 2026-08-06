@@ -259,7 +259,7 @@ One last thing about cost. The blended cost estimate of $1.11 per chart in the a
 
 ## Tags
 
-`document-intelligence` · `ocr` · `textract` · `bedrock` · `nova-lite` · `nova-pro` · `claude-haiku` · `claude-sonnet` · `claude-opus` · `vision-models` · `batch-inference` · `prompt-caching` · `comprehend-medical` · `healthlake` · `fhir` · `fhir-r4` · `chart-migration` · `batch-processing` · `aws-batch` · `step-functions` · `model-tiering` · `cost-optimization` · `document-segmentation` · `document-classification` · `s3-glacier` · `hipaa` · `interoperability` · `cms-interoperability-rule`
+`classification` · `computer-vision` · `document-intelligence` · `ocr` · `model-tiering` · `fhir` · `interoperability` · `hipaa` · `batch-processing` · `aws-batch` · `bedrock` · `comprehend-medical` · `healthlake` · `nova` · `step-functions` · `textract`
 
 ---
 

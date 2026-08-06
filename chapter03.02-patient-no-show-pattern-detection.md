@@ -234,7 +234,7 @@ The trap to avoid: do not optimize the model to minimize no-shows if your operat
 
 ## Tags
 
-`anomaly-detection` · `no-show-prediction` · `patient-engagement` · `propensity-modeling` · `contextual-anomaly` · `sagemaker` · `feature-store` · `batch-transform` · `dynamodb` · `step-functions` · `pinpoint` · `glue` · `lambda` · `hipaa` · `provider`
+`anomaly-detection` · `patient-engagement` · `provider` · `hipaa` · `feature-store` · `dynamodb` · `glue` · `lambda` · `pinpoint` · `sagemaker` · `step-functions`
 
 ---
 

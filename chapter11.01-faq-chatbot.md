@@ -465,7 +465,7 @@ The FAQ chatbot is the right place to start in this chapter because it is the re
 
 ## Tags
 
-`conversational-ai` · `chatbot` · `faq-bot` · `patient-facing` · `patient-engagement` · `digital-front-door` · `web-chat` · `messaging` · `rag-pattern` · `retrieval-augmented-generation` · `knowledge-base` · `embeddings` · `hybrid-retrieval` · `re-ranking` · `intent-classification` · `scope-containment` · `crisis-detection` · `prompt-injection-defense` · `prompt-versioning` · `persona-design` · `multilingual` · `accessibility` · `equity-monitoring` · `cohort-stratified-accuracy` · `bedrock` · `bedrock-knowledge-bases` · `bedrock-guardrails` · `lambda` · `api-gateway` · `waf` · `dynamodb` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `eventbridge` · `kinesis-firehose` · `glue` · `athena` · `connect` · `lex` · `opensearch` · `hipaa` · `phi-handling` · `audit-trail` · `containment-rate` · `handoff-rate` · `chapter11` · `recipe-11-1`
+`conversational-ai` · `embeddings` · `rag` · `intent-classification` · `learning-to-rank` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `multilingual` · `accessibility` · `equity-monitoring` · `hipaa` · `prompt-injection-defense` · `scope-containment` · `bedrock` · `bedrock-knowledge-bases`
 
 ---
 

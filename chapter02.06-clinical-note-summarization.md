@@ -195,7 +195,7 @@ Finally: the bar for "useful" here is lower than teams often assume. Clinicians 
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `healthlake` · `comprehend-medical` · `clinical-summarization` · `clinician-facing` · `grounded-generation` · `provenance` · `handoff` · `hospital-course` · `specialty-aware` · `map-reduce` · `hierarchical-summarization` · `must-include-checklist` · `guardrails-contextual-grounding` · `medium-complexity` · `hipaa` · `fhir` · `smart-on-fhir`
+`generative-ai` · `llm` · `fhir` · `smart-on-fhir` · `hipaa` · `provenance` · `grounded-generation` · `bedrock` · `comprehend-medical` · `healthlake`
 
 ---
 

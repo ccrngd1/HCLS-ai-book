@@ -146,7 +146,7 @@ One more thing: the system gets dramatically more useful when you have multiple 
 
 ## Tags
 
-`cohort-analysis` · `clustering` · `clinical-trials` · `patient-matching` · `nlp` · `comprehend-medical` · `sagemaker` · `athena` · `step-functions` · `hipaa` · `research`
+`clustering` · `entity-resolution` · `nlp` · `hipaa` · `athena` · `comprehend-medical` · `sagemaker` · `step-functions`
 
 ---
 

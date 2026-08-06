@@ -270,7 +270,7 @@ One last point, because it's specific to this use case: the directory is often t
 
 ## Tags
 
-`personalization` · `search` · `learning-to-rank` · `lambdamart` · `hybrid-search` · `vector-search` · `provider-directory` · `network-adequacy` · `fairness` · `data-quality` · `bedrock` · `opensearch` · `dynamodb` · `sagemaker` · `location-service` · `lambda` · `hipaa`
+`personalization` · `vector-search` · `learning-to-rank` · `network-adequacy` · `provider-directory` · `equity-monitoring` · `hipaa` · `bedrock` · `dynamodb` · `lambda` · `location-service` · `opensearch` · `sagemaker`
 
 ---
 

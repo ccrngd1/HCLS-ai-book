@@ -108,7 +108,7 @@ Retraining cadence matters too. Quarterly retraining picks up vocabulary drift (
 
 ## Tags
 
-`nlp` · `text-classification` · `chief-complaint` · `triage` · `comprehend` · `comprehend-medical` · `lambda` · `dynamodb` · `sqs` · `hipaa` · `real-time`
+`classification` · `nlp` · `triage` · `hipaa` · `real-time` · `comprehend` · `comprehend-medical` · `dynamodb` · `lambda` · `sqs`
 
 ---
 

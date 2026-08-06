@@ -203,7 +203,7 @@ Also: the exploration rate matters less than you think. With thousands of patien
 
 ## Tags
 
-`reinforcement-learning` · `contextual-bandits` · `notification-timing` · `patient-engagement` · `personalize` · `pinpoint` · `personalization` · `lambda` · `dynamodb` · `hipaa`
+`personalization` · `reinforcement-learning` · `patient-engagement` · `hipaa` · `dynamodb` · `lambda` · `pinpoint`
 
 ---
 

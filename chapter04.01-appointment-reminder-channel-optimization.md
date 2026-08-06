@@ -190,7 +190,7 @@ And the trap worth flagging, because it's the most common failure mode I've seen
 
 ## Tags
 
-`personalization` · `recommendation` · `contextual-bandit` · `thompson-sampling` · `patient-engagement` · `appointment-reminders` · `multi-channel-messaging` · `sns` · `ses` · `connect` · `dynamodb` · `eventbridge-scheduler` · `lambda` · `hipaa`
+`personalization` · `recommendation` · `contextual-bandit` · `patient-engagement` · `hipaa` · `connect` · `dynamodb` · `lambda` · `sns`
 
 ---
 

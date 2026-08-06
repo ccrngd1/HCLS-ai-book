@@ -134,3 +134,9 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 - **Recipe 12.8: Disease Progression Trajectory Modeling** - Longer-term trajectory modeling that provides context for why a patient's readmission risk is elevated.
 
 ---
+
+---
+
+## Tags
+
+`classification` · `predictive-analytics` · `calibration` · `explainability` · `transitions-of-care` · `care-management` · `fhir` · `hipaa` · `dynamodb` · `healthlake` · `lambda` · `quicksight` · `sagemaker` · `step-functions`

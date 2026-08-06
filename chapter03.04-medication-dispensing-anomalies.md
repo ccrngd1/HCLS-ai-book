@@ -256,7 +256,7 @@ The trap to avoid: do not let the business case be "reduce adverse drug events b
 
 ## Tags
 
-`anomaly-detection` · `medication-safety` · `clinical-decision-support` · `pharmacy` · `dose-error-detection` · `drug-interaction` · `controlled-substance-diversion` · `statistical-process-control` · `cusum` · `isolation-forest` · `kinesis` · `lambda` · `dynamodb` · `sagemaker` · `feature-store` · `neptune` · `opensearch` · `comprehend-medical` · `bedrock` · `hl7` · `fhir` · `rxnorm` · `hipaa` · `provider`
+`anomaly-detection` · `statistical-process-control` · `clinical-decision-support` · `pharmacy` · `provider` · `fhir` · `hl7` · `rxnorm` · `hipaa` · `feature-store` · `dynamodb` · `kinesis` · `lambda` · `neptune` · `opensearch` · `sagemaker`
 
 ---
 

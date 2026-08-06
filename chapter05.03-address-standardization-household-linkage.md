@@ -324,7 +324,7 @@ Last point, because it is specific to the regulatory context: HIPAA's de-identif
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `address-standardization` · `cass-certified` · `usps` · `ncoa` · `household-linkage` · `geocoding` · `sdoh` · `population-health` · `outreach` · `event-driven` · `hipaa` · `privacy`
+`entity-resolution` · `population-health` · `sdoh` · `hipaa` · `privacy` · `event-driven`
 
 ---
 

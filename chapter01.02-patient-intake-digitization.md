@@ -127,7 +127,7 @@ The honest scope boundary: this recipe handles printed text well and checkboxes 
 
 ## Tags
 
-`document-intelligence` · `ocr` · `textract` · `forms` · `tables` · `checkboxes` · `intake-forms` · `patient-demographics` · `async` · `multi-page` · `lambda` · `s3` · `dynamodb` · `sns` · `hipaa`
+`document-intelligence` · `ocr` · `hipaa` · `dynamodb` · `lambda` · `s3` · `sns` · `textract`
 
 ---
 

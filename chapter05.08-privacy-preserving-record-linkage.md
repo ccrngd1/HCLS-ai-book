@@ -461,7 +461,7 @@ Last point, because it is specific to the use case: PPRL is a tool for the cases
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `privacy-preserving` · `pprl` · `bloom-filter-encoding` · `cryptographic-long-term-key` · `clk` · `tokenization` · `secure-multi-party-computation` · `smpc` · `private-set-intersection` · `psi` · `homomorphic-encryption` · `trusted-execution-environment` · `tee` · `confidential-computing` · `cross-organizational-matching` · `salt-rotation` · `parameterization-versioning` · `re-identification-risk` · `differential-privacy` · `cohort-stratified-accuracy` · `consent-management` · `multi-party-trust-framework` · `event-driven` · `hipaa` · `42-cfr-part-2` · `information-blocking` · `cures-act` · `equity-monitoring` · `research-collaboration` · `public-health-surveillance` · `cross-payer-outcomes` · `audit-archive`
+`entity-resolution` · `public-health-surveillance` · `42-cfr-part-2` · `audit-trail` · `consent-management` · `cures-act` · `equity-monitoring` · `information-blocking` · `hipaa` · `event-driven`
 
 ---
 

@@ -163,7 +163,7 @@ The thing I'd do differently: start with the intervention capacity constraint an
 
 ## Tags
 
-`predictive-analytics` · `risk-scoring` · `rising-risk` · `trajectory` · `longitudinal` · `care-management` · `population-health` · `sagemaker` · `glue` · `batch-processing` · `time-series` · `hipaa`
+`predictive-analytics` · `time-series` · `care-management` · `population-health` · `longitudinal` · `hipaa` · `batch-processing` · `glue` · `sagemaker`
 
 ---
 

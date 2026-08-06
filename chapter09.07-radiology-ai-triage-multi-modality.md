@@ -120,7 +120,7 @@ The thing that surprised me most: radiologists actually like these systems when 
 
 ## Tags
 
-`computer-vision` · `radiology` · `triage` · `multi-modality` · `dicom` · `sagemaker` · `healthimaging` · `fda` · `critical-findings` · `worklist` · `cnn` · `deep-learning` · `pacs` · `hipaa`
+`computer-vision` · `cnn` · `radiology` · `triage` · `dicom` · `fda-pathway` · `hipaa` · `healthimaging` · `sagemaker`
 
 ---
 

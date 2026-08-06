@@ -349,7 +349,7 @@ Last point, because it is specific to the regulatory context: the No Surprises A
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `eligibility-verification` · `x12` · `270-271` · `caqh-core` · `clearinghouse` · `fhir` · `coverage` · `revenue-cycle` · `charity-care` · `dynamodb` · `elasticache` · `lambda` · `step-functions` · `event-driven` · `hipaa` · `no-surprises-act`
+`entity-resolution` · `revenue-cycle` · `fhir` · `x12` · `no-surprises-act` · `hipaa` · `event-driven` · `dynamodb` · `elasticache` · `lambda` · `step-functions`
 
 ---
 

@@ -146,7 +146,7 @@ Here's what will surprise you when you build this:
 
 ## Tags
 
-`knowledge-graph` `pharmacogenomics` `precision-medicine` `neptune` `gene-drug-interactions` `clinical-decision-support` `cpic` `pharmgkb` `entity-resolution` `evidence-grading`
+`entity-resolution` · `knowledge-graph` · `clinical-decision-support` · `precision-medicine` · `provenance` · `neptune`
 
 ---
 

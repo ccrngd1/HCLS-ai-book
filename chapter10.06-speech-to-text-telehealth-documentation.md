@@ -526,7 +526,7 @@ Telehealth speech-to-text is the recipe in this chapter where the operational im
 
 ## Tags
 
-`speech-voice-ai` · `telehealth` · `speech-to-text` · `ambient-documentation` · `clinical-documentation` · `diarization` · `multi-speaker` · `streaming-asr` · `batch-asr` · `live-transcription` · `note-generation` · `structured-extraction` · `faithfulness-checking` · `citation-grounding` · `clinician-review` · `per-channel-audio` · `audio-quality-monitoring` · `behavioral-health` · `multi-state-consent` · `recording-consent` · `42-cfr-part-2` · `equity-monitoring` · `cohort-stratified-accuracy` · `multilingual` · `ehr-integration` · `fhir-write-back` · `transcribe` · `transcribe-streaming` · `transcribe-medical` · `bedrock` · `bedrock-guardrails` · `comprehend-medical` · `chime-sdk` · `kinesis-video-streams` · `polly` · `lambda` · `step-functions` · `api-gateway` · `cognito` · `dynamodb` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `eventbridge` · `kinesis-firehose` · `glue` · `athena` · `quicksight` · `hipaa` · `phi-handling` · `audit-trail`
+`speech-voice-ai` · `diarization` · `streaming-asr` · `structured-extraction` · `behavioral-health` · `clinical-documentation` · `ehr-integration` · `multilingual` · `42-cfr-part-2` · `consent-management` · `human-in-the-loop` · `bedrock-guardrails` · `citation-grounding` · `faithfulness-checking` · `bedrock` · `transcribe-medical`
 
 ---
 

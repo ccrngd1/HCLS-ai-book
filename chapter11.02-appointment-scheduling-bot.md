@@ -479,7 +479,7 @@ The scheduling bot is the right second recipe in this chapter, after the FAQ bot
 
 ## Tags
 
-`conversational-ai` · `scheduling-bot` · `appointment-scheduling` · `patient-facing` · `patient-engagement` · `digital-front-door` · `tool-using-llm` · `function-calling` · `bedrock-agents` · `transactional-bot` · `identity-verification` · `slot-hold` · `slot-search` · `visit-type-mapping` · `fhir-scheduling` · `ehr-integration` · `intent-classification` · `scope-containment` · `crisis-detection` · `prompt-injection-defense` · `prompt-versioning` · `persona-design` · `multilingual` · `accessibility` · `equity-monitoring` · `cohort-stratified-accuracy` · `bedrock` · `bedrock-knowledge-bases` · `bedrock-guardrails` · `comprehend-medical` · `lambda` · `api-gateway` · `waf` · `dynamodb` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `eventbridge` · `kinesis-firehose` · `glue` · `athena` · `connect` · `lex` · `hipaa` · `phi-handling` · `audit-trail` · `booking-completion-rate` · `chapter11` · `recipe-11-2`
+`conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `equity-monitoring` · `privacy` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `bedrock` · `bedrock-agents`
 
 ---
 

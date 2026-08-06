@@ -180,7 +180,7 @@ The part that took me the longest to internalize is that this is fundamentally a
 
 ## Tags
 
-`time-series` · `census-forecasting` · `hospital-operations` · `bed-management` · `survival-analysis` · `monte-carlo` · `poisson-regression` · `negative-binomial` · `xgboost-survival` · `deepar` · `healthlake` · `fhir` · `adt` · `sagemaker` · `dynamodb` · `step-functions` · `hipaa` · `ed-boarding` · `or-scheduling`
+`forecasting` · `survival-analysis` · `time-series` · `monte-carlo` · `capacity-management` · `hospital-operations` · `adt` · `fhir` · `hipaa` · `dynamodb` · `healthlake` · `sagemaker` · `step-functions`
 
 ---
 

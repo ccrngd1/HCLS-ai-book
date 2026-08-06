@@ -452,7 +452,7 @@ The last thing, because it matters here even more than in the other recipes in t
 
 ## Tags
 
-`speech-voice-ai` · `voice-navigation` · `voice-command` · `ehr-integration` · `smart-on-fhir` · `streaming-asr` · `intent-classification` · `slot-extraction` · `push-to-talk` · `wake-word` · `hands-free-clinical` · `read-write-boundary` · `confirmation-flow` · `disambiguation` · `patient-slot-resolution` · `vocabulary-biasing` · `confidence-thresholding` · `session-state` · `context-resolution` · `clinical-workflow` · `clinician-burden-reduction` · `transcribe-streaming` · `transcribe-medical` · `lex` · `bedrock` · `lambda` · `api-gateway` · `cognito` · `dynamodb` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `eventbridge` · `kinesis-firehose` · `glue` · `athena` · `quicksight` · `hipaa` · `phi-handling` · `audit-trail` · `equity-monitoring` · `multilingual-asr`
+`speech-voice-ai` · `confidence-thresholding` · `intent-classification` · `streaming-asr` · `clinical-documentation` · `ehr-integration` · `multilingual` · `smart-on-fhir` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `bedrock` · `lambda` · `lex` · `transcribe-medical`
 
 ---
 

@@ -114,7 +114,7 @@ The part that surprised me: front-of-card processing gets you maybe 70% of what 
 
 ## Tags
 
-`document-intelligence` · `ocr` · `textract` · `forms` · `insurance-card` · `point-of-care` · `lambda` · `s3` · `dynamodb` · `hipaa`
+`document-intelligence` · `ocr` · `hipaa` · `dynamodb` · `lambda` · `s3` · `textract`
 
 ---
 

@@ -336,7 +336,7 @@ The moral tension: FWA work involves accusing people, sometimes wrongly. A wrong
 
 ## Tags
 
-`anomaly-detection` · `fraud-detection` · `payment-integrity` · `siu` · `upcoding` · `unbundling` · `phantom-billing` · `kickbacks` · `collusive-networks` · `graph-analytics` · `community-detection` · `gnn` · `neptune` · `isolation-forest` · `cusum` · `sagemaker` · `feature-store` · `clarify` · `opensearch` · `knn-vector-search` · `dynamodb` · `bedrock` · `comprehend-medical` · `clean-rooms` · `cci` · `mue` · `leie` · `stark-law` · `anti-kickback` · `false-claims-act` · `hipaa` · `payer` · `provider`
+`anomaly-detection` · `knowledge-graph` · `gnn` · `statistical-process-control` · `payer` · `payment-integrity` · `provider` · `hipaa` · `feature-store` · `bedrock` · `comprehend-medical` · `dynamodb` · `neptune` · `opensearch` · `sagemaker` · `sagemaker-clarify`
 
 ---
 

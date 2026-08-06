@@ -144,3 +144,9 @@ One more thing: don't underestimate the specialty hierarchy. "Cardiology" means 
 ---
 
 **Tags:** `knowledge-graph`, `provider-directory`, `graph-database`, `provider-search`, `network-adequacy`, `healthcare-directory`, `ontology`, `taxonomy`
+
+---
+
+## Tags
+
+`entity-resolution` · `knowledge-graph` · `network-adequacy` · `provider` · `provider-directory` · `graph-database` · `api-gateway` · `eventbridge` · `glue` · `lambda` · `neptune` · `opensearch`

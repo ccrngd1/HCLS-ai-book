@@ -175,7 +175,7 @@ The intervention matching is where the value lives, and it's where most projects
 
 ## Tags
 
-`cohort-analysis` · `clustering` · `sdoh` · `social-determinants` · `nlp` · `phenotyping` · `comprehend-medical` · `sagemaker` · `glue` · `equity` · `population-health` · `hipaa`
+`clustering` · `nlp` · `phenotyping` · `population-health` · `sdoh` · `equity-monitoring` · `hipaa` · `comprehend-medical` · `glue` · `sagemaker`
 
 ---
 

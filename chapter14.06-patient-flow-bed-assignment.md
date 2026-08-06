@@ -161,7 +161,7 @@ Here's what I've learned about bed assignment optimization that the vendor demos
 
 ## Tags
 
-`optimization` `operations-research` `patient-flow` `bed-management` `real-time` `constraint-programming` `mixed-integer-programming` `hospital-operations` `capacity-management` `ED-boarding`
+`optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `capacity-management` · `hospital-operations` · `real-time`
 
 ---
 

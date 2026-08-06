@@ -373,7 +373,7 @@ Last point, because it's specific to this use case: care gaps are not the same a
 
 ## Tags
 
-`personalization` · `recommendation` · `care-gap-prioritization` · `hedis` · `quality-measures` · `cms-stars` · `clinical-urgency-modeling` · `visit-context-ranking` · `closure-tracking` · `multi-source-reconciliation` · `equity` · `cohort-analysis` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `healthlake` · `hipaa`
+`clustering` · `entity-resolution` · `personalization` · `recommendation` · `quality-measures` · `hedis` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `healthlake` · `lambda` · `sagemaker` · `step-functions`
 
 ---
 

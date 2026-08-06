@@ -606,3 +606,9 @@ Here's what I've learned about chemotherapy scheduling optimization that the tex
 - **Recipe 7.1 (Appointment No-Show Prediction):** No-show models enable overbooking strategies in the scheduling optimizer.
 
 ---
+
+---
+
+## Tags
+
+`optimization` · `constraint-programming` · `operations-research` · `oncology` · `resource-allocation` · `scheduling` · `hipaa` · `api-gateway` · `dynamodb` · `healthlake` · `lambda` · `step-functions`

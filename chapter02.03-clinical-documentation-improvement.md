@@ -117,7 +117,7 @@ One more thing: the financial ROI on CDI is easy to measure (compare DRG weights
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `rag` · `cdi` · `clinical-documentation` · `coding` · `icd-10` · `knowledge-bases` · `hipaa` · `lambda` · `dynamodb`
+`generative-ai` · `llm` · `rag` · `clinical-documentation` · `icd-10` · `hipaa` · `bedrock` · `bedrock-knowledge-bases` · `dynamodb` · `lambda`
 
 ---
 

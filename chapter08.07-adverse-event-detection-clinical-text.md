@@ -156,7 +156,7 @@ One thing that surprised me: the highest-value outputs weren't the individual hi
 
 ## Tags
 
-`nlp`, `adverse-events`, `pharmacovigilance`, `patient-safety`, `relation-extraction`, `clinical-text`, `surveillance`, `drug-safety`
+`nlp` · `relation-extraction` · `patient-safety` · `public-health-surveillance` · `clinical-notes`
 
 ---
 

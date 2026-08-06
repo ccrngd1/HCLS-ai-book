@@ -195,7 +195,7 @@ Finally: the forecast is the conversation, not the artifact. A forecast that is 
 
 ## Tags
 
-`time-series` · `epidemic-forecasting` · `public-health` · `surveillance` · `compartmental-models` · `seir` · `bayesian-hierarchical` · `state-space-models` · `nowcasting` · `wastewater-surveillance` · `syndromic-surveillance` · `ensemble-forecasting` · `weighted-interval-score` · `calibration-monitoring` · `scenario-forecasting` · `respiratory-virus` · `flu` · `rsv` · `sars-cov-2` · `kinesis` · `glue` · `sagemaker` · `step-functions` · `dynamodb` · `aurora` · `quicksight` · `hipaa`
+`time-series` · `bayesian-hierarchical` · `calibration` · `public-health-surveillance` · `hipaa` · `dynamodb` · `glue` · `kinesis` · `quicksight` · `sagemaker` · `step-functions`
 
 ---
 

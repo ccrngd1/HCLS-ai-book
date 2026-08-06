@@ -199,7 +199,7 @@ There's a bigger opportunity hiding in this use case, too. The AVS is the visibl
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `healthlake` · `comprehend-medical` · `after-visit-summary` · `patient-facing` · `grounded-generation` · `health-literacy` · `plain-language` · `multilingual` · `readability` · `guardrails` · `medium-complexity` · `hipaa` · `fhir` · `smart-on-fhir`
+`generative-ai` · `llm` · `patient-engagement` · `fhir` · `multilingual` · `smart-on-fhir` · `health-literacy` · `hipaa` · `bedrock-guardrails` · `grounded-generation` · `bedrock` · `comprehend-medical` · `healthlake`
 
 ---
 

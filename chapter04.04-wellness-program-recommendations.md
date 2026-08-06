@@ -286,7 +286,7 @@ Last point, because it's specific to this use case: members are people, and well
 
 ## Tags
 
-`personalization` · `recommendation` · `uplift-modeling` · `causal-inference` · `capacity-allocation` · `wellness` · `behavior-change` · `equity` · `cohort-analysis` · `bedrock` · `sagemaker` · `feature-store` · `dynamodb` · `step-functions` · `lambda` · `hipaa`
+`clustering` · `causal-inference` · `personalization` · `recommendation` · `uplift-modeling` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `lambda` · `sagemaker` · `step-functions`
 
 ---
 

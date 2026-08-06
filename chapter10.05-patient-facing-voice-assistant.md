@@ -508,7 +508,7 @@ The patient-facing voice assistant is the recipe in this chapter where the opera
 
 ## Tags
 
-`speech-voice-ai` · `patient-facing` · `voice-assistant` · `conversational-ai` · `patient-engagement` · `contact-center` · `telephony` · `mobile-app` · `smart-speaker` · `multi-channel` · `intent-classification` · `slot-filling` · `dialog-management` · `rag-pattern` · `knowledge-base` · `identity-verification` · `otp-step-up` · `caregiver-proxy` · `crisis-detection` · `scope-containment` · `warm-handoff` · `equity-monitoring` · `cohort-stratified-accuracy` · `multilingual` · `recording-consent` · `tcpa` · `bipa` · `accessibility` · `older-patients` · `connect` · `lex` · `bedrock` · `bedrock-knowledge-bases` · `bedrock-guardrails` · `comprehend-medical` · `transcribe` · `polly` · `pinpoint` · `lambda` · `step-functions` · `api-gateway` · `cognito` · `dynamodb` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `eventbridge` · `kinesis-firehose` · `glue` · `athena` · `quicksight` · `hipaa` · `phi-handling` · `audit-trail` · `containment-rate` · `escalation-rate`
+`conversational-ai` · `rag` · `speech-voice-ai` · `intent-classification` · `crisis-detection` · `patient-engagement` · `multilingual` · `consent-management` · `equity-monitoring` · `privacy` · `bedrock-guardrails` · `scope-containment` · `warm-handoff` · `bedrock-knowledge-bases` · `connect` · `lex`
 
 ---
 

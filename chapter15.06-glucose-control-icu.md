@@ -115,3 +115,9 @@ Clinician trust is the deployment bottleneck, not model accuracy. Even if your O
 - **Recipe 15.1 (Alert Threshold Optimization):** A simpler RL application that shares the offline learning and safety constraint patterns in a lower-stakes setting.
 
 ---
+
+---
+
+## Tags
+
+`reinforcement-learning` · `off-policy-evaluation` · `icu` · `vital-signs` · `human-in-the-loop` · `safety-constraints` · `clinical-validation` · `dynamodb` · `lambda` · `sagemaker` · `step-functions`

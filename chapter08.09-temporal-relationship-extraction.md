@@ -167,7 +167,7 @@ My honest recommendation: if your use case is building a visual timeline for cli
 
 ## Tags
 
-`nlp` · `temporal-reasoning` · `timeline` · `clinical-events` · `relation-extraction` · `comprehend-medical` · `comprehend-custom` · `neptune` · `hipaa` · `research`
+`nlp` · `relation-extraction` · `hipaa` · `comprehend-medical` · `neptune`
 
 ---
 

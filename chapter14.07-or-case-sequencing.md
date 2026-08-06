@@ -146,7 +146,7 @@ The thing that surprised me most: the constraint that causes the most infeasibil
 
 ## Tags
 
-`optimization` · `operations-research` · `scheduling` · `constraint-programming` · `mixed-integer-programming` · `operating-room` · `surgical` · `real-time` · `ecs-fargate` · `eventbridge` · `dynamodb` · `hipaa`
+`optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `scheduling` · `hipaa` · `real-time` · `dynamodb` · `eventbridge`
 
 ---
 

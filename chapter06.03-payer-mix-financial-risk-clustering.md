@@ -142,7 +142,7 @@ One more thing: don't over-index on the algorithm. K-Means with well-engineered 
 
 ## Tags
 
-`cohort-analysis` · `clustering` · `k-means` · `payer-mix` · `financial-risk` · `revenue-cycle` · `sagemaker` · `glue` · `athena` · `quicksight` · `population-health` · `hipaa`
+`clustering` · `k-means` · `payer` · `population-health` · `revenue-cycle` · `hipaa` · `athena` · `glue` · `quicksight` · `sagemaker`
 
 ---
 

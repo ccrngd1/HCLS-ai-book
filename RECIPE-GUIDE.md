@@ -96,7 +96,17 @@ that decorative ratings in titles duplicate this field.
 
 **Related Recipes.** Cross-references by recipe number with one-line descriptions.
 
-**Tags.** Searchable labels.
+**Tags.** Searchable labels drawn from a controlled vocabulary in
+`tag-vocabulary.json`. Only canonical tags may be used; add a new one to that
+file rather than inventing it inline, and cap a recipe at 16.
+
+This matters because it was got wrong once. Before the vocabulary existed there
+were 1,432 distinct tags, 75% of them used exactly once, and per-recipe counts
+ranged from 6 to 106. A tag used once connects nothing, so three quarters of the
+vocabulary was dead weight. That is what per-recipe tagging without a shared list
+produces. Tags are stripped from the print edition, so they serve digital
+discovery only, which is exactly why every tag needs to appear on more than one
+recipe to be worth carrying.
 
 **Navigation.** Footer links to previous recipe, chapter preface, and next recipe.
 

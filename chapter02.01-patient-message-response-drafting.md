@@ -139,7 +139,7 @@ One more thing: resist the temptation to expand scope. "If it works for refill r
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `patient-messaging` · `clinical-communication` · `human-in-the-loop` · `guardrails` · `lambda` · `dynamodb` · `hipaa`
+`generative-ai` · `llm` · `human-in-the-loop` · `hipaa` · `bedrock-guardrails` · `bedrock` · `dynamodb` · `lambda`
 
 ---
 

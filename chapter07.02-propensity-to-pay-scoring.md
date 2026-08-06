@@ -121,7 +121,7 @@ That said, here's what will surprise you:
 
 ## Tags
 
-`predictive-analytics` · `risk-scoring` · `revenue-cycle` · `propensity-to-pay` · `binary-classification` · `xgboost` · `sagemaker` · `batch-transform` · `calibration` · `fairness` · `hipaa`
+`classification` · `predictive-analytics` · `calibration` · `revenue-cycle` · `equity-monitoring` · `hipaa` · `sagemaker`
 
 ---
 

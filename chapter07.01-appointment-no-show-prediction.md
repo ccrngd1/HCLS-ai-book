@@ -120,3 +120,9 @@ Retraining frequency matters more than you'd think. Patient populations shift. N
 ---
 
 | [← Chapter 7 Index](chapter07-preface) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.2 →](chapter07.02-propensity-to-pay-scoring) |
+
+---
+
+## Tags
+
+`classification` · `predictive-analytics` · `calibration` · `patient-engagement` · `scheduling` · `hipaa` · `dynamodb` · `eventbridge` · `glue` · `lambda` · `sagemaker`

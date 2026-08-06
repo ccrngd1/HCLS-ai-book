@@ -123,7 +123,7 @@ Finally: the explanation matters as much as the detection. Clinicians are patter
 
 ## Tags
 
-`time-series` · `lab-results` · `loinc` · `ucum` · `trend-analysis` · `change-point-detection` · `kalman-filter` · `mann-kendall` · `theil-sen` · `cds-hooks` · `healthlake` · `fhir` · `sagemaker` · `dynamodb` · `step-functions` · `hipaa` · `chronic-disease` · `ckd` · `diabetes`
+`time-series` · `chronic-disease` · `ehr-integration` · `fhir` · `loinc` · `hipaa` · `dynamodb` · `healthlake` · `sagemaker` · `step-functions`
 
 ---
 

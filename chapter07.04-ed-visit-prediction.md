@@ -124,7 +124,7 @@ The "preventable" question never goes away. Stakeholders will always ask "what p
 
 ## Tags
 
-`predictive-analytics` · `risk-scoring` · `emergency-department` · `ed-prediction` · `gradient-boosted-trees` · `xgboost` · `sagemaker` · `batch-transform` · `glue` · `step-functions` · `care-management` · `population-health` · `medium-complexity` · `hipaa`
+`predictive-analytics` · `emergency-department` · `care-management` · `population-health` · `hipaa` · `glue` · `sagemaker` · `step-functions`
 
 ---
 

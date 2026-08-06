@@ -138,7 +138,7 @@ One more thing: the 75% utilization target that every hospital uses as a benchma
 
 ## Tags
 
-`optimization` `operations-research` `mixed-integer-programming` `scheduling` `operating-room` `block-scheduling` `resource-allocation` `aws-batch` `dynamodb` `sagemaker` `eventbridge` `hipaa` `medium-complexity`
+`optimization` · `mixed-integer-programming` · `operations-research` · `resource-allocation` · `scheduling` · `hipaa` · `aws-batch` · `dynamodb` · `eventbridge` · `sagemaker`
 
 ---
 

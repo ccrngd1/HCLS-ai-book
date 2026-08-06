@@ -164,7 +164,7 @@ One more thing: publication bias in this space is severe. The papers that get pu
 
 ## Tags
 
-`cohort-analysis` · `clustering` · `unsupervised-learning` · `disease-subtype` · `precision-medicine` · `sagemaker` · `pca` · `consensus-clustering` · `clinical-validation` · `research` · `hipaa`
+`clustering` · `unsupervised-learning` · `precision-medicine` · `hipaa` · `clinical-validation` · `sagemaker`
 
 ---
 

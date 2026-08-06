@@ -421,7 +421,7 @@ Last point, because it is specific to the use case: the deceased-patient-resolut
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `deceased-patient-resolution` · `record-reconciliation` · `death-event-matching` · `multi-source-reconciliation` · `ssa-dmf` · `ladmf` · `vital-records` · `vrdr` · `state-vital-records-feeds` · `payer-death-feeds` · `hospice-deaths` · `family-reported-deaths` · `obituary-feeds` · `provider-reported-deaths` · `claims-cessation-inferences` · `premature-death-report-reversal` · `hidden-duplicate-revelation` · `date-of-death-conflict-resolution` · `cross-system-cascade-propagation` · `appointment-cancellation` · `prescription-disposition` · `billing-episode-closure` · `bereavement-aware-communications` · `personal-representative-framework` · `hipaa-posthumous-protection` · `50-year-retention` · `multi-decade-archival` · `cross-jurisdictional-posthumous-overlay` · `family-correspondence-after-death-monitoring` · `event-driven` · `hipaa` · `equity-monitoring` · `family-experience` · `institutional-dignity`
+`entity-resolution` · `equity-monitoring` · `hipaa` · `event-driven`
 
 ---
 

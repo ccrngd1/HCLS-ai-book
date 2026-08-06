@@ -138,7 +138,7 @@ One more thing: Comprehend Medical's built-in negation detection is better than 
 
 ## Tags
 
-`nlp` · `assertion` · `negation` · `clinical-text` · `comprehend-medical` · `sagemaker` · `entity-classification` · `hipaa` · `clinical-decision-support`
+`nlp` · `negation` · `clinical-decision-support` · `clinical-notes` · `hipaa` · `comprehend-medical` · `sagemaker`
 
 ---
 

@@ -585,7 +585,7 @@ What I'd do differently if starting over: spend the first 6 months on the simula
 
 ## Tags
 
-`reinforcement-learning` `resource-allocation` `hospital-operations` `capacity-management` `decision-support` `simulation` `offline-rl` `constrained-mdp` `bed-management` `staffing`
+`reinforcement-learning` · `simulation` · `clinical-decision-support` · `capacity-management` · `hospital-operations` · `resource-allocation` · `staffing`
 
 ---
 

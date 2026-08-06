@@ -135,7 +135,7 @@ Start with a single condition (diabetes is the classic choice: large population,
 
 ## Tags
 
-`cohort-analysis` · `patient-similarity` · `knn` · `nearest-neighbor` · `care-planning` · `feature-engineering` · `clinical-decision-support` · `embeddings`
+`clustering` · `embeddings` · `clinical-decision-support`
 
 ---
 

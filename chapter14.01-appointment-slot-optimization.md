@@ -145,7 +145,7 @@ Start with one willing provider. Show results. Let word spread. Mandating optimi
 
 ## Tags
 
-`optimization` · `operations-research` · `scheduling` · `appointment-template` · `constraint-programming` · `mixed-integer-programming` · `simulation` · `sagemaker` · `step-functions` · `hipaa`
+`optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `simulation` · `scheduling` · `hipaa` · `sagemaker` · `step-functions`
 
 ---
 

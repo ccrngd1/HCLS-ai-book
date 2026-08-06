@@ -205,7 +205,7 @@ That said, here's what will humble you:
 
 ## Tags
 
-`cohort-analysis` · `clustering` · `k-means` · `utilization` · `population-health` · `segmentation` · `sagemaker` · `batch-analytics` · `hipaa`
+`clustering` · `k-means` · `population-health` · `hipaa` · `sagemaker`
 
 ---
 

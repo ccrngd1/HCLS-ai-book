@@ -141,7 +141,7 @@ If I were starting over, I'd spend less time optimizing the mining algorithms an
 
 ## Tags
 
-`cohort-analysis` · `clustering` · `multi-morbidity` · `association-mining` · `network-analysis` · `temporal-patterns` · `population-health` · `comorbidity`
+`clustering` · `population-health`
 
 ---
 

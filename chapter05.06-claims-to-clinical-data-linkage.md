@@ -421,7 +421,7 @@ Last point, because it is specific to the regulatory context: information-blocki
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `claims-to-clinical` · `claims-clinical-linkage` · `omop` · `omop-cdm` · `pcornet` · `sentinel` · `fhir` · `explanationofbenefit` · `x12` · `837` · `835` · `ncpdp` · `vocabulary-mapping` · `cpt` · `hcpcs` · `icd-10` · `ndc` · `rxnorm` · `loinc` · `revenue-codes` · `drg` · `hcc` · `risk-adjustment` · `quality-measurement` · `outcomes-research` · `real-world-evidence` · `glue` · `spark` · `dynamodb` · `athena` · `lake-formation` · `healthlake` · `eventbridge` · `step-functions` · `event-driven` · `hipaa` · `information-blocking` · `cures-act`
+`entity-resolution` · `statistical-process-control` · `cpt` · `fhir` · `icd-10` · `ncpdp` · `x12` · `cures-act` · `information-blocking` · `hipaa` · `event-driven` · `athena` · `dynamodb` · `glue` · `healthlake` · `lake-formation`
 
 ---
 

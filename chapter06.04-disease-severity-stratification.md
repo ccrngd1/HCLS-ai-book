@@ -135,7 +135,7 @@ One more thing to keep in mind. Tier assignments are not destiny; they're a snap
 
 ## Tags
 
-`clustering` `k-means` `severity-stratification` `chronic-disease` `population-health` `care-management` `cohort-analysis` `unsupervised-learning`
+`clustering` · `k-means` · `unsupervised-learning` · `chronic-disease` · `care-management` · `population-health`
 
 ---
 

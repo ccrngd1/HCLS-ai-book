@@ -139,7 +139,7 @@ Start with the basic model. Get the data pipeline right. Prove value on a subset
 
 ## Tags
 
-`optimization` · `operations-research` · `inventory` · `supply-chain` · `mip` · `mixed-integer-programming` · `demand-forecasting` · `sagemaker` · `step-functions` · `ecs` · `dynamodb` · `healthcare-operations`
+`forecasting` · `optimization` · `mixed-integer-programming` · `operations-research` · `inventory` · `supply-chain` · `dynamodb` · `sagemaker` · `step-functions`
 
 ---
 

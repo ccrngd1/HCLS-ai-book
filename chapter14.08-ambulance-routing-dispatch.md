@@ -179,3 +179,9 @@ The dispatch scoring function is the easy part. Seriously. You can get a working
 ---
 
 | [← 14.7: OR Case Sequencing](chapter14.07-or-case-sequencing) | [Chapter 14 Index](chapter14-preface) | [14.9: Chemotherapy Scheduling →](chapter14.09-chemotherapy-scheduling) |
+
+---
+
+## Tags
+
+`optimization` · `operations-research` · `emergency-department` · `resource-allocation` · `real-time` · `geospatial` · `api-gateway` · `dynamodb` · `eventbridge` · `lambda` · `sagemaker` · `step-functions`

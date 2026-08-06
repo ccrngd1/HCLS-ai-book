@@ -110,7 +110,7 @@ The comparison to curated databases is unfair but inevitable. Stakeholders will 
 
 ## Tags
 
-`knowledge-graph` · `nlp` · `relation-extraction` · `biomedical-literature` · `neptune` · `comprehend-medical` · `sagemaker` · `evidence-grading` · `entity-normalization` · `pubmed` · `research` · `pharmacogenomics` · `drug-discovery`
+`knowledge-graph` · `nlp` · `rag` · `relation-extraction` · `precision-medicine` · `provenance` · `comprehend-medical` · `neptune` · `sagemaker`
 
 ---
 

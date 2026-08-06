@@ -183,7 +183,7 @@ Finally: don't try to automate the whole thing. The physician signature is load-
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `rag` · `prior-authorization` · `medical-necessity` · `grounded-generation` · `knowledge-bases` · `healthlake` · `step-functions` · `medium-complexity` · `hipaa` · `fhir` · `davinci-pas`
+`generative-ai` · `llm` · `rag` · `prior-authorization` · `fhir` · `hipaa` · `grounded-generation` · `bedrock` · `bedrock-knowledge-bases` · `healthlake` · `step-functions`
 
 ---
 

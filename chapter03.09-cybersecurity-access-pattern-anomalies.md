@@ -346,7 +346,7 @@ Patients matter most, even when they're invisible in the operational workflow. T
 
 ## Tags
 
-`anomaly-detection` · `cybersecurity` · `access-monitoring` · `insider-threat` · `ueba` · `user-behavior-analytics` · `patient-privacy-monitoring` · `audit-log-analysis` · `ehr-audit` · `hipaa-security-rule` · `audit-controls` · `breach-notification` · `vip-access` · `same-name-detection` · `break-glass` · `credential-compromise` · `graph-analytics` · `neptune` · `relationship-graph` · `gnn` · `xgboost` · `isolation-forest` · `autoencoder` · `sequence-model` · `lstm` · `feature-store` · `clarify` · `model-monitor` · `bedrock` · `comprehend-medical` · `kinesis` · `timestream` · `dynamodb` · `opensearch` · `eventbridge` · `sagemaker` · `appsync` · `step-functions` · `siem` · `splunk` · `sentinel` · `privacy-office` · `infosec` · `case-management` · `subgroup-performance` · `equity` · `workforce-monitoring` · `acceptable-use-policy` · `calibration` · `shap` · `peer-group-baselines` · `cold-start` · `hipaa` · `compliance`
+`anomaly-detection` · `knowledge-graph` · `predictive-analytics` · `time-series` · `calibration` · `explainability` · `gnn` · `statistical-process-control` · `care-management` · `equity-monitoring` · `hipaa` · `regulatory-strategy` · `feature-store` · `neptune` · `sagemaker-clarify` · `sagemaker-model-monitor`
 
 ---
 

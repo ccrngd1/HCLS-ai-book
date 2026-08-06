@@ -129,7 +129,7 @@ One more thing: deploy in shadow mode first. Generate recommendations without su
 
 ## Tags
 
-`predictive-analytics` · `risk-scoring` · `survival-analysis` · `intervention-timing` · `causal-inference` · `sagemaker` · `kinesis` · `glue` · `dynamodb` · `research` · `longitudinal` · `care-management` · `population-health` · `hipaa`
+`causal-inference` · `predictive-analytics` · `survival-analysis` · `care-management` · `population-health` · `longitudinal` · `hipaa` · `dynamodb` · `glue` · `kinesis` · `sagemaker`
 
 ---
 

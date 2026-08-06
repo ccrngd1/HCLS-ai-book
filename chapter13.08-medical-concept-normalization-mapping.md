@@ -140,7 +140,7 @@ One more thing: licensing. UMLS requires a free license from NLM. SNOMED CT is f
 
 ## Tags
 
-`knowledge-graph` · `terminology` · `normalization` · `snomed` · `icd-10` · `loinc` · `rxnorm` · `umls` · `neptune` · `mapping` · `interoperability` · `hipaa`
+`knowledge-graph` · `structured-extraction` · `icd-10` · `interoperability` · `loinc` · `rxnorm` · `snomed` · `hipaa` · `neptune`
 
 ---
 

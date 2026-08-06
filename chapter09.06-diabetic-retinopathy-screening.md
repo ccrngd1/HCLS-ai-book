@@ -112,7 +112,7 @@ Lastly, the patients who most need screening (uncontrolled diabetes, multiple co
 
 ## Tags
 
-`computer-vision` `medical-imaging` `diabetic-retinopathy` `screening` `deep-learning` `classification` `sagemaker` `fda-regulated` `population-health` `ophthalmology` `fundus-photography`
+`classification` · `computer-vision` · `cnn` · `medical-imaging` · `population-health` · `fda-pathway` · `sagemaker`
 
 ---
 

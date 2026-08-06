@@ -144,7 +144,7 @@ Here's what I've learned about wound measurement systems:
 
 ## Tags
 
-`computer-vision` `image-segmentation` `wound-care` `measurement` `u-net` `sagemaker` `longitudinal-tracking` `nursing` `home-health` `chronic-wounds` `hipaa`
+`computer-vision` · `hipaa` · `sagemaker`
 
 ---
 

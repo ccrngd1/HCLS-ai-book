@@ -154,7 +154,7 @@ Not all interactions are created equal, and your graph needs to represent this. 
 
 ## Tags
 
-`knowledge-graph` `drug-interactions` `clinical-decision-support` `pharmacology` `neptune` `patient-safety` `alert-fatigue` `rxnorm` `drugbank` `cpoe` `pharmacy`
+`knowledge-graph` · `clinical-decision-support` · `patient-safety` · `pharmacy` · `rxnorm` · `alert-fatigue` · `neptune`
 
 ---
 

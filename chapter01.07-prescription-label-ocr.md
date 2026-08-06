@@ -158,7 +158,7 @@ The thing I didn't anticipate building the first version of this: days supply is
 
 ## Tags
 
-`document-intelligence` · `ocr` · `textract` · `comprehend-medical` · `rxnorm` · `ndc` · `prescription` · `medication` · `pharmacy` · `sig-codes` · `lambda` · `s3` · `dynamodb` · `hipaa`
+`document-intelligence` · `ocr` · `pharmacy` · `ndc` · `rxnorm` · `hipaa` · `comprehend-medical` · `dynamodb` · `lambda` · `s3` · `textract`
 
 ---
 

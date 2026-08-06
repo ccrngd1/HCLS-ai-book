@@ -124,7 +124,7 @@ One more honest admission: most managed medical NER services impose a character 
 
 ## Tags
 
-`nlp` · `ner` · `medications` · `rxnorm` · `comprehend-medical` · `clinical-text` · `normalization` · `lambda` · `s3` · `dynamodb` · `hipaa` · `medication-reconciliation`
+`nlp` · `ner` · `structured-extraction` · `medication-reconciliation` · `clinical-notes` · `rxnorm` · `hipaa` · `comprehend-medical` · `dynamodb` · `lambda` · `s3`
 
 ---
 

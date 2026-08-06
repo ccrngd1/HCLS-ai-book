@@ -113,7 +113,7 @@ The part that's genuinely hard: explaining to a CFO why the forecast missed badl
 
 ## Tags
 
-`time-series` · `forecasting` · `prophet` · `deepar` · `sagemaker` · `s3` · `dynamodb` · `step-functions` · `appointment-volume` · `staffing` · `hipaa`
+`forecasting` · `time-series` · `staffing` · `hipaa` · `dynamodb` · `s3` · `sagemaker` · `step-functions`
 
 ---
 

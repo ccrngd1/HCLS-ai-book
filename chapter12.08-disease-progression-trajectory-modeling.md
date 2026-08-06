@@ -153,7 +153,7 @@ Finally: the explanation matters even more than in lab trend analysis, because t
 
 ## Tags
 
-`time-series` · `disease-progression` · `trajectory-modeling` · `mixed-effects` · `bayesian-hierarchical` · `joint-models` · `survival-analysis` · `counterfactual` · `causal-inference` · `chronic-disease` · `ckd` · `adpkd` · `oncology` · `neurodegenerative` · `cohort-definition` · `calibration-monitoring` · `clinical-decision-support` · `cds-hooks` · `healthlake` · `sagemaker` · `dynamodb` · `step-functions` · `hipaa` · `samd`
+`causal-inference` · `survival-analysis` · `time-series` · `bayesian-hierarchical` · `calibration` · `chronic-disease` · `clinical-decision-support` · `oncology` · `ehr-integration` · `longitudinal` · `fda-pathway` · `hipaa` · `dynamodb` · `healthlake` · `sagemaker` · `step-functions`
 
 ---
 

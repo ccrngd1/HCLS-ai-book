@@ -158,7 +158,7 @@ One more thing: the gap between "what the formulary file says" and "what the PBM
 
 ## Tags
 
-`knowledge-graph` · `neptune` · `formulary` · `pharmacy` · `drug-alternatives` · `opencypher` · `graph-database` · `elasticache` · `hipaa`
+`knowledge-graph` · `pharmacy` · `hipaa` · `graph-database` · `elasticache` · `neptune`
 
 ---
 

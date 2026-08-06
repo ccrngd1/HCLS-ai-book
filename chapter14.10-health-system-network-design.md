@@ -149,7 +149,7 @@ One more thing: don't try to solve the whole problem at once on your first itera
 
 ## Tags
 
-`optimization` · `facility-location` · `network-design` · `mixed-integer-programming` · `capital-allocation` · `demand-forecasting` · `gravity-model` · `scenario-analysis` · `sagemaker` · `step-functions` · `quicksight` · `hipaa`
+`forecasting` · `optimization` · `mixed-integer-programming` · `hipaa` · `quicksight` · `sagemaker` · `step-functions`
 
 ---
 

@@ -130,3 +130,9 @@ This deserves its own subsection because it's easy to ship an optimizer that "wo
 **Tags:** `optimization` · `operations-research` · `panel-management` · `assignment-problem` · `integer-programming` · `primary-care` · `patient-matching`
 
 ---
+
+---
+
+## Tags
+
+`optimization` · `mixed-integer-programming` · `operations-research` · `care-management` · `provider` · `scheduling` · `hipaa` · `dynamodb` · `eventbridge` · `lambda` · `sagemaker` · `step-functions`

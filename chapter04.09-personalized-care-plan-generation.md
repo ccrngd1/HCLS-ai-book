@@ -187,7 +187,7 @@ A note about patient engagement. The patient-facing narrative is the surface are
 
 ## Tags
 
-`personalization` · `care-plan-generation` · `multi-condition-reconciliation` · `goals-of-care` · `therapeutic-burden` · `polypharmacy` · `deprescribing` · `equity` · `cohort-analysis` · `fhir` · `careplan-resource` · `clinical-decision-support` · `smart-on-fhir` · `bedrock` · `dynamodb` · `feature-store` · `step-functions` · `lambda` · `pinpoint` · `healthlake` · `hipaa`
+`clustering` · `personalization` · `clinical-decision-support` · `fhir` · `smart-on-fhir` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `healthlake` · `lambda` · `pinpoint` · `step-functions`
 
 ---
 

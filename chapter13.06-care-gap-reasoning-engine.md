@@ -115,7 +115,7 @@ The part that surprised me most: the condition hierarchy mapping is never "done.
 
 ## Tags
 
-`knowledge-graph` · `ontology` · `care-gaps` · `quality-measures` · `HEDIS` · `reasoning` · `SPARQL` · `population-health` · `value-based-care` · `Neptune`
+`knowledge-graph` · `population-health` · `quality-measures` · `value-based-care` · `hedis` · `ontology` · `graph-database` · `neptune`
 
 ---
 

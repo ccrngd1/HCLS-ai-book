@@ -149,7 +149,7 @@ The part that's genuinely hard to communicate to operations: the prediction inte
 
 ## Tags
 
-`time-series` · `forecasting` · `prophet` · `croston` · `sba` · `deepar` · `sagemaker` · `glue` · `dynamodb` · `step-functions` · `supply-chain` · `inventory` · `reorder-point` · `safety-stock` · `hipaa`
+`forecasting` · `time-series` · `inventory` · `supply-chain` · `hipaa` · `dynamodb` · `glue` · `sagemaker` · `step-functions`
 
 ---
 

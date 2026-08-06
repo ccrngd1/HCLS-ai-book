@@ -168,7 +168,7 @@ If I were starting this project today, I'd begin with a single regimen at a sing
 
 ## Tags
 
-`reinforcement-learning` `offline-rl` `chemotherapy` `oncology` `dose-optimization` `safety-constraints` `clinical-decision-support` `sequential-decisions` `pharmacokinetics` `sagemaker` `research-stage`
+`reinforcement-learning` · `clinical-decision-support` · `oncology` · `safety-constraints` · `sagemaker`
 
 ---
 

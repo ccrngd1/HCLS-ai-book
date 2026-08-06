@@ -142,7 +142,7 @@ Second, model versioning. When you deploy a new model version, decide whether to
 
 ## Tags
 
-`computer-vision` · `video-analysis` · `surgical-ai` · `phase-recognition` · `instrument-detection` · `temporal-modeling` · `sagemaker` · `mediaconvert` · `step-functions` · `opensearch` · `research` · `hipaa` · `gpu`
+`computer-vision` · `hipaa` · `opensearch` · `sagemaker` · `step-functions`
 
 ---
 

@@ -553,7 +553,7 @@ The refill bot is the right third recipe in this chapter, after the FAQ bot and 
 
 ## Tags
 
-`conversational-ai` · `refill-bot` · `prescription-refill` · `medication-management` · `patient-facing` · `patient-engagement` · `digital-front-door` · `tool-using-llm` · `function-calling` · `bedrock-agents` · `transactional-bot` · `identity-verification` · `medication-resolution` · `protocol-as-code` · `prescriber-delegation` · `co-signature-workflow` · `controlled-substance-handling` · `drug-interaction-screening` · `lab-reconciliation` · `e-prescribing` · `surescripts` · `fhir-medicationrequest` · `cds-hooks` · `ehr-integration` · `intent-classification` · `scope-containment` · `crisis-detection` · `prompt-injection-defense` · `prompt-versioning` · `persona-design` · `multilingual` · `accessibility` · `equity-monitoring` · `cohort-stratified-accuracy` · `bedrock` · `bedrock-knowledge-bases` · `bedrock-guardrails` · `comprehend-medical` · `healthlake` · `lambda` · `api-gateway` · `waf` · `dynamodb` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `eventbridge` · `kinesis-firehose` · `glue` · `athena` · `connect` · `hipaa` · `phi-handling` · `audit-trail` · `refill-event-journal` · `chapter11` · `recipe-11-3`
+`conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `clinical-decision-support` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `equity-monitoring` · `privacy` · `prompt-injection-defense` · `scope-containment` · `bedrock` · `bedrock-agents`
 
 ---
 

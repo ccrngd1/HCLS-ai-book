@@ -263,7 +263,7 @@ A final thought: this is one of the highest-value clinical AI categories, bar no
 
 ## Tags
 
-`llm` · `generative-ai` · `bedrock` · `healthscribe` · `transcribe-medical` · `comprehend-medical` · `healthlake` · `ambient-documentation` · `ambient-scribe` · `asr` · `speech-recognition` · `diarization` · `clinical-notes` · `ehr-integration` · `fhir` · `documentation-burnout` · `consent-management` · `grounded-generation` · `hipaa` · `phi` · `provenance`
+`generative-ai` · `llm` · `diarization` · `clinical-documentation` · `clinical-notes` · `ehr-integration` · `fhir` · `consent-management` · `hipaa` · `provenance` · `grounded-generation` · `bedrock` · `comprehend-medical` · `healthlake` · `healthscribe` · `transcribe-medical`
 
 ---
 
