@@ -99,14 +99,49 @@ EOF
 
 Expect Gelasio and DejaVuSansMono subsets, and a non-zero `/FontFile2` count.
 
-## Current interior: 251 pages
+## Appendix B is generated from the recipe tags
+
+`print/tag_index.py` builds Appendix B on every run by reading the `## Tags`
+section of all 152 recipes. It replaced a hand-curated `index-terms.json`, which
+could drift from the text and which pointed at recipe *numbers* only, leaving a
+reader of the printed book with "5.5, 5.8, 5.9" and no page to turn to.
+
+Each entry now gives the **page** for recipes printed in this book, plus the
+recipe numbers covering the same topic in the digital edition.
+
+Two presentation rules, both about the index entry rather than the underlying
+tags, which stay complete on every recipe:
+
+- Tags carried by 40% or more of recipes are named once as pervasive and not
+  enumerated. A tag on most recipes cannot help anyone find anything. Currently:
+  HIPAA, Amazon DynamoDB, Amazon SageMaker, AWS Lambda.
+- The digital-edition list is capped at 12 numbers, then "and N more".
+
+Display names come from a `DISPLAY` map in `tag_index.py`; add an entry there when
+a new tag should not simply be its slug title-cased (for example `s3` renders as
+"Amazon S3").
+
+`index-terms.json` is retained as a fallback: if `tag_index.py` raises, the build
+prints a warning and falls back to the curated index rather than shipping a book
+with no index.
+
+Page numbers come from `build/toc-pagemap.json`, produced by the two-pass render.
+This is stable because the appendices sit at the back, so their own length never
+moves the recipe pages they cite. Verify after a build:
+
+```bash
+python3 print/tag_index.py --stats     # recipe/tag/pagemap counts
+python3 print/tag_index.py | head -20  # inspect the markdown
+```
+
+## Current interior: 254 pages
 
 Rendered with embedded fonts and `--engine markdown-it-py`, 6.00 x 9.00in trim,
 0 reference warnings. This supersedes the 268-page figure recorded at Phase C
 close, which was produced with a substituted system font on another machine and
 is not reproducible.
 
-Spine width at 251 pages: **0.6275in** on cream 60# stock, **0.5653in** on white
+Spine width at 254 pages: **0.6350in** on cream 60# stock, **0.5653in** on white
 50#. Confirm against KDP's calculator for the stock you select, and note the count
 is currently odd, so add a trailing blank if you want the interior to end on a
 verso.

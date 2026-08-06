@@ -421,6 +421,10 @@ def get_md_renderer(prefer: str = "markdown-it-py"):
 
 PRINT_CSS_PATH = os.path.join(HERE, "print.css")
 
+# allow importing sibling modules (tag_index) when run as a script
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
 
 def build_html(sections: list[tuple[str, str]], render, title: str) -> str:
     with open(PRINT_CSS_PATH, encoding="utf-8") as fh:
@@ -537,7 +541,14 @@ def main() -> int:
         _ap = appendix_catalog(man)
         if _ap:
             sections.append(_ap)
-        _ix = appendix_index(man)
+        _ix = None
+        try:
+            import tag_index as _ti
+            _ix = _ti.build(built, man.get("digital_edition_url", ""))
+        except Exception as exc:                        # fall back to the curated index
+            print(f"  [appendix-b] tag index unavailable ({exc}); "
+                  f"using curated index-terms.json", file=sys.stderr)
+            _ix = appendix_index(man)
         if _ix:
             sections.append(_ix)
         book_md = "\n\n<!-- ===== PAGE ===== -->\n\n".join(s[1] for s in sections)
