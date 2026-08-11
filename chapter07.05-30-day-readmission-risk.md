@@ -72,7 +72,7 @@ The features that predict 30-day readmission cluster into several domains:
 
 For readmission prediction, calibration is arguably more important than discrimination. Here's why: your care transition team has finite capacity. If you tell them "these 50 patients are high-risk," they need to trust that those patients genuinely have elevated risk. If your model says "40% readmission probability" but the actual rate for that group is 20%, you're wasting half your intervention capacity on patients who would have been fine anyway.
 
-Calibration asks a simple question; are the predicted numbers actually true? If the model says a group of patients is "20% risk," it's well-calibrated when about 20 out of every 100 of them really are eadmitted. A model can be good at ranking who's higher-risk and still get these numbers wrong. The numbers matter the moment they drive a decision, like who gets an expensive intervention.  Calibration can be corrected after the model is trained, without hurting that ranking. 
+Calibration asks a simple question; are the predicted numbers actually true? If the model says a group of patients is "20% risk," it's well-calibrated when about 20 out of every 100 of them really are readmitted. A model can be good at ranking who's higher-risk and still get these numbers wrong. The numbers matter the moment they drive a decision, like who gets an expensive intervention.  Calibration can be corrected after the model is trained, without hurting that ranking. 
 
 ### Fairness and Bias Considerations
 

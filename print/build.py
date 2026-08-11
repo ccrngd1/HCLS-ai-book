@@ -78,7 +78,13 @@ def resolve_source(recipe: str) -> str | None:
 # --------------------------------------------------------------------------- #
 # Transforms (section 2b)
 # --------------------------------------------------------------------------- #
-NAV_FOOTER_RE = re.compile(r"(?m)^\s*\*\s*\u2190.*?\u2192.*?\*\s*$")
+# Nav footers appear in at least five hand-written shapes: italic-wrapped
+# (*<- ... ->*), a table row (| [<- ...] | ... |), bare links, and a
+# "**Navigation:**" label. Matching only the italic form left 19 footers in the
+# book, one of which printed as live blue links on an external page. Key on the
+# left arrow plus a link to a chapter page, which no prose or diagram line has
+# (verified zero matches inside fenced code blocks across all 152 recipes).
+NAV_FOOTER_RE = re.compile(r"(?m)^.*\u2190.*\]\(chapter[^\n]*$")
 TAGS_RE = re.compile(r"(?ms)\n?##\s+Tags\s*\n.*?(?=\n##\s|\Z)")
 RELATED_RE = re.compile(r"(?ms)^(##\s+Related Recipes)\s*\n(.*?)(?=\n##\s|\Z)")
 ARCH_CALLOUT_RE = re.compile(
@@ -86,6 +92,22 @@ ARCH_CALLOUT_RE = re.compile(
 )
 RECIPE_REF_RE = re.compile(r"Recipe\s+(\d+)\.(\d+)")
 MULTI_RULE_RE = re.compile(r"(?ms)(?:^\s*-{3,}\s*\n\s*){2,}")
+
+
+REL_LINK_RE = re.compile(r"\]\((chapter[0-9][^)\s]*)\)")
+
+
+def absolutise_links(md: str, url: str) -> tuple[str, int]:
+    """Point any surviving relative recipe link at the digital edition.
+
+    Relative markdown links render as file:// annotations in the PDF, which leaks
+    the local build path (username, directory layout) into a document handed to
+    customers. Belt-and-braces behind the nav-footer strip.
+    """
+    base = url.rstrip("/")
+    if not base:
+        return md, 0
+    return REL_LINK_RE.subn(lambda m: f"]({base}/{m.group(1)}.html)", md)
 
 
 def strip_nav_footer(md: str) -> tuple[str, int]:
@@ -191,6 +213,9 @@ def transform_recipe(
         md = md.replace(RELATED_PLACEHOLDER,
                         build_related_pointer(related_orig, recipe_url, url))
     counts["related"] = 1 if related_orig is not None else 0
+    # 4. Any relative recipe link that survived becomes an absolute https target,
+    #    so the PDF cannot carry file:// annotations exposing the build path.
+    md, counts["abs_links"] = absolutise_links(md, url)
     md = collapse_rules(md)
     return md, warns, counts
 
@@ -433,12 +458,46 @@ def build_html(sections: list[tuple[str, str]], render, title: str) -> str:
     for cls, md_text in sections:
         body.append(f'<section class="{cls}">\n{render(md_text)}\n</section>')
     return (
-        "<!doctype html><html><head><meta charset='utf-8'>"
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
         f"<title>{_html.escape(title)}</title>"
         f"<style>{css}</style></head><body>\n"
         + "\n".join(body)
         + "\n</body></html>\n"
     )
+
+
+def set_pdf_metadata(pdf_path: str, man: dict) -> bool:
+    """Replace Chrome's toolchain metadata with real document metadata.
+
+    Chrome writes Creator as a full HeadlessChrome user-agent and Producer as Skia,
+    both visible in any reader's document properties, and leaves Author, Subject and
+    Keywords empty, which hurts catalogue discoverability. Rewrites the Info
+    dictionary in place. Skipped with a warning if pypdf is unavailable.
+    """
+    try:
+        from pypdf import PdfReader, PdfWriter
+    except Exception:
+        print("  [pdf] pypdf not installed; leaving Chrome metadata in place "
+              "(pip install --user pypdf)", file=sys.stderr)
+        return False
+    try:
+        reader = PdfReader(pdf_path)
+        writer = PdfWriter(clone_from=reader)
+        writer.add_metadata({
+            "/Title": man.get("title", ""),
+            "/Author": man.get("author", ""),
+            "/Subject": man.get("subtitle", ""),
+            "/Keywords": "healthcare, artificial intelligence, machine learning, "
+                         "clinical informatics, architecture, HIPAA, AWS",
+            "/Creator": man.get("title", ""),
+            "/Producer": "HCLS AI/ML Cookbook print pipeline",
+        })
+        with open(pdf_path, "wb") as fh:
+            writer.write(fh)
+        return True
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [pdf] metadata step failed ({exc})", file=sys.stderr)
+        return False
 
 
 def render_pdf(html_path: str, pdf_path: str) -> bool:
@@ -460,7 +519,8 @@ def render_pdf(html_path: str, pdf_path: str) -> bool:
             "{waitUntil:'networkidle0',timeout:60000});"
             "await new Promise(r=>setTimeout(r,1500));"
             "await pg.pdf({path:process.argv[3],preferCSSPageSize:true,"
-            "printBackground:true});await b.close();"
+            "printBackground:true,outline:true,tagged:true});"
+            "await b.close();"
             "console.log('PDF written');})().catch(e=>{"
             "console.error('PDF ERROR:',e.message);process.exit(1);});"
         )
@@ -530,12 +590,22 @@ def main() -> int:
     # assemble book.md + book.html (re-callable so the TOC two-pass can rebuild)
     render, engine = get_md_renderer(args.engine)
 
-    def _assemble() -> bool:
+    def _assemble(include_pgm: bool = True) -> bool:
+        """Assemble book.md and book.html.
+
+        include_pgm controls the page-extraction anchors. They are needed on the
+        first render so extract-toc-pages.js can find each chapter's page, but they
+        must not ship: at 1px they are invisible on paper yet remain in the text
+        layer, surfacing in copy-paste, search, screen readers and any EPUB
+        conversion. The anchor is absolutely positioned in print.css, so dropping it
+        cannot shift pagination.
+        """
         sections: list[tuple[str, str]] = []
         sections += front_matter(man, built)
         for b in built:
             _md = re.sub(r"[\u2b50\U0001F536\U0001F537\U0001F3E5\uFE0F]", "", b["md"])
-            _anchor = f'<span class="pgm">PGMK{b["print_chapter"]}ENDPGMK</span>\n\n'
+            _anchor = (f'<span class="pgm">PGMK{b["print_chapter"]}ENDPGMK</span>\n\n'
+                       if include_pgm else "")
             sections.append(("recipe", _anchor + _md))
         sections += back_matter(man, built)
         _ap = appendix_catalog(man)
@@ -601,11 +671,14 @@ def main() -> int:
                     try:
                         subprocess.run([node, extractor], check=True, timeout=120,
                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        _assemble()
+                        _assemble(include_pgm=False)
                         render_pdf(os.path.join(out, "book.html"), pdf)
-                        print("  book.pdf: TOC page numbers applied (two-pass)")
+                        print("  book.pdf: TOC page numbers applied (two-pass); "
+                              "page anchors stripped")
                     except Exception as exc:  # noqa: BLE001
                         print(f"  [toc] page-number pass skipped ({exc})", file=sys.stderr)
+                if set_pdf_metadata(pdf, man):
+                    print("  book.pdf: document metadata set")
                 sz = os.path.getsize(pdf)
                 print(f"  book.pdf: {sz/1024:.0f} KB")
 
