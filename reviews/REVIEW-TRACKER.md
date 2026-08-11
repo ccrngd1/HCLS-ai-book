@@ -24,9 +24,10 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 17 |
-| OPEN | 62 |
-| NEEDS DECISION | 4 |
+| DONE | 21 |
+| OPEN | 57 |
+| NEEDS DECISION | 3 |
+| WONTFIX | 2 |
 | **total** | **83** |
 
 ---
@@ -97,16 +98,16 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-5.1 | ONC/ASTP HTI-1 DSI criteria (31 transparency attributes, eff. 2025-01-01) | Critical | OPEN | Reaches readers via their EHR vendor. Ch7, 13, 15 all describe Predictive DSIs. |
-| V-5.2 | California AB 3030 (GenAI patient communications, eff. 2025-01-01) | Critical | OPEN | Directly hits Ch2's after-visit summary. |
-| V-5.3 | Section 1557 final rule (compliance 2025-05-01) | Critical | OPEN | Legal hook for the equity/per-cohort monitoring sections. |
-| V-5.4 | EU AI Act timeline: Annex I → 2028-08-02, Annex III → 2027-12-02 (2026 Digital Omnibus) | Critical | OPEN | The commonly-quoted Aug 2026 date no longer applies. |
+| V-5.1 | ONC/ASTP HTI-1 DSI criteria (31 transparency attributes, eff. 2025-01-01) | Critical | DONE | In-place HTI-1 awareness note added to 7.5 and 13.4. Did not assert the source-attribute count, which I could not verify. Author constraint 2026-08-11: we are not compliance experts, so the book names what exists and why it touches the recipe, and routes the reader to their own legal and compliance teams. It does not say how to comply. |
+| V-5.2 | California AB 3030 (GenAI patient communications, eff. 2025-01-01) | Critical | DONE | In-place AB 3030 note added to 2.5. Verified the clinician-review exemption, which is the useful fact here: 2.5's existing review step is the pivot the rule turns on. Author constraint 2026-08-11: we are not compliance experts, so the book names what exists and why it touches the recipe, and routes the reader to their own legal and compliance teams. It does not say how to comply. |
+| V-5.3 | Section 1557 final rule (compliance 2025-05-01) | Critical | DONE | In-place Section 1557 note added to 9.6 and 10.7, tied to the per-cohort accuracy monitoring already in both. Author constraint 2026-08-11: we are not compliance experts, so the book names what exists and why it touches the recipe, and routes the reader to their own legal and compliance teams. It does not say how to comply. |
+| V-5.4 | EU AI Act timeline: Annex I → 2028-08-02, Annex III → 2027-12-02 (2026 Digital Omnibus) | Critical | WONTFIX | US-only scope per author decision 2026-08-11. Also moot as written: the book states no EU AI Act date, so there is no incorrect date to correct. |
 | V-5.5 | 42 CFR Part 2 final rule (compliance 2026-02-16) | Significant | OPEN | Ch5's no-link flags predate it. |
-| V-5.6 | FDA PCCP guidance (final 2024-12) | Significant | OPEN | Relevant to drift-monitoring sections. |
+| V-5.6 | FDA PCCP guidance (final 2024-12) | Significant | DONE | In-place PCCP note added to 9.6, framed as a vendor question for a cleared device. Not added to 7.5: PCCP scope is AI-enabled device software functions, and 7.5's model is non-device CDS when clinician-mediated, so citing it there would mislead. Author constraint 2026-08-11: we are not compliance experts, so the book names what exists and why it touches the recipe, and routes the reader to their own legal and compliance teams. It does not say how to comply. |
 | V-5.7 | CMS-0057-F prior authorization | Significant | OPEN | |
 | V-5.8 | Joint Commission + CHAI Responsible Use of AI (2025-09-17) | Significant | OPEN | |
 | V-5.9 | NIST AI RMF + GenAI Profile (AI 600-1) | Significant | OPEN | |
-| V-5.10 | Recommendation: one cross-cutting "The Regulatory Layer" chapter | — | NEEDS DECISION | A 16th chapter changes the manifest, pipeline, page count and spine. |
+| V-5.10 | Recommendation: one cross-cutting "The Regulatory Layer" chapter | — | WONTFIX | Author decision 2026-08-11: no 16th chapter. It would change the manifest, pipeline, page count and spine, and the flagship-15 structure is locked. **This declines the mechanism, not the substance** — V-5.1 to V-5.9 stay open and, if addressed, go in-place in the recipes they touch. |
 
 ## 6. Missing technical layer
 

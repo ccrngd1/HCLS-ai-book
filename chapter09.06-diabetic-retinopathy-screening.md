@@ -100,6 +100,8 @@ Lastly, the patients who most need screening (uncontrolled diabetes, multiple co
 
 ---
 
+**Two regulatory notes, and their limits.** First, the Section 1557 final rule issued in 2024, with its patient-care decision support provisions phasing in during 2025, prohibits discrimination in health programs and reaches tools that use protected characteristics as inputs or perform unevenly across them. That is the legal backdrop to the per-cohort accuracy work described above, and a reason to treat disparity monitoring as load-bearing rather than optional. Second, if you are buying a cleared device, ask the vendor whether it carries an FDA Predetermined Change Control Plan and what that plan covers, because a PCCP is the mechanism that lets a manufacturer ship certain model updates without a new marketing submission, and it shapes how the product you deployed will change underneath you. Neither point is compliance guidance. Both are questions to take to your legal and compliance teams before you sign anything.
+
 ## Related Recipes
 
 - **Recipe 9.1 (Image Quality Assessment):** The quality gate in this recipe is a specialized application of the general image quality assessment pattern

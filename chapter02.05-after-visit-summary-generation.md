@@ -186,6 +186,8 @@ There's a bigger opportunity hiding in this use case, too. The AVS is the visibl
 
 ---
 
+**A regulatory note, and its limits.** If you operate in California, AB 3030 took effect in January 2025 and applies to generative AI used to produce patient communications about clinical information, requiring a disclaimer and instructions for reaching a human clinician. It broadly exempts communications that a licensed provider reads and reviews, which is worth knowing here because it means the clinician review step described above is not only a safety control, it is the pivot the rule turns on. Other states are legislating in the same direction. Treat that as awareness and nothing more: whether and how any of it applies to your deployment is a question for your legal and compliance teams, not for a cookbook.
+
 ## Related Recipes
 
 - **Recipe 2.1 (Patient Message Response Drafting):** Uses similar LLM patterns but for one-off messages rather than structured document generation. The tone and reading-level considerations transfer directly.

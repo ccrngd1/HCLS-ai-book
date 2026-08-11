@@ -241,6 +241,8 @@ Ambient clinical documentation, done well, gives clinicians their evenings back.
 
 ---
 
+**A regulatory note, and its limits.** The per-cohort accuracy monitoring described above has a legal backdrop as well as an ethical one. The Section 1557 final rule issued in 2024, with its patient-care decision support provisions phasing in during 2025, prohibits discrimination in health programs and reaches tools that perform unevenly across protected characteristics. Systematically worse transcription for some patient populations is the kind of disparity that sits inside that scope. Read this as a reason to keep the monitoring and to involve your legal and compliance teams early, not as a compliance recipe. It is not one.
+
 ## Related Recipes
 
 - **Recipe 10.1 (IVR Call Routing Enhancement):** Same chapter, simplest analog. Recipe 10.1 routes calls based on intent; recipe 10.7 captures conversations for documentation. The telephony plumbing patterns from 10.1 are foundational for any voice work, even though 10.7 does not use telephony directly.

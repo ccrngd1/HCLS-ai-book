@@ -125,6 +125,8 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 
 ---
 
+**A regulatory note, and its limits.** A risk model that surfaces in clinical workflow is what regulators call a decision support intervention. The ONC HTI-1 rule, whose requirements took effect in January 2025, sets transparency expectations for predictive decision support delivered through certified health IT, requiring a defined set of source attributes covering things like the training data, the validation performed, and the model's ongoing maintenance. It binds developers of certified health IT rather than provider organizations directly, but it reaches you through your EHR vendor, and the attributes it asks for overlap heavily with what a model card already contains. That is the whole of what this book will say about it. Whether it applies to what you are building, and what you would owe if it does, is a question for your legal and compliance teams. Nothing here is a compliance plan.
+
 ## Related Recipes
 
 - **Recipe 7.4: ED Visit Prediction** - Predicts emergency department utilization; shares many features and can be combined with readmission prediction for a unified acute utilization model.
