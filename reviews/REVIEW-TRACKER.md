@@ -24,9 +24,9 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 16 |
+| DONE | 17 |
 | OPEN | 62 |
-| NEEDS DECISION | 5 |
+| NEEDS DECISION | 4 |
 | **total** | **83** |
 
 ---
@@ -82,7 +82,7 @@ Single place to track feedback from all reviewers. One row per finding.
 | V-3.9 | Six typos | Minor | DONE | All six fixed. `eadmitted` was mid-word ("are eadmitted"), not the standalone token it looked like. |
 | V-3.10 | Bold body font embedded twice | Minor | OPEN | |
 | V-3.11 | Front matter uses arabic, not roman, numerals | Minor | OPEN | |
-| V-3.12 | Digital edition on a personal GitHub Pages repo; 80 annotations point at `ccrngd1.github.io` | Critical | NEEDS DECISION | Single point of failure and exposes a personal handle. Needs a branded domain or CNAME. |
+| V-3.12 | Digital edition on a personal GitHub Pages repo; 80 annotations point at `ccrngd1.github.io` | Critical | DONE | Moved to `https://health-ai.lawson.engineer/`. Manifest updated, QR regenerated and verified to encode the new URL, 78 PDF annotations repointed, 0 references to the old handle remain. |
 
 ## 4. Chapter 11 patient safety and standalone readability
 
