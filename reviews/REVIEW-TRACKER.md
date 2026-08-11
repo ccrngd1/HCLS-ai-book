@@ -24,9 +24,10 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 21 |
-| OPEN | 62 |
+| DONE | 27 |
+| OPEN | 53 |
 | NEEDS DECISION | 4 |
+| NEEDS EXPERT | 3 |
 | WONTFIX | 2 |
 | **total** | **89** |
 
@@ -36,14 +37,14 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-1.1a | Ch8: `N18.3` invalid since 2021-10-01; use `N18.32` (matches Linda's stage 3b, eGFR 39) | Critical | OPEN | Confirmed present in the print-bound main file. |
-| V-1.1b | Ch8: hypertension + CKD is `I12`, not `I10` | Critical | OPEN | Two `I10` occurrences confirmed. |
-| V-1.1c | Ch8: diabetes + CKD needs combination code `E11.22` | Critical | OPEN | `E11.22` appears nowhere. Target set: `E11.22 + E11.4x + I12.9 + N18.3x`. |
+| V-1.1a | Ch8: `N18.3` invalid since 2021-10-01; use `N18.32` (matches Linda's stage 3b, eGFR 39) | Critical | NEEDS EXPERT | Fixed, pending coder sign-off. Used `N18.30` (stage 3 unspecified), **not** the `N18.32` the reviewer asked for: he conflated two patients. Linda with eGFR 39 is the Ch4.09 persona; Ch8's patient is documented "stage 3" with no sub-stage, and AAPC confirms a coder may not infer the stage from eGFR. Added that constraint to the passage as a teaching point. |
+| V-1.1b | Ch8: hypertension + CKD is `I12`, not `I10` | Critical | NEEDS EXPERT | Fixed, pending coder sign-off. Line 9 now takes `I12.9`. Deliberately left line 31's "Hypertension maps to I10" alone: that line describes what a rule-based dictionary does, and I10 is correct for essential hypertension alone, so changing it would be an over-correction. Only one of the two occurrences was a defect. |
+| V-1.1c | Ch8: diabetes + CKD needs combination code `E11.22` | Critical | NEEDS EXPERT | Fixed, pending coder sign-off. `E11.22` added and sequenced ahead of the hypertensive code, per the I12 "code first" note. Verified the "with" convention presumes the causal link. |
 | V-1.2 | Ch8: "rule out = do not code" is outpatient-only (IV.H); inpatient II.H/III.C says code it as confirmed | Critical | OPEN | |
-| V-1.3a | Ch14: "no more than 60 hours per week (labor law)" — no such US federal law | Critical | OPEN | Line 36. Replace with state mandatory-overtime limits (PA Act 102, NY Labor Law 167). |
-| V-1.3b | Ch14: "minimum 11 hours between shifts (union rule)" is the EU Working Time Directive figure | Significant | OPEN | Line 34. |
-| V-1.4 | Ch13: "these two drugs both inhibit CYP2C9" is backwards; needs one inhibitor + one substrate | Critical | OPEN | Line 15, confirmed verbatim. The graph three lines later is already correct. |
-| V-1.5 | Ch9: business case predates CPT 92229 (autonomous retinal analysis, ~$45.75 non-facility, HEDIS-eligible) | Significant | OPEN | |
+| V-1.3a | Ch14: "no more than 60 hours per week (labor law)" — no such US federal law | Critical | DONE | Replaced with what the law actually says. No US federal weekly hour ceiling exists for adults; FLSA governs overtime pay, not hours. Verified against pa.gov and dol.ny.gov that Act 102 and Labor Law 167 restrict *mandatory* overtime rather than capping hours, so the constraint is a consent flag per assignment, not a numeric bound. Added that as a modelling note, since encoding it as a bound causes phantom infeasibility. |
+| V-1.3b | Ch14: "minimum 11 hours between shifts (union rule)" is the EU Working Time Directive figure | Significant | DONE | Rest between shifts is now attributed to the bargaining agreement or facility policy, and the passage names 11 hours as the European Working Time Directive figure so the error's origin is visible. |
+| V-1.4 | Ch13: "these two drugs both inhibit CYP2C9" is backwards; needs one inhibitor + one substrate | Critical | DONE | Rewritten as fluconazole inhibiting CYP2C9 with warfarin as substrate, matching the book's own graph at lines 42-44 rather than inventing a new drug pair. Added an explicit note that the mechanism needs one inhibitor and one substrate, and that two inhibitors of the same enzyme do not interact by it. |
+| V-1.5 | Ch9: business case predates CPT 92229 (autonomous retinal analysis, ~$45.75 non-facility, HEDIS-eligible) | Significant | DONE | Business case rewritten around CPT 92229. Two corrections to the reviewer: the code is carrier-priced rather than paid off a national fee schedule, so his ~$45.75 is one carrier's number and is deliberately not quoted; and per payer guidance, billing 92229 alone does **not** close the HEDIS eye-exam measure, because it records that imaging happened, not what it found. Both caveats are now in the text. |
 | V-1.6 | Ch14: MIP conflates coverage with the variable index; 42x2x14=1,176 binaries + coverage constraint, not 42x18x14=10,584 | Significant | OPEN | An earlier pass "fixed" the arithmetic and left the formulation wrong. |
 | V-1.7a | Ch2: AFib vignette uses warfarin as default; 2023 ACC/AHA/ACCP/HRS prefers a DOAC | Significant | OPEN | |
 | V-1.7b | Ch1: "OCR goes back to the 1970s" — Tauschek 1929, GISMO 1951 | Minor | OPEN | |
@@ -89,8 +90,8 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-4.1 | Bot gives a drug and dose (chew 325mg aspirin) pre-EMS, no anticoagulant/bleeding/dissection check | Critical | OPEN | Confirmed verbatim. Crosses the SaMD line the chapter says it will not cross. |
-| V-4.2 | Escalation logic self-contradictory: architecture says chest pain routes immediately to 911, exemplar escalates "by turn ten" | Critical | OPEN | |
+| V-4.1 | Bot gives a drug and dose (chew 325mg aspirin) pre-EMS, no anticoagulant/bleeding/dissection check | Critical | DONE | Drug and dose removed. The bot now defers the aspirin question to the 911 dispatcher and says why: it cannot know whether the patient took an anticoagulant, and cannot see a dissection at all. Also reinforced the scope-discipline paragraph so a later edit does not restore the dose. |
+| V-4.2 | Escalation logic self-contradictory: architecture says chest pain routes immediately to 911, exemplar escalates "by turn ten" | Critical | DONE | Resolved by correcting the architecture claim rather than the walkthrough. The walkthrough escalates after four questions, not ten as the review states, and that behaviour is clinically defensible; the defect was the screening step overclaiming that active chest pain routes immediately to 911. It now separates presentations needing no further questions from those needing a short red-flag pass. |
 | V-4.3 | HEART and Wells presented as conversationally gatherable; both need ECG/troponin/exam | Significant | OPEN | Replace with pre-hospital red-flag stratification. |
 | V-4.4 | Ch11 Honest Take references five bots absent from this volume; other dangling refs 5.5, 5.7, 5.9, 2.8, 10.4, 10.6 | Significant | OPEN | Violates the Preface promise to describe rather than cross-reference. |
 
