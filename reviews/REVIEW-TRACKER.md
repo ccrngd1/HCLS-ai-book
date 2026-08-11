@@ -16,7 +16,7 @@ Single place to track feedback from all reviewers. One row per finding.
 | ID | Reviewer | Role | Artifact reviewed | Received | Notes |
 |----|----------|------|-------------------|----------|-------|
 | V | Vince Skinner (vskin) | Sr TAM, AWS HCLS | `book.pdf`, 268pp, 57,466 words | 2026-08-11 | Reviewed the 2026-07-30 build, so a number of findings were already fixed. Retracted two of his own findings unprompted. |
-| R | (radwin) | — | — | pending | `reviews/peers/ext-review-radwin.md` is currently empty. |
+| R | (radwin) | — | Digital edition (site) | 2026-08-11 | Short-form feedback, 110 words, 5 findings. Focused on reader accessibility and site structure rather than technical content. |
 
 ---
 
@@ -25,10 +25,10 @@ Single place to track feedback from all reviewers. One row per finding.
 | Status | Count |
 |--------|------:|
 | DONE | 21 |
-| OPEN | 57 |
-| NEEDS DECISION | 3 |
+| OPEN | 62 |
+| NEEDS DECISION | 4 |
 | WONTFIX | 2 |
-| **total** | **83** |
+| **total** | **89** |
 
 ---
 
@@ -159,6 +159,19 @@ Single place to track feedback from all reviewers. One row per finding.
 | V-11.2 | "Estimated Cost" mixes units; Ch1 "~$0.05 per" truncated; Ch14 renders "~$100200/month" | Significant | DONE | Field removed entirely, `1ef700f7`. |
 | V-11.3 | Body chapter titles use recipe names, Appendix A uses capability areas | Minor | OPEN | |
 | V-11.4 | Define the header fields in "How to Use This Book" | Minor | OPEN | Now documented in RECIPE-GUIDE.md, but not in the book itself. |
+
+## 12. Radwin: accessibility, register, site structure
+
+| ID | Finding | Sev | Status | Notes |
+|----|---------|-----|--------|-------|
+| R-1 | Spell out technology and healthcare abbreviations and jargon on first use (OCR, X12, 4010, 277 given as examples) | Significant | OPEN | Measured, and the gap is wide: FHIR 1761 uses / 3 expansions, ASR 736/7, HL7 350/1, OCR 336/2, EOB 150/20, NER 105/17. Bare X12 transaction numbers: 837 (110), 271 (79), 835 (69), 270 (61), 277 (18). `4010` does not appear at all. Correct standard is first use *per recipe*, not per book, because recipes are read standalone. Best paired with a glossary appendix so print readers have one place to look. Large mechanical job, good ralph candidate. |
+| R-2 | Overly informal register; colloquialisms should be rewritten while keeping it conversational (`bog standard` cited) | Significant | OPEN | Confirmed and concentrated: `bog-standard`, `low-hanging fruit` and `secret sauce` all sit in `chapter03.01-duplicate-claim-detection.md`, which is **print-bound**. Others: `punt on` x3 (7.10, 8.08, 8.09), `moving the needle` (4.04), `hand-wavy` (2.04), `secret sauce` (3.06). Deliberately excluded from scope: `adversarial` (44) is correct technical usage, `gotcha` (73) is standard technical register and appears in prose only, never as a heading. |
+| R-3 | Digital edition bottom page navigation: missing on some pages, broken on others | Significant | OPEN | Root-caused, and it is the same defect as V-3.1. Footers are hand-written in four shapes across the corpus: italic (129), table row (11), bare links (4), bold label (1), and absent on 24 files (all chapter-level: prefaces, ch1 index, ch1 executive summary). The print build now strips them; the digital edition still renders whatever was hand-written. Real fix is to generate the footer from the manifest rather than maintain it by hand, which closes R-3 and V-3.1 permanently. |
+| R-4 | Some chapters have both an overview and a preface; only one is needed, combine | Minor | OPEN | Chapter 1 only. It carries `chapter01-index.md` (sidebar "Overview"), `chapter01-preface.md`, and `chapter01-executive-summary.md`, where chapters 2-15 have a preface alone. All three share the identical H1 "Chapter 1: Document Intelligence", so the site shows three differently-scoped pages under one title. Note the content does not overlap: index is What You'll Learn / Prerequisites / Chapter Architecture / Recipes, preface is the conceptual essay, exec summary is for leadership. So this is a naming and navigation problem more than a duplication problem. |
+| R-5 | Some chapters' overview is just the first recipe | Significant | NEEDS DECISION | Could not reproduce, need the reviewer to point at one. Ruled out: no chapter preface duplicates its first recipe (max text similarity 0.02 across all 15), `Home.md` and `README.md` contain no chapter links at all, and the sidebar links chapters only to prefaces and recipes. Two candidates for what was actually seen: the sidebar has no chapter landing page for 2-15, so a chapter name is unclickable text and the first thing under it is a recipe; or R-4's Ch1 "Overview" was read as the pattern and found missing elsewhere. |
+| R-6 | Chapter titles disagree between the sidebar and the chapter pages | Significant | OPEN | Found while investigating R-5, not reported by either reviewer. Sidebar vs page H1: "Anomaly Detection" / "Anomaly & Outlier Detection", "Personalization / Recommendations" / "Recommendation & Personalization", "Cohort Analysis / Clustering" / "Clustering & Patient Segmentation", "Predictive Analytics" / "Predictive Risk Modeling", "NLP (Non-LLM)" / "Clinical NLP & Information Extraction", "Time Series Analysis" / "Forecasting & Time-Series", "Reinforcement Learning" / "Sequential Decision-Making", "LLM / Generative AI" / "Clinical Text Generation". README's category table is a third variant. Affects print, site and Appendix B. Needs one canonical list. |
+
+---
 
 ## Retracted by the reviewer
 
