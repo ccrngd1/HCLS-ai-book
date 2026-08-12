@@ -240,6 +240,24 @@ def _qr_block(url: str) -> str:
     )
 
 
+def _frontmatter_file(name: str, **subs) -> str:
+    """Read an editable front-matter page from print/frontmatter/.
+
+    Returns "" when the file is absent, so deleting a page omits it rather than
+    breaking the build. HTML comments are stripped: the files carry editing notes
+    that must not reach the reader.
+    """
+    path = os.path.join(HERE, "frontmatter", name)
+    if not os.path.isfile(path):
+        return ""
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S).strip()
+    for key, value in subs.items():
+        text = text.replace("{" + key + "}", str(value))
+    return text + "\n"
+
+
 def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     """Return list of (css_class, markdown) front-matter sections."""
     y = man["copyright_year"]
@@ -278,23 +296,11 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
         f"Digital edition (all {n} recipes): {url}\n\n"
         f"First printing, {y}.\n"
     )
-    # First person, matching the book's voice: the author appears in the body only
-    # as "I've seen this fail", and the sole third-person self-reference is in the
-    # legal disclaimers above, where convention requires it.
-    about_author = (
-        "# About the Author\n\n"
-        "I am a Solution Architect at Amazon Web Services, working in healthcare. "
-        "Most of what I do is help organizations design and deploy artificial "
-        "intelligence and machine learning systems that survive contact with real "
-        "clinical, regulatory, and operational constraints. That is the problem this "
-        "book is about, and much of what is in it comes from watching that go wrong.\n\n"
-        "I spent most of my career as a software engineer before moving into "
-        "architecture. It shows: I work from first principles, I want to see the thing "
-        "running, and I am wary of anything described as turnkey.\n\n"
-        "My academic background is a BS, an MEng, and doctoral research in artificial "
-        "intelligence and machine learning.\n\n"
-        f"This volume is a fifteen-recipe sampler. All {n} recipes, each with an "
-        f"architecture companion, are in the digital edition at {url}\n"
+    # Prose lives in print/frontmatter/*.md so it can be edited without touching
+    # Python. Placeholders keep the URL and recipe count in sync with the manifest,
+    # which matters: the digital edition URL has already changed once.
+    about_author = _frontmatter_file(
+        "about-the-author.md", digital_url=url, recipe_count=n
     )
     preface = (
         "# Preface\n\n"
