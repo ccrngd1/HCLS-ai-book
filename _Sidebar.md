@@ -6,7 +6,6 @@
 
 #### Ch 1: Document Intelligence
 
-* [Overview](chapter01-index)
 * [Preface](chapter01-preface)
 * [1.1 — Insurance Card Scanning](chapter01.01-insurance-card-scanning)
  * [Architecture and Implementation](chapter01.01-architecture)
