@@ -24,8 +24,8 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 36 |
-| OPEN | 53 |
+| DONE | 40 |
+| OPEN | 49 |
 | NEEDS DECISION | 1 |
 | WONTFIX | 3 |
 | **total** | **93** |
@@ -118,7 +118,7 @@ Single place to track feedback from all reviewers. One row per finding.
 | V-6.3 | No governance artifacts (CHAI model cards, AI use inventories) | Significant | OPEN | |
 | V-6.4 | No LLM security (prompt injection, jailbreaks, PHI in prompts/logs, OWASP LLM Top 10) | Significant | OPEN | |
 | V-6.5 | CDS Hooks missing from the body (Appendix B only) | Significant | OPEN | Standard integration point for Ch7 and Ch13 alerting. |
-| V-6.6 | Epic Sepsis Model external-validation failure (Wong 2021, AUC 0.63 vs claimed 0.76-0.83) omitted from Ch7 and Ch15 | Significant | OPEN | |
+| V-6.6 | Epic Sepsis Model external-validation failure (Wong 2021, AUC 0.63 vs claimed 0.76-0.83) omitted from Ch7 and Ch15 | Significant | DONE | Added to Ch7's Honest Take, directly after the buy-versus-build verdict, where it makes the abstract advice 'measure it on your own population' concrete. **Correction to the finding as filed:** the book did not claim the optimistic figures. `Epic` appeared 0 times in the entire corpus, so this was a pure omission, and the 0.76-0.83 in the finding is the vendor's claim rather than the book's. Cites Wong et al., JAMA Internal Medicine 2021, Michigan Medicine, ~38,000 hospitalisations, AUC 0.63. Deliberately did not state the sensitivity percentage, which I could not verify in-session. Not added to Ch15: that recipe already counsels against deploying sepsis RL, so the caution would be redundant there. |
 | V-6.7 | Prenosis Sepsis ImmunoScore (first FDA De Novo sepsis AI, 2024-04) omitted from Ch15 | Significant | DONE | Pre-existing fix, `646a6818`. Added to 15.4's buy-vs-build verdict with DEN230036. |
 
 ## 7. Enterprise readiness
@@ -132,8 +132,8 @@ Single place to track feedback from all reviewers. One row per finding.
 | V-7.5 | No security incident-response or breach-notification runbook for serving chapters | Significant | OPEN | |
 | V-7.6 | Automation bias unmonitored (no reviewer edit-rate tracking, no seeded errors) | Significant | OPEN | Safety argument rests on human review the book itself shows decaying. |
 | V-7.7 | Tool-using LLMs have no enforced authorization boundary; frame as OWASP "excessive agency" | Critical | OPEN | "Conservative by default" is a prompt property, not a control. |
-| V-7.8 | Ch9 liability overclaims ("absorbed the medico-legal liability", "simplifies regulatory compliance") | Significant | OPEN | |
-| V-7.9 | Ch8 specificity bias is potential False Claims Act / OIG upcoding exposure, not just training noise | Significant | OPEN | |
+| V-7.8 | Ch9 liability overclaims ("absorbed the medico-legal liability", "simplifies regulatory compliance") | Significant | DONE | Both overclaims corrected. Vendors are now described as absorbing FDA clearance and the clinical validation behind it, with an explicit distinction the original conflated: a cleared device puts *product* liability on the manufacturer but does not move *professional* liability for the care decision, follow-up, or an uncompleted referral. 'Buying removes development risk, not accountability.' The physician-in-the-loop claim no longer says it 'simplifies regulatory compliance'; it now says it changes which regime applies rather than exempting you from one, and routes the question to the reader's regulatory and legal teams. |
+| V-7.9 | Ch8 specificity bias is potential False Claims Act / OIG upcoding exposure, not just training noise | Significant | DONE | Reframed. The bullet previously ended at 'your model learns whatever bias exists in your historical data', which reads as a data-quality caveat. It now says the model does not merely inherit the tendency but automates it uniformly across every encounter, names unsupported codes as the substance of coding enforcement, notes that 'the model suggested it' is no defence because the submitting organisation attests to the claim, and points out the exposure is self-documenting because inference logs record what was suggested and how often it was accepted. Routes severity drift to the compliance officer. Held to the standing constraint: it names the risk and stops short of saying what compliance requires. |
 
 ## 8. Chapter 14 optimization
 
@@ -152,7 +152,7 @@ Single place to track feedback from all reviewers. One row per finding.
 | V-10.3 | Appendix B unusable as a print index (recipe numbers, not pages) | Significant | DONE | Pre-existing fix, `68704943`. Now generated from tags with 120 page-numbered entries. |
 | V-10.4 | Appendix B casing errors (Rxnorm, Sns, Sqs, Waf, Cloudtrail, Samd, Elasticache, Gpu, Shap, Transcribe medical) | Minor | DONE | Pre-existing fix, `68704943`, via the `DISPLAY` map. All ten verified. |
 | V-10.5 | Appendix B Fairness entry omits 14.4 | Minor | DONE | Index now derived from tags, so it cannot drift. |
-| V-10.6 | Ch13 placeholder citations ("[RCT: Smith et al. 2018]") look like real citations | Significant | OPEN | Cite two real papers or label the box illustrative. |
+| V-10.6 | Ch13 placeholder citations ("[RCT: Smith et al. 2018]") look like real citations | Significant | DONE | Took the reviewer's second option. The two fabricated evidence nodes are replaced with schematic ones (`[Evidence: product labelling, established]`, `[Evidence: pharmacokinetic study, level 1]`) so the sketch still teaches the shape of evidence attachment without inventing literature, and the surrounding paragraph now says explicitly that those labels are schematic rather than citations. Checked the pattern was contained: `Smith`/`Johnson et al.` appeared once each, in this file only, and no other placeholder-shaped citations exist in the corpus. |
 | V-10.7 | Disclaimer lacks not-medical-advice, no clinician-patient disclaimer, no drug-dosing carve-out | Critical | OPEN | Book prints a specific aspirin dose, DDI severities, sepsis treatment. Add per-chapter safety banners on 11, 13, 15. |
 | V-10.8 | AI content disclosure (KDP), trademark acknowledgment, employer clearance, "views are my own" | Critical | DONE | Resolved 2026-08-12. Employer clearance **granted** by the author's employer. Added to the generated copyright page and mirrored on the digital edition landing page: (1) a views disclaimer that names both current *and former* employers plus any affiliated organization, per author instruction; (2) a trademark acknowledgment naming the 13 Amazon and AWS marks that actually appear in the print volume, with the standard editorial-use, no-affiliation and no-endorsement language. KDP's AI-content disclosure was completed on the KDP side. Per explicit author instruction, **no mention of AI use appears in the published content of either edition**, verified by grep across the print book, README and Home. Copyright page absorbed both additions without spilling: 259 pages unchanged. |
 | V-11.1 | Per-recipe header fields not comparable ("Phase" mixes three taxonomies) | Significant | DONE | Field removed entirely, `1ef700f7`. |

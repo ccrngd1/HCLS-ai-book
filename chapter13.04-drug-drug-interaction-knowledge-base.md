@@ -44,8 +44,8 @@ Here's what the warfarin + fluconazole interaction looks like as a graph:
 [CYP2C9 Inhibition] --CAUSES--> [Increased Warfarin Concentration]
 [Increased Warfarin Concentration] --LEADS_TO--> [Increased Bleeding Risk]
 [Increased Bleeding Risk] --SEVERITY--> [Major]
-[Increased Bleeding Risk] --EVIDENCE--> [RCT: Smith et al. 2018]
-[Increased Bleeding Risk] --EVIDENCE--> [Meta-analysis: Johnson et al. 2020]
+[Increased Bleeding Risk] --EVIDENCE--> [Evidence: product labelling, established]
+[Increased Bleeding Risk] --EVIDENCE--> [Evidence: pharmacokinetic study, level 1]
 ```
 
 This representation enables several things that flat tables cannot:
@@ -54,7 +54,7 @@ This representation enables several things that flat tables cannot:
 
 **Severity contextualization.** The severity of a CYP2C9 inhibition interaction depends on several factors and these become properties on the graph edges. A system can compute a context-specific severity rather than returning a static label.
 
-**Evidence transparency.** Each interaction path can carry evidence nodes such as studies that support it, evidence level (observational, case report), and the year of publication. A clinician can see *why* the system is alerting and make an informed decision about whether to override.
+**Evidence transparency.** Each interaction path can carry evidence nodes recording what supports it, how strong that support is, and where it came from: a product label's drug-interaction section, a pharmacokinetic study, an observational cohort, or a single case report. The node labels in the sketch above are schematic rather than real citations, because the point is the shape of the evidence attachment; in a real graph these are identifiers into whichever evidence source you license or curate. A clinician can see *why* the system is alerting and make an informed decision about whether to override.
 
 **Transitive interaction detection.** Some interactions are indirect. Drug A induces CYP3A4. Drug B is metabolized by CYP3A4 into an active metabolite. Drug C inhibits the transporter that clears that metabolite. The three-drug combination creates a problem that no pairwise check would catch. Graph traversal naturally handles multi-hop interaction paths.
 
