@@ -266,77 +266,20 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     sub = man["subtitle"]
     author = man["author"]
     n = man["total_recipes_in_digital"]
-    title_pg = (
-        f"# {title}\n\n## {sub}\n\n&nbsp;\n\n**{author}**\n"
+    # All front-matter prose lives in print/frontmatter/*.md so it can be edited
+    # without touching Python. Placeholders are substituted from the manifest, which
+    # keeps the URL and counts from drifting; the digital edition URL has already
+    # changed once. The Contents page below stays generated, since it is built from
+    # the two-pass page map rather than authored.
+    subs = dict(
+        title=title, subtitle=sub, author=author, year=y,
+        digital_url=url, recipe_count=n, extra_recipes=n - 15,
     )
-    copyright_pg = (
-        f"**{title}**\n\n"
-        f"Copyright \u00a9 {y} {author}. All rights reserved.\n\n"
-        "No part of this book may be reproduced in any form without permission "
-        "from the author, except brief quotations in a review.\n\n"
-        "The patterns, architectures, and guidance in this book are provided for "
-        "educational purposes. Healthcare AI systems must be validated for your "
-        "own clinical, regulatory, and compliance context (HIPAA, FDA, and "
-        "applicable state law) before production use. The author assumes no "
-        "liability for implementation decisions.\n\n"
-        "The views and opinions expressed in this book are those of the author "
-        "alone. They do not represent the views, positions, or policies of any "
-        "current or former employer of the author, or of any organization with "
-        "which the author is or has been affiliated.\n\n"
-        "Many of the product and service names used in this book are claimed as "
-        "trademarks by their owners. Amazon Web Services, AWS, Amazon Bedrock, "
-        "Amazon SageMaker, Amazon Textract, Amazon Comprehend Medical, Amazon "
-        "Transcribe Medical, AWS HealthLake, Amazon Connect, Amazon DynamoDB, "
-        "Amazon S3, AWS Lambda, and AWS Step Functions are trademarks of "
-        "Amazon.com, Inc. or its affiliates. All other trademarks are the "
-        "property of their respective owners. Where those names appear in this "
-        "book they are used in an editorial fashion only, with no intention of "
-        "infringement and no implication of affiliation with, sponsorship by, or "
-        "endorsement from the trademark owner.\n\n"
-        f"Digital edition (all {n} recipes): {url}\n\n"
-        f"First printing, {y}.\n"
-    )
-    # Prose lives in print/frontmatter/*.md so it can be edited without touching
-    # Python. Placeholders keep the URL and recipe count in sync with the manifest,
-    # which matters: the digital edition URL has already changed once.
-    about_author = _frontmatter_file(
-        "about-the-author.md", digital_url=url, recipe_count=n
-    )
-    preface = (
-        "# Preface\n\n"
-        "This book is a curated sampler. The complete Healthcare AI/ML Cookbook "
-        f"is a living digital reference of {n} recipes across 15 capability areas "
-        "\u2014 document intelligence, clinical text generation, anomaly "
-        "detection, entity resolution, predictive risk, medical imaging, "
-        "conversational AI, and more. What you hold is one flagship recipe from "
-        "each of those 15 chapters: enough to feel the shape of the whole, "
-        "chosen to be the most instructive entry point in its domain.\n\n"
-        "Everything in this printed volume is cloud-agnostic. The use cases, the "
-        "technology discussions, and the architectures describe what has to happen "
-        "and why, not which vendor you buy it from, so they apply whether you run "
-        "on premises or on any of the major cloud providers. The companion pages in "
-        "the digital edition are written against AWS services, because a worked "
-        "example has to pick something concrete to be useful. Those choices are not "
-        "requirements: each one has an on-premises equivalent and a counterpart on "
-        "the other hyperscalers, and the architecture in this book is what carries "
-        "across. Keeping the build in the digital edition also keeps the print "
-        "readable and durable, since service names change faster than a book can. "
-        "Where a recipe "
-        "references a capability covered elsewhere, we describe the concept "
-        "rather than send you to a page that isn't in this volume.\n"
-    )
-    how_to = (
-        "# How to Use This Book\n\n"
-        "- **Browse by capability.** Each chapter is a self-contained recipe in "
-        "a distinct AI/ML domain; read in any order.\n"
-        "- **Start with the problem.** Every recipe opens with a concrete "
-        "healthcare scenario before any technology.\n"
-        "- **Mind the honest take.** Each recipe ends with the limitations and "
-        "the things that surprised us in production.\n"
-        f"- **Go deeper online.** The digital edition ({url}) has the AWS "
-        f"implementation, diagrams, runnable examples, and {n - 15}+ more "
-        "recipes.\n"
-    )
+    title_pg = _frontmatter_file("title-page.md", **subs)
+    copyright_pg = _frontmatter_file("copyright-page.md", **subs)
+    about_author = _frontmatter_file("about-the-author.md", **subs)
+    preface = _frontmatter_file("preface.md", **subs)
+    how_to = _frontmatter_file("how-to-use-this-book.md", **subs)
     how_to = how_to + _qr_block(url)
     import os as _os, json as _json
     _pm = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "build", "toc-pagemap.json")

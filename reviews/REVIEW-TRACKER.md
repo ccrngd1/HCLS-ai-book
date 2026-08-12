@@ -24,9 +24,10 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 56 |
-| OPEN | 32 |
-| WONTFIX | 6 |
+| DONE | 55 |
+| OPEN | 33 |
+| NEEDS DECISION | 1 |
+| WONTFIX | 5 |
 | **total** | **94** |
 
 ---
@@ -146,8 +147,8 @@ Single place to track feedback from all reviewers. One row per finding.
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
 | V-9.1 | "Vendor-agnostic" claim contradicted by named AWS services, 15 AWS callouts, AWS service index | Significant | DONE | Resolved by making the claim precise rather than dropping it. The print volume now states plainly that everything in it is cloud-agnostic, that the digital companions are written against AWS because a worked example has to pick something concrete, and that each of those choices has an on-premises equivalent and a counterpart on the other hyperscalers. The word 'vendor-agnostic' no longer appears in the print book at all: it was doing double duty as both a design property and a marketing claim, and the new wording says what is actually true. The 15 per-recipe callouts changed from 'The AWS implementation lives in the digital edition' to 'The implementation lives in the digital edition ... for one concrete build of it, on AWS', which stops the print volume reading as an AWS book while keeping the pointer honest. KDP listing copy updated to match. **Author declined the reviewer's Appendix B rename**: it stays 'Topic and Service Index'. AWS is still named 39 times where naming it is accurate. |
-| V-10.1 | No About the Author | Critical | DONE | Added as generated front matter in `print/build.py`, immediately after the copyright page per author placement decision, rather than the back-matter position convention would suggest. Written in **first person**, decided by measuring the book's actual voice rather than by convention: the body addresses the reader as "you" 397 times, the author appears only as "I've seen this fail" in three places, and the sole third-person self-reference is in the legal disclaimers where convention requires it. Third person would have introduced a narrator the book does not otherwise have. Adapted from the 192-word KDP bio, not pasted: cut "a rare mix of theoretical depth and production-grade pragmatism" and "the backbone of this book", which assert credibility the preceding pages already earn, and replaced "skeptical of anything that doesn't just work", which is illogical, with "wary of anything described as turnkey". Kept "doctoral research" rather than implying a completed doctorate. The KDP bio field stays third person, which is correct for a catalogue surface. **Still outstanding: a short 40-60 word back-cover bio**, which is where readers most often look and which belongs to the unbuilt cover. |
-| V-10.2 | No ISBN | Minor | OPEN | Required only for library/bookstore/catalogue discoverability. |
+| V-10.1 | No About the Author | Critical | OPEN | His "would fix today". The book's authority rests on first-person claims. |
+| V-10.2 | No ISBN | Minor | DONE | KDP provides ISBN - 9798192171134 |
 | V-10.3 | Appendix B unusable as a print index (recipe numbers, not pages) | Significant | DONE | Pre-existing fix, `68704943`. Now generated from tags with 120 page-numbered entries. |
 | V-10.4 | Appendix B casing errors (Rxnorm, Sns, Sqs, Waf, Cloudtrail, Samd, Elasticache, Gpu, Shap, Transcribe medical) | Minor | DONE | Pre-existing fix, `68704943`, via the `DISPLAY` map. All ten verified. |
 | V-10.5 | Appendix B Fairness entry omits 14.4 | Minor | DONE | Index now derived from tags, so it cannot drift. |
