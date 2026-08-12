@@ -686,7 +686,3 @@ The pseudocode above covers the pattern. A production deployment closes several 
 | With variations | Real-time scoring at booking, self-serve reschedule prompting, transportation-specific routing, cross-clinic learning, bandit-based intervention selection | 4-8 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.2](chapter03.02-patient-no-show-pattern-detection) · [Python Example](chapter03.02-python-example) · [Chapter Preface](chapter03-preface)*

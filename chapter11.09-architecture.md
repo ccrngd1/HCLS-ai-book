@@ -2045,7 +2045,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Post-discharge variant deep deployment, chronic-multi-condition variant, oncology coordination variant, transplant coordination variant, heart-failure-focused variant, pediatric-complex-care variant, older-adult-with-dementia variant, maternal-and-postpartum variant, behavioral-health-medical-integrated variant with 42 CFR Part 2 compliance, population-management overlay variant, specialty-referral-management variant, care-navigation variant for under-resourced populations, ED-to-PCP-follow-up variant, hospital-at-home variant, voice-channel variant with accessibility considerations, multi-language deployment beyond English plus Spanish with native-speaker review, hybrid AI-plus-licensed-coach variant, high-risk-tier variant with intensive case management, population-health overlay with quality-measure focus, build-on-FHIR-only variant, continuous-improvement loop with structured failure-mode labeling, specialty-specific protocol-library variants, provider-side coordination variant | 24-48 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.9](chapter11.09-care-coordination-assistant) · [Python Example](chapter11.09-python-example) · [Chapter Preface](chapter11-preface)*

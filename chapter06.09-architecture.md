@@ -487,7 +487,3 @@ This architecture demonstrates the full pipeline shape, but several gaps remain 
 | **With variations** | 6-9 months | Longitudinal trajectory tracking, real-time assignment, federated learning across sites, outcome-validated phenotypes |
 
 ---
-
----
-
-*← [Main Recipe 6.9](chapter06.09-social-determinant-phenotyping) · [Python Example](chapter06.09-python-example) · [Chapter Preface](chapter06-preface)*

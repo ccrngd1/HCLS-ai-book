@@ -538,7 +538,3 @@ The pseudocode and architecture above demonstrate the shape of a disease progres
 | **With variations** (multi-disease joint modeling, counterfactual simulation, patient-facing) | 30-40 weeks |
 
 ---
-
----
-
-*← [Main Recipe 7.8](chapter07.08-disease-progression-modeling) · [Python Example](chapter07.08-python-example) · [Chapter Preface](chapter07-preface)*

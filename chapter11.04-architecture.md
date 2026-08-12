@@ -1868,7 +1868,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Voice channel (drawing from recipe 10.5 patterns), additional languages beyond English plus Spanish with native-speaker review, specialist-consultation protocols (cardiology, oncology, behavioral health, OB-GYN, orthopedics, dermatology, GI), pediatric-and-proxy-completion flows with pediatric screener bundle, geriatric-and-caregiver-supported flows with geriatric screener bundle, behavioral-health intake variant with the rich screener bundle, pre-procedure intake with consent prompts, telehealth-visit intake with technology readiness check, chronic-condition longitudinal intake with patient-self-monitoring integration, SDOH-resource-referral integration, asynchronous follow-up pipeline integration, integration with the FAQ bot, scheduling bot, and refill bot behind a unified chat surface, continuous-improvement loop with structured failure-mode labeling | 8-14 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.4](chapter11.04-pre-visit-intake-bot) · [Python Example](chapter11.04-python-example) · [Chapter Preface](chapter11-preface)*

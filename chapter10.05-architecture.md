@@ -1501,7 +1501,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Smart-speaker channel (Alexa, Google) with platform certification, multilingual beyond English plus Spanish, voice-biometric step-up (with biometric-data-governance), outbound proactive voice with TCPA compliance, predictive intent surfacing using EHR-recent-context, multi-channel handoff with conversation continuity, post-discharge follow-up programs, clinical-trial enrollment screening | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.5](chapter10.05-patient-facing-voice-assistant) · [Python Example](chapter10.05-python-example) · [Chapter Preface](chapter10-preface)*

@@ -405,7 +405,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 | **With variations** (real-time triggers, multi-outcome, intervention feedback loop) | 16-22 weeks |
 
 ---
-
----
-
-*← [Main Recipe 7.4](chapter07.04-ed-visit-prediction) · [Python Example](chapter07.04-python-example) · [Chapter Preface](chapter07-preface)*

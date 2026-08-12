@@ -476,7 +476,3 @@ This architecture works as a proof of concept and will generate real predictions
 | **Basic** (single model, batch scoring, manual threshold tuning) | 3-4 weeks |
 | **Production-ready** (calibration, monitoring, fairness checks, automated retraining) | 8-12 weeks |
 | **With variations** (real-time scoring, multi-outcome, segmented models) | 14-20 weeks |
-
----
-
-*← [Main Recipe 7.2](chapter07.02-propensity-to-pay-scoring) · [Python Example](chapter07.02-python-example) · [Chapter Preface](chapter07-preface)*

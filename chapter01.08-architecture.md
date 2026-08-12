@@ -708,7 +708,3 @@ This is a simple string scan on the header label keys (not values). It runs befo
 - [Building an End-to-End Intelligent Document Processing Solution Using AWS](https://aws.amazon.com/blogs/machine-learning/building-an-end-to-end-intelligent-document-processing-solution-using-aws/): Comprehensive walkthrough of multi-stage IDP pipelines with Textract and generative AI
 
 ---
-
----
-
-*← [Main Recipe 1.8](chapter01.08-eob-processing) · [Python Example](chapter01.08-python-example) · [Chapter Preface](chapter01-preface)*

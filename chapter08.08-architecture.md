@@ -513,7 +513,3 @@ Input text: "Patient is a 62-year-old male with history of MI (2019). Currently 
 | **With variations** | 14-18 weeks | Add active problem list integration, quality measure automation, multi-specialty model variants. |
 
 ---
-
----
-
-*← [Main Recipe 8.8](chapter08.08-clinical-assertion-classification) · [Python Example](chapter08.08-python-example) · [Chapter Preface](chapter08-preface)*

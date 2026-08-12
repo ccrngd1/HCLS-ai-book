@@ -574,11 +574,3 @@ For high-risk patients with connected devices (weight scales for CHF, pulse oxim
 ---
 
 **Tags:** `predictive-analytics`, `readmission`, `risk-scoring`, `care-transitions`, `quality-measures`, `HRRP`, `XGBoost`, `SageMaker`, `HealthLake`, `HIPAA`
-
----
-
-[← Recipe 7.4: ED Visit Prediction](chapter07.04-ed-visit-prediction) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.6: Rising Risk Identification →](chapter07.06-rising-risk-identification)
-
----
-
-*← [Main Recipe 7.5](chapter07.05-30-day-readmission-risk) · [Python Example](chapter07.05-python-example) · [Chapter Preface](chapter07-preface)*

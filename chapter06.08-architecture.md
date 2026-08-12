@@ -485,7 +485,3 @@ This pipeline produces validated research-grade subtypes and a trained classifie
 | **With variations** (temporal subtyping, multi-omics, per-subtype models) | 9-12 months |
 
 ---
-
----
-
-*← [Main Recipe 6.8](chapter06.08-disease-subtype-discovery) · [Python Example](chapter06.08-python-example) · [Chapter Preface](chapter06-preface)*

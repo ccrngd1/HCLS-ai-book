@@ -125,7 +125,3 @@ The cost model also catches people off guard. Cloud NLP services charge per char
 ## Tags
 
 `nlp` · `structured-extraction` · `phenotyping` · `hipaa` · `provenance` · `comprehend-medical` · `step-functions`
-
----
-
-*← [Recipe 8.9: Temporal Relationship Extraction](chapter08.09-temporal-relationship-extraction) · [Chapter 8 Index](chapter08-preface) · [Next: Chapter 9 - Computer Vision →](chapter09-preface)*

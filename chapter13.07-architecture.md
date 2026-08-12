@@ -652,7 +652,3 @@ Extend the graph with clinical trial nodes connected to their molecular eligibil
 | With variations (tumor genomics, population analytics) | 24-32 weeks | OncoKB integration, analytics dashboards, clinical trial matching |
 
 ---
-
----
-
-*← [Main Recipe 13.7](chapter13.07-disease-gene-drug-relationship-graph) · [Python Example](chapter13.07-python-example) · [Chapter Preface](chapter13-preface)*

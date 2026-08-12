@@ -462,12 +462,3 @@ The pseudocode and architecture above give you the shape of the solution. Here's
 ---
 
 **Tags:** `predictive-analytics`, `length-of-stay`, `hospital-operations`, `bed-management`, `discharge-planning`, `xgboost`, `feature-store`, `sagemaker`, `healthlake`, `regression`, `time-series`
-
----
-
-| [← 7.6: Rising Risk Identification](chapter07.06-rising-risk-identification) | [Chapter 7 Index](chapter07-preface) | [7.8: Disease Progression Modeling →](chapter07.08-disease-progression-modeling) |
-|:---|:---:|---:|
-
----
-
-*← [Main Recipe 7.7](chapter07.07-length-of-stay-prediction) · [Python Example](chapter07.07-python-example) · [Chapter Preface](chapter07-preface)*

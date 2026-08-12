@@ -337,7 +337,3 @@ The moral tension: FWA work involves accusing people, sometimes wrongly. A wrong
 ## Tags
 
 `anomaly-detection` · `knowledge-graph` · `gnn` · `statistical-process-control` · `payer` · `payment-integrity` · `provider` · `hipaa` · `feature-store` · `bedrock` · `comprehend-medical` · `dynamodb` · `neptune` · `opensearch` · `sagemaker` · `sagemaker-clarify`
-
----
-
-*← [Recipe 3.5: Lab Result Outlier Detection](chapter03.05-lab-result-outlier-detection) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.7 - Patient Deterioration Early Warning →](chapter03.07-patient-deterioration-early-warning)*

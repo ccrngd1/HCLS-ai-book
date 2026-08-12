@@ -418,7 +418,3 @@ Pipeline times assume a warm SageMaker endpoint. Cold-start (first request after
 | **With variations** | 12-18 months | Intraoperative navigation, longitudinal response tracking, federated training across institutions, FDA submission preparation. |
 
 ---
-
----
-
-*← [Main Recipe 9.10](chapter09.10-multi-modal-imaging-fusion-analysis) · [Python Example](chapter09.10-python-example) · [Chapter Preface](chapter09-preface)*

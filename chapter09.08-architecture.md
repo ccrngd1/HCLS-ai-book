@@ -405,7 +405,3 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 | **With variations** (multi-cancer, grading, biomarker prediction, FDA submission) | 18-24+ months |
 
 ---
-
----
-
-*← [Main Recipe 9.8](chapter09.08-pathology-slide-analysis) · [Python Example](chapter09.08-python-example) · [Chapter Preface](chapter09-preface)*

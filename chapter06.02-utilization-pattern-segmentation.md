@@ -206,7 +206,3 @@ That said, here's what will humble you:
 ## Tags
 
 `clustering` · `k-means` · `population-health` · `hipaa` · `sagemaker`
-
----
-
-*← [Recipe 6.1: Geographic Patient Clustering](chapter06.01-geographic-patient-clustering) · [Chapter 6 Index](chapter06-preface) · [Next: Recipe 6.3 - Payer Mix Financial Risk Clustering →](chapter06.03-payer-mix-financial-risk-clustering)*

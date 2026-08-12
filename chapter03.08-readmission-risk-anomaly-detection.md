@@ -353,7 +353,3 @@ Lives are saved here too, just less dramatically than in Recipe 3.7. The signal 
 ## Tags
 
 `anomaly-detection` · `causal-inference` · `predictive-analytics` · `recommendation` · `survival-analysis` · `time-series` · `calibration` · `explainability` · `remote-patient-monitoring` · `transitions-of-care` · `care-management` · `provider` · `sdoh` · `equity-monitoring` · `fda-pathway` · `hipaa` · `clinical-validation` · `feature-store` · `model-registry` · `appsync` · `bedrock` · `comprehend-medical` · `dynamodb` · `eventbridge` · `kinesis` · `opensearch` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `step-functions` · `timestream`
-
----
-
-*← [Recipe 3.7: Patient Deterioration Early Warning](chapter03.07-patient-deterioration-early-warning) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.9 - Cybersecurity / Access Pattern Anomalies →](chapter03.09-cybersecurity-access-pattern-anomalies)*

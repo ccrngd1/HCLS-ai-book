@@ -161,7 +161,3 @@ The thing I would do differently if I were starting over: build the per-payer ba
 ## Tags
 
 `survival-analysis` · `time-series` · `monte-carlo` · `payer` · `revenue-cycle` · `x12` · `hipaa` · `dynamodb` · `glue` · `sagemaker` · `step-functions`
-
----
-
-*← [Previous: Recipe 12.5 - Hospital Census Forecasting](chapter12.05-hospital-census-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.7 - Vital Sign Trajectory Monitoring →](chapter12.07-vital-sign-trajectory-monitoring)*

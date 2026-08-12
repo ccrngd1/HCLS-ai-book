@@ -302,7 +302,3 @@ Last point, because it is specific to this domain: duplicate patient records are
 ## Tags
 
 `entity-resolution` · `blocking` · `fellegi-sunter` · `string-similarity` · `equity-monitoring` · `hipaa` · `dynamodb` · `glue` · `lambda` · `opensearch` · `step-functions`
-
----
-
-*← [Chapter 5 Preface](chapter05-preface) · Chapter 5 · [Next: Recipe 5.2 - Provider NPI Matching →](chapter05.02-provider-npi-matching)*

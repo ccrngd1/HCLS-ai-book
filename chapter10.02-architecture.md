@@ -1211,7 +1211,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Real-time transcription during recording, transcript search via OpenSearch, auto-resolution of high-confidence routine intents, LLM-generated suggested callback responses, voice-biometric speaker identification with regulatory overlay, patient-portal integration with auto-message conversion, outbound proactive callback campaigns triggered from triage queue, real-time fraud detection, sentiment-aware queue ordering, supervisor caseload analytics dashboard, cross-pipeline integration with the IVR | 4-9 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.2](chapter10.02-voicemail-transcription-classification) · [Python Example](chapter10.02-python-example) · [Chapter Preface](chapter10-preface)*

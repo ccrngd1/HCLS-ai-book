@@ -395,7 +395,3 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
 | **With variations** | 9-12 months | Multi-finding composite scoring, longitudinal comparison, radiologist feedback loop, multi-site deployment |
 
 ---
-
----
-
-*← [Main Recipe 9.5](chapter09.05-chest-xray-triage) · [Python Example](chapter09.05-python-example) · [Chapter Preface](chapter09-preface)*

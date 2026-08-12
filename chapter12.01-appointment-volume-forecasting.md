@@ -114,7 +114,3 @@ The part that's genuinely hard: explaining to a CFO why the forecast missed badl
 ## Tags
 
 `forecasting` · `time-series` · `staffing` · `hipaa` · `dynamodb` · `s3` · `sagemaker` · `step-functions`
-
----
-
-*← [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.2 - Supply Inventory Forecasting →](chapter12.02-supply-inventory-forecasting)*

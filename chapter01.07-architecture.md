@@ -459,7 +459,3 @@ The pseudocode and architecture above demonstrate the pattern. A real deployment
 | Basic | Single-format label extraction with Textract FORMS, basic SIG abbreviation lookup table, Comprehend Medical entity extraction with RxNorm linking, Lambda orchestration, DynamoDB storage, no NDC validation or multi-format support | 2-4 weeks |
 | Production-ready | Multi-format label support (retail, mail-order, hospital), complete SIG normalization with dosing schedule parsing, NDC cross-validation against FDA database, confidence thresholds with pharmacist review queue, audit logging, error handling for partial extractions, API Gateway with authentication | 2-4 months |
 | With variations | Drug interaction checking via RxNav API, multi-language label support, refill tracking with temporal logic, integration with e-prescribing systems (NCPDP SCRIPT), real-time formulary coverage lookup | 2-3 months beyond production-ready |
-
----
-
-*← [Main Recipe 1.7](chapter01.07-prescription-label-ocr) · [Python Example](chapter01.07-python-example) · [Chapter Preface](chapter01-preface)*

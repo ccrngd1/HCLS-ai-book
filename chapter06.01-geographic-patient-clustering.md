@@ -122,7 +122,3 @@ The incremental refresh pattern that actually works in production looks like thi
 ## Tags
 
 `clustering` · `network-adequacy` · `population-health` · `geospatial`
-
----
-
-*← [Chapter 6 Index](chapter06-preface) · [Next: Recipe 6.2 - Utilization Pattern Segmentation →](chapter06.02-utilization-pattern-segmentation)*

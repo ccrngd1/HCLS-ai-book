@@ -828,7 +828,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | LLM-augmented intent classification for low-confidence cases, outbound proactive callback campaigns, real-time agent-assist with screen pop and live transcripts, authenticated patient-portal hand-off, voice-biometric verification with regulatory overlay (BIPA-aware deployment), conversational AI fulfillment for complex intents, real-time fraud detection on call stream, A/B testing framework, federated multi-site routing | 4-9 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.1](chapter10.01-ivr-call-routing-enhancement) · [Python Example](chapter10.01-python-example) · [Chapter Preface](chapter10-preface)*

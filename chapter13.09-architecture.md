@@ -745,7 +745,3 @@ The architecture above demonstrates the pattern. Running this against PubMed at 
 | **With variations** (RAG integration, systematic review support, real-time safety signals) | 8-12 months |
 
 ---
-
----
-
-*← [Main Recipe 13.9](chapter13.09-literature-derived-knowledge-graph) · [Python Example](chapter13.09-python-example) · [Chapter Preface](chapter13-preface)*

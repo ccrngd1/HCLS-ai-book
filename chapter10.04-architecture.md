@@ -1630,7 +1630,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Per-clinician acoustic-model adaptation via SageMaker, voice-driven order-draft creation with explicit non-voice confirmation, multi-language support, ambient-and-dictation hybrid workflow integration, real-time CDS Hooks integration during dictation, multi-EHR-vendor support, addendum and co-signature workflows, LLM-driven note quality scoring | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.4](chapter10.04-medical-transcription-dictation) · [Python Example](chapter10.04-python-example) · [Chapter Preface](chapter10-preface)*

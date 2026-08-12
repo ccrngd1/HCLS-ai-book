@@ -594,7 +594,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this as
 | **With regulatory pathway** (FDA submission, prospective validation, clinical deployment) | 2-4 years |
 
 ---
-
----
-
-*← [Main Recipe 15.4](chapter15.04-sepsis-treatment-optimization) · [Python Example](chapter15.04-python-example) · [Chapter Preface](chapter15-preface)*

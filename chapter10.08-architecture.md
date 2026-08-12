@@ -1578,7 +1578,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Cough monitoring deployment in chronic respiratory-disease management workflows, Parkinson's progression monitoring in established-patient cohorts, post-stroke aphasia recovery monitoring, ICU sedation and delirium monitoring, anesthesia recovery monitoring, suicide-risk decision-support pilots, at-home longitudinal cognitive-decline monitoring, pediatric speech-and-language screening, multi-modal integration with EHR plus wearable plus questionnaire data, integration with ambient documentation pipelines, real-time decision support during telehealth, federated cohort validation across institutions | 8-15 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.8](chapter10.08-voice-biomarker-detection) · [Python Example](chapter10.08-python-example) · [Chapter Preface](chapter10-preface)*

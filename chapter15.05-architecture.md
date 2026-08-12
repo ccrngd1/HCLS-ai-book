@@ -389,11 +389,3 @@ This architecture demonstrates the shape of an RL-based ventilator weaning syste
 ---
 
 **Tags:** `reinforcement-learning`, `icu`, `ventilator`, `weaning`, `offline-rl`, `clinical-decision-support`, `sequential-decisions`, `safety-constraints`, `sagemaker`
-
----
-
-| [← 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) | [Chapter 15 Index](chapter15-preface) | [15.6: Glucose Control in ICU →](chapter15.06-glucose-control-icu) |
-
----
-
-*← [Main Recipe 15.5](chapter15.05-ventilator-weaning-protocols) · [Python Example](chapter15.05-python-example) · [Chapter Preface](chapter15-preface)*

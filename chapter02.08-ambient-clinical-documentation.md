@@ -264,7 +264,3 @@ A final thought: this is one of the highest-value clinical AI categories, bar no
 ## Tags
 
 `generative-ai` · `llm` · `diarization` · `clinical-documentation` · `clinical-notes` · `ehr-integration` · `fhir` · `consent-management` · `hipaa` · `provenance` · `grounded-generation` · `bedrock` · `comprehend-medical` · `healthlake` · `healthscribe` · `transcribe-medical`
-
----
-
-*← [Recipe 2.7: Literature Search and Evidence Synthesis](chapter02.07-literature-search-evidence-synthesis) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.9 - Clinical Decision Support Synthesis →](chapter02.09-clinical-decision-support-synthesis)*

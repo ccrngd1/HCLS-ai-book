@@ -386,7 +386,3 @@ The architecture above demonstrates the pattern. Deploying this in a health syst
 | **With variations** | 16-20 weeks | Concurrent CDI, multi-note context, quality dashboards, provider-specific tuning |
 
 ---
-
----
-
-*← [Main Recipe 2.3](chapter02.03-clinical-documentation-improvement) · [Python Example](chapter02.03-python-example) · [Chapter Preface](chapter02-preface)*

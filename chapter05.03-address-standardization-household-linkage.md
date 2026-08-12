@@ -325,7 +325,3 @@ Last point, because it is specific to the regulatory context: HIPAA's de-identif
 ## Tags
 
 `entity-resolution` · `population-health` · `sdoh` · `hipaa` · `privacy` · `event-driven`
-
----
-
-*← [Recipe 5.2: Provider NPI Matching](chapter05.02-provider-npi-matching) · Chapter 5 · [Next: Recipe 5.4 - Insurance Eligibility Matching →](chapter05.04-insurance-eligibility-matching)*

@@ -387,7 +387,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this in
 | **With variations (per-patient, multi-objective, alert bundling)** | 9-12 months |
 
 ---
-
----
-
-*← [Main Recipe 15.1](chapter15.01-alert-threshold-optimization) · [Python Example](chapter15.01-python-example) · [Chapter Preface](chapter15-preface)*

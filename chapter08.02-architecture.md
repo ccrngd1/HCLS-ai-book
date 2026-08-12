@@ -351,7 +351,3 @@ The architecture above demonstrates the pattern. Deploying this at an actual hea
 | **With variations** | 8-12 weeks | Multilingual support, competitive benchmarking, statistical trend detection, executive reporting |
 
 ---
-
----
-
-*← [Main Recipe 8.2](chapter08.02-patient-sentiment-analysis) · [Python Example](chapter08.02-python-example) · [Chapter Preface](chapter08-preface)*

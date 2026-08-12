@@ -1259,7 +1259,3 @@ The pseudocode captures the core logic. A production chart migration program req
 - [Amazon Bedrock Batch Inference for Large-Scale Document Processing](https://aws.amazon.com/blogs/machine-learning/): Search the ML blog for recent batch inference deep dives covering JSONL format, cost optimization, and throughput benchmarks
 
 ---
-
----
-
-*← [Main Recipe 1.10](chapter01.10-historical-chart-migration) · [Python Example](chapter01.10-python-example) · [Chapter Preface](chapter01-preface)*

@@ -577,7 +577,3 @@ This implementation demonstrates the pipeline structure and the core NLP-to-clas
 | **With variations** | 6-9 months | Multi-site federation, active learning refinement loop, LLM augmentation, phenotype library with version management |
 
 ---
-
----
-
-*← [Main Recipe 8.10](chapter08.10-phenotype-extraction-research) · [Python Example](chapter08.10-python-example) · [Chapter Preface](chapter08-preface)*

@@ -487,7 +487,3 @@ Simplified output (6th grade target):
 | **With variations** | 8-10 weeks | Multi-language support, configurable reading levels per document type, EHR integration triggers, interactive patient-facing UI |
 
 ---
-
----
-
-*← [Main Recipe 2.2](chapter02.02-medical-terminology-simplification) · [Python Example](chapter02.02-python-example) · [Chapter Preface](chapter02-preface)*

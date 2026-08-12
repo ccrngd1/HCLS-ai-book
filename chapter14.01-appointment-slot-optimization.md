@@ -146,7 +146,3 @@ Start with one willing provider. Show results. Let word spread. Mandating optimi
 ## Tags
 
 `optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `simulation` · `scheduling` · `hipaa` · `sagemaker` · `step-functions`
-
----
-
-*← [Chapter 14 Index](chapter14-preface) · [Next: Recipe 14.2 - Patient-Provider Assignment →](chapter14.02-patient-provider-assignment)*

@@ -260,7 +260,3 @@ One last thing about cost. The blended cost estimate of $1.11 per chart in the a
 ## Tags
 
 `classification` · `computer-vision` · `document-intelligence` · `ocr` · `model-tiering` · `fhir` · `interoperability` · `hipaa` · `batch-processing` · `aws-batch` · `bedrock` · `comprehend-medical` · `healthlake` · `nova` · `step-functions` · `textract`
-
----
-
-*← [Recipe 1.9: Medical Records Request Extraction](chapter01.09-medical-records-request-extraction) · [↑ Chapter 1 Index](chapter01-preface) · [→ Chapter 2 Preface](chapter02-preface)*

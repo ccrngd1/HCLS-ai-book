@@ -1296,7 +1296,3 @@ Shipping clinical decision support that synthesizes recommendations is a multi-y
 | **With variations** | 60-90 weeks | Multiple scenario modules across specialties. Guideline-change monitoring and population-health triggering. Prior-auth and formulary integration. Second-opinion and multi-agent deliberation. Patient-facing explanations. Integration with order sets and protocol improvement. Full post-market surveillance instrumentation. Specialty-specific prompt and retrieval tuning. Ongoing clinical evaluation program with versioned benchmarks. |
 
 ---
-
----
-
-*← [Main Recipe 2.9](chapter02.09-clinical-decision-support-synthesis) · [Python Example](chapter02.09-python-example) · [Chapter Preface](chapter02-preface)*

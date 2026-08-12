@@ -613,7 +613,3 @@ The last thing: the benefits navigator is the recipe most likely to be deployed 
 ## Tags
 
 `conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `no-surprises-act` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `citation-grounding` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `opensearch-serverless` · `quicksight` · `s3` · `secrets-manager` · `waf`
-
----
-
-*← [Recipe 11.4: Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.6: Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot) →*

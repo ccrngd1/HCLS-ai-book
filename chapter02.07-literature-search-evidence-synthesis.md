@@ -259,7 +259,3 @@ Final thought: this is one of the highest-leverage applications of medical AI I'
 ## Tags
 
 `generative-ai` · `llm` · `rag` · `vector-search` · `learning-to-rank` · `hipaa` · `provenance` · `citation-grounding` · `grounded-generation` · `bedrock` · `bedrock-knowledge-bases` · `comprehend-medical` · `opensearch`
-
----
-
-*← [Recipe 2.6: Clinical Note Summarization](chapter02.06-clinical-note-summarization) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.8 - Ambient Clinical Documentation →](chapter02.08-ambient-clinical-documentation)*

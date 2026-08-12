@@ -466,7 +466,3 @@ The FAQ chatbot is the right place to start in this chapter because it is the re
 ## Tags
 
 `conversational-ai` · `embeddings` · `rag` · `intent-classification` · `learning-to-rank` · `prompt-versioning` · `crisis-detection` · `patient-engagement` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `opensearch` · `s3` · `secrets-manager` · `waf`
-
----
-
-*← [Chapter 11 Preface](chapter11-preface) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.2: Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot) →*

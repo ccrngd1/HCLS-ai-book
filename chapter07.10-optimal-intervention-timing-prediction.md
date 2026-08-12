@@ -130,7 +130,3 @@ One more thing: deploy in shadow mode first. Generate recommendations without su
 ## Tags
 
 `causal-inference` · `predictive-analytics` · `survival-analysis` · `care-management` · `population-health` · `longitudinal` · `hipaa` · `dynamodb` · `glue` · `kinesis` · `sagemaker`
-
----
-
-*← [Recipe 7.9: Mortality Risk Scoring (ICU)](chapter07.09-mortality-risk-scoring-icu) · [Chapter 7 Index](chapter07-preface) · [Next: Chapter 8 →](chapter08-preface)*

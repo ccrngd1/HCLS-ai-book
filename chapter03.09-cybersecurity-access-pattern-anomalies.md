@@ -347,7 +347,3 @@ Patients matter most, even when they're invisible in the operational workflow. T
 ## Tags
 
 `anomaly-detection` · `knowledge-graph` · `predictive-analytics` · `recommendation` · `time-series` · `calibration` · `explainability` · `gnn` · `statistical-process-control` · `care-management` · `equity-monitoring` · `hipaa` · `regulatory-strategy` · `feature-store` · `appsync` · `bedrock` · `comprehend-medical` · `dynamodb` · `eventbridge` · `kinesis` · `neptune` · `opensearch` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `step-functions` · `timestream`
-
----
-
-*← [Recipe 3.8: Readmission Risk Anomaly Detection](chapter03.08-readmission-risk-anomaly-detection) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.10 - Epidemic / Outbreak Detection →](chapter03.10-epidemic-outbreak-detection)*

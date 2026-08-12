@@ -347,7 +347,3 @@ This architecture demonstrates the screening pipeline's shape, but a production 
 | **Basic** | 4-6 weeks | Quality gate + single model endpoint + DynamoDB storage + basic referral notification. Physician reviews all results. |
 | **Production-ready** | 3-5 months | Validated model with clinical study, Step Functions workflow, EHR integration, provider notifications, patient portal results, monitoring dashboard, regulatory documentation. |
 | **With variations** | 6-12 months | Multi-disease screening, longitudinal tracking, OCT integration, multi-site deployment with camera-specific calibration. |
-
----
-
-*← [Main Recipe 9.6](chapter09.06-diabetic-retinopathy-screening) · [Python Example](chapter09.06-python-example) · [Chapter Preface](chapter09-preface)*

@@ -467,7 +467,3 @@ FUNCTION store_and_route(flagged_patients, previous_flags):
 | **With variations** (multi-dimensional trajectories, predictive modeling, peer cohort comparison, outcome tracking) | 16-22 weeks |
 
 ---
-
----
-
-*← [Main Recipe 7.6](chapter07.06-rising-risk-identification) · [Python Example](chapter07.06-python-example) · [Chapter Preface](chapter07-preface)*

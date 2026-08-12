@@ -124,7 +124,3 @@ Finally: the explanation matters as much as the detection. Clinicians are patter
 ## Tags
 
 `time-series` · `chronic-disease` · `ehr-integration` · `fhir` · `loinc` · `hipaa` · `dynamodb` · `healthlake` · `sagemaker` · `step-functions`
-
----
-
-*← [Previous: Recipe 12.3 - ED Arrival Forecasting](chapter12.03-ed-arrival-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.5 - Hospital Census Forecasting →](chapter12.05-hospital-census-forecasting)*

@@ -145,7 +145,3 @@ Here's what I've learned about wound measurement systems:
 ## Tags
 
 `computer-vision` · `hipaa` · `sagemaker`
-
----
-
-[← Recipe 9.2: Patient Photo Verification](chapter09.02-patient-photo-verification) | [Chapter 9 Index](chapter09-preface) | [Recipe 9.4: Dermatology Lesion Triage →](chapter09.04-dermatology-lesion-triage)

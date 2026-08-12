@@ -490,7 +490,3 @@ Use a fast approximate search (HNSW) to retrieve 100 candidates, then re-rank th
 | **With variations** | 14-18 weeks | Payer-filtered search, temporal decay, re-ranking, denial clustering pipeline, provider portal integration |
 
 ---
-
----
-
-*← [Main Recipe 7.12](chapter07.12-claim-cohort-matching) · [Python Example](chapter07.12-python-example) · [Chapter Preface](chapter07-preface)*

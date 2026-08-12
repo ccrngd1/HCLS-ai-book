@@ -136,7 +136,3 @@ Start with a single condition (diabetes is the classic choice: large population,
 ## Tags
 
 `clustering` · `embeddings` · `clinical-decision-support`
-
----
-
-*← [Recipe 6.5: Provider Practice Pattern Analysis](chapter06.05-provider-practice-pattern-analysis) · [Chapter 6 Index](chapter06-preface) · [Recipe 6.7: Clinical Trial Patient Matching →](chapter06.07-clinical-trial-patient-matching)*

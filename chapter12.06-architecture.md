@@ -374,7 +374,3 @@ A typical weekly run for a 380-bed community hospital with 75,000 open claims ac
 | **Basic** | Single-payer proof of concept. One payer, simplified harmonization (single clearinghouse feed), KM curve fitting, Monte Carlo simulation, DynamoDB output. No contract versioning, no backtest loop, no production IAM scoping. | 3-4 weeks |
 | **Production-ready** | Full payer catalog, contract-version awareness, per-payer drift alerts, backtest loop with accuracy scorecard, production IAM (per-Lambda roles), KMS encryption per data class, VPC endpoints, CloudTrail data events, EventBridge lifecycle events, CloudWatch dashboards and alarms. | 10-14 weeks |
 | **With variations** | Add hierarchical multi-entity forecasting (DeepAR), denial-prevention feedback loop, payer-contract-renewal scenario modeling, dedicated self-pay sub-model, and real-time intra-week refresh on 835 file arrival. | 16-22 weeks |
-
----
-
-*← [Main Recipe: Revenue Cycle Cash Flow Forecasting](chapter12.06-revenue-cycle-cash-flow-forecasting) · [Python Example](chapter12.06-python-example) · [Chapter 12 Index](chapter12-preface)*

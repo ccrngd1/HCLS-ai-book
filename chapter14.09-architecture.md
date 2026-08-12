@@ -184,11 +184,3 @@ Some patients receive multiple treatments across different departments (radiatio
 ---
 
 **Tags:** optimization, scheduling, chemotherapy, infusion-center, constraint-programming, resource-allocation, pharmacy-coordination, nursing-workload, operations-research
-
----
-
-[← Recipe 14.8: Ambulance Routing and Dispatch](chapter14.08-ambulance-routing-dispatch) | [Chapter 14 Index](chapter14-preface) | [Recipe 14.10: Health System Network Design →](chapter14.10-health-system-network-design)
-
----
-
-*← [Main Recipe 14.9](chapter14.09-chemotherapy-scheduling) · [Python Example](chapter14.09-python-example) · [Chapter Preface](chapter14-preface)*

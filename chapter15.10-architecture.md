@@ -158,7 +158,3 @@ Rather than reacting to current state, use forecasting models (see Chapter 12 re
 | Basic (simulation only) | 4-6 months | Hospital simulator, basic RL training loop, offline evaluation against historical data. No live integration. Proves feasibility. |
 | Production-ready | 12-18 months | Real-time data pipeline, validated simulator, trained and evaluated policy, decision support UI, human workflow integration, monitoring. |
 | With variations | 18-24 months | Multi-campus coordination, surge mode, predictive pre-positioning, continuous learning from human feedback. |
-
----
-
-*← [Main Recipe 15.10](chapter15.10-hospital-resource-allocation-uncertainty) · [Python Example](chapter15.10-python-example) · [Chapter Preface](chapter15-preface)*

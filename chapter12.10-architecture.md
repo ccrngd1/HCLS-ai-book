@@ -431,7 +431,3 @@ FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
 | **With variations** (multi-modal fusion, adaptive baselines, research platform) | 12-18 months |
 
 ---
-
----
-
-*← [Main Recipe 12.10](chapter12.10-physiological-waveform-analysis) · [Python Example](chapter12.10-python-example) · [Chapter Preface](chapter12-preface)*

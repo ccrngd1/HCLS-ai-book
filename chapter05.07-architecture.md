@@ -1137,7 +1137,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add patient-mediated propagation, vital-records integration where available, tokenization-based privacy-preserving extension, gender-affirming-care workflow integration, public-health-registry-specific reconciliation, cross-organizational push notification where supported by HIE, active-learning configuration tuning, sensitivity-class-specific audit channels, audit-summary delivery to patient, multi-step history reasoning, family-disambiguation rules | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.7](chapter05.07-longitudinal-patient-matching-name-changes) · [Python Example](chapter05.07-python-example) · [Chapter Preface](chapter05-preface)*

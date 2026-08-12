@@ -208,7 +208,3 @@ What I recommend to any team looking to embark on this project, start with a det
 ## Tags
 
 `anomaly-detection` · `entity-resolution` · `blocking` · `payer` · `claims` · `hipaa` · `dynamodb` · `eventbridge` · `lambda` · `opensearch` · `sagemaker` · `sqs`
-
----
-
-*← [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.2 - Patient No-Show Pattern Detection →](chapter03.02-patient-no-show-pattern-detection)*

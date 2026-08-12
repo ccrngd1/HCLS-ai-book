@@ -514,7 +514,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - **With variations (hierarchical models, panel-level reasoning, real-time CDS Hooks integration):** 24-36 weeks
 
 ---
-
----
-
-*← [Main Recipe 12.4](chapter12.04-lab-result-trend-analysis) · [Python Example](chapter12.04-python-example) · [Chapter Preface](chapter12-preface)*

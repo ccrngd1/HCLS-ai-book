@@ -381,7 +381,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - **With variations (hierarchical, multi-facility pooling, newsvendor):** 16-20 weeks
 
 ---
-
----
-
-*← [Main Recipe 12.2](chapter12.02-supply-inventory-forecasting) · [Python Example](chapter12.02-python-example) · [Chapter Preface](chapter12-preface)*

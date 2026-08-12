@@ -486,7 +486,3 @@ The architecture above demonstrates the pattern. Running this against a real mem
 | **With variations** (temporal trajectories, real-time scoring endpoint, segment-specific models) | 8-12 weeks |
 
 ---
-
----
-
-*← [Main Recipe 6.2](chapter06.02-utilization-pattern-segmentation) · [Python Example](chapter06.02-python-example) · [Chapter Preface](chapter06-preface)*

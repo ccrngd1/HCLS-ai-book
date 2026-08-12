@@ -532,11 +532,3 @@ Once a unit is dispatched and en route, continue monitoring the route for traffi
 ---
 
 **Tags:** `optimization` · `vehicle-routing` · `real-time` · `ems` · `dispatch` · `geospatial` · `operations-research` · `coverage` · `fleet-management`
-
----
-
-| [← 14.7: OR Case Sequencing](chapter14.07-or-case-sequencing) | [Chapter 14 Index](chapter14-preface) | [14.9: Chemotherapy Scheduling →](chapter14.09-chemotherapy-scheduling) |
-
----
-
-*← [Main Recipe 14.8](chapter14.08-ambulance-routing-dispatch) · [Python Example](chapter14.08-python-example) · [Chapter Preface](chapter14-preface)*

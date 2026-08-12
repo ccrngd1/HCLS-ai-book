@@ -405,7 +405,3 @@ Last point, because it's specific to this use case: care management is rationing
 ## Tags
 
 `clustering` · `causal-inference` · `personalization` · `recommendation` · `uplift-modeling` · `care-management` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `connect` · `dynamodb` · `lambda` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 4.6: Care Gap Prioritization](chapter04.06-care-gap-prioritization) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.8 - Treatment Response Prediction →](chapter04.08-treatment-response-prediction)*

@@ -203,7 +203,3 @@ One more thing: patient informed consent for AI-assisted treatment planning is a
 ## Tags
 
 `reinforcement-learning` · `clinical-decision-support` · `fda-pathway` · `hipaa` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 15.8: Chemotherapy Dose Optimization](chapter15.08-chemotherapy-dose-optimization) · [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.10: Hospital Resource Allocation Under Uncertainty →](chapter15.10-hospital-resource-allocation-uncertainty)*

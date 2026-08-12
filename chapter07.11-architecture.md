@@ -575,7 +575,3 @@ This architecture gives you a working denial prediction pipeline, but a producti
 | **With variations** (payer-specific ensemble, multi-class denial reason, appeal success prediction) | 24-32 weeks |
 
 ---
-
----
-
-*← [Main Recipe 7.11](chapter07.11-claim-denial-prediction) · [Python Example](chapter07.11-python-example) · [Chapter Preface](chapter07-preface)*

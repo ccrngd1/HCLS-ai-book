@@ -398,7 +398,3 @@ FUNCTION handle_engagement_timeout(message_id):
 | **With variations** | 10-12 weeks | Multi-channel joint optimization, content personalization integration, cold-start clustering, fatigue modeling, predictive send-ahead. |
 
 ---
-
----
-
-*← [Main Recipe 15.2](chapter15.02-notification-timing-optimization) · [Python Example](chapter15.02-python-example) · [Chapter Preface](chapter15-preface)*

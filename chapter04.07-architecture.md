@@ -1611,7 +1611,3 @@ A `sweep_pending_decisions` Lambda runs daily: for each pending decision past it
 | With variations | Add real-time post-discharge enrollment, hospital-at-home integration, behavioral-health pathway, SDOH-focused programs, randomized-evaluation cohort, predictive disenrollment-prevention, member-incentive integration, cost-aware uplift optimization, provider-performance feedback | 10-16 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.7](chapter04.07-care-management-program-enrollment) · [Python Example](chapter04.07-python-example) · [Chapter Preface](chapter04-preface)*

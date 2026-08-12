@@ -184,7 +184,3 @@ Finally: don't try to automate the whole thing. The physician signature is load-
 ## Tags
 
 `generative-ai` · `llm` · `rag` · `prior-authorization` · `fhir` · `hipaa` · `grounded-generation` · `bedrock` · `bedrock-knowledge-bases` · `healthlake` · `step-functions`
-
----
-
-*← [Recipe 2.3: Clinical Documentation Improvement](chapter02.03-clinical-documentation-improvement) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.5 - After-Visit Summary Generation →](chapter02.05-after-visit-summary-generation)*

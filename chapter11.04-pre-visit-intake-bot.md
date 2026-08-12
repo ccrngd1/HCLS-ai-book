@@ -671,7 +671,3 @@ The intake bot is the right fourth recipe in this chapter, after the FAQ bot, th
 ## Tags
 
 `conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `behavioral-health` · `clinical-decision-support` · `crisis-detection` · `medication-reconciliation` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `comprehend-medical` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `lex` · `quicksight` · `s3` · `secrets-manager` · `waf`
-
----
-
-*← [Recipe 11.3: Prescription Refill Request Bot](chapter11.03-prescription-refill-request-bot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.5: Insurance Benefits Navigator](chapter11.05-insurance-benefits-navigator) →*

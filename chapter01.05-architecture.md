@@ -964,7 +964,3 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 | **Basic (proof of concept)** | 3-5 days | S3 bucket, Step Functions skeleton, Textract extraction, Nova Lite boundary detection and classification for a single document type (operative reports), basic DynamoDB storage. Enough to ingest a 10-page attachment, segment it, classify one document, and see structured output. No claim line matching yet. |
 | **Production-ready** | 4-6 weeks | Full multi-document classification taxonomy, claim line matching with Claude Sonnet, confidence gating, human review routing via A2I, dead letter queues, S3 Object Lock for retention, CloudWatch alarms, per-line support evidence surfacing, and integration with at least one claims workstation or adjudication system. |
 | **With variations** | 8-12 weeks | Add claim-value-based routing thresholds, Bedrock Data Automation evaluation path, structured workstation integration with examiner UI, multi-payer taxonomy tuning, and end-to-end regression testing against a representative corpus of real claims packages across surgical, therapy, and diagnostic categories. |
-
----
-
-*← [Main Recipe 1.5](chapter01.05-claims-attachment-processing) · [Python Example](chapter01.05-python-example) · [Chapter Preface](chapter01-preface)*

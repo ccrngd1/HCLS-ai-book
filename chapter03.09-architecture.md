@@ -1080,7 +1080,3 @@ The pseudocode shows the shape. A production access-monitoring program closes se
 | With variations | Additional EHRs and application systems, sequence-based workflow detection, GNN-based relationship detection, privileged-user monitoring program (typically as a separate program), patient-portal access monitoring, federated cross-site monitoring, conversational AI investigator copilot, advanced equity audits with formalized disparate-impact analysis, patient-facing transparency (access-log exposure to patients), insider-threat-program integration with HR and physical-access signals | 18-48 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.9](chapter03.09-cybersecurity-access-pattern-anomalies) · [Python Example](chapter03.09-python-example) · [Chapter Preface](chapter03-preface)*

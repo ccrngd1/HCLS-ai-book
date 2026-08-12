@@ -372,7 +372,3 @@ Let's be direct about the gap between this architecture and clinical deployment:
 | With variations (multi-site, continuous actions, regulatory submission) | 24-36 months |
 
 ---
-
----
-
-*← [Main Recipe 15.9](chapter15.09-radiation-therapy-adaptive-planning) · [Python Example](chapter15.09-python-example) · [Chapter Preface](chapter15-preface)*

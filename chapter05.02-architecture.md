@@ -1119,7 +1119,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add state medical board license verification, Death Master File integration, FHIR Practitioner / PractitionerRole publication, multi-source taxonomy reconciliation, active-learning-driven gold-set construction, per-cohort m/u models, credentialing-system bidirectional sync, provider self-service portal | 4-8 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.2](chapter05.02-provider-npi-matching) · [Python Example](chapter05.02-python-example) · [Chapter Preface](chapter05-preface)*

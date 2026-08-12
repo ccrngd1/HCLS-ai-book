@@ -136,8 +136,3 @@ One more thing to keep in mind. Tier assignments are not destiny; they're a snap
 ## Tags
 
 `clustering` · `k-means` · `unsupervised-learning` · `chronic-disease` · `care-management` · `population-health`
-
----
-
-| [← 6.3: Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering) | [Chapter 6 Index](chapter06-preface) | [6.5: Provider Practice Pattern Analysis →](chapter06.05-provider-practice-pattern-analysis) |
-|:---|:---:|---:|

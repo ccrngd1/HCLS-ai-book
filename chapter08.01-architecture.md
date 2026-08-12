@@ -369,7 +369,3 @@ This closes the loop: misclassifications get corrected by humans, corrections be
 | **With variations** (multi-label, acuity stacking, drift detection) | 10-12 weeks |
 
 ---
-
----
-
-*← [Main Recipe 8.1](chapter08.01-chief-complaint-classification) · [Python Example](chapter08.01-python-example) · [Chapter Preface](chapter08-preface)*

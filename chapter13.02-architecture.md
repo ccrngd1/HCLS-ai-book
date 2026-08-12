@@ -542,11 +542,3 @@ FUNCTION health_endpoint(neptune_endpoint):
 ---
 
 **Tags:** `knowledge-graph`, `provider-directory`, `neptune`, `graph-database`, `gremlin`, `provider-search`, `network-adequacy`, `healthcare-directory`, `ontology`, `taxonomy`
-
----
-
-[← Recipe 13.1: Drug Formulary Navigation](chapter13.01-drug-formulary-navigation) | [Chapter 13 Index](chapter13-preface) | [Recipe 13.3: ICD/CPT Hierarchy Navigation →](chapter13.03-icd-cpt-hierarchy-navigation)
-
----
-
-*← [Main Recipe 13.2](chapter13.02-provider-directory-knowledge-graph) · [Python Example](chapter13.02-python-example) · [Chapter Preface](chapter13-preface)*

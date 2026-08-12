@@ -486,7 +486,3 @@ This pipeline extracts problems and produces recommendations. But several gaps s
 | **With variations** (multi-note longitudinal, specialty-adapted, FHIR integration) | 12-16 weeks |
 
 ---
-
----
-
-*← [Main Recipe 8.5](chapter08.05-problem-list-extraction) · [Python Example](chapter08.05-python-example) · [Chapter Preface](chapter08-preface)*

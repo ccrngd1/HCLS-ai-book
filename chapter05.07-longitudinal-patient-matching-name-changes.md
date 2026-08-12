@@ -393,7 +393,3 @@ Last point, because it is specific to the regulatory context: the information-bl
 ## Tags
 
 `entity-resolution` · `patient-safety` · `fhir` · `audit-trail` · `cures-act` · `equity-monitoring` · `information-blocking` · `hipaa` · `event-driven`
-
----
-
-*← [Recipe 5.6: Claims-to-Clinical Data Linkage](chapter05.06-claims-to-clinical-data-linkage) · Chapter 5 · [Next: Recipe 5.8 - Privacy-Preserving Record Linkage →](chapter05.08-privacy-preserving-record-linkage)*

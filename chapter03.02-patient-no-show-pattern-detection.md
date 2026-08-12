@@ -235,7 +235,3 @@ The trap to avoid: do not optimize the model to minimize no-shows if your operat
 ## Tags
 
 `anomaly-detection` · `patient-engagement` · `provider` · `hipaa` · `feature-store` · `dynamodb` · `glue` · `lambda` · `pinpoint` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 3.1: Duplicate Claim Detection](chapter03.01-duplicate-claim-detection) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.3 - Billing Code Anomalies →](chapter03.03-billing-code-anomalies)*

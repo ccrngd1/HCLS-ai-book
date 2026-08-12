@@ -147,7 +147,3 @@ Start with a single unit. Prove it works. Then expand. Trying to optimize across
 ## Tags
 
 `optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `hipaa` · `real-time` · `dynamodb` · `eventbridge` · `lambda` · `sagemaker`
-
----
-
-*← [Recipe 14.3: Inventory Reorder Optimization](chapter14.03-inventory-reorder-optimization) · [Chapter 14 Index](chapter14-preface) · [Next: Recipe 14.5 - Operating Room Block Scheduling →](chapter14.05-operating-room-block-scheduling)*

@@ -188,7 +188,3 @@ A note about patient engagement. The patient-facing narrative is the surface are
 ## Tags
 
 `clustering` · `personalization` · `clinical-decision-support` · `fhir` · `smart-on-fhir` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `healthlake` · `lambda` · `pinpoint` · `step-functions`
-
----
-
-*← [Recipe 4.8: Treatment Response Prediction](chapter04.08-treatment-response-prediction) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.10 - Dynamic Treatment Regime Recommendation →](chapter04.10-dynamic-treatment-regime-recommendation)*

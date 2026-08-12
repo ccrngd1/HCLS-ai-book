@@ -274,7 +274,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - **With variations (hourly, per-provider, no-show adjustment):** 8-12 weeks
 
 ---
-
----
-
-*← [Main Recipe 12.1](chapter12.01-appointment-volume-forecasting) · [Python Example](chapter12.01-python-example) · [Chapter Preface](chapter12-preface)*

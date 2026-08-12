@@ -696,7 +696,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Real-time detection at ingestion edge, embedding-based similarity on attachments, graph detection of coordinated duplicates, cross-payer privacy-preserving linkage, LLM-assisted review triage | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.1](chapter03.01-duplicate-claim-detection) · [Python Example](chapter03.01-python-example) · [Chapter Preface](chapter03-preface)*

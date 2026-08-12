@@ -1205,7 +1205,3 @@ The pseudocode shows the shape. A production surveillance program closes several
 | With variations | Additional states/jurisdictions, genomic-cluster integration, wearable-aggregate signal integration, conversational AI investigator copilot, patient-facing transparency dashboards, federated cross-jurisdictional surveillance, One Health integration with veterinary and environmental surveillance, climate and weather-aware baseline modeling, mass-gathering temporary surveillance overlays, advanced equity audits with formalized disparate-impact analysis | 24-60 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.10](chapter03.10-epidemic-outbreak-detection) · [Python Example](chapter03.10-python-example) · [Chapter Preface](chapter03-preface)*

@@ -511,7 +511,3 @@ FUNCTION generate_reports(assignments, profiles, provider_metrics):
 | **Basic** (single specialty, K-Means, manual case-mix adjustment) | 4-6 weeks |
 | **Production-ready** (multi-specialty, automated pipeline, provider dashboards, feedback mechanism) | 12-16 weeks |
 | **With variations** (temporal tracking, network analysis, outcome-weighted clustering) | 20-24 weeks |
-
----
-
-*← [Main Recipe 6.5](chapter06.05-provider-practice-pattern-analysis) · [Python Example](chapter06.05-python-example) · [Chapter Preface](chapter06-preface)*

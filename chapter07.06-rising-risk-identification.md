@@ -164,7 +164,3 @@ The thing I'd do differently: start with the intervention capacity constraint an
 ## Tags
 
 `predictive-analytics` · `time-series` · `care-management` · `population-health` · `longitudinal` · `hipaa` · `batch-processing` · `glue` · `sagemaker`
-
----
-
-*← [Recipe 7.5: 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk) · [Chapter 7 Index](chapter07-preface) · [Next: Recipe 7.7 →](chapter07.07-length-of-stay-prediction)*

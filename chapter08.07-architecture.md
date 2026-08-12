@@ -545,11 +545,3 @@ The pseudocode above gets you to a working demo. Here's what stands between that
 ---
 
 **Tags:** `nlp`, `adverse-events`, `pharmacovigilance`, `patient-safety`, `comprehend-medical`, `relation-extraction`, `clinical-text`, `surveillance`, `drug-safety`
-
----
-
-| [← 8.6: SDOH Extraction](chapter08.06-sdoh-extraction) | [Chapter 8 Index](chapter08-preface) | [8.8: Clinical Assertion Classification →](chapter08.08-clinical-assertion-classification) |
-
----
-
-*← [Main Recipe 8.7](chapter08.07-adverse-event-detection-clinical-text) · [Python Example](chapter08.07-python-example) · [Chapter Preface](chapter08-preface)*

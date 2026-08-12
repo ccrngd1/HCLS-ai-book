@@ -159,7 +159,3 @@ The thing I didn't anticipate building the first version of this: days supply is
 ## Tags
 
 `document-intelligence` · `ocr` · `pharmacy` · `ndc` · `rxnorm` · `hipaa` · `comprehend-medical` · `dynamodb` · `lambda` · `s3` · `textract`
-
----
-
-*← [Chapter 1 Index](chapter01-preface) · ← [Recipe 1.6: Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) · [Recipe 1.8: EOB Processing →](chapter01.08-eob-processing)*

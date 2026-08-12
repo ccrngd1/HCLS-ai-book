@@ -350,7 +350,3 @@ Last point, because it is specific to the regulatory context: the No Surprises A
 ## Tags
 
 `entity-resolution` · `revenue-cycle` · `fhir` · `x12` · `no-surprises-act` · `hipaa` · `event-driven` · `dynamodb` · `elasticache` · `lambda` · `step-functions`
-
----
-
-*← [Recipe 5.3: Address Standardization and Household Linkage](chapter05.03-address-standardization-household-linkage) · Chapter 5 · [Next: Recipe 5.5 - Cross-Facility Patient Matching for HIE →](chapter05.05-cross-facility-patient-matching)*

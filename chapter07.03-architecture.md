@@ -493,7 +493,3 @@ The pseudocode and architecture above demonstrate the churn prediction pipeline 
 | **With variations** (real-time triggers, reason sub-models, group-level prediction) | 14-18 weeks |
 
 ---
-
----
-
-*← [Main Recipe 7.3](chapter07.03-patient-churn-disenrollment-prediction) · [Python Example](chapter07.03-python-example) · [Chapter Preface](chapter07-preface)*

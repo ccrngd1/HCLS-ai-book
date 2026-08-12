@@ -271,7 +271,3 @@ One last point, because it's specific to this use case: the directory is often t
 ## Tags
 
 `personalization` · `vector-search` · `learning-to-rank` · `network-adequacy` · `provider-directory` · `equity-monitoring` · `hipaa` · `bedrock` · `dynamodb` · `lambda` · `location-service` · `opensearch` · `sagemaker`
-
----
-
-*← [Recipe 4.2: Patient Education Content Matching](chapter04.02-patient-education-content-matching) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.4 - Wellness Program Recommendations →](chapter04.04-wellness-program-recommendations)*

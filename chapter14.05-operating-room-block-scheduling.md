@@ -139,7 +139,3 @@ One more thing: the 75% utilization target that every hospital uses as a benchma
 ## Tags
 
 `optimization` · `mixed-integer-programming` · `operations-research` · `resource-allocation` · `scheduling` · `hipaa` · `aws-batch` · `dynamodb` · `eventbridge` · `sagemaker`
-
----
-
-*← [Recipe 14.4: Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization) · [Chapter 14 Index](chapter14-preface) · [Next: Recipe 14.6: Patient Flow / Bed Assignment →](chapter14.06-patient-flow-bed-assignment)*

@@ -1309,7 +1309,3 @@ The variations are listed in roughly the order most programs add them. Heart-fai
 | With variations | Additional cohorts (post-op, diabetes, COPD, behavioral health), HIE integration for external readmissions, claims feed integration for ACO contexts, LLM-driven outreach script generation, conversational AI patient check-ins, time-series LSTM or transformer model, federated learning across multiple sites, RPM device program with patient enrollment and logistics, formal HRSN/SDOH screening integration, closed-loop interventions for specific narrow scenarios, pediatric or maternal specializations | 18-36 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.8](chapter03.08-readmission-risk-anomaly-detection) · [Python Example](chapter03.08-python-example) · [Chapter Preface](chapter03-preface)*

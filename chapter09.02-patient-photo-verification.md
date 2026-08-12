@@ -102,7 +102,3 @@ The bias question is real and you can't hand-wave it. Test your system. Publish 
 ## Tags
 
 `computer-vision` · `patient-safety` · `hipaa` · `privacy` · `dynamodb` · `lambda` · `rekognition` · `s3`
-
----
-
-*← [Recipe 9.1: Image Quality Assessment](chapter09.01-image-quality-assessment) · [Chapter 9 Index](chapter09-preface) · [Next: Recipe 9.3: Wound Photography Measurement →](chapter09.03-wound-photography-measurement)*

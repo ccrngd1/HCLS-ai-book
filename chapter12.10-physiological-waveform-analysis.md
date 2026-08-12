@@ -126,7 +126,3 @@ The FDA question looms over everything. If your system makes diagnostic claims (
 ## Tags
 
 `time-series` · `cnn` · `icu` · `vital-signs` · `fda-pathway` · `hipaa` · `real-time` · `streaming` · `kinesis` · `sagemaker` · `timestream`
-
----
-
-*← [Recipe 12.9: Epidemic Forecasting](chapter12.09-epidemic-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Chapter 13 →](chapter13-preface)*

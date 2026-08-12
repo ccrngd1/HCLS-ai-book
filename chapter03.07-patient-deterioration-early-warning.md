@@ -321,7 +321,3 @@ Lives are saved sometimes. I want to say this clearly because it's easy to get l
 ## Tags
 
 `anomaly-detection` · `predictive-analytics` · `time-series` · `calibration` · `explainability` · `vital-signs` · `provider` · `alert-fatigue` · `equity-monitoring` · `fda-pathway` · `hipaa` · `clinical-validation` · `feature-store` · `model-registry` · `bedrock` · `comprehend-medical` · `dynamodb` · `eventbridge` · `kinesis` · `opensearch` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `timestream`
-
----
-
-*← [Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection](chapter03.06-healthcare-fraud-waste-abuse-detection) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.8 - Readmission Risk Anomaly Detection →](chapter03.08-readmission-risk-anomaly-detection)*

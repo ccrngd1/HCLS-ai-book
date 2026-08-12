@@ -422,7 +422,3 @@ FUNCTION detect_population_shift(current_distribution, previous_distribution, th
 | **Basic** (single-source clustering, manual feature selection, notebook-based) | 2-3 weeks |
 | **Production-ready** (multi-source ETL, automated pipeline, dashboards, monitoring) | 6-8 weeks |
 | **With variations** (temporal trajectories, service-line splits, predictive assignment) | 10-14 weeks |
-
----
-
-*← [Main Recipe 6.3](chapter06.03-payer-mix-financial-risk-clustering) · [Python Example](chapter06.03-python-example) · [Chapter Preface](chapter06-preface)*

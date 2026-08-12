@@ -527,7 +527,3 @@ Telehealth speech-to-text is the recipe in this chapter where the operational im
 ## Tags
 
 `speech-voice-ai` · `diarization` · `streaming-asr` · `structured-extraction` · `behavioral-health` · `clinical-documentation` · `ehr-integration` · `multilingual` · `42-cfr-part-2` · `audit-trail` · `consent-management` · `equity-monitoring` · `human-in-the-loop` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `citation-grounding` · `faithfulness-checking` · `api-gateway` · `athena` · `bedrock` · `chime-sdk` · `cloudtrail` · `cloudwatch` · `cognito` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `polly` · `quicksight` · `s3` · `secrets-manager` · `step-functions` · `transcribe-medical`
-
----
-
-*← [Recipe 10.5: Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.7: Ambient Clinical Documentation](chapter10.07-ambient-clinical-documentation) →*

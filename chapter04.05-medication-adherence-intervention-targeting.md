@@ -332,7 +332,3 @@ Last point, because it's specific to this use case: medication non-adherence is 
 ## Tags
 
 `clustering` · `causal-inference` · `personalization` · `recommendation` · `uplift-modeling` · `pharmacy` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `lambda` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 4.4: Wellness Program Recommendations](chapter04.04-wellness-program-recommendations) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.6 - Care Gap Prioritization →](chapter04.06-care-gap-prioritization)*

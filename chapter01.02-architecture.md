@@ -467,7 +467,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 | **Basic (proof of concept)** | 2-3 days | S3 trigger, Textract async job, basic field parsing, DynamoDB storage. Enough to demo on a single form template. |
 | **Production-ready** | 2-3 weeks | Dead letter queues, error handling, idempotency, VPC endpoints, CloudWatch alarms, multi-template support, confidence gating with review queue integration. |
 | **With variations** | 4-6 weeks | Add multi-language support, consent/signature tracking, FHIR output transform, and EHR integration testing. |
-
----
-
-*← [Main Recipe 1.2](chapter01.02-patient-intake-digitization) · [Python Example](chapter01.02-python-example) · [Chapter Preface](chapter01-preface)*

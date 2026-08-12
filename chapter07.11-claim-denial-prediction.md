@@ -157,7 +157,3 @@ On the federal side, CMS finalized rule CMS-0057-F (effective January 2026) mand
 ## Tags
 
 `classification` · `predictive-analytics` · `explainability` · `prior-authorization` · `revenue-cycle` · `equity-monitoring` · `hipaa` · `sagemaker`
-
----
-
-*← [Recipe 7.10: Optimal Intervention Timing Prediction](chapter07.10-optimal-intervention-timing-prediction) · [Chapter 7 Index](chapter07-preface) · [Next: Chapter 8 →](chapter08-preface)*

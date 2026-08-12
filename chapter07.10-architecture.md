@@ -554,7 +554,3 @@ The pseudocode and architecture above get you to a working prototype. Here's wha
 | **With variations** (multi-intervention, causal correction, continuous learning) | 30-40+ weeks |
 
 ---
-
----
-
-*← [Main Recipe 7.10](chapter07.10-optimal-intervention-timing-prediction) · [Python Example](chapter07.10-python-example) · [Chapter Preface](chapter07-preface)*

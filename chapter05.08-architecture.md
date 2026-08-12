@@ -1216,7 +1216,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add commercial tokenization vendor integration, TEE-based PPRL with Nitro Enclaves, patient-mediated PPRL through Patient Access API, federated SMPC across more than two parties, differential-privacy-augmented disclosure with privacy-budget tracking, cross-cycle linkage composition with persistent encoded-record identifiers, re-identification-risk-aware adaptive parameterization, cross-jurisdictional overlay automation, audit-summary delivery to patient | 12-18 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.8](chapter05.08-privacy-preserving-record-linkage) · [Python Example](chapter05.08-python-example) · [Chapter Preface](chapter05-preface)*

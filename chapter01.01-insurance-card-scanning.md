@@ -115,7 +115,3 @@ The part that surprised me: front-of-card processing gets you maybe 70% of what 
 ## Tags
 
 `document-intelligence` · `ocr` · `hipaa` · `dynamodb` · `lambda` · `s3` · `textract`
-
----
-
-*← [Chapter 1 Index](chapter01-preface) · [Next: Recipe 1.2 - Patient Intake Form Digitization →](chapter01.02-patient-intake-digitization)*

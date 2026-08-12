@@ -116,7 +116,3 @@ The biggest surprise: simple works. A basic slope + deviation model with good su
 ## Tags
 
 `time-series` · `vital-signs` · `longitudinal` · `alert-fatigue` · `hipaa` · `real-time` · `streaming`
-
----
-
-*← [Recipe 12.6: Revenue Cycle Cash Flow Forecasting](chapter12.06-revenue-cycle-cash-flow-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.8: Disease Progression Trajectory Modeling →](chapter12.08-disease-progression-trajectory-modeling)*

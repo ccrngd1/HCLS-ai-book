@@ -554,7 +554,3 @@ The refill bot is the right third recipe in this chapter, after the FAQ bot and 
 ## Tags
 
 `conversational-ai` · `function-calling` · `intent-classification` · `prompt-versioning` · `clinical-decision-support` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `multilingual` · `accessibility` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `privacy` · `bedrock-guardrails` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `comprehend-medical` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `s3` · `secrets-manager` · `waf`
-
----
-
-*← [Recipe 11.2: Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.4: Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot) →*

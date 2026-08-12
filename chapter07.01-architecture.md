@@ -463,11 +463,3 @@ The architecture above is complete enough to score appointments and trigger remi
 ---
 
 **Tags:** `predictive-analytics`, `binary-classification`, `xgboost`, `no-show`, `scheduling`, `operations`, `sagemaker`, `glue`, `dynamodb`
-
----
-
-| [← Chapter 7 Index](chapter07-preface) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.2 →](chapter07.02-propensity-to-pay-scoring) |
-
----
-
-*← [Main Recipe 7.1](chapter07.01-appointment-no-show-prediction) · [Python Example](chapter07.01-python-example) · [Chapter Preface](chapter07-preface)*

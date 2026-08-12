@@ -173,7 +173,3 @@ One more thing: the contextual bandit approach (mentioned in the Technology sect
 ## Tags
 
 `reinforcement-learning` · `contextual-bandit` · `patient-safety` · `alert-fatigue` · `hipaa` · `dynamodb` · `kinesis` · `sagemaker`
-
----
-
-*← [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.2 - Notification Timing Optimization →](chapter15.02-notification-timing-optimization)*

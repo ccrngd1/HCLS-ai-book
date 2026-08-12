@@ -143,7 +143,3 @@ One more thing: don't over-index on the algorithm. K-Means with well-engineered 
 ## Tags
 
 `clustering` · `k-means` · `payer` · `population-health` · `revenue-cycle` · `hipaa` · `athena` · `glue` · `quicksight` · `sagemaker`
-
----
-
-*← [Recipe 6.2: Utilization Pattern Segmentation](chapter06.02-utilization-pattern-segmentation) · [Chapter 6 Index](chapter06-preface) · [Next: Recipe 6.4 - Disease Severity Stratification →](chapter06.04-disease-severity-stratification)*

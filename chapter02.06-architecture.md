@@ -834,7 +834,3 @@ The pipeline above produces summaries that are structurally sound and clinically
 | **With variations** | 36-52 weeks | Six or more specialty templates. Longitudinal disease-specific summarization. Interval summaries. Audio rendering. Multi-patient rounding summaries. Quality-measure extraction alongside summarization. Production-grade feedback loop with automated retraining or prompt iteration. Health system-wide rollout with change management and clinician training. |
 
 ---
-
----
-
-*← [Main Recipe 2.6](chapter02.06-clinical-note-summarization) · [Python Example](chapter02.06-python-example) · [Chapter Preface](chapter02-preface)*

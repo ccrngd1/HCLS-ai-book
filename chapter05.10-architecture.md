@@ -1224,7 +1224,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add authorized-intermediary LADMF subscription, state-vital-records FHIR-based feed integration, cross-network deceased-patient-event propagation through TEFCA, hospice-data-network deceased-patient-source integration, pharmacy-network deceased-patient-fraud-detection integration, cohort-survival-analysis cohort-refresh automation, quality-measurement-pipeline deceased-patient-handling automation, multi-decade-archival-pathway lifecycle automation, cross-jurisdictional posthumous-protection-overlay engine, active-learning-driven matching-tolerance tuning, audit-summary delivery to the personal representative | 9-18 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.10](chapter05.10-deceased-patient-resolution-reconciliation) · [Python Example](chapter05.10-python-example) · [Chapter Preface](chapter05-preface)*

@@ -117,7 +117,3 @@ The caching layer pays for itself quickly. Standard procedure discharge instruct
 ## Tags
 
 `generative-ai` · `llm` · `patient-education` · `health-literacy` · `hipaa` · `bedrock-guardrails` · `bedrock` · `comprehend-medical` · `dynamodb` · `lambda`
-
----
-
-*← [Recipe 2.1: Patient Message Response Drafting](chapter02.01-patient-message-response-drafting) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.3 - Clinical Documentation Improvement →](chapter02.03-clinical-documentation-improvement)*

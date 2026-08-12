@@ -1363,7 +1363,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add refill-gap real-time triggers, primary-adherence pathway, specialty pharmacy pipeline, caregiver-mediated interventions, EHR-embedded adherence flags, behavioral economics nudges, cross-recipe orchestration with 4.4 and 4.7 | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.5](chapter04.05-medication-adherence-intervention-targeting) · [Python Example](chapter04.05-python-example) · [Chapter Preface](chapter04-preface)*

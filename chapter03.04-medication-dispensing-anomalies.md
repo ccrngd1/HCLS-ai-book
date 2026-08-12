@@ -257,7 +257,3 @@ The trap to avoid: do not let the business case be "reduce adverse drug events b
 ## Tags
 
 `anomaly-detection` · `statistical-process-control` · `clinical-decision-support` · `pharmacy` · `provider` · `fhir` · `hl7` · `rxnorm` · `hipaa` · `feature-store` · `bedrock` · `comprehend-medical` · `dynamodb` · `kinesis` · `lambda` · `neptune` · `opensearch` · `sagemaker`
-
----
-
-*← [Recipe 3.3: Billing Code Anomalies](chapter03.03-billing-code-anomalies) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.5 - Lab Result Outlier Detection →](chapter03.05-lab-result-outlier-detection)*

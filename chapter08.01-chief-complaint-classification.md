@@ -109,7 +109,3 @@ Retraining cadence matters too. Quarterly retraining picks up vocabulary drift (
 ## Tags
 
 `classification` · `nlp` · `triage` · `hipaa` · `real-time` · `comprehend` · `comprehend-medical` · `dynamodb` · `lambda` · `sqs`
-
----
-
-*← [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.2 - Patient Sentiment Analysis →](chapter08.02-patient-sentiment-analysis)*

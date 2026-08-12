@@ -1653,7 +1653,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add multi-outcome scoring, federated learning across institutions, pharmacogenomic integration, cost-effectiveness extensions, real-world evidence pipeline integration, time-varying treatment effects, sequencing optimization (4.10 lead-in), patient-reported outcome integration, adaptive trial integration | 12-24 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.8](chapter04.08-treatment-response-prediction) · [Python Example](chapter04.08-python-example) · [Chapter Preface](chapter04-preface)*

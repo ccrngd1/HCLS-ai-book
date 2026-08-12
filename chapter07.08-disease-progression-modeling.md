@@ -137,8 +137,3 @@ Disease progression modeling is one of those problems where the concept is intui
 ## Tags
 
 `predictive-analytics` · `survival-analysis` · `chronic-disease` · `longitudinal`
-
----
-
-| [← 7.7: Length of Stay Prediction](chapter07.07-length-of-stay-prediction) | [Chapter 7 Index](chapter07-preface) | [7.9: Mortality Risk Scoring →](chapter07.09-mortality-risk-scoring-icu) |
-|:---|:---:|---:|

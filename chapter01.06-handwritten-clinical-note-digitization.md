@@ -203,7 +203,3 @@ Let me be direct about what changed and what didn't.
 ## Tags
 
 `computer-vision` · `document-intelligence` · `ocr` · `clinical-notes` · `human-in-the-loop` · `hipaa` · `multi-modal` · `a2i` · `bedrock` · `step-functions` · `textract`
-
----
-
-*← [Recipe 1.5 - Claims Attachment Processing](chapter01.05-claims-attachment-processing) · [↑ Chapter 1 Index](chapter01-preface) · [Recipe 1.7 - Prescription Label OCR →](chapter01.07-prescription-label-ocr)*

@@ -287,7 +287,3 @@ Last point, because it's specific to this use case: members are people, and well
 ## Tags
 
 `clustering` · `causal-inference` · `personalization` · `recommendation` · `uplift-modeling` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `lambda` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 4.3: Provider Directory Search Optimization](chapter04.03-provider-directory-search-optimization) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.5 - Medication Adherence Intervention Targeting →](chapter04.05-medication-adherence-intervention-targeting)*

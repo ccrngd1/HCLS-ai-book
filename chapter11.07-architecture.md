@@ -1564,7 +1564,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Diabetes-specific deep CGM integration, heart-failure-specific weight-and-symptom-tracking deep integration, hypertension-specific home-BP-monitoring program integration, COPD/asthma-specific peak-flow and exacerbation-prevention focus, CKD-specific deep integration with nephrology, depression/anxiety-specific behavioral-health tooling integrated with mental-health pathway, pediatric chronic-disease deployment with parent-as-historian and developmentally-appropriate transitions, geriatric coaching with caregiver integration, oncology survivorship deployment, transplant-recipient deployment, post-discharge transitions-of-care variant, maternal-health deployment across pregnancy and postpartum, voice-channel deployment with accessibility considerations, multi-language deployment beyond English plus Spanish with native-speaker review, hybrid AI-plus-human coaching deployment with care-management integration, cross-institutional federation, care-plan-revision feedback loop with bottom-quartile outcome triggers, population-health overlay for value-based-care reporting, continuous-improvement loop with structured failure-mode labeling | 18-24 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.7](chapter11.07-chronic-disease-management-coach) · [Python Example](chapter11.07-python-example) · [Chapter Preface](chapter11-preface)*

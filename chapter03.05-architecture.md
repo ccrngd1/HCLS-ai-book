@@ -1201,7 +1201,3 @@ The pseudocode shows the shape. A production lab outlier detection system closes
 | With variations | POCT integration, blood bank extension, microbiology interpretation assist, oncology biomarker trend detection, therapeutic drug monitoring integration, cross-facility harmonization, LLM-assisted triage, patient-portal context layer | 12-24 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.5](chapter03.05-lab-result-outlier-detection) · [Python Example](chapter03.05-python-example) · [Chapter Preface](chapter03-preface)*

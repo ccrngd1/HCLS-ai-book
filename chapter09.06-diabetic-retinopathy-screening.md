@@ -121,5 +121,3 @@ Lastly, the patients who most need screening (uncontrolled diabetes, multiple co
 ---
 
 ## Navigation
-
-[← 9.5: Chest X-Ray Triage](chapter09.05-chest-xray-triage) | [Chapter 9 Index](chapter09-preface) | [9.7: Radiology AI Triage →](chapter09.07-radiology-ai-triage-multi-modality)

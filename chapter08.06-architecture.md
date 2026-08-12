@@ -499,7 +499,3 @@ The pseudocode above gets you extraction results. These gaps will bite you in pr
 ### Tags
 
 `comprehend-medical` · `comprehend-custom` · `lambda` · `dynamodb` · `sqs` · `kms` · `cloudwatch` · `sdoh` · `nlp` · `text-classification` · `entity-extraction` · `hipaa`
-
----
-
-*← [Main Recipe 8.6](chapter08.06-sdoh-extraction) · [Python Example](chapter08.06-python-example) · [Chapter Preface](chapter08-preface)*

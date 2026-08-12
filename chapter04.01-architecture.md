@@ -446,7 +446,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add LLM-based content drafting, multi-touch sequence optimization, uplift modeling, SDOH integration | 6-9 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.1](chapter04.01-appointment-reminder-channel-optimization) · [Python Example](chapter04.01-python-example) · [Chapter Preface](chapter04-preface)*

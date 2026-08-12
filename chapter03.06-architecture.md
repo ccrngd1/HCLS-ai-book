@@ -1326,7 +1326,3 @@ The infrastructure that makes subgroup monitoring binding: subgroup performance 
 | With variations | Pharmacy specialization, home health / hospice specialization, DME specialization, behavioral health specialization, real-time pre-payment integration, Clean Rooms cross-payer intelligence, federated learning, member-facing fraud detection, provider-facing transparency dashboards | 18-36 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.6](chapter03.06-healthcare-fraud-waste-abuse-detection) · [Python Example](chapter03.06-python-example) · [Chapter Preface](chapter03-preface)*

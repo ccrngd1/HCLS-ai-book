@@ -162,7 +162,3 @@ Here's what I've learned about bed assignment optimization that the vendor demos
 ## Tags
 
 `optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `capacity-management` · `hospital-operations` · `real-time`
-
----
-
-| [← 14.5: Operating Room Block Scheduling](chapter14.05-operating-room-block-scheduling) | [Chapter 14 Index](chapter14-preface) | [14.7: OR Case Sequencing →](chapter14.07-or-case-sequencing) |

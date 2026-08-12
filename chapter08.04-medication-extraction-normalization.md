@@ -125,7 +125,3 @@ One more honest admission: most managed medical NER services impose a character 
 ## Tags
 
 `nlp` · `ner` · `structured-extraction` · `medication-reconciliation` · `clinical-notes` · `rxnorm` · `hipaa` · `comprehend-medical` · `dynamodb` · `lambda` · `s3`
-
----
-
-*← [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.5: Problem List Extraction →](chapter08.05-problem-list-extraction)*

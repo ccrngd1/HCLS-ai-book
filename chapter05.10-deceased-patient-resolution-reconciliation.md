@@ -422,7 +422,3 @@ Last point, because it is specific to the use case: the deceased-patient-resolut
 ## Tags
 
 `entity-resolution` · `equity-monitoring` · `hipaa` · `event-driven`
-
----
-
-*← [Recipe 5.9: National-Scale Patient Matching (TEFCA)](chapter05.09-national-scale-patient-matching) · [Chapter 5 Index](chapter05-preface) · Chapter 5 complete*

@@ -147,7 +147,3 @@ The thing that surprised me most: the constraint that causes the most infeasibil
 ## Tags
 
 `optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `scheduling` · `hipaa` · `real-time` · `dynamodb` · `eventbridge`
-
----
-
-*← [Recipe 14.6: Patient Flow / Bed Assignment](chapter14.06-patient-flow-bed-assignment) · [Chapter 14 Index](chapter14-preface) · [Next: Recipe 14.8: Ambulance Routing and Dispatch →](chapter14.08-ambulance-routing-dispatch)*

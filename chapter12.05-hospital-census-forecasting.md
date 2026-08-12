@@ -181,7 +181,3 @@ The part that took me the longest to internalize is that this is fundamentally a
 ## Tags
 
 `forecasting` · `survival-analysis` · `time-series` · `monte-carlo` · `capacity-management` · `hospital-operations` · `adt` · `fhir` · `hipaa` · `dynamodb` · `healthlake` · `sagemaker` · `step-functions`
-
----
-
-*← [Previous: Recipe 12.4 - Lab Result Trend Analysis](chapter12.04-lab-result-trend-analysis) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.6 - Revenue Cycle Cash Flow Forecasting →](chapter12.06-revenue-cycle-cash-flow-forecasting)*

@@ -306,7 +306,3 @@ FUNCTION enroll_patient_photo(patient_id, photo_bytes):
 | **With variations** | 10-14 weeks | Telehealth continuous verification, multi-factor scoring, automated re-enrollment |
 
 ---
-
----
-
-*← [Main Recipe 9.2](chapter09.02-patient-photo-verification) · [Python Example](chapter09.02-python-example) · [Chapter Preface](chapter09-preface)*

@@ -616,7 +616,3 @@ The thing I would do differently the second time: start with a single, well-char
 ## Tags
 
 `conversational-ai` · `function-calling` · `multilingual` · `audit-trail` · `equity-monitoring` · `fda-pathway` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `citation-grounding` · `prompt-injection-defense` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `kms` · `lambda` · `opensearch-serverless` · `pinpoint` · `s3` · `secrets-manager` · `sqs` · `step-functions` · `waf`
-
----
-
-*← [Recipe 11.9: Care Coordination Assistant](chapter11.09-care-coordination-assistant) · [Chapter 11 Preface](chapter11-preface)*

@@ -417,7 +417,3 @@ FUNCTION handle_formulary_query(request):
 | **With variations** | 10-12 weeks | Multi-plan comparison, step therapy visualization, pricing enrichment, EHR integration |
 
 ---
-
----
-
-*← [Main Recipe 13.1](chapter13.01-drug-formulary-navigation) · [Python Example](chapter13.01-python-example) · [Chapter Preface](chapter13-preface)*

@@ -147,7 +147,3 @@ One more thing: the system gets dramatically more useful when you have multiple 
 ## Tags
 
 `clustering` · `entity-resolution` · `nlp` · `hipaa` · `athena` · `comprehend-medical` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 6.6: Patient Similarity for Care Planning](chapter06.06-patient-similarity-care-planning) · [Chapter 6 Index](chapter06-preface) · [Next: Recipe 6.8: Disease Subtype Discovery →](chapter06.08-disease-subtype-discovery)*

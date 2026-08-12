@@ -488,7 +488,3 @@ The pseudocode demonstrates the optimization pipeline end-to-end. Moving to prod
 | **Basic** | 4-6 weeks | Single-location, batch nightly optimization for top 500 items. Statistical demand forecasting. Manual criticality classification. |
 | **Production-ready** | 3-4 months | Full item catalog. ML-based demand forecasting. ERP integration for real-time execution. Alerting and monitoring. Expiration handling. |
 | **With variations** | 6-9 months | Multi-location with redistribution. Vendor-managed inventory integration. Order consolidation for volume discounts. Demand sensing from surgical schedules. |
-
----
-
-*← [Main Recipe 14.3](chapter14.03-inventory-reorder-optimization) · [Python Example](chapter14.03-python-example) · [Chapter Preface](chapter14-preface)*

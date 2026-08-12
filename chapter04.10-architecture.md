@@ -1279,7 +1279,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add multi-objective regimes, patient-driven reward weighting, federated and consortium estimation, real-time RPM-driven decision points, consultation-mode advice, multi-regime composition, counterfactual explanation surfaces, value-of-information analysis, prospective comparison studies | 18-36 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.10](chapter04.10-dynamic-treatment-regime-recommendation) · [Python Example](chapter04.10-python-example) · [Chapter Preface](chapter04-preface)*

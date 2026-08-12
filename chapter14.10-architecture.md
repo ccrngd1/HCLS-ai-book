@@ -497,7 +497,3 @@ The pseudocode demonstrates the optimization pattern. Deploying this for actual 
 | **Basic** (single service line, single scenario, open-source solver) | 8-12 weeks |
 | **Production-ready** (multi-service, multi-scenario, validated gravity model, executive dashboard) | 6-9 months |
 | **With variations** (multi-period staging, competitive response, equity constraints) | 12-18 months |
-
----
-
-*← [Main Recipe 14.10](chapter14.10-health-system-network-design) · [Python Example](chapter14.10-python-example) · [Chapter Preface](chapter14-preface)*

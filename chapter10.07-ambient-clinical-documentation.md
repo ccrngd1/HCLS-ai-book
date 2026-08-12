@@ -264,7 +264,3 @@ Ambient clinical documentation, done well, gives clinicians their evenings back.
 ## Tags
 
 `speech-voice-ai` · `streaming-asr` · `structured-extraction` · `behavioral-health` · `clinical-documentation` · `ehr-integration` · `multilingual` · `42-cfr-part-2` · `audit-trail` · `bipa` · `consent-management` · `equity-monitoring` · `human-in-the-loop` · `phi-handling` · `hipaa` · `bedrock-guardrails` · `citation-grounding` · `faithfulness-checking` · `api-gateway` · `athena` · `bedrock` · `chime-sdk` · `cloudtrail` · `cloudwatch` · `cognito` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `healthscribe` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `secrets-manager` · `step-functions` · `transcribe-medical`
-
----
-
-*← [Recipe 10.6: Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.8: Voice Biomarker Detection](chapter10.08-voice-biomarker-detection) →*

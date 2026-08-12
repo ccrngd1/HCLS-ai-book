@@ -477,11 +477,3 @@ The pseudocode and architecture above demonstrate the reasoning pattern. Here's 
 ---
 
 **Tags:** knowledge-graph, ontology, care-gaps, quality-measures, HEDIS, reasoning, Neptune, SPARQL, population-health, value-based-care
-
----
-
-[← Recipe 13.5: Clinical Pathway Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling) | [Chapter 13 Index](chapter13-preface) | [Recipe 13.7: Disease-Gene-Drug Relationship Graph →](chapter13.07-disease-gene-drug-relationship-graph)
-
----
-
-*← [Main Recipe 13.6](chapter13.06-care-gap-reasoning-engine) · [Python Example](chapter13.06-python-example) · [Chapter Preface](chapter13-preface)*

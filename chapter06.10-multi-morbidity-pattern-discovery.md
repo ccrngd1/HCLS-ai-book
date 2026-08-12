@@ -142,7 +142,3 @@ If I were starting over, I'd spend less time optimizing the mining algorithms an
 ## Tags
 
 `clustering` · `population-health`
-
----
-
-| [← 6.9: Social Determinant Phenotyping](chapter06.09-social-determinant-phenotyping) | [Chapter 6 Index](chapter06-preface) | [Chapter 7 →](chapter07-preface) |

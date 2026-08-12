@@ -563,7 +563,3 @@ The architecture above demonstrates the pattern. Deploying this to a real surgic
 | **With variations** (multi-site, surgeon-level, rolling horizon) | 30-40 weeks |
 
 ---
-
----
-
-*← [Main Recipe 14.5](chapter14.05-operating-room-block-scheduling) · [Python Example](chapter14.05-python-example) · [Chapter Preface](chapter14-preface)*

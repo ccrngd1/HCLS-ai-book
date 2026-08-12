@@ -131,7 +131,3 @@ One last thing that surprised me: DICOM-RT Structure Set generation is harder th
 ## Tags
 
 `clustering` · `computer-vision` · `medical-imaging` · `dicom` · `multi-modal` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 9.9: Surgical Video Analysis](chapter09.09-surgical-video-analysis) · [Chapter 9 Index](chapter09-preface) · [Next: Chapter 10 →](chapter10-preface)*

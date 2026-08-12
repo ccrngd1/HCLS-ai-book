@@ -351,7 +351,3 @@ Last point, because it is specific to the regulatory context: the 21st Century C
 ## Tags
 
 `entity-resolution` · `fhir` · `interoperability` · `42-cfr-part-2` · `information-blocking` · `hipaa` · `event-driven`
-
----
-
-*← [Recipe 5.4: Insurance Eligibility Matching](chapter05.04-insurance-eligibility-matching) · Chapter 5 · [Next: Recipe 5.6 - Claims-to-Clinical Data Linkage →](chapter05.06-claims-to-clinical-data-linkage)*

@@ -908,7 +908,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add international address standardization, privacy-preserving cross-organization household linkage, SDOH-indicator integration pipeline, address-based fraud detection cross-reference, USPS Informed Delivery integration, patient-portal self-service confirmation flow, active-learning-driven correction tuning | 3-6 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.3](chapter05.03-address-standardization-household-linkage) · [Python Example](chapter05.03-python-example) · [Chapter Preface](chapter05-preface)*

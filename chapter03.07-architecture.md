@@ -1217,7 +1217,3 @@ The pseudocode shows the shape. A production deterioration early warning system 
 | With variations | Phenotype-specific models (sepsis, respiratory failure, post-op), bedside monitor integration, LSTM or transformer-based time-series model, multi-channel alert routing (Vocera/TigerConnect), nursing note NLP features (Rothman-style), LLM-generated narrative explanations, federated learning across multiple sites, closed-loop interventions for specific narrow scenarios, pediatric or maternal-fetal specializations | 18-36 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.7](chapter03.07-patient-deterioration-early-warning) · [Python Example](chapter03.07-python-example) · [Chapter Preface](chapter03-preface)*

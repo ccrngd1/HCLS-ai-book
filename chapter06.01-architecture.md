@@ -401,12 +401,3 @@ This pipeline produces correct, useful cluster output. But "produces correct out
 ---
 
 **Tags:** `clustering` · `geospatial` · `DBSCAN` · `facility-planning` · `network-adequacy` · `population-health` · `Amazon Location Service` · `QuickSight`
-
----
-
-| [← Chapter 6 Index](chapter06-preface) | [Chapter 6 Index](chapter06-preface) | [Recipe 6.2 →](chapter06.02-utilization-pattern-segmentation) |
-|:---|:---:|---:|
-
----
-
-*← [Main Recipe 6.1](chapter06.01-geographic-patient-clustering) · [Python Example](chapter06.01-python-example) · [Chapter Preface](chapter06-preface)*

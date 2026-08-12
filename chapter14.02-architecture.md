@@ -315,11 +315,3 @@ Add a hard constraint that patients can only be assigned to providers who are in
 ---
 
 **Tags:** `optimization` · `operations-research` · `panel-management` · `assignment-problem` · `integer-programming` · `primary-care` · `patient-matching`
-
----
-
-[← Recipe 14.1: Appointment Slot Optimization](chapter14.01-appointment-slot-optimization) · [Chapter 14 Index](chapter14-preface) · [Recipe 14.3: Inventory Reorder Optimization →](chapter14.03-inventory-reorder-optimization)
-
----
-
-*← [Main Recipe 14.2](chapter14.02-patient-provider-assignment) · [Python Example](chapter14.02-python-example) · [Chapter Preface](chapter14-preface)*

@@ -146,7 +146,3 @@ Operational monitoring is the other piece people underestimate. Track feature di
 ## Tags
 
 `reinforcement-learning` · `clinical-decision-support` · `icu` · `safety-constraints` · `sagemaker`
-
----
-
-*← [Recipe 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) · [Chapter 15 Index](chapter15-preface) · [Recipe 15.6: Glucose Control in ICU →](chapter15.06-glucose-control-icu)*

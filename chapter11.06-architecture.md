@@ -1648,7 +1648,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Pediatric-specific deployment, behavioral-health-specific deployment with crisis-pathway integration, post-operative-recovery deployment, active-treatment-plan deployment, voice-channel IVR integration, multi-language deployment beyond English plus Spanish with native-speaker review, provider-side triage-support tool, cross-institutional triage federation, specialty-specific protocols (women's health, men's health, dermatology, ophthalmology, ENT), telehealth-bridged triage with full booking integration, care-navigation overlay for social-determinants-aware recommendations, outcome-feedback closed loop with protocol-revision automation, population-health overlay, continuous-improvement loop with structured failure-mode labeling | 12-20 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.6](chapter11.06-symptom-checker-triage-bot) · [Python Example](chapter11.06-python-example) · [Chapter Preface](chapter11-preface)*

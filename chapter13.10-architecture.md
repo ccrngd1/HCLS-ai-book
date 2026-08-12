@@ -470,7 +470,3 @@ FUNCTION assemble_results(partial_results_from_all_sources):
 | **With variations (federated learning, temporal queries)** | 18-24+ months | Full network with ML-based ontology alignment, federated learning for patient-derived insights, temporal versioning, and automated conflict resolution. |
 
 ---
-
----
-
-*← [Main Recipe 13.10](chapter13.10-federated-clinical-knowledge-network) · [Python Example](chapter13.10-python-example) · [Chapter Preface](chapter13-preface)*

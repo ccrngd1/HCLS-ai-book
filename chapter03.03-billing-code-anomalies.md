@@ -266,7 +266,3 @@ The trap to avoid: do not let the system drive toward "maximize cases generated.
 ## Tags
 
 `anomaly-detection` · `statistical-process-control` · `payer` · `payment-integrity` · `hipaa` · `feature-store` · `athena` · `dynamodb` · `glue` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 3.2: Patient No-Show Pattern Detection](chapter03.02-patient-no-show-pattern-detection) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.4 - Medication Dispensing Anomalies →](chapter03.04-medication-dispensing-anomalies)*

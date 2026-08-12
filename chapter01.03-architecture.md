@@ -531,7 +531,3 @@ The pseudocode and architecture above demonstrate the two-stage extraction patte
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end industry blog post on combining both services for claims automation
 
 ---
-
----
-
-*← [Main Recipe 1.3](chapter01.03-lab-requisition-extraction) · [Python Example](chapter01.03-python-example) · [Chapter Preface](chapter01-preface)*

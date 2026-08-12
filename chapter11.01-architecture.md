@@ -1137,7 +1137,3 @@ Canonical ownership: privacy officer plus patient-experience team.
 | With variations | Voice channel (drawing from recipe 10.5 patterns), additional languages beyond English plus Spanish, deep provider-directory integration, pre-visit context-aware proactive surfacing, integration with the scheduling and refill bots from recipes 11.2 and 11.3 behind a unified chat surface, persona variants by patient segment, continuous-improvement loop with structured failure-mode labeling | 4-8 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.1](chapter11.01-faq-chatbot) · [Python Example](chapter11.01-python-example) · [Chapter Preface](chapter11-preface)*

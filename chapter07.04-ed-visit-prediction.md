@@ -125,7 +125,3 @@ The "preventable" question never goes away. Stakeholders will always ask "what p
 ## Tags
 
 `predictive-analytics` · `emergency-department` · `care-management` · `population-health` · `hipaa` · `glue` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 7.3: Patient Churn / Disenrollment Prediction](chapter07.03-patient-churn-disenrollment-prediction) · [Chapter 7 Index](chapter07-preface) · [Next: Recipe 7.5: 30-Day Readmission Risk →](chapter07.05-30-day-readmission-risk)*

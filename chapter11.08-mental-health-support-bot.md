@@ -702,7 +702,3 @@ The last thing: mental-health support bots are a category where the operational,
 ## Tags
 
 `causal-inference` · `conversational-ai` · `rag` · `function-calling` · `intent-classification` · `prompt-versioning` · `behavioral-health` · `crisis-detection` · `patient-engagement` · `ehr-integration` · `fhir` · `multilingual` · `42-cfr-part-2` · `accessibility` · `audit-trail` · `consent-management` · `equity-monitoring` · `fda-pathway` · `mandatory-reporting` · `phi-handling` · `hipaa` · `privacy` · `regulatory-strategy` · `bedrock-guardrails` · `citation-grounding` · `prompt-injection-defense` · `scope-containment` · `persona-design` · `warm-handoff` · `api-gateway` · `athena` · `bedrock` · `bedrock-agents` · `bedrock-knowledge-bases` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `opensearch-serverless` · `pinpoint` · `quicksight` · `s3` · `sagemaker` · `secrets-manager` · `step-functions` · `waf`
-
----
-
-*← [Recipe 11.7: Chronic Disease Management Coach](chapter11.07-chronic-disease-management-coach) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.9: Care Coordination Assistant](chapter11.09-care-coordination-assistant) →*

@@ -974,7 +974,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add telehealth awareness, episode-aware boosting, cost-estimation overlay, provider self-service portal, comparative LLM explanations, cross-recipe orchestration | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.3](chapter04.03-provider-directory-search-optimization) · [Python Example](chapter04.03-python-example) · [Chapter Preface](chapter04-preface)*

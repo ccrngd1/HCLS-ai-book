@@ -462,7 +462,3 @@ Last point, because it is specific to the use case: PPRL is a tool for the cases
 ## Tags
 
 `entity-resolution` · `public-health-surveillance` · `42-cfr-part-2` · `audit-trail` · `consent-management` · `cures-act` · `equity-monitoring` · `information-blocking` · `hipaa` · `event-driven`
-
----
-
-*← [Recipe 5.7: Longitudinal Patient Matching Across Name Changes](chapter05.07-longitudinal-patient-matching-name-changes) · Chapter 5 · [Next: Recipe 5.9 - National-Scale Patient Matching (TEFCA) →](chapter05.09-national-scale-patient-matching)*

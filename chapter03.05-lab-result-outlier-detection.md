@@ -257,7 +257,3 @@ The politics: the lab and the clinical teams view alerts differently. A lab dire
 ## Tags
 
 `anomaly-detection` · `statistical-process-control` · `clinical-decision-support` · `provider` · `fhir` · `hl7` · `loinc` · `hipaa` · `feature-store` · `bedrock` · `comprehend-medical` · `dynamodb` · `kinesis` · `lambda` · `opensearch` · `sagemaker`
-
----
-
-*← [Recipe 3.4: Medication Dispensing Anomalies](chapter03.04-medication-dispensing-anomalies) · [Chapter 3 Preface](chapter03-preface) · [Next: Recipe 3.6 - Healthcare Fraud/Waste/Abuse Detection →](chapter03.06-healthcare-fraud-waste-abuse-detection)*

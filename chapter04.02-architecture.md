@@ -632,7 +632,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add learned ranker (LambdaMART), explicit preference capture, LLM-tailored snippets, provider co-recommendation, multi-modal content support | 6-9 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.2](chapter04.02-patient-education-content-matching) · [Python Example](chapter04.02-python-example) · [Chapter Preface](chapter04-preface)*

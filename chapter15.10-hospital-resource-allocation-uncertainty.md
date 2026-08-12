@@ -586,7 +586,3 @@ What I'd do differently if starting over: spend the first 6 months on the simula
 ## Tags
 
 `reinforcement-learning` · `simulation` · `clinical-decision-support` · `capacity-management` · `hospital-operations` · `resource-allocation` · `staffing`
-
----
-
-| [← 15.9: Radiation Therapy Adaptive Planning](chapter15.09-radiation-therapy-adaptive-planning) | [Chapter 15 Index](chapter15-preface) | |

@@ -551,7 +551,3 @@ This pseudocode demonstrates the normalization pattern, but a production deploym
 | **With variations** | 6-9 months | NLP integration, FHIR ConceptMap exposure, automated mapping suggestions, multi-tenant support |
 
 ---
-
----
-
-*← [Main Recipe 13.8](chapter13.08-medical-concept-normalization-mapping) · [Python Example](chapter13.08-python-example) · [Chapter Preface](chapter13-preface)*

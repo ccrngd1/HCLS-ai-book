@@ -466,7 +466,3 @@ Once patterns are discovered and validated, build a real-time scoring system tha
 | **With variations** (medication interactions, cost weighting, real-time scoring) | 20-28 weeks | Adds pharmacy data integration, cost modeling, streaming pattern assignment |
 
 ---
-
----
-
-*← [Main Recipe 6.10](chapter06.10-multi-morbidity-pattern-discovery) · [Python Example](chapter06.10-python-example) · [Chapter Preface](chapter06-preface)*

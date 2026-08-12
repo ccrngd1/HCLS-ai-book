@@ -1371,7 +1371,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Real-time clinical-decision-support integration, patient-facing live captions, real-time multilingual interpretation (recipe 10.10 integration), automated billing-code suggestion, quality-measure capture, group-visit support, voice-driven order entry, patient pre-visit voice intake, longitudinal pattern detection, integration with in-person ambient documentation (recipe 10.7) | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.6](chapter10.06-speech-to-text-telehealth-documentation) · [Python Example](chapter10.06-python-example) · [Chapter Preface](chapter10-preface)*

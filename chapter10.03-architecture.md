@@ -1084,7 +1084,3 @@ The clinician is the speaker in this recipe (unlike patient-facing recipes where
 | With variations | Wake-word activation, foot-pedal integration, per-clinician speaker adaptation, LLM-based command suggestion, voice-driven low-risk write commands with explicit non-voice confirmation, multi-language support, ambient-documentation integration, multi-EHR-vendor support with SMART-on-FHIR substrate, eye-tracking-aware context resolution, CDS Hooks integration | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.3](chapter10.03-voice-to-text-ehr-navigation) · [Python Example](chapter10.03-python-example) · [Chapter Preface](chapter10-preface)*

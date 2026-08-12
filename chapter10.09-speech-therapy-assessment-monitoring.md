@@ -432,7 +432,3 @@ Speech-therapy assessment and monitoring, done well, is one of the more rewardin
 ## Tags
 
 `speech-voice-ai` · `value-based-care` · `longitudinal` · `audit-trail` · `bipa` · `consent-management` · `fda-pathway` · `phi-handling` · `hipaa` · `privacy` · `clinical-validation` · `bedrock-guardrails` · `api-gateway` · `athena` · `bedrock` · `cloudtrail` · `cloudwatch` · `cognito` · `dynamodb` · `eventbridge` · `glue` · `healthlake` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `sagemaker` · `sagemaker-clarify` · `sagemaker-model-monitor` · `secrets-manager` · `step-functions` · `transcribe-medical`
-
----
-
-*← [Recipe 10.8: Voice Biomarker Detection](chapter10.08-voice-biomarker-detection) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.10: Multilingual Real-Time Medical Interpretation](chapter10.10-multilingual-realtime-medical-interpretation) →*

@@ -125,7 +125,3 @@ One more thing: be careful about who sees the raw comments. Patient experience t
 ## Tags
 
 `nlp` · `patient-engagement` · `hipaa` · `comprehend` · `dynamodb` · `lambda` · `quicksight` · `s3`
-
----
-
-*← [Recipe 8.1: Chief Complaint Classification](chapter08.01-chief-complaint-classification) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.3: ICD-10 Code Suggestion →](chapter08.03-icd-10-code-suggestion)*

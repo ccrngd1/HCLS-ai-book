@@ -166,7 +166,3 @@ One more thing: the clusters will reveal uncomfortable truths. You'll find that 
 ## Tags
 
 `clustering` · `population-health` · `value-based-care`
-
----
-
-*← [Recipe 6.4: Disease Severity Stratification](chapter06.04-disease-severity-stratification) | [Chapter 6 Index](chapter06-preface) | [Recipe 6.6: Patient Similarity for Care Planning](chapter06.06-patient-similarity-care-planning) →*

@@ -150,7 +150,3 @@ One more thing: don't try to solve the whole problem at once on your first itera
 ## Tags
 
 `forecasting` · `optimization` · `mixed-integer-programming` · `hipaa` · `quicksight` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling) · [Chapter 14 Index](chapter14-preface) · [Next: Chapter 15 →](chapter15-preface)*

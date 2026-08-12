@@ -463,7 +463,3 @@ The last thing, because it is the easiest one to get wrong: medical dictation pr
 ## Tags
 
 `speech-voice-ai` · `streaming-asr` · `clinical-documentation` · `ehr-integration` · `smart-on-fhir` · `audit-trail` · `equity-monitoring` · `phi-handling` · `hipaa` · `faithfulness-checking` · `api-gateway` · `athena` · `bedrock` · `cloudtrail` · `cloudwatch` · `cognito` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `sagemaker` · `secrets-manager` · `step-functions` · `transcribe-medical`
-
----
-
-*← [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.5: Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant) →*

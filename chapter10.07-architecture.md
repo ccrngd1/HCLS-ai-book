@@ -1411,7 +1411,3 @@ Per-language quality metrics and launch gates apply independently: a language is
 | With variations | Inpatient progress notes from rounding audio, ED encounter documentation, procedure-room ambient documentation, real-time clinical-decision-support integration, patient-facing live captions, automated billing-code suggestion, quality-measure capture, group-visit support, voice-driven order entry, patient pre-visit voice intake, longitudinal pattern detection, integration with telehealth ambient documentation (recipe 10.6), ambient documentation for nursing and care-team members | 9-15 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.7](chapter10.07-ambient-clinical-documentation) · [Python Example](chapter10.07-python-example) · [Chapter Preface](chapter10-preface)*

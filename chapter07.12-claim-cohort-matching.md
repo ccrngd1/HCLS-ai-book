@@ -186,7 +186,3 @@ Let's be real about what this approach can and can't do.
 ## Tags
 
 `embeddings` · `predictive-analytics` · `recommendation` · `vector-search` · `prior-authorization` · `revenue-cycle` · `claims` · `opensearch`
-
----
-
-[← Recipe 7.11: Claim Denial / Prior-Auth Determination Prediction](chapter07.11-claim-denial-prediction) | [Chapter 7 Index](chapter07-preface) | [Chapter 8: NLP →](chapter08-preface)

@@ -447,7 +447,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - **With variations (sub-hourly, real-time updating, multi-ED hierarchical):** 16-24 weeks
 
 ---
-
----
-
-*← [Main Recipe 12.3](chapter12.03-ed-arrival-forecasting) · [Python Example](chapter12.03-python-example) · [Chapter Preface](chapter12-preface)*

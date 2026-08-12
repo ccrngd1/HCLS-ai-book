@@ -1362,7 +1362,3 @@ The architectural primitive for specialist-coordination: extend the `recommendat
 | With variations | Add real-time closure-suppression triggers, pre-visit patient prep, at-the-visit EHR integration, patient-driven self-service, incentive integration, outreach bundling, specialist-coordination workflows, cohort-specific catalogs, closure-rate forecasting | 8-14 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.6](chapter04.06-care-gap-prioritization) · [Python Example](chapter04.06-python-example) · [Chapter Preface](chapter04-preface)*

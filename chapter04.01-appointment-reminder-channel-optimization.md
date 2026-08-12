@@ -191,7 +191,3 @@ And the trap worth flagging, because it's the most common failure mode I've seen
 ## Tags
 
 `personalization` · `recommendation` · `contextual-bandit` · `patient-engagement` · `hipaa` · `connect` · `dynamodb` · `lambda` · `sns`
-
----
-
-*← [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.2 - Patient Education Content Matching →](chapter04.02-patient-education-content-matching)*

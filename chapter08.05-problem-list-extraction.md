@@ -145,7 +145,3 @@ One more thing. Problem list extraction is inherently a clinician-in-the-loop wo
 ## Tags
 
 `nlp` · `assertion-detection` · `negation` · `ner` · `icd-10` · `snomed` · `hipaa` · `comprehend-medical` · `dynamodb` · `lambda`
-
----
-
-*← [Recipe 8.4: Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.6: SDOH Extraction →](chapter08.06-sdoh-extraction)*

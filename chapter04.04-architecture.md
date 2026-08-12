@@ -1087,7 +1087,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add sequential program recommendation, intensity-tier selection, closed-loop care-manager integration, cross-recipe orchestration with Recipe 4.5, LLM-generated longitudinal messaging | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 4.4](chapter04.04-wellness-program-recommendations) · [Python Example](chapter04.04-python-example) · [Chapter Preface](chapter04-preface)*

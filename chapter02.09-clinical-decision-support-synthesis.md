@@ -288,7 +288,3 @@ Final thought. Clinical decision support synthesis is one of the genuinely high-
 ## Tags
 
 `generative-ai` · `llm` · `rag` · `clinical-decision-support` · `pharmacy` · `ehr-integration` · `fhir` · `smart-on-fhir` · `alert-fatigue` · `fda-pathway` · `hipaa` · `provenance` · `regulatory-strategy` · `bedrock-guardrails` · `citation-grounding` · `grounded-generation` · `aurora-pgvector` · `bedrock` · `bedrock-knowledge-bases` · `comprehend-medical` · `healthlake` · `opensearch`
-
----
-
-*← [Recipe 2.8: Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.10 - Multi-Modal Clinical Reasoning →](chapter02.10-multi-modal-clinical-reasoning)*

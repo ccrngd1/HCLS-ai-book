@@ -117,7 +117,3 @@ One more thing: the "competitive advantage" concern is real but often overstated
 ## Tags
 
 `knowledge-graph` · `interoperability` · `ontology` · `hipaa` · `graph-database` · `neptune`
-
----
-
-*← [Recipe 13.9: Literature-Derived Knowledge Graph](chapter13.09-literature-derived-knowledge-graph) · [Chapter 13 Index](chapter13-preface) · [Next: Chapter 14 →](chapter14-preface)*

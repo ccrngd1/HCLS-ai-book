@@ -116,7 +116,3 @@ The part that surprised me most: the condition hierarchy mapping is never "done.
 ## Tags
 
 `knowledge-graph` · `population-health` · `quality-measures` · `value-based-care` · `hedis` · `ontology` · `graph-database` · `neptune`
-
----
-
-*← [Recipe 13.5: Clinical Pathway Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling) · [Chapter 13 Index](chapter13-preface) · [Next: Recipe 13.7: Disease-Gene-Drug Relationship Graph →](chapter13.07-disease-gene-drug-relationship-graph)*

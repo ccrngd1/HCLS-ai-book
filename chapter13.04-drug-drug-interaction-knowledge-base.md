@@ -157,7 +157,3 @@ Not all interactions are created equal, and your graph needs to represent this. 
 ## Tags
 
 `knowledge-graph` · `clinical-decision-support` · `patient-safety` · `pharmacy` · `rxnorm` · `alert-fatigue` · `neptune`
-
----
-
-*← [Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation) | [Chapter 13 Index](chapter13-preface) | [Recipe 13.5: Clinical Pathway / Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling) →*

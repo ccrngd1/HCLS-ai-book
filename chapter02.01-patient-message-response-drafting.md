@@ -140,7 +140,3 @@ One more thing: resist the temptation to expand scope. "If it works for refill r
 ## Tags
 
 `generative-ai` · `llm` · `human-in-the-loop` · `hipaa` · `bedrock-guardrails` · `bedrock` · `dynamodb` · `lambda`
-
----
-
-*← [Chapter 2 Preface](chapter02-preface) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.2 - Medical Terminology Simplification →](chapter02.02-medical-terminology-simplification)*

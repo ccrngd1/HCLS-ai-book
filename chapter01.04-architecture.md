@@ -826,7 +826,3 @@ BDA makes sense if you want to minimize the pipeline you manage. This recipe tak
 | With variations | Parallel Map state page processing, Bedrock Data Automation evaluation, provider portal pre-screening API, per-provider prompt specialization, image quality pre-filtering, multi-payer form variant support | 2-4 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 1.4](chapter01.04-prior-auth-document-processing) · [Python Example](chapter01.04-python-example) · [Chapter Preface](chapter01-preface)*

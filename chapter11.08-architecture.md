@@ -1764,7 +1764,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Anxiety-specific deep CBT delivery, depression-specific deep behavioral-activation deployment, substance-use-specific deployment with 42 CFR Part 2 compliance, eating-disorder restricted-scope deployment with tight handoff to ED specialty teams, PTSD stabilization-only deployment with trauma-therapy team integration, postpartum-specific deployment with EPDS screening and postpartum-specific content, workplace-deployment with employer-privacy walls and EAP integration, college-deployment with counseling-center integration, older-adult deployment with geriatric-specific content and elder-abuse mandatory-reporting, voice-channel deployment with accessibility considerations, multi-language deployment beyond English plus Spanish with native-speaker review, hybrid AI-plus-licensed-coach deployment, care-management-tier deployment for high-risk members, post-discharge follow-up variant, specialty-population variants (Veterans, LGBTQ+, racial- and ethnic-minority, healthcare workers, caregivers), therapist-augmentation deployment, population-health overlay, continuous-improvement loop with structured failure-mode labeling | 18-24 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.8](chapter11.08-mental-health-support-bot) · [Python Example](chapter11.08-python-example) · [Chapter Preface](chapter11-preface)*

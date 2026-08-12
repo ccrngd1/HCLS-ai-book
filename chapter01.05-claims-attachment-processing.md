@@ -191,7 +191,3 @@ The path from this recipe to production runs through measurement, feedback loops
 ## Tags
 
 `classification` · `document-intelligence` · `llm` · `ocr` · `model-tiering` · `payer` · `claims` · `icd-10` · `hipaa` · `bedrock` · `comprehend-medical` · `nova` · `step-functions` · `textract`
-
----
-
-*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.4: Prior Authorization Document Processing](chapter01.04-prior-auth-document-processing) · [Next: Recipe 1.6 - Handwritten Clinical Note Digitization →](chapter01.06-handwritten-clinical-note-digitization)*

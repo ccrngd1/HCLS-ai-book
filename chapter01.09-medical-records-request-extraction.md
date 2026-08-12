@@ -177,7 +177,3 @@ One operational lesson worth sharing: build the review queue carefully before yo
 ## Tags
 
 `document-intelligence` · `ocr` · `payer` · `hipaa` · `privacy` · `bedrock` · `nova` · `textract`
-
----
-
-*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.8: EOB Processing](chapter01.08-eob-processing) · [Next: Recipe 1.10: Historical Chart Migration →](chapter01.10-historical-chart-migration)*

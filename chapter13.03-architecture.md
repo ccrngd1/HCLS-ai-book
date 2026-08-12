@@ -458,7 +458,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 | **Basic** (ICD-10-CM hierarchy only, single version) | 2-3 weeks |
 | **Production-ready** (ICD + CPT + cross-walks, versioning, caching, monitoring) | 6-8 weeks |
 | **With variations** (payer-specific rules, coding assistance, claim editing integration) | 10-14 weeks |
-
----
-
-*← [Main Recipe 13.3](chapter13.03-icd-cpt-hierarchy-navigation) · [Python Example](chapter13.03-python-example) · [Chapter Preface](chapter13-preface)*

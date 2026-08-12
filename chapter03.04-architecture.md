@@ -941,7 +941,3 @@ The pseudocode above gives you the shape. A production medication dispensing ano
 | With variations | Diversion detection module with graph analytics, BCMA integration, outpatient and PDMP integration, LLM-assisted clinical triage, compounding anomaly path, multi-facility rollout | 12-24 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.4](chapter03.04-medication-dispensing-anomalies) · [Python Example](chapter03.04-python-example) · [Chapter Preface](chapter03-preface)*

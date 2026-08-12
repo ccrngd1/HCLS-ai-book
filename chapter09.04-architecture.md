@@ -385,12 +385,3 @@ The architecture above demonstrates the pattern. Deploying this in a clinical en
 ---
 
 **Tags:** `computer-vision` `dermatology` `image-classification` `triage` `skin-cancer` `cnn` `sagemaker` `bias-fairness` `fda` `samd`
-
----
-
-| [← 9.3: Wound Photography Measurement](chapter09.03-wound-photography-measurement) | [Chapter 9 Index](chapter09-preface) | [9.5: Chest X-Ray Triage →](chapter09.05-chest-xray-triage) |
-|:---|:---:|---:|
-
----
-
-*← [Main Recipe 9.4](chapter09.04-dermatology-lesion-triage) · [Python Example](chapter09.04-python-example) · [Chapter Preface](chapter09-preface)*

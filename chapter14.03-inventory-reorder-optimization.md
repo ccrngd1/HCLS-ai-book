@@ -140,7 +140,3 @@ Start with the basic model. Get the data pipeline right. Prove value on a subset
 ## Tags
 
 `forecasting` · `optimization` · `mixed-integer-programming` · `operations-research` · `inventory` · `supply-chain` · `dynamodb` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 14.2: Patient-Provider Assignment](chapter14.02-patient-provider-assignment) · [Chapter 14 Index](chapter14-preface) · [Next: Recipe 14.4 - Nurse Staffing Optimization →](chapter14.04-nurse-staffing-optimization)*

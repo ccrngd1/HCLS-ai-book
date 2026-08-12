@@ -668,7 +668,3 @@ The architecture above demonstrates the pattern. Deploying it at a practice or h
 | **With variations** | 32-40 weeks | Multi-payer coverage. Appeals workflow. FHIR PAS submission for supporting payers. Proactive triage at order entry. Practice-wide rollout with change management. |
 
 ---
-
----
-
-*← [Main Recipe 2.4](chapter02.04-prior-auth-letter-generation) · [Python Example](chapter02.04-python-example) · [Chapter Preface](chapter02-preface)*

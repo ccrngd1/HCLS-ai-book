@@ -1390,7 +1390,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Provider-side front-desk benefits-verification deployment, voice-channel IVR integration, pharmacy-benefits-specialist sub-flow, behavioral-health-benefits sub-flow with parity awareness, cost-transparency tooling for shoppable services, surprise-bill-protection education and dispute-initiation sub-flow, multi-language deployment beyond English plus Spanish with native-speaker review, member-rights and access-request integration, proactive benefits-coaching outreach pipeline, integration with the rest of the chapter 11 bots behind a unified chat surface, continuous-improvement loop with structured failure-mode labeling | 8-14 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.5](chapter11.05-insurance-benefits-navigator) · [Python Example](chapter11.05-python-example) · [Chapter Preface](chapter11-preface)*

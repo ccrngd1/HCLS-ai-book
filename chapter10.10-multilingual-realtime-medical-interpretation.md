@@ -510,7 +510,3 @@ Real-time medical interpretation, done responsibly, can extend language access t
 ## Tags
 
 `speech-voice-ai` · `streaming-asr` · `multilingual` · `audit-trail` · `phi-handling` · `hipaa` · `privacy` · `bedrock-guardrails` · `faithfulness-checking` · `prompt-injection-defense` · `api-gateway` · `athena` · `cloudtrail` · `cloudwatch` · `cognito` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `quicksight` · `s3` · `secrets-manager` · `step-functions` · `transcribe-medical`
-
----
-
-*← [Recipe 10.9: Speech Therapy Assessment and Monitoring](chapter10.09-speech-therapy-assessment-monitoring) · [Chapter 10 Index](chapter10-preface) · [Chapter 11 Preface →](chapter11-preface)*

@@ -463,12 +463,3 @@ FUNCTION generate_treatment_recommendation(patient_id, new_hba1c, visit_data, po
 ---
 
 **Tags:** `reinforcement-learning`, `offline-rl`, `bcq`, `chronic-disease`, `diabetes`, `treatment-personalization`, `safety-constraints`, `clinical-decision-support`, `sequential-decision-making`, `off-policy-evaluation`
-
----
-
-| [← 15.6: Glucose Control in ICU](chapter15.06-glucose-control-icu) | [Chapter 15 Index](chapter15-preface) | [15.8: Chemotherapy Dose Optimization →](chapter15.08-chemotherapy-dose-optimization) |
-|:---|:---:|---:|
-
----
-
-*← [Main Recipe 15.7](chapter15.07-chronic-disease-treatment-personalization) · [Python Example](chapter15.07-python-example) · [Chapter Preface](chapter15-preface)*

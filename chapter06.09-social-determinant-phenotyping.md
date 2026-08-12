@@ -176,7 +176,3 @@ The intervention matching is where the value lives, and it's where most projects
 ## Tags
 
 `clustering` · `nlp` · `phenotyping` · `population-health` · `sdoh` · `equity-monitoring` · `hipaa` · `comprehend-medical` · `glue` · `sagemaker`
-
----
-
-*← [Recipe 6.8: Disease Subtype Discovery](chapter06.08-disease-subtype-discovery) · [Chapter 6 Index](chapter06-preface) · [Next: Recipe 6.10: Multi-Morbidity Pattern Discovery →](chapter06.10-multi-morbidity-pattern-discovery)*

@@ -367,7 +367,3 @@ People matter most, even when they're invisible. The clinicians who first see th
 ## Tags
 
 `anomaly-detection` · `nlp` · `recommendation` · `bayesian-hierarchical` · `calibration` · `statistical-process-control` · `care-management` · `public-health-surveillance` · `fhir` · `equity-monitoring` · `hipaa` · `regulatory-strategy` · `geospatial` · `appsync` · `athena` · `aws-batch` · `bedrock` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `kinesis` · `location-service` · `opensearch` · `quicksight` · `sagemaker` · `sagemaker-model-monitor` · `step-functions` · `timestream`
-
----
-
-*← [Recipe 3.9: Cybersecurity / Access Pattern Anomalies](chapter03.09-cybersecurity-access-pattern-anomalies) · [Chapter 3 Preface](chapter03-preface) · End of Chapter 3 →*

@@ -532,7 +532,3 @@ Build a separate optimization profile for surge conditions (pandemic, mass casua
 | With variations | 24-36 weeks | Predictive pre-positioning, multi-campus support, surge mode, ML-based discharge predictions |
 
 ---
-
----
-
-*← [Main Recipe 14.6](chapter14.06-patient-flow-bed-assignment) · [Python Example](chapter14.06-python-example) · [Chapter Preface](chapter14-preface)*

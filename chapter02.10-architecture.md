@@ -1479,7 +1479,3 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 | **With variations (multiple scenarios and extensions)** | 104-156 weeks | Multiple scenario modules across specialties. Tumor board preparation and comparative imaging variants. Risk-score integration and explanation modules. Second-opinion synthesis. Genomic-informed reasoning for oncology. Continuous monitoring integration for critical care. Patient-facing reasoning summaries. Post-market surveillance instrumentation across scenarios. Ongoing clinical evaluation program with versioned benchmarks per scenario. |
 
 ---
-
----
-
-*← [Main Recipe 2.10](chapter02.10-multi-modal-clinical-reasoning) · [Python Example](chapter02.10-python-example) · [Chapter Preface](chapter02-preface)*

@@ -624,7 +624,3 @@ Multi-modal integration brings additional regulatory layers. Genetic data is cov
 - **With variations (multimodal integration, continuous-learning priors, patient-facing surface, federated learning):** 40-60 weeks
 
 ---
-
----
-
-*← [Main Recipe 12.8](chapter12.08-disease-progression-trajectory-modeling) · [Python Example](chapter12.08-python-example) · [Chapter Preface](chapter12-preface)*

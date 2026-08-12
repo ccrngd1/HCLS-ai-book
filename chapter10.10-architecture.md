@@ -1211,7 +1211,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Outbound patient communication translation, in-person clinic shared-device deployment, telehealth visit deployment, ED triage deployment, inpatient bedside deployment, behavioral health deployment with strict guardrails, pediatric encounter deployment, multilingual ambient documentation, multilingual patient-facing voice assistant, multilingual IVR and call routing, clinical-research enrollment consent in patient's language, cultural-competence advisory for clinicians, interpreter training environment, per-pair cost analytics, patient feedback capture in patient's language, expansion to additional language pairs as patient population evolves | 12-24 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.10](chapter10.10-multilingual-realtime-medical-interpretation) · [Python Example](chapter10.10-python-example) · [Chapter Preface](chapter10-preface)*

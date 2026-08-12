@@ -1569,7 +1569,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Voice channel (drawing from recipe 10.5 patterns), additional languages beyond English plus Spanish, deep clinical-recommendation integration for pre-emptive booking, eligibility verification at booking time, pre-visit prep and intake integration with recipe 11.4, dependent and authorized-caregiver flows, group scheduling for procedures, calendar sync, integration with the FAQ bot from recipe 11.1 and the refill bot from recipe 11.3 behind a unified chat surface, continuous-improvement loop with structured failure-mode labeling | 5-9 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.2](chapter11.02-appointment-scheduling-bot) · [Python Example](chapter11.02-python-example) · [Chapter Preface](chapter11-preface)*

@@ -403,12 +403,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying multi-m
 ---
 
 **Tags:** `computer-vision`, `radiology`, `triage`, `multi-modality`, `dicom`, `sagemaker`, `healthimaging`, `fda`, `critical-findings`, `worklist`
-
----
-
-| [← 9.6: Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening) | [Chapter 9 Index](chapter09-preface) | [9.8: Pathology Slide Analysis →](chapter09.08-pathology-slide-analysis) |
-|:---|:---:|---:|
-
----
-
-*← [Main Recipe 9.7](chapter09.07-radiology-ai-triage-multi-modality) · [Python Example](chapter09.07-python-example) · [Chapter Preface](chapter09-preface)*

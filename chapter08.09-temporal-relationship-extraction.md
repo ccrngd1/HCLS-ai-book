@@ -168,7 +168,3 @@ My honest recommendation: if your use case is building a visual timeline for cli
 ## Tags
 
 `nlp` · `relation-extraction` · `hipaa` · `comprehend-medical` · `neptune`
-
----
-
-*← [Recipe 8.8: Clinical Assertion Classification](chapter08.08-clinical-assertion-classification) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.10: Phenotype Extraction for Research →](chapter08.10-phenotype-extraction-research)*

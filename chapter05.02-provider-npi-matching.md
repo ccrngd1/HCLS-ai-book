@@ -316,7 +316,3 @@ Last point, because it is specific to the regulatory context: provider directory
 ## Tags
 
 `entity-resolution` · `blocking` · `fellegi-sunter` · `string-similarity` · `network-adequacy` · `provider-directory` · `no-surprises-act` · `hipaa`
-
----
-
-*← [Recipe 5.1: Internal Duplicate Patient Detection](chapter05.01-internal-duplicate-patient-detection) · Chapter 5 · [Next: Recipe 5.3 - Address Standardization and Household Linkage →](chapter05.03-address-standardization-household-linkage)*

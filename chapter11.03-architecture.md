@@ -1758,7 +1758,3 @@ PrivateLink egress hierarchy for external integrations: PrivateLink preferred wh
 | With variations | Voice channel (drawing from recipe 10.5 patterns), additional languages beyond English plus Spanish, proactive refill reminders integration, adherence-coaching integration with recipe 11.7, prior-authorization integration with recipe 2.4 patterns, specialty-pharmacy coordination, caregiver and authorized-representative flows, deep pharmacy-side integration for richer status updates, integration with the FAQ bot from recipe 11.1 and the scheduling bot from recipe 11.2 behind a unified chat surface, continuous-improvement loop with structured failure-mode labeling | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 11.3](chapter11.03-prescription-refill-request-bot) · [Python Example](chapter11.03-python-example) · [Chapter Preface](chapter11-preface)*

@@ -434,7 +434,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this ag
 | **With variations** | 10-14 weeks | Medication reconciliation across notes, drug interaction checking, formulary compliance, FHIR output formatting |
 
 ---
-
----
-
-*← [Main Recipe 8.4](chapter08.04-medication-extraction-normalization) · [Python Example](chapter08.04-python-example) · [Chapter Preface](chapter08-preface)*

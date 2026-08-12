@@ -557,7 +557,3 @@ This architecture gets you working suggestions. It does not get you production-g
 | **With variations** | 10-14 weeks | Hierarchical UI, quality audit automation, specialty model training, A/B testing framework for confidence thresholds |
 
 ---
-
----
-
-*← [Main Recipe 8.3](chapter08.03-icd-10-code-suggestion) · [Python Example](chapter08.03-python-example) · [Chapter Preface](chapter08-preface)*

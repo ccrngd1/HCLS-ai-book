@@ -936,7 +936,3 @@ Shipping clinical RAG is a year-long effort done right. Here is the list of conc
 | **With variations** | 44-60 weeks | Patient-specific question answering. Systematic-review drafting support. Guideline-change monitoring. Multi-agent decomposition for complex questions. Fine-tuned medical embedder and re-ranker. Integration into order entry and EHR workflows. Institution-wide rollout with change management and clinician training. Ongoing evaluation program with versioned benchmarks. |
 
 ---
-
----
-
-*← [Main Recipe 2.7](chapter02.07-literature-search-evidence-synthesis) · [Python Example](chapter02.07-python-example) · [Chapter Preface](chapter02-preface)*

@@ -1193,7 +1193,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add FHIR-based connectivity for payers offering it, charity-care multi-payer fanout, COB resolution module, real-time pricing transparency, patient-portal self-service, predictive refresh, payer-quality scorecards | 4-8 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.4](chapter05.04-insurance-eligibility-matching) · [Python Example](chapter05.04-python-example) · [Chapter Preface](chapter05-preface)*

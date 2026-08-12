@@ -795,7 +795,3 @@ The pseudocode above covers the shape of the pipeline. A production payment inte
 | With variations | Supervised classifier once labels accumulate, real-time claim-level screening, network/graph analysis, case-mix-adjusted expected billing, cross-payer benchmark integration, automated provider education routing | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 3.3](chapter03.03-billing-code-anomalies) · [Python Example](chapter03.03-python-example) · [Chapter Preface](chapter03-preface)*

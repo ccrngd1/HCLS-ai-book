@@ -1386,7 +1386,3 @@ The recipe-specific extensions to the chapter pattern are the QHIN-credential ro
 | With variations | Add QHIN-operator architecture, FHIR-based exchange migration, federated analytics extension, PPRL-and-TEFCA integration, identity-history-aware cross-network matching, sensitivity-flag coordination, capacity-coordination across QHINs, active-learning-driven tolerance tuning, audit-summary delivery to patient, cross-jurisdictional overlay-rule federation | 12-24 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.9](chapter05.09-national-scale-patient-matching) · [Python Example](chapter05.09-python-example) · [Chapter Preface](chapter05-preface)*

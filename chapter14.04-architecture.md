@@ -483,7 +483,3 @@ The architecture above demonstrates the pattern. Running this for a real nursing
 | **Basic** | 4-6 weeks | Single-unit batch scheduling with hard constraints only. Manual trigger. CSV export. |
 | **Production-ready** | 3-5 months | Multi-unit scheduling with soft constraints, real-time call-off handling, mobile notifications, dashboard, audit trail. |
 | **With variations** | 6-9 months | Float pool optimization, predictive call-off modeling, self-scheduling integration, multi-facility coordination. |
-
----
-
-*← [Main Recipe 14.4](chapter14.04-nurse-staffing-optimization) · [Python Example](chapter14.04-python-example) · [Chapter Preface](chapter14-preface)*

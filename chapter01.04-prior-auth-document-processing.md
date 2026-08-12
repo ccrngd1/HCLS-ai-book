@@ -272,7 +272,3 @@ The architectural principle that carries forward: Textract extracts structure. L
 ## Tags
 
 `document-intelligence` · `llm` · `ocr` · `model-tiering` · `payer` · `prior-authorization` · `icd-10` · `hipaa` · `bedrock` · `comprehend-medical` · `nova` · `step-functions` · `textract`
-
----
-
-*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.3: Lab Requisition Form Extraction](chapter01.03-lab-requisition-extraction) · [Next: Recipe 1.5 - Claims Attachment Processing →](chapter01.05-claims-attachment-processing)*

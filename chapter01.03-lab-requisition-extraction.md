@@ -120,7 +120,3 @@ The CPT lookup table is honestly the most maintenance-intensive part of this pip
 ## Tags
 
 `document-intelligence` · `nlp` · `ocr` · `prior-authorization` · `cpt` · `icd-10` · `hipaa` · `comprehend-medical` · `dynamodb` · `lambda` · `s3` · `sns` · `textract`
-
----
-
-*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.2: Patient Intake Form Digitization](chapter01.02-patient-intake-digitization) · [Next: Recipe 1.4 - Prior Authorization Document Processing →](chapter01.04-prior-auth-document-processing)*

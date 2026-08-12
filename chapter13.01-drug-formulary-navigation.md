@@ -159,7 +159,3 @@ One more thing: the gap between "what the formulary file says" and "what the PBM
 ## Tags
 
 `knowledge-graph` · `pharmacy` · `hipaa` · `graph-database` · `elasticache` · `neptune`
-
----
-
-*← [Chapter 13 Index](chapter13-preface) · [Next: Recipe 13.2 - Provider Directory as Knowledge Graph →](chapter13.02-provider-directory-knowledge-graph)*

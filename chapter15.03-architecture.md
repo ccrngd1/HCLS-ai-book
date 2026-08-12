@@ -376,12 +376,3 @@ The architecture above covers the statistical machinery and the data flow. Deplo
 ---
 
 **Tags:** `reinforcement-learning`, `clinical-trials`, `adaptive-design`, `thompson-sampling`, `bayesian`, `multi-armed-bandit`, `randomization`, `regulatory`, `fda`
-
----
-
-| [← Recipe 15.2: Notification Timing Optimization](chapter15.02-notification-timing-optimization) | [Chapter 15 Index](chapter15-preface) | [Recipe 15.4: Sepsis Treatment Optimization →](chapter15.04-sepsis-treatment-optimization) |
-|:---|:---:|---:|
-
----
-
-*← [Main Recipe 15.3](chapter15.03-clinical-trial-adaptive-randomization) · [Python Example](chapter15.03-python-example) · [Chapter Preface](chapter15-preface)*

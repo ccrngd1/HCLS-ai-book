@@ -432,7 +432,3 @@ The last thing, because it's specific to healthcare and to this recipe in partic
 ## Tags
 
 `speech-voice-ai` · `confidence-thresholding` · `intent-classification` · `streaming-asr` · `triage` · `multilingual` · `audit-trail` · `equity-monitoring` · `human-in-the-loop` · `phi-handling` · `hipaa` · `athena` · `bedrock` · `cloudtrail` · `cloudwatch` · `comprehend-medical` · `dynamodb` · `eventbridge` · `glue` · `kinesis-firehose` · `kms` · `lambda` · `opensearch` · `quicksight` · `s3` · `secrets-manager` · `sns` · `step-functions` · `transcribe-medical`
-
----
-
-*← [Recipe 10.1: IVR Call Routing Enhancement](chapter10.01-ivr-call-routing-enhancement) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation) →*

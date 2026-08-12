@@ -396,7 +396,3 @@ Combine area measurements with tissue classification to suggest wound stage (for
 | With variations (tissue classification + 3D) | 16-22 weeks | Tissue composition analysis, depth measurement, automated staging suggestions, predictive healing models. |
 
 ---
-
----
-
-*← [Main Recipe 9.3](chapter09.03-wound-photography-measurement) · [Python Example](chapter09.03-python-example) · [Chapter Preface](chapter09-preface)*

@@ -498,7 +498,3 @@ The architecture above produces calibrated mortality predictions and serves them
 | **With variations** (multi-horizon, event-triggered, palliative care integration) | 24-36 weeks |
 
 ---
-
----
-
-*← [Main Recipe 7.9](chapter07.09-mortality-risk-scoring-icu) · [Python Example](chapter07.09-python-example) · [Chapter Preface](chapter07-preface)*

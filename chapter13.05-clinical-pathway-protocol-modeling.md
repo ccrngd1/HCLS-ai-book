@@ -126,7 +126,3 @@ The condition evaluation layer is where performance problems hide. If evaluating
 ## Tags
 
 `knowledge-graph` · `clinical-decision-support` · `hipaa` · `regulatory-strategy` · `graph-database` · `dynamodb` · `eventbridge` · `neptune`
-
----
-
-*← [Recipe 13.4: Drug-Drug Interaction Knowledge Base](chapter13.04-drug-drug-interaction-knowledge-base) · [Chapter 13 Index](chapter13-preface) · [Next: Recipe 13.6: Care Gap Reasoning Engine →](chapter13.06-care-gap-reasoning-engine)*

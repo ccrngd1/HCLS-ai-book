@@ -122,7 +122,3 @@ That said, here's what will surprise you:
 ## Tags
 
 `classification` · `predictive-analytics` · `calibration` · `revenue-cycle` · `equity-monitoring` · `hipaa` · `sagemaker`
-
----
-
-*← [Recipe 7.1: Appointment No-Show Prediction](chapter07.01-appointment-no-show-prediction) · [Chapter 7 Index](chapter07-preface) · [Next: Recipe 7.3: Patient Churn / Disenrollment Prediction →](chapter07.03-patient-churn-disenrollment-prediction)*

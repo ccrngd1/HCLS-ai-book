@@ -230,7 +230,3 @@ One last point, because it's specific to this use case: be careful with the fram
 ## Tags
 
 `personalization` · `recommendation` · `vector-search` · `learning-to-rank` · `patient-education` · `health-literacy` · `hipaa` · `bedrock` · `dynamodb` · `lambda` · `opensearch` · `sagemaker`
-
----
-
-*← [Recipe 4.1: Appointment Reminder Channel Optimization](chapter04.01-appointment-reminder-channel-optimization) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.3 - Provider Directory Search Optimization →](chapter04.03-provider-directory-search-optimization)*

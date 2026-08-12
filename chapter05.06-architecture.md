@@ -1272,7 +1272,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add OMOP CDM integration, FHIR-native linkage with HealthLake, tokenization-based privacy-preserving linkage, real-time operational linkage, pharmacy-focused adherence analytics, HCC risk-adjustment specialization, quality-measure specialization, cross-organizational HIE-mediated linkage, streaming Kinesis-based pipeline, active-learning configuration tuning, external-encounter clinical-summary inference | 6-15 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.6](chapter05.06-claims-to-clinical-data-linkage) · [Python Example](chapter05.06-python-example) · [Chapter Preface](chapter05-preface)*

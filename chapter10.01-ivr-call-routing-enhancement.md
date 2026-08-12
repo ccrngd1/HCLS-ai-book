@@ -352,7 +352,3 @@ The last thing, because it's specific to healthcare: the IVR is, for many patien
 ## Tags
 
 `conversational-ai` · `speech-voice-ai` · `confidence-thresholding` · `intent-classification` · `streaming-asr` · `patient-engagement` · `triage` · `accessibility` · `equity-monitoring` · `hipaa` · `cloudtrail` · `cloudwatch` · `connect` · `dynamodb` · `eventbridge` · `kinesis` · `kms` · `lambda` · `lex` · `polly` · `s3` · `secrets-manager` · `transcribe-medical`
-
----
-
-*← [Chapter 10 Preface](chapter10-preface) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.2: Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification) →*

@@ -466,7 +466,3 @@ FUNCTION monitor_and_rollback(provider_id, monitoring_window_days = 14):
 | **With variations** (multi-provider, dynamic intra-day, Pareto frontier) | 12-16 weeks |
 
 ---
-
----
-
-*← [Main Recipe 14.1](chapter14.01-appointment-slot-optimization) · [Python Example](chapter14.01-python-example) · [Chapter Preface](chapter14-preface)*

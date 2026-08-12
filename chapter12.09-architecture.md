@@ -562,7 +562,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this fo
 - **Basic pipeline (single pathogen, single jurisdiction, statistical models only, weekly cadence, no public-facing surface):** 10-14 weeks
 - **Production-ready (multi-source fusion, compartmental + statistical ensemble, scenario forecasting, calibration monitoring, internal and operational surfaces):** 28-40 weeks
 - **With variations (multi-pathogen integration, fine-resolution spatial, genomic-aware, federated forecast hub publishing, public-facing dashboard, outbreak-response mode):** 48-72 weeks
-
----
-
-*← [Main Recipe 12.9](chapter12.09-epidemic-forecasting) · [Python Example](chapter12.09-python-example) · [Chapter Preface](chapter12-preface)*

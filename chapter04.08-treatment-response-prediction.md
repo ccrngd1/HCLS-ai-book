@@ -353,7 +353,3 @@ Last point, because it is specific to this use case: treatment response predicti
 ## Tags
 
 `clustering` · `causal-inference` · `personalization` · `calibration` · `clinical-decision-support` · `ehr-integration` · `smart-on-fhir` · `equity-monitoring` · `fda-pathway` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `healthlake` · `lambda` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 4.7: Care Management Program Enrollment](chapter04.07-care-management-program-enrollment) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.9 - Personalized Care Plan Generation →](chapter04.09-personalized-care-plan-generation)*

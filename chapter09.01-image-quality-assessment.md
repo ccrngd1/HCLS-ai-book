@@ -118,7 +118,3 @@ The part that surprised me: the biggest ROI is not in radiology. It's in clinica
 ## Tags
 
 `computer-vision` · `medical-imaging` · `radiology` · `dicom` · `hipaa`
-
----
-
-*← [Chapter 9 Index](chapter09-preface) · [Next: Recipe 9.2 - Patient Photo Verification →](chapter09.02-patient-photo-verification)*

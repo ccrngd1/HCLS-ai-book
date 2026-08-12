@@ -1753,7 +1753,3 @@ Each upstream service has a defined failover policy. The SLP must be able to con
 | With variations | School-based deployment with full IEP integration, telepractice-optimized workflow, home-practice and parent-coaching app, stuttering severity tracking with longitudinal trajectory, voice-quality assessment for laryngeal pathology, post-stroke aphasia and dysarthria recovery monitoring, pediatric autism spectrum disorder assessment support, cleft-palate resonance assessment, transgender voice-training assessment, multilingual articulation assessment, real-time SLP feedback during therapy sessions, caseload-level analytics, AAC assessment integration, per-population norm development | 10-18 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 10.9](chapter10.09-speech-therapy-assessment-monitoring) · [Python Example](chapter10.09-python-example) · [Chapter Preface](chapter10-preface)*

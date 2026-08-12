@@ -552,7 +552,3 @@ In production, pager notifications typically contain location identifiers (room/
 | **With variations** (continuous monitoring, medication-aware suppression, retrospective research platform) | 8-12 months |
 
 ---
-
----
-
-*← [Main Recipe 12.7](chapter12.07-vital-sign-trajectory-monitoring) · [Python Example](chapter12.07-python-example) · [Chapter Preface](chapter12-preface)*

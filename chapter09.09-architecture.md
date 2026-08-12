@@ -616,7 +616,3 @@ This architecture shows the complete shape of a surgical video analysis pipeline
 | **With variations** | 12-18 months | Multiple procedure types. Skill assessment metrics. Near-real-time processing. Integration with surgical scheduling systems. Complication flagging (research mode). |
 
 ---
-
----
-
-*← [Main Recipe 9.9](chapter09.09-surgical-video-analysis) · [Python Example](chapter09.09-python-example) · [Chapter Preface](chapter09-preface)*

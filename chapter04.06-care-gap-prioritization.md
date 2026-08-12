@@ -374,7 +374,3 @@ Last point, because it's specific to this use case: care gaps are not the same a
 ## Tags
 
 `clustering` · `entity-resolution` · `personalization` · `recommendation` · `quality-measures` · `hedis` · `equity-monitoring` · `hipaa` · `feature-store` · `bedrock` · `dynamodb` · `healthlake` · `lambda` · `sagemaker` · `step-functions`
-
----
-
-*← [Recipe 4.5: Medication Adherence Intervention Targeting](chapter04.05-medication-adherence-intervention-targeting) · [Chapter 4 Preface](chapter04-preface) · [Next: Recipe 4.7 - Care Management Program Enrollment →](chapter04.07-care-management-program-enrollment)*

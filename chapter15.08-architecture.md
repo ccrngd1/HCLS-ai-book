@@ -515,7 +515,3 @@ This recipe describes a research architecture. Deploying RL-based chemotherapy d
 | **Total to clinical deployment** | 2-4 years |
 
 ---
-
----
-
-*← [Main Recipe 15.8](chapter15.08-chemotherapy-dose-optimization) · [Python Example](chapter15.08-python-example) · [Chapter Preface](chapter15-preface)*

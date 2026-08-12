@@ -356,7 +356,3 @@ The architecture above demonstrates the pattern. Taking it to a real radiology d
 | **With variations** (edge deployment, study-level, continuous learning) | 16-20 weeks |
 
 ---
-
----
-
-*← [Main Recipe 9.1](chapter09.01-image-quality-assessment) · [Python Example](chapter09.01-python-example) · [Chapter Preface](chapter09-preface)*

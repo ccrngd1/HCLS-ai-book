@@ -506,7 +506,3 @@ This architecture covers the core graph traversal and state management loop. But
 | **With variations** | 20-28 weeks | Multi-pathway coordination, outcome linkage, pathway-aware order entry |
 
 ---
-
----
-
-*← [Main Recipe 13.5](chapter13.05-clinical-pathway-protocol-modeling) · [Python Example](chapter13.05-python-example) · [Chapter Preface](chapter13-preface)*

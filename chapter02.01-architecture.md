@@ -342,7 +342,3 @@ The architecture above demonstrates the pattern end to end. Deploying it to a he
 | **With variations** | 10-12 weeks | Multi-language, smart routing, feedback loop, A/B testing on prompts, analytics on approval rates |
 
 ---
-
----
-
-*← [Main Recipe 2.1](chapter02.01-patient-message-response-drafting) · [Python Example](chapter02.01-python-example) · [Chapter Preface](chapter02-preface)*

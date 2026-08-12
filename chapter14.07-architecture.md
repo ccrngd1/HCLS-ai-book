@@ -426,7 +426,3 @@ FUNCTION publish_schedule(schedule):
 | With variations (stochastic, multi-day, downstream integration) | 6-9 months |
 
 ---
-
----
-
-*← [Main Recipe 14.7](chapter14.07-or-case-sequencing) · [Python Example](chapter14.07-python-example) · [Chapter Preface](chapter14-preface)*

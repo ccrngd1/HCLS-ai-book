@@ -147,7 +147,3 @@ Here's what will surprise you when you build this:
 ## Tags
 
 `entity-resolution` · `knowledge-graph` · `clinical-decision-support` · `precision-medicine` · `provenance` · `neptune`
-
----
-
-**Navigation:** [← 13.6: Care Gap Reasoning Engine](chapter13.06-care-gap-reasoning-engine) | [Chapter 13 Index](chapter13-preface) | [13.8: Medical Concept Normalization →](chapter13.08-medical-concept-normalization-mapping)

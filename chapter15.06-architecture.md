@@ -532,12 +532,3 @@ When deploying a new policy version, never cut over 100% of traffic at once. Use
 ---
 
 **Tags:** `reinforcement-learning`, `offline-rl`, `glucose-control`, `icu`, `insulin-dosing`, `safety-constraints`, `clinical-decision-support`, `sequential-decision-making`, `off-policy-evaluation`
-
----
-
-| [← 15.5: Ventilator Weaning Protocols](chapter15.05-ventilator-weaning-protocols) | [Chapter 15 Index](chapter15-preface) | [15.7: Chronic Disease Treatment Personalization →](chapter15.07-chronic-disease-treatment-personalization) |
-|:---|:---:|---:|
-
----
-
-*← [Main Recipe 15.6](chapter15.06-glucose-control-icu) · [Python Example](chapter15.06-python-example) · [Chapter Preface](chapter15-preface)*

@@ -146,7 +146,3 @@ The feedback loop is where the real value emerges. When you track which suggesti
 ## Tags
 
 `classification` · `nlp` · `assertion-detection` · `negation` · `revenue-cycle` · `icd-10` · `hipaa` · `api-gateway` · `comprehend-medical` · `dynamodb` · `lambda`
-
----
-
-*← [Recipe 8.2: Patient Sentiment Analysis](chapter08.02-patient-sentiment-analysis) · [Chapter 8 Index](chapter08-preface) · [Recipe 8.4: Medication Extraction and Normalization →](chapter08.04-medication-extraction-normalization)*

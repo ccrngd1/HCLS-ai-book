@@ -248,7 +248,3 @@ One thing I'm genuinely uncertain about: Bedrock schema mapping accuracy on the 
 ## Tags
 
 `document-intelligence` · `ocr` · `claims` · `hipaa` · `bedrock` · `dynamodb` · `lambda` · `nova` · `sqs` · `textract`
-
----
-
-*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.7: Prescription Label OCR](chapter01.07-prescription-label-ocr) · [Next: Recipe 1.9: Medical Records Request Extraction →](chapter01.09-medical-records-request-extraction)*

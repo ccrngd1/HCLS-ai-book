@@ -480,7 +480,3 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this ag
 | With variations (cross-document, real-time, population mining) | 16-22 weeks |
 
 ---
-
----
-
-*← [Main Recipe 8.9](chapter08.09-temporal-relationship-extraction) · [Python Example](chapter08.09-python-example) · [Chapter Preface](chapter08-preface)*

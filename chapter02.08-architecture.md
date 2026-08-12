@@ -959,7 +959,3 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 | **With variations** | 60-96 weeks | Multi-language support. Inpatient progress notes. Procedure note generation. Telemedicine integration. Orders extraction with clinician confirmation workflow. Longitudinal patient context. Institution-wide rollout with specialty-specific tuning. Ongoing evaluation program with monthly clinical case review. Cost optimization at scale. Integration with revenue cycle and coding workflows. |
 
 ---
-
----
-
-*← [Main Recipe 2.8](chapter02.08-ambient-clinical-documentation) · [Python Example](chapter02.08-python-example) · [Chapter Preface](chapter02-preface)*

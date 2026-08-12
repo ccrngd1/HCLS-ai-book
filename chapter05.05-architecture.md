@@ -1078,7 +1078,3 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add TEFCA QHIN exchange, patient-mediated identity, privacy-preserving cross-facility matching, care-transition-aware prioritization, partner-organization quality scorecards, active-learning-driven threshold tuning | 6-12 months beyond production-ready |
 
 ---
-
----
-
-*← [Main Recipe 5.5](chapter05.05-cross-facility-patient-matching) · [Python Example](chapter05.05-python-example) · [Chapter Preface](chapter05-preface)*

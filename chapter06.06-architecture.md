@@ -404,11 +404,3 @@ Patient similarity is architecturally different from most clinical decision supp
 ---
 
 **Tags:** `cohort-analysis` `patient-similarity` `knn` `nearest-neighbor` `care-planning` `feature-engineering` `sagemaker` `clinical-decision-support` `embeddings`
-
----
-
-| [← 6.5: Provider Practice Pattern Analysis](chapter06.05-provider-practice-pattern-analysis) | [Chapter 6 Index](chapter06-preface) | [6.7: Clinical Trial Patient Matching →](chapter06.07-clinical-trial-patient-matching) |
-
----
-
-*← [Main Recipe 6.6](chapter06.06-patient-similarity-care-planning) · [Python Example](chapter06.06-python-example) · [Chapter Preface](chapter06-preface)*
