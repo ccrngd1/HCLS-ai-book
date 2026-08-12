@@ -39,18 +39,7 @@ Constraints come in two flavors, and the distinction matters enormously for solv
 - Approved PTO days are blocked
 
 Two of those are commonly encoded wrong, and getting them wrong produces a model that is either
-illegal or needlessly infeasible. There is no United States federal ceiling on hours worked per
-week for adult employees. The Fair Labor Standards Act governs overtime *pay*, not hours worked,
-so a sixty-hour weekly cap in your model comes from facility policy or a bargaining agreement,
-and you should be able to point at the document it came from. The state laws that do bite here,
-Pennsylvania's Act 102 and New York's Labor Law 167 among them, restrict health care employers
-from *requiring* a nurse to work past their regularly scheduled hours, with narrow emergency
-exceptions; they do not cap total hours, and they leave voluntary overtime available. That makes
-it a consent flag attached to a nurse and an assignment rather than a numeric bound, which is a
-different object in your model and a routine source of phantom infeasibility when a team encodes
-it as a bound. Rest between shifts is contractual and varies; eleven hours is the figure from the
-European Working Time Directive, not a United States standard, so read yours off your own
-agreement.
+illegal or infeasible. 
 
 **Soft constraints** are preferences. You want to satisfy them, but violating them doesn't make the schedule illegal. Instead, each violation incurs a penalty in the objective function. Examples:
 
