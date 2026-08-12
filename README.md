@@ -61,4 +61,25 @@ current vendor documentation.
 All patterns assume HIPAA compliance, PHI handling requirements, and enterprise-scale concerns. Regulatory considerations (FDA, state laws) are noted where relevant.
 
 ---
- 
+
+---
+
+## Disclaimers
+
+The patterns, architectures, and guidance here are provided for educational purposes.
+Healthcare AI systems must be validated for your own clinical, regulatory, and compliance
+context before production use. Nothing here is medical, legal, or compliance advice, and
+regulatory questions belong with your own legal and compliance teams.
+
+The views and opinions expressed are those of the author alone. They do not represent the
+views, positions, or policies of any current or former employer of the author, or of any
+organization with which the author is or has been affiliated.
+
+Many of the product and service names used here are claimed as trademarks by their owners.
+Amazon Web Services, AWS, Amazon Bedrock, Amazon SageMaker, Amazon Textract, Amazon
+Comprehend Medical, Amazon Transcribe Medical, AWS HealthLake, Amazon Connect, Amazon
+DynamoDB, Amazon S3, AWS Lambda, and AWS Step Functions are trademarks of Amazon.com, Inc.
+or its affiliates. All other trademarks are the property of their respective owners. Where
+those names appear they are used in an editorial fashion only, with no intention of
+infringement and no implication of affiliation with, sponsorship by, or endorsement from the
+trademark owner.

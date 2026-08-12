@@ -24,9 +24,9 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 32 |
+| DONE | 33 |
 | OPEN | 55 |
-| NEEDS DECISION | 4 |
+| NEEDS DECISION | 3 |
 | WONTFIX | 2 |
 | **total** | **93** |
 
@@ -154,7 +154,7 @@ Single place to track feedback from all reviewers. One row per finding.
 | V-10.5 | Appendix B Fairness entry omits 14.4 | Minor | DONE | Index now derived from tags, so it cannot drift. |
 | V-10.6 | Ch13 placeholder citations ("[RCT: Smith et al. 2018]") look like real citations | Significant | OPEN | Cite two real papers or label the box illustrative. |
 | V-10.7 | Disclaimer lacks not-medical-advice, no clinician-patient disclaimer, no drug-dosing carve-out | Critical | OPEN | Book prints a specific aspirin dose, DDI severities, sepsis treatment. Add per-chapter safety banners on 11, 13, 15. |
-| V-10.8 | AI content disclosure (KDP), trademark acknowledgment, employer clearance, "views are my own" | Critical | NEEDS DECISION | Employer review has the longest lead time of anything on this list. |
+| V-10.8 | AI content disclosure (KDP), trademark acknowledgment, employer clearance, "views are my own" | Critical | DONE | Resolved 2026-08-12. Employer clearance **granted** by the author's employer. Added to the generated copyright page and mirrored on the digital edition landing page: (1) a views disclaimer that names both current *and former* employers plus any affiliated organization, per author instruction; (2) a trademark acknowledgment naming the 13 Amazon and AWS marks that actually appear in the print volume, with the standard editorial-use, no-affiliation and no-endorsement language. KDP's AI-content disclosure was completed on the KDP side. Per explicit author instruction, **no mention of AI use appears in the published content of either edition**, verified by grep across the print book, README and Home. Copyright page absorbed both additions without spilling: 259 pages unchanged. |
 | V-11.1 | Per-recipe header fields not comparable ("Phase" mixes three taxonomies) | Significant | DONE | Field removed entirely, `1ef700f7`. |
 | V-11.2 | "Estimated Cost" mixes units; Ch1 "~$0.05 per" truncated; Ch14 renders "~$100200/month" | Significant | DONE | Field removed entirely, `1ef700f7`. |
 | V-11.3 | Body chapter titles use recipe names, Appendix A uses capability areas | Minor | OPEN | |
