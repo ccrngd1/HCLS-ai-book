@@ -156,9 +156,9 @@ def build_related_pointer(original: str, recipe_url: str, base_url: str) -> str:
 
 def rewrite_arch_callout(md: str, arch_url: str) -> tuple[str, int]:
     replacement = (
-        "> **The AWS implementation lives in the digital edition.** This printed "
+        "> **The implementation lives in the digital edition.** This printed "
         "recipe covers the problem, the underlying technology, and the "
-        "vendor-agnostic architecture. For the AWS services, architecture "
+        "cloud-agnostic architecture. For one concrete build of it, on AWS, with the architecture "
         "diagram, prerequisites, and step-by-step pseudocode, see the companion "
         f"page at <{arch_url}>."
     )
@@ -287,9 +287,17 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
         "conversational AI, and more. What you hold is one flagship recipe from "
         "each of those 15 chapters: enough to feel the shape of the whole, "
         "chosen to be the most instructive entry point in its domain.\n\n"
-        "Each recipe is architecture-focused and vendor-agnostic in the body, "
-        "with the cloud-specific build, diagrams, and pseudocode kept in the "
-        "digital edition so the print stays readable and durable. Where a recipe "
+        "Everything in this printed volume is cloud-agnostic. The use cases, the "
+        "technology discussions, and the architectures describe what has to happen "
+        "and why, not which vendor you buy it from, so they apply whether you run "
+        "on premises or on any of the major cloud providers. The companion pages in "
+        "the digital edition are written against AWS services, because a worked "
+        "example has to pick something concrete to be useful. Those choices are not "
+        "requirements: each one has an on-premises equivalent and a counterpart on "
+        "the other hyperscalers, and the architecture in this book is what carries "
+        "across. Keeping the build in the digital edition also keeps the print "
+        "readable and durable, since service names change faster than a book can. "
+        "Where a recipe "
         "references a capability covered elsewhere, we describe the concept "
         "rather than send you to a page that isn't in this volume.\n"
     )

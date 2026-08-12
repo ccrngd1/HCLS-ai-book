@@ -24,10 +24,10 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 33 |
+| DONE | 34 |
 | OPEN | 55 |
-| NEEDS DECISION | 3 |
-| WONTFIX | 2 |
+| NEEDS DECISION | 1 |
+| WONTFIX | 3 |
 | **total** | **93** |
 
 ---
@@ -113,7 +113,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-6.1 | Agentic AI absent (MCP, prior-auth agents, revenue-cycle agents) | Significant | NEEDS DECISION | Book-scope call, not a fix. |
+| V-6.1 | Agentic AI absent (MCP, prior-auth agents, revenue-cycle agents) | Significant | WONTFIX | Author decision 2026-08-12: agentic AI and MCP stay out. The print volume is a 15-recipe sampler, and it is reasonable for agentic patterns not to be a banner use case in a curated subset. No scope note added either, per instruction, so the book does not draw attention to the omission. The digital edition is expected to cover this eventually, which is where a new capability area belongs: it can be added there without touching the manifest, pagination or spine. |
 | V-6.2 | No coherent evaluation story (LLM-as-judge reliability, golden datasets, red-teaming, MedHELM, HealthBench) | Significant | OPEN | |
 | V-6.3 | No governance artifacts (CHAI model cards, AI use inventories) | Significant | OPEN | |
 | V-6.4 | No LLM security (prompt injection, jailbreaks, PHI in prompts/logs, OWASP LLM Top 10) | Significant | OPEN | |
@@ -146,7 +146,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-9.1 | "Vendor-agnostic" claim contradicted by named AWS services, 15 AWS callouts, AWS service index | Significant | NEEDS DECISION | His fix: drop the claim, retitle Appendix B "AWS Service Index", reword the callouts. |
+| V-9.1 | "Vendor-agnostic" claim contradicted by named AWS services, 15 AWS callouts, AWS service index | Significant | DONE | Resolved by making the claim precise rather than dropping it. The print volume now states plainly that everything in it is cloud-agnostic, that the digital companions are written against AWS because a worked example has to pick something concrete, and that each of those choices has an on-premises equivalent and a counterpart on the other hyperscalers. The word 'vendor-agnostic' no longer appears in the print book at all: it was doing double duty as both a design property and a marketing claim, and the new wording says what is actually true. The 15 per-recipe callouts changed from 'The AWS implementation lives in the digital edition' to 'The implementation lives in the digital edition ... for one concrete build of it, on AWS', which stops the print volume reading as an AWS book while keeping the pointer honest. KDP listing copy updated to match. **Author declined the reviewer's Appendix B rename**: it stays 'Topic and Service Index'. AWS is still named 39 times where naming it is accurate. |
 | V-10.1 | No About the Author | Critical | OPEN | His "would fix today". The book's authority rests on first-person claims. |
 | V-10.2 | No ISBN | Minor | OPEN | Required only for library/bookstore/catalogue discoverability. |
 | V-10.3 | Appendix B unusable as a print index (recipe numbers, not pages) | Significant | DONE | Pre-existing fix, `68704943`. Now generated from tags with 120 page-numbered entries. |

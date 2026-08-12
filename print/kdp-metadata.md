@@ -44,7 +44,7 @@ author in production.
 It is written for the people who actually ship these systems: solution
 architects, engineering leaders, machine learning engineers, and product
 managers working under HIPAA, FDA, and real operational constraints. The
-patterns are vendor-agnostic in the body, with cloud-specific implementation
+patterns are cloud-agnostic, with one concrete implementation
 kept in the companion digital edition.
 
 The complete digital cookbook, with all 150+ recipes, full architectures, and
