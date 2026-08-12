@@ -107,6 +107,10 @@ Even with conservative thresholds and human review, some merges will be wrong. A
 
 You cannot bolt this on later. The data structures need to support reversibility from day one, because once you have done a year of merges without provenance, the reverse-engineering is painful and lossy. The compliance, legal, and patient-safety implications of a non-reversible merge are large enough that "we'll add audit later" is the wrong answer.
 
+It is worth being specific about what that compliance exposure actually is, because "data quality issue" is the wrong mental model and it leads teams to under-resource this. A wrong merge places one patient's protected health information inside another patient's chart, where the second patient and everyone treating them can read it. That is an impermissible disclosure, and under the HIPAA Breach Notification Rule an impermissible disclosure is presumed to be a reportable breach unless a documented risk assessment concludes otherwise. Where notification is required, the clock for notifying individuals runs from discovery, not from the moment you finish the unmerge, and it is measured in days rather than quarters.
+
+That reframing changes what you have to build. "We can unmerge it" is a weaker claim than the one you will actually be asked for, which is which records were exposed, to whom, and for how long. Your privacy officer owns the determination and the notification decision, not the matcher team, and they can only make it if the provenance described above exists. Treat this paragraph as a reason to involve them while you are still designing the merge log, rather than as guidance on what the rule requires of you. That question belongs with them and with your counsel.
+
 ### Where the Field Has Moved
 
 A few practical updates worth knowing:

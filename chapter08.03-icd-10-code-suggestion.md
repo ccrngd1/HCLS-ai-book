@@ -55,9 +55,11 @@ The hardest part of ICD-10 suggestion from clinical text isn't identifying that 
 - "Patient has diabetes" = code it.
 - "No diabetes" = do not code it.
 - "Family history of diabetes" = code Z83.3 (family history), not E11.x.
-- "Rule out diabetes" = do not code it (it's a working hypothesis, not a confirmed diagnosis).
+- "Rule out diabetes" = it depends on the care setting, and this is the one that catches people. For outpatient encounters, ICD-10-CM Section IV.H says not to code an uncertain diagnosis at all; you code to the highest degree of certainty for that visit, which usually means the signs and symptoms. For inpatient admissions, Sections II.H and III.C say the opposite: if the diagnosis is still documented as uncertain at discharge, you code it as though it were established.
 - "Diabetes resolved" = may or may not be coded depending on whether it's considered a chronic condition.
 - "History of gestational diabetes" = Z86.32, not a current diabetes code.
+
+That fourth case deserves more than a bullet, because it is the one that quietly breaks models. The correct label for "rule out diabetes" is not a property of the sentence. It is a property of the encounter the sentence sits in, and for inpatient stays it turns on whether the uncertainty survives to discharge. A single assertion classifier trained on a mixture of inpatient and outpatient notes is being taught two contradictory labels for identical text, and the resulting confusion will look like model noise rather than the labelling error it actually is. Either condition the model on encounter type and carry discharge status through as a feature, or train separate heads and route by setting. Note too that the inpatient rule is a facility-billing rule, so the same admission can legitimately produce different answers on the facility claim and the professional claim. Which of those you are generating codes for is a question to settle with your HIM team before you define the label, not after.
 
 A model that ignores assertion context will over-suggest codes for conditions the patient doesn't have. This is worse than suggesting nothing, because a coder who trusts the suggestions will spend time verifying and rejecting false positives, which is slower than just reading the note themselves.
 
