@@ -637,14 +637,6 @@ FUNCTION serve_recommendation(patient_id, regime_id, decision_point_id):
     // the patient's trajectory state.
     treatment_relationship_check(calling_clinician_id, patient_id)
     consistency_check(decision_point_id, trajectory_metadata)
-    // TODO (TechWriter): Expert review S1 (HIGH). Specify the
-    // identity-boundary check policy and rejection semantics at the
-    // chapter pattern level: failure modes (clinician_not_authorized,
-    // patient_not_active_in_regime, decision_point_inconsistent),
-    // metric emission on each violation, and the served_to_clinician_id
-    // capture that record_action_taken needs. Mirror 4.4-4.9 chapter
-    // pattern; sharper here because trajectory contamination is a
-    // propagating harm into the next training cycle.
 
     // Step 5C: eligibility check. The regime's eligibility predicates
     // are evaluated against the current state. Patients who fail
@@ -683,15 +675,6 @@ FUNCTION serve_recommendation(patient_id, regime_id, decision_point_id):
     // regime risk tier determines whether OOD-flagged patients still
     // receive a recommendation, receive one with explicit warnings,
     // or are blocked.
-    // TODO (TechWriter): Expert review A3 (HIGH). Specify the OOD
-    // severity bands (NONE/LOW/MODERATE/HIGH thresholds), the routing
-    // policy by regime risk tier (which severity bands serve, warn,
-    // or suppress at each tier), the override semantics (whether a
-    // clinician can request "show recommendation anyway" and how that
-    // event is captured), and the suppressed-for-OOD outcome on the
-    // recommendation record so the audit trail captures the
-    // suppression. Without these the clinical-safety posture is
-    // implementation-defined.
 
     // Step 5E: invoke the regime's policy.
     endpoint_response = SageMaker.InvokeEndpoint(
@@ -807,16 +790,6 @@ FUNCTION record_action_taken(recommendation_id, action_taken_payload):
     IF action_taken_payload.clinician_id != rec.served_to_clinician_id:
         log_security_violation(...)
         REJECT
-    // TODO (TechWriter): Expert review S1 (HIGH). Specify the
-    // rejection semantics in chapter pattern style: validate that
-    // action_id is in the recommendation's known action set
-    // (recommended_action plus alternatives, or explicit out-of-
-    // catalog), enforce idempotency on replay (rec.action_taken
-    // already set means treat as replay rather than double-mutate),
-    // and emit metric action_taken_identity_mismatch on rejection.
-    // Trajectory poisoning from a misrouted action-taken event
-    // propagates into the next training cycle; the boundary must
-    // hold.
 
     DynamoDB.UpdateItem("recommendation-records", recommendation_id, {
         action_taken: action_taken_payload.action_id,
@@ -867,19 +840,6 @@ FUNCTION run_surveillance(regime_id, surveillance_window):
     outcome_metrics = compute_outcome_metrics(regime_id, surveillance_window)
     drift_results = detect_calibration_drift(regime_id, surveillance_window,
                                               ope_baseline = lookup_ope_baseline(regime_id))
-    // TODO (TechWriter): Expert review A4 (HIGH). Specify the
-    // prediction-versus-outcome pairing: identify recommendations
-    // whose outcome window has closed within the surveillance
-    // window (regime.outcome_window_days), join action-taken events
-    // to observed outcomes computed against the regime's reward
-    // function (matching weights), apply IPCW for patients censored
-    // before the outcome window closed, and compute per-cohort
-    // residuals. Drift severity = |mean residual| / OPE baseline CI
-    // half-width. The implementation must avoid the failure mode of
-    // averaging predicted Q-values across recommendations and
-    // calling that "observed reward"; that signal detects
-    // population-mix drift, not calibration drift, and the
-    // RETRAINING_TRIGGER_THRESHOLD fires on the wrong axis.
 
     // Step 6C: cohort-stratified surveillance. Outcome trajectories
     // by cohort, regime adherence by cohort, OOD-flag rates by
@@ -897,21 +857,6 @@ FUNCTION run_surveillance(regime_id, surveillance_window):
                 triggered_at: current UTC timestamp,
                 review_status: "pending"
             })
-    // TODO (TechWriter): Expert review A1 (HIGH). Specify the
-    // cohort-disparity thresholds (REGIME_VALUE_DISPARITY_THRESHOLD,
-    // REGIME_ADHERENCE_DISPARITY_THRESHOLD, OOD_RATE_DISPARITY_THRESHOLD,
-    // OUTCOME_TRAJECTORY_DISPARITY_THRESHOLD) and the per-axis-per-
-    // metric override mechanism. Specify how each disparity is
-    // computed (e.g., regime value disparity = ratio of mean DR-OPE
-    // value worst-cohort vs best-cohort; adherence disparity =
-    // difference in follow-recommendation rate by recommendation
-    // strength tier). Specify MIN_SURVEILLANCE_COHORT_SAMPLE and
-    // chronic-suppression-as-fairness-signal pattern: a cohort whose
-    // sample size is structurally low across windows is itself an
-    // under-representation alert, not silently absorbed into the
-    // disparity calculation. Specify the relationship between the
-    // OPE-stage MIN_COHORT_SAMPLE and the surveillance-stage minimum.
-    // Reference Obermeyer 2019 and the chapter siblings 4.8 A4 / 4.9 A2.
 
     // Step 6D: drift-driven retraining trigger. If calibration drift
     // exceeds threshold, trigger a retraining cycle ahead of the

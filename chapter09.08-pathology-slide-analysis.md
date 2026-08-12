@@ -118,7 +118,7 @@ The part that works better than expected: pathologist acceptance. Unlike radiolo
 - **Recipe 9.1 (Image Quality Assessment):** Apply quality checks to slide scans before analysis (focus quality, staining artifacts, tissue folds)
 - **Recipe 9.5 (Chest X-Ray Triage):** Shares the pattern of AI-assisted prioritization for specialist review
 - **Recipe 9.7 (Radiology AI Triage):** Similar multi-model orchestration pattern but for radiology rather than pathology
-- **Recipe 14.3 (TODO: Lab Workflow Optimization):** Optimizing the order in which slides are processed based on clinical priority
+- **Recipe 14.7 (OR Case Sequencing):** The same sequencing problem in a different domain, ordering a queue of work by priority under resource constraints; the formulation transfers to deciding which slides a pathologist sees first
 
 ---
 

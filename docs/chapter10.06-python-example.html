@@ -607,9 +607,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="c1"># changes over time as state law evolves; production maintains</span>
 <span class="c1"># this in a legal-team-reviewed configuration with an explicit</span>
 <span class="c1"># update cadence.</span>
-<span class="c1"># TODO (TechWriter): verify the current all-party-consent state</span>
-<span class="c1"># list against the Reporters Committee for Freedom of the Press</span>
-<span class="c1"># state-by-state recording-laws guide before deploying.</span>
 <span class="n">ALL_PARTY_CONSENT_STATES</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CT&quot;</span><span class="p">,</span> <span class="s2">&quot;FL&quot;</span><span class="p">,</span> <span class="s2">&quot;IL&quot;</span><span class="p">,</span> <span class="s2">&quot;MD&quot;</span><span class="p">,</span> <span class="s2">&quot;MA&quot;</span><span class="p">,</span>
     <span class="s2">&quot;MT&quot;</span><span class="p">,</span> <span class="s2">&quot;NV&quot;</span><span class="p">,</span> <span class="s2">&quot;NH&quot;</span><span class="p">,</span> <span class="s2">&quot;PA&quot;</span><span class="p">,</span> <span class="s2">&quot;WA&quot;</span><span class="p">,</span>
@@ -722,20 +719,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">        Production yields these as they arrive; the mock yields</span>
 <span class="sd">        them in the order specified by the fixture.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO (TechWriter): Code review W1 (WARNING). The</span>
-        <span class="c1"># mixed-audio path silently yields zero events because</span>
-        <span class="c1"># this filter excludes every fixture segment whose</span>
-        <span class="c1"># speaker_role is not equal to channel_role; for the</span>
-        <span class="c1"># mixed channel (channel_role == &quot;mixed&quot;) no fixture</span>
-        <span class="c1"># segment matches and the loop yields nothing. Fix:</span>
-        <span class="c1"># when channel_role == &quot;mixed&quot;, do not filter on</span>
-        <span class="c1"># speaker_role; preserve the per-segment speaker_role</span>
-        <span class="c1"># in the emitted event so map_speaker_label_to_role can</span>
-        <span class="c1"># do its job. The current code makes Marisol&#39;s mixed-</span>
-        <span class="c1"># audio scenario silently produce streaming_segment_count</span>
-        <span class="c1"># == 0 with avg_streaming_asr_confidence == 0.0, which</span>
-        <span class="c1"># contradicts the comment in run_streaming_asr that</span>
-        <span class="c1"># claims the mock simulates the mixed-audio event flow.</span>
         <span class="n">segments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixtures</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">visit_id</span><span class="p">,</span> <span class="p">[])</span>
         <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">segment</span><span class="p">[</span><span class="s2">&quot;speaker_role&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">channel_role</span><span class="p">:</span>
@@ -811,23 +794,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
         <span class="c1"># template structure in the prompt context. The</span>
         <span class="c1"># guardrail is applied at runtime via the guardrail_id</span>
         <span class="c1"># parameter.</span>
-        <span class="c1"># TODO (TechWriter): Code review W2 (WARNING).</span>
-        <span class="c1"># bedrock_runtime.invoke_model does not have a</span>
-        <span class="c1"># response_format parameter. Its surface is</span>
-        <span class="c1"># invoke_model(modelId=..., body=&lt;model-specific JSON&gt;,</span>
-        <span class="c1"># contentType=&quot;application/json&quot;,</span>
-        <span class="c1"># accept=&quot;application/json&quot;,</span>
-        <span class="c1"># guardrailIdentifier=..., guardrailVersion=...).</span>
-        <span class="c1"># Structured output for Anthropic Claude on Bedrock is</span>
-        <span class="c1"># enforced through tool-use (the tools field inside the</span>
-        <span class="c1"># body, with the structured-output schema declared as a</span>
-        <span class="c1"># tool definition) or through a system prompt that</span>
-        <span class="c1"># demands JSON. Apply the same correction to</span>
-        <span class="c1"># check_faithfulness and extract_higher_level_fields,</span>
-        <span class="c1"># and to the Configuration and Constants comment near</span>
-        <span class="c1"># BEDROCK_EXTRACTION_MODEL_ID, and to the Gap section&#39;s</span>
-        <span class="c1"># &quot;Real Bedrock invocation&quot; paragraph that references</span>
-        <span class="c1"># a &quot;strict-JSON output schema&quot; via invoke_model.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">invocations</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
             <span class="s2">&quot;type&quot;</span><span class="p">:</span>       <span class="s2">&quot;note_generation&quot;</span><span class="p">,</span>
             <span class="s2">&quot;visit_id&quot;</span><span class="p">:</span>   <span class="n">visit_id</span><span class="p">,</span>

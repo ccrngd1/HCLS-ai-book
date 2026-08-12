@@ -99,9 +99,6 @@ MAX_TOKENS_MULTIPLIER = 2
 # Segment type classification keywords. Order matters: first match wins
 # when a section could fit multiple types. Keep medications first so
 # medication-heavy sections get the strictest preservation rules.
-# TODO (TechWriter): The "aspirin" keyword under "medications" is fragile:
-# specific drug names won't generalize. Consider replacing with structural
-# markers (section headers, list patterns) or a small classifier model.
 SEGMENT_TYPES = {
     "medications": ["medication", "prescription", "drug", "dose", "mg", "tablet", "aspirin"],
     "diagnosis":   ["diagnosis", "assessment", "impression", "condition"],

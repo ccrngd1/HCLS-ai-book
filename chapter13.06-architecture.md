@@ -301,7 +301,7 @@ FUNCTION score_gaps(gaps, patient_facts):
         risk_factor = minimum(comorbidity_count / 3, 2.0)
 
         // Quality measure weight: some measures impact Star Ratings more heavily
-        // TODO: integrate actual measure weights from quality program specs
+        // Weights come from your quality program's specifications; substitute yours here
         measure_weight = lookup_measure_weight(gap.measure_id)
 
         // Composite score (higher = more urgent)

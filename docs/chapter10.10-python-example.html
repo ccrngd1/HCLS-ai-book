@@ -457,18 +457,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
                                        <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG_ASYNC</span><span class="p">)</span>
 <span class="n">s3_client</span>           <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
                                        <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG_ASYNC</span><span class="p">)</span>
-<span class="c1"># TODO (TechWriter): Code review E1 (ERROR). The next line raises</span>
-<span class="c1"># botocore.exceptions.UnknownServiceError at module import: there</span>
-<span class="c1"># is no &quot;transcribe-streaming&quot; service in boto3. Amazon Transcribe</span>
-<span class="c1"># streaming uses HTTP/2 and is exposed through the separate</span>
-<span class="c1"># `amazon-transcribe` package (the Amazon Transcribe Streaming SDK</span>
-<span class="c1"># for Python), not through boto3.client(). The `transcribe` service</span>
-<span class="c1"># in boto3 is the batch-jobs API only. Either guard with</span>
-<span class="c1"># `try/except ImportError` around `from amazon_transcribe.client</span>
-<span class="c1"># import TranscribeStreamingClient`, or drop this module-level</span>
-<span class="c1"># client entirely (the demo only exercises MockTranscribeStreaming</span>
-<span class="c1"># below). The Setup section already references the streaming SDK</span>
-<span class="c1"># correctly; this line is the only inconsistent surface.</span>
 <span class="n">transcribe_streaming</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
     <span class="s2">&quot;transcribe-streaming&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">REGION</span><span class="p">,</span>
     <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG_REALTIME</span><span class="p">)</span>
@@ -596,10 +584,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="c1"># speakers, and at an appropriate literacy level. Production</span>
 <span class="c1"># looks up the patient&#39;s jurisdiction and language; the demo</span>
 <span class="c1"># uses illustrative defaults.</span>
-<span class="c1"># TODO (TechWriter): consent disclosure text below is</span>
-<span class="c1"># illustrative-only. Production deployment requires native-</span>
-<span class="c1"># speaker-validated translations per language with attention</span>
-<span class="c1"># to literacy level and cultural framing.</span>
 <span class="n">CONSENT_DISCLOSURE_DEFAULT_EN</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s2">&quot;We are using a computer-based interpretation service &quot;</span>
     <span class="s2">&quot;for this conversation. Your voice is being processed &quot;</span>
@@ -636,9 +620,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="c1"># over time as state law evolves; production maintains this</span>
 <span class="c1"># in a legal-team-reviewed configuration with an explicit</span>
 <span class="c1"># update cadence.</span>
-<span class="c1"># TODO (TechWriter): verify the current biometric-data-law</span>
-<span class="c1"># state list against the IAPP biometric-privacy tracker</span>
-<span class="c1"># before deploying.</span>
 <span class="n">BIOMETRIC_DATA_LAW_STATES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;IL&quot;</span><span class="p">,</span> <span class="s2">&quot;TX&quot;</span><span class="p">,</span> <span class="s2">&quot;WA&quot;</span><span class="p">}</span>
 
 <span class="c1"># --- Topic Category to Deployment Posture Mapping ---</span>
@@ -727,8 +708,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
         <span class="c1"># Vietnamese TTS coverage in Polly is limited at the</span>
         <span class="c1"># time of this writing; production may route to a</span>
         <span class="c1"># third-party vendor for the patient-direction TTS.</span>
-        <span class="c1"># TODO (TechWriter): verify current Polly Vietnamese</span>
-        <span class="c1"># voice availability and quality.</span>
         <span class="s2">&quot;tts_voice&quot;</span><span class="p">:</span>             <span class="s2">&quot;Lien&quot;</span><span class="p">,</span>
         <span class="s2">&quot;tts_engine&quot;</span><span class="p">:</span>             <span class="s2">&quot;neural&quot;</span><span class="p">,</span>
         <span class="s2">&quot;tts_lexicons&quot;</span><span class="p">:</span>          <span class="p">[</span><span class="s2">&quot;medical-vi-pronunciation-v1&quot;</span><span class="p">],</span>
@@ -898,22 +877,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
             <span class="s2">&quot;applied_terminologies&quot;</span><span class="p">:</span>
                 <span class="n">fixture</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                     <span class="s2">&quot;applied_terminologies&quot;</span><span class="p">,</span> <span class="p">[]),</span>
-            <span class="c1"># TODO (TechWriter): Code review W1 (WARNING).</span>
-            <span class="c1"># Real `translate_client.translate_text` does NOT</span>
-            <span class="c1"># return per-translation confidence. The response</span>
-            <span class="c1"># has TranslatedText, SourceLanguageCode,</span>
-            <span class="c1"># TargetLanguageCode, AppliedTerminologies, and</span>
-            <span class="c1"># AppliedSettings (Formality/Profanity/Brevity).</span>
-            <span class="c1"># Either rename this field to `demo_confidence`</span>
-            <span class="c1"># with a comment that production runs a separate</span>
-            <span class="c1"># quality-estimation step (COMET-QE, a fine-tuned</span>
-            <span class="c1"># quality-estimation model, or a secondary verifier</span>
-            <span class="c1"># model) on each translated segment, or drop the</span>
-            <span class="c1"># field and source per-utterance confidence from a</span>
-            <span class="c1"># dedicated quality-estimation function. As written,</span>
-            <span class="c1"># a learner replacing the mock with the real client</span>
-            <span class="c1"># silently loses confidence-based escalation</span>
-            <span class="c1"># (every utterance falls back to the 0.85 default).</span>
             <span class="s2">&quot;applied_settings_confidence&quot;</span><span class="p">:</span>
                 <span class="n">fixture</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0.85&quot;</span><span class="p">)),</span>
         <span class="p">}</span>

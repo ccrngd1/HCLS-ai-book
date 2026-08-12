@@ -691,18 +691,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    attributes via a DynamoDB GSI; the demo collapses them into</span>
 <span class="sd">    one for simplicity.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review Finding 4 (NOTE). The recipe</span>
-    <span class="c1"># text says &quot;Within an urgency level, older messages come</span>
-    <span class="c1"># first&quot; but this priority key sorted descending puts newer</span>
-    <span class="c1"># messages first within tier, and items_for_queue sorts</span>
-    <span class="c1"># descending without flipping intra-tier. Fix one of: (a)</span>
-    <span class="c1"># invert the timestamp ((datetime(2099,1,1)-recorded_at)</span>
-    <span class="c1"># total seconds with leading zeros) so descending sort</span>
-    <span class="c1"># puts older first within tier; (b) change items_for_queue</span>
-    <span class="c1"># to a two-key sort (urgency rank desc, recorded_at asc);</span>
-    <span class="c1"># (c) split into two attributes and document the production</span>
-    <span class="c1"># DynamoDB GSI pattern. Whichever fix, update the in-code</span>
-    <span class="c1"># comment to match.</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;U#</span><span class="si">{</span><span class="n">urgency_rank</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">recorded_at_iso</span><span class="si">}</span><span class="s2">&quot;</span>
 </pre></div>
 
@@ -751,19 +739,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
         <span class="c1"># In production this is a non-blocking API call that returns</span>
         <span class="c1"># immediately and runs the transcription in the background.</span>
         <span class="c1"># The demo synthesizes the result inline.</span>
-        <span class="c1"># TODO (TechWriter): Code review Finding 1 (ERROR). The</span>
-        <span class="c1"># fixtures are keyed by literal demo names (&quot;vm-fixture-</span>
-        <span class="c1"># refill&quot; etc.) but voicemail_id is generated dynamically</span>
-        <span class="c1"># in ingest_voicemail() as &quot;vm-&quot; + uuid.uuid4().hex[:12].</span>
-        <span class="c1"># Every scenario other than the pocket-dial short-circuit</span>
-        <span class="c1"># falls through to the &quot;no fixture available&quot; default,</span>
-        <span class="c1"># the ASR gate fires on empty word_confidences, and the</span>
-        <span class="c1"># rule layer / classifier / SNS-emergent path are never</span>
-        <span class="c1"># exercised. Recommended fix (Option B from the review):</span>
-        <span class="c1"># have ingest_voicemail() accept an optional</span>
-        <span class="c1"># &quot;voicemail_id_override&quot; from source_event so each</span>
-        <span class="c1"># scenario can pass its fixture id deterministically; the</span>
-        <span class="c1"># override is documented as demo-only.</span>
         <span class="n">fixture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixtures</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">voicemail_id</span><span class="p">,</span> <span class="p">{</span>
             <span class="s2">&quot;transcript_text&quot;</span><span class="p">:</span> <span class="s2">&quot;no fixture available for this voicemail&quot;</span><span class="p">,</span>
             <span class="s2">&quot;items&quot;</span><span class="p">:</span> <span class="p">[],</span>
@@ -797,17 +772,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    fixture-driven response keyed by transcript text so the</span>
 <span class="sd">    classification is reproducible across runs.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review Finding 5 (NOTE). The mock&#39;s</span>
-    <span class="c1"># parameter name is snake_case (model_id) while the real</span>
-    <span class="c1"># bedrock_runtime.invoke_model uses camelCase (modelId). The</span>
-    <span class="c1"># production-comment skeletons elsewhere in this file use the</span>
-    <span class="c1"># real-API casing. To keep the demo internally consistent,</span>
-    <span class="c1"># either restructure the mocks to accept the real API&#39;s</span>
-    <span class="c1"># keyword arguments (e.g. invoke_model(self, modelId, body,</span>
-    <span class="c1"># contentType=None, accept=None)) or note the snake_case-to-</span>
-    <span class="c1"># camelCase translation at every call site. Same pattern in</span>
-    <span class="c1"># MockTranscribeMedical (job_name vs MedicalTranscriptionJobName,</span>
-    <span class="c1"># etc.).</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classification_fixtures</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fixtures</span> <span class="o">=</span> <span class="n">classification_fixtures</span>
 
@@ -1030,14 +994,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="n">cloudwatch</span>           <span class="o">=</span> <span class="n">MockCloudWatch</span><span class="p">()</span>
 <span class="c1"># transcribe, bedrock, and comprehend_medical mocks are wired</span>
 <span class="c1"># up in run_demo() with fixture data tailored to each scenario.</span>
-<span class="c1"># TODO (TechWriter): Code review Finding 7 (NOTE). These three</span>
-<span class="c1"># globals are None until run_demo executes; importing the module</span>
-<span class="c1"># and calling process_voicemail directly will fail with</span>
-<span class="c1"># AttributeError. Either initialize them at module load with</span>
-<span class="c1"># empty-fixture defaults (and let run_demo reassign them with</span>
-<span class="c1"># populated fixtures), or refactor the pipeline-stage functions</span>
-<span class="c1"># to receive the mock instances as arguments rather than reading</span>
-<span class="c1"># them from module globals.</span>
 <span class="n">transcribe_mock</span>      <span class="o">=</span> <span class="kc">None</span>
 <span class="n">bedrock_mock</span>         <span class="o">=</span> <span class="kc">None</span>
 <span class="n">comprehend_mock</span>      <span class="o">=</span> <span class="kc">None</span>
@@ -1592,30 +1548,10 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="n">rule_layer_urgency_floor</span> <span class="o">=</span> <span class="n">rule_match</span><span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">rule_match</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="n">rule_layer_phrase</span>        <span class="o">=</span> <span class="n">rule_match</span><span class="p">[</span><span class="s2">&quot;phrase&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">rule_match</span> <span class="k">else</span> <span class="kc">None</span>
 
-    <span class="c1"># TODO (TechWriter): Code review Finding 6 (NOTE). The</span>
-    <span class="c1"># main recipe pseudocode (Step 4B) and the prose overview</span>
-    <span class="c1"># at the top of this file describe the LLM classifier and</span>
-    <span class="c1"># the entity extractor running in parallel</span>
-    <span class="c1"># (invoke_model_async + detect_entities_v2_async + await).</span>
-    <span class="c1"># The demo runs them sequentially below for readability.</span>
-    <span class="c1"># In a real Lambda, run them in parallel with a</span>
-    <span class="c1"># ThreadPoolExecutor (or via two parallel branches in the</span>
-    <span class="c1"># Step Functions state machine). Add an inline comment or</span>
-    <span class="c1"># rephrase the prose overview to match the demo&#39;s</span>
-    <span class="c1"># simplification.</span>
 
     <span class="c1"># Step 4B: LLM-based classifier. In production this is a</span>
     <span class="c1"># Bedrock InvokeModel call against a pinned model and</span>
     <span class="c1"># inference profile. The demo uses MockBedrock.</span>
-    <span class="c1"># TODO (TechWriter): Code review Finding 3 (NOTE).</span>
-    <span class="c1"># BEDROCK_INFERENCE_PROFILE_ARN is defined and asserted at</span>
-    <span class="c1"># module load but never referenced. Add a production-comment</span>
-    <span class="c1"># skeleton above this call that shows</span>
-    <span class="c1"># bedrock_runtime.invoke_model(modelId=BEDROCK_INFERENCE_PROFILE_ARN,</span>
-    <span class="c1"># body=..., contentType=&quot;application/json&quot;,</span>
-    <span class="c1"># accept=&quot;application/json&quot;) so the inference-profile-as-</span>
-    <span class="c1"># modelId pattern is visible to a learner translating the</span>
-    <span class="c1"># demo to production.</span>
     <span class="n">classifier_prompt</span> <span class="o">=</span> <span class="n">_build_classifier_prompt</span><span class="p">(</span><span class="n">transcript_text</span><span class="p">)</span>
     <span class="n">classifier_response</span> <span class="o">=</span> <span class="n">bedrock_mock</span><span class="o">.</span><span class="n">invoke_model</span><span class="p">(</span>
         <span class="n">model_id</span><span class="o">=</span><span class="n">BEDROCK_CLASSIFIER_MODEL_ID</span><span class="p">,</span>
@@ -2402,17 +2338,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
             <span class="c1"># (classifier, entities) can find them. In a real</span>
             <span class="c1"># pipeline, the transcript IS the input to those</span>
             <span class="c1"># stages; the demo keys the mocks for clarity.</span>
-            <span class="c1"># TODO (TechWriter): Code review Finding 1 (ERROR).</span>
-            <span class="c1"># The pass below is a literal no-op; the comment</span>
-            <span class="c1"># describes the fix but it is not implemented. By</span>
-            <span class="c1"># the time this point is reached, process_voicemail</span>
-            <span class="c1"># has already submitted the ASR job using vm_id, so</span>
-            <span class="c1"># re-keying after the fact does not help. Adopt</span>
-            <span class="c1"># Option B from the code review: in ingest_voicemail,</span>
-            <span class="c1"># honor source_event.get(&quot;voicemail_id_override&quot;)</span>
-            <span class="c1"># when present (demo-only) and pass each scenario&#39;s</span>
-            <span class="c1"># fixture_id through the source_event. Then this</span>
-            <span class="c1"># block can go away entirely.</span>
             <span class="k">pass</span>
         <span class="n">processed_voicemail_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vm_id</span><span class="p">)</span>
 

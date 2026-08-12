@@ -910,22 +910,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="s2">&quot;mrn_prefix&quot;</span><span class="p">:</span>   <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\bMRN\s*[:#]?\s*\d{4,}\b&quot;</span><span class="p">,</span>
                                 <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">),</span>
 <span class="p">}</span>
-<span class="c1"># TODO (TechWriter): Code review W2 (WARNING). Same root cause as</span>
-<span class="c1"># 11.01 / 11.02: the `account_long` 9-16-digit pattern matches any</span>
-<span class="c1"># standalone digit run, including a phone number the bot just asked</span>
-<span class="c1"># the patient to provide for identity verification. The contradictory</span>
-<span class="c1"># loop is masked in 11.03 because REQUIRE_AUTHENTICATED_FOR_REFILL</span>
-<span class="c1"># gates refill-action intents to authenticated sessions, but a</span>
-<span class="c1"># deployment that flips that flag for status-check or</span>
-<span class="c1"># medication-question intents over an unauthenticated channel hits</span>
-<span class="c1"># the same loop documented in 11.02. Phase-gate the `account_long`</span>
-<span class="c1"># check on the conversation phase (skip when the last assistant turn</span>
-<span class="c1"># was an `ask_for_identifiers` / `ask_for_phone` / `step_up_requested`</span>
-<span class="c1"># action), or tighten the pattern to require an account-context cue</span>
-<span class="c1"># (e.g., (?:account|member|insurance)) within a small window. While</span>
-<span class="c1"># editing, also extend `_redact_pii_for_logging` to cover ISO and</span>
-<span class="c1"># slash-formatted dates of birth so the audit pipeline does not carry</span>
-<span class="c1"># the patient&#39;s DOB in plain text after redaction.</span>
 </pre></div>
 
 <hr />
@@ -1201,15 +1185,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
             <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">_to_decimal</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">_from_decimal</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-    <span class="c1"># TODO (TechWriter): Code review N2 (NOTE). The</span>
-    <span class="c1"># read-modify-write above is a tutorial-grade race condition.</span>
-    <span class="c1"># Two messages from the same channel arriving close together</span>
-    <span class="c1"># both read message_count = N, both increment to N + 1, and the</span>
-    <span class="c1"># last write wins, so message_count ends at N + 1 instead of</span>
-    <span class="c1"># N + 2. The DynamoDB-native pattern is `update_item` with</span>
-    <span class="c1"># UpdateExpression &quot;SET #la = :ts ADD #mc :one&quot;; switch to that</span>
-    <span class="c1"># in production (and update the demo&#39;s mock to support</span>
-    <span class="c1"># multi-attribute UpdateExpression and ADD; see N3).</span>
 
     <span class="c1"># Brand-new session.</span>
     <span class="n">new_session</span> <span class="o">=</span> <span class="p">{</span>
@@ -1914,16 +1889,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="n">conf_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
         <span class="sa">r</span><span class="s2">&quot;(?&lt;!\d)(\d</span><span class="si">{4}</span><span class="s2">)(?!\d)&quot;</span><span class="p">,</span> <span class="n">combined</span><span class="p">)</span>
     <span class="n">confirmation</span> <span class="o">=</span> <span class="n">conf_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">conf_match</span> <span class="k">else</span> <span class="kc">None</span>
-    <span class="c1"># TODO (TechWriter): Code review W1 (WARNING). Same root cause as</span>
-    <span class="c1"># 11.01 / 11.02: this regex returns the FIRST standalone 4-digit</span>
-    <span class="c1"># sequence, which on the canonical &quot;Marcus Chen, 1979-03-14, 7842&quot;</span>
-    <span class="c1"># input picks &quot;1979&quot; (the DOB year) instead of &quot;7842&quot; (the</span>
-    <span class="c1"># last-four-of-phone the bot&#39;s prompt asked for). The bug is masked</span>
-    <span class="c1"># in 11.03 because REQUIRE_AUTHENTICATED_FOR_REFILL gates the</span>
-    <span class="c1"># refill-action intents to authenticated sessions, but the bug fires</span>
-    <span class="c1"># immediately if a deployment turns that flag off. Use re.findall</span>
-    <span class="c1"># and pick the LAST match, ideally as a shared helper across the</span>
-    <span class="c1"># 11.01-11.04 recipes so the fix lands once.</span>
 
     <span class="n">complete</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">name</span> <span class="ow">and</span> <span class="n">dob</span> <span class="ow">and</span> <span class="n">confirmation</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span>
@@ -3374,22 +3339,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    each call _append_turn directly with pre-built strings, so</span>
 <span class="sd">    the demo applies this at the boundary in run_demo.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review W3 (WARNING). The refill-claim</span>
-    <span class="c1"># verification, medication-list integrity check, and</span>
-    <span class="c1"># controlled-substance language detection below are the</span>
-    <span class="c1"># load-bearing safety primitive the main recipe sells. Today,</span>
-    <span class="c1"># most assistant turns are appended via _append_turn directly</span>
-    <span class="c1"># inside helper functions like _execute_auto_approve, which</span>
-    <span class="c1"># captures the unscreened text in the audit metadata; only the</span>
-    <span class="c1"># run_demo wrapper calls screen_output before delivery, so the</span>
-    <span class="c1"># audit log holds the unverified claim while the user sees the</span>
-    <span class="c1"># safe replacement. Centralize assistant-turn writes through a</span>
-    <span class="c1"># single helper that runs screen_output first, then appends the</span>
-    <span class="c1"># (possibly replaced) turn, then returns the chat-reply payload,</span>
-    <span class="c1"># so the prescription-ID claim in the auto-approval confirmation</span>
-    <span class="c1"># goes through the screen exactly once and the audit metadata</span>
-    <span class="c1"># always matches the delivered text.</span>
-    <span class="c1"># Step 9A: standard scope-drift check on the generated text.</span>
     <span class="n">violations</span> <span class="o">=</span> <span class="n">_check_response_scope</span><span class="p">(</span><span class="n">response_text</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">violations</span><span class="p">:</span>
         <span class="n">_put_metric</span><span class="p">(</span><span class="s2">&quot;OutputScopeViolation&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">{</span>
@@ -3689,26 +3638,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
             <span class="nb">bool</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;crisis_detected&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
         <span class="s2">&quot;scope_violation_count&quot;</span><span class="p">:</span>
             <span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scope_violation_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
-        <span class="c1"># TODO (TechWriter): Code review W4 (WARNING). The</span>
-        <span class="c1"># scope_violation_count, handoffs_offered, and</span>
-        <span class="c1"># handoffs_accepted counters are initialized to 0 in</span>
-        <span class="c1"># _get_or_create_session and read here at archive time, but no</span>
-        <span class="c1"># code path increments them. CloudWatch metrics fire</span>
-        <span class="c1"># independently (HandoffOffered, OutputScopeViolation,</span>
-        <span class="c1"># UnsupportedRefillClaim, MedicationNotOnPatientList,</span>
-        <span class="c1"># ControlledSubstanceAutoApprovalAttempted) so the per-cohort</span>
-        <span class="c1"># dashboards work, but the per-conversation audit record always</span>
-        <span class="c1"># shows 0 and the close_conversation_and_archive</span>
-        <span class="c1"># final_disposition logic never lands at &quot;escalated&quot; for</span>
-        <span class="c1"># discontinuation-handoff or other handoff-accepted cases.</span>
-        <span class="c1"># Add an _increment_session_counter helper (using DynamoDB ADD</span>
-        <span class="c1"># in production; the demo&#39;s MockTable.update_item only handles</span>
-        <span class="c1"># single-attribute SET expressions, so update the mock or use</span>
-        <span class="c1"># an explicit read-modify-write with a comment) and call it at</span>
-        <span class="c1"># each emission site (handoffs_offered after _put_metric</span>
-        <span class="c1"># &quot;HandoffOffered&quot; in _handle_in_scope_message;</span>
-        <span class="c1"># scope_violation_count when screen_output detects a violation;</span>
-        <span class="c1"># handoffs_accepted via a new record_user_feedback hook).</span>
         <span class="s2">&quot;refills_auto_approved&quot;</span><span class="p">:</span>
             <span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;refills_auto_approved&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
         <span class="s2">&quot;refills_routed&quot;</span><span class="p">:</span>
@@ -3922,19 +3851,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    clinical leadership; the demo runs the protocol from</span>
 <span class="sd">    REFILL_PROTOCOL.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review N1 (NOTE). request_context carries</span>
-    <span class="c1"># `refills_remaining` from _evaluate_protocol but this function</span>
-    <span class="c1"># never consults it. A patient with refills_remaining = 0 (Eleanor&#39;s</span>
-    <span class="c1"># metformin in the recipe narrative) is treated identically to a</span>
-    <span class="c1"># patient with refills authorized as long as the early-refill,</span>
-    <span class="c1"># monitoring, and interaction checks pass. The narrative implies</span>
-    <span class="c1"># the bot handles the refills_remaining = 0 case by deferring to</span>
-    <span class="c1"># the prescriber under standing-order delegation. Either consume</span>
-    <span class="c1"># `refills_remaining` here (e.g., a separate `route_for_renewal`</span>
-    <span class="c1"># disposition when refills_remaining == 0 and the protocol&#39;s</span>
-    <span class="c1"># standing-order rules require it), or stop packaging it into</span>
-    <span class="c1"># request_context with a comment that standing-order renewal is</span>
-    <span class="c1"># out of scope for the demo.</span>
     <span class="n">name_lower</span> <span class="o">=</span> <span class="p">(</span><span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="n">entry</span> <span class="o">=</span> <span class="n">REFILL_PROTOCOL</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name_lower</span><span class="p">,</span> <span class="p">{})</span>
 
@@ -4134,15 +4050,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    Knowledge Bases&#39; retrieve-and-generate flow with the</span>
 <span class="sd">    medication-information corpus as the source.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review N4 (NOTE). The demo wires this</span>
-    <span class="c1"># to MockKnowledgeBase, but the bedrock_agent_runtime client</span>
-    <span class="c1"># constructed at module load is never invoked, so a reader does</span>
-    <span class="c1"># not see the production API surface. Either include the real</span>
-    <span class="c1"># `bedrock_agent_runtime.retrieve_and_generate(...)` call here</span>
-    <span class="c1"># (with the mock taking over via the same boto3-client</span>
-    <span class="c1"># substitution pattern used elsewhere) or add an explicit</span>
-    <span class="c1"># &quot;this is what the production call looks like&quot; code-comment</span>
-    <span class="c1"># block referencing recipe 11.1&#39;s pattern.</span>
     <span class="k">return</span> <span class="n">knowledge_base</span><span class="o">.</span><span class="n">retrieve_and_answer</span><span class="p">(</span>
         <span class="n">question</span><span class="o">=</span><span class="n">question</span><span class="p">,</span>
         <span class="n">medication</span><span class="o">=</span><span class="n">medication</span><span class="p">,</span>
@@ -4181,15 +4088,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="k">def</span> <span class="nf">update_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Key</span><span class="p">,</span> <span class="n">UpdateExpression</span><span class="p">,</span>
                     <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="c1"># TODO (TechWriter): Code review N3 (NOTE). This regex only</span>
-        <span class="c1"># handles a single-attribute `SET &lt;name&gt; = &lt;val&gt;` UpdateExpression.</span>
-        <span class="c1"># Multi-attribute SETs (&quot;SET #a = :a, #b = :b&quot;) and ADD/REMOVE</span>
-        <span class="c1"># actions silently no-op, which is the wrong default for a</span>
-        <span class="c1"># teaching example because a learner extending the demo to</span>
-        <span class="c1"># increment a counter via &quot;ADD #c :one&quot; (the natural fix for</span>
-        <span class="c1"># W4) sees no error and no state change. Split the expression</span>
-        <span class="c1"># on action tokens and apply each piece in turn, or at minimum</span>
-        <span class="c1"># log a warning when the regex does not match.</span>
         <span class="n">key</span> <span class="o">=</span> <span class="n">Key</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key_attr</span><span class="p">]</span>
         <span class="n">existing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Key</span><span class="p">))</span>
         <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s*SET\s+(\S+)\s*=\s*(\S+)\s*$&quot;</span><span class="p">,</span>
@@ -4381,23 +4279,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
             <span class="p">},</span>
         <span class="p">}</span>
         <span class="c1"># Synthetic medication lists per patient.</span>
-        <span class="c1"># TODO (TechWriter): Code review E1 (ERROR). Eleanor&#39;s metformin</span>
-        <span class="c1"># fixture has `days_since_last_fill: 31` against a 90-day supply</span>
-        <span class="c1"># with the protocol&#39;s `early_refill_threshold_days: 7`, so the</span>
-        <span class="c1"># protocol&#39;s early-refill check fires (31 &lt; 90 - 7 = 83) and</span>
-        <span class="c1"># routes the request to clinical instead of auto-approving.</span>
-        <span class="c1"># That contradicts the recipe&#39;s headline &quot;Sample conversation&quot;</span>
-        <span class="c1"># narrative (Eleanor&#39;s ninety-second metformin auto-approval</span>
-        <span class="c1"># with confirmation number RX-2026-7798231). Bump</span>
-        <span class="c1"># days_since_last_fill on the metformin entry to a value past</span>
-        <span class="c1"># the early-refill threshold (e.g., 92) so the headline</span>
-        <span class="c1"># `happy_path_auto_approve` scenario actually exercises the</span>
-        <span class="c1"># auto-approval path and the demo output matches the recipe&#39;s</span>
-        <span class="c1"># sample audit record. Same fixture mismatch affects</span>
-        <span class="c1"># Eleanor&#39;s lisinopril (`days_since_last_fill: 20` is also</span>
-        <span class="c1"># below the 83-day threshold for a 90-day supply); bump to</span>
-        <span class="c1"># something like 85 so both maintenance medications align</span>
-        <span class="c1"># with the narrative.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">medications</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;patient-internal-eleanor&quot;</span><span class="p">:</span> <span class="p">[</span>
                 <span class="p">{</span>

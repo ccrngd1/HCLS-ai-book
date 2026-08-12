@@ -265,9 +265,6 @@ CONSENT_DISCLOSURE_BEHAVIORAL_HEALTH = (
 # changes over time as state law evolves; production maintains
 # this in a legal-team-reviewed configuration with an explicit
 # update cadence.
-# TODO (TechWriter): verify the current all-party-consent state
-# list against the Reporters Committee for Freedom of the Press
-# state-by-state recording-laws guide before deploying.
 ALL_PARTY_CONSENT_STATES = {
     "CA", "CT", "FL", "IL", "MD", "MA",
     "MT", "NV", "NH", "PA", "WA",
@@ -384,20 +381,6 @@ class MockTranscribeStreaming:
         Production yields these as they arrive; the mock yields
         them in the order specified by the fixture.
         """
-        # TODO (TechWriter): Code review W1 (WARNING). The
-        # mixed-audio path silently yields zero events because
-        # this filter excludes every fixture segment whose
-        # speaker_role is not equal to channel_role; for the
-        # mixed channel (channel_role == "mixed") no fixture
-        # segment matches and the loop yields nothing. Fix:
-        # when channel_role == "mixed", do not filter on
-        # speaker_role; preserve the per-segment speaker_role
-        # in the emitted event so map_speaker_label_to_role can
-        # do its job. The current code makes Marisol's mixed-
-        # audio scenario silently produce streaming_segment_count
-        # == 0 with avg_streaming_asr_confidence == 0.0, which
-        # contradicts the comment in run_streaming_asr that
-        # claims the mock simulates the mixed-audio event flow.
         segments = self._fixtures.get(visit_id, [])
         for segment in segments:
             if segment["speaker_role"] != channel_role:
@@ -473,23 +456,6 @@ class MockBedrock:
         # template structure in the prompt context. The
         # guardrail is applied at runtime via the guardrail_id
         # parameter.
-        # TODO (TechWriter): Code review W2 (WARNING).
-        # bedrock_runtime.invoke_model does not have a
-        # response_format parameter. Its surface is
-        # invoke_model(modelId=..., body=<model-specific JSON>,
-        # contentType="application/json",
-        # accept="application/json",
-        # guardrailIdentifier=..., guardrailVersion=...).
-        # Structured output for Anthropic Claude on Bedrock is
-        # enforced through tool-use (the tools field inside the
-        # body, with the structured-output schema declared as a
-        # tool definition) or through a system prompt that
-        # demands JSON. Apply the same correction to
-        # check_faithfulness and extract_higher_level_fields,
-        # and to the Configuration and Constants comment near
-        # BEDROCK_EXTRACTION_MODEL_ID, and to the Gap section's
-        # "Real Bedrock invocation" paragraph that references
-        # a "strict-JSON output schema" via invoke_model.
         self.invocations.append({
             "type":       "note_generation",
             "visit_id":   visit_id,

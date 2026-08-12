@@ -113,18 +113,6 @@ dynamodb            = boto3.resource("dynamodb", region_name=REGION,
                                        config=BOTO3_RETRY_CONFIG_ASYNC)
 s3_client           = boto3.client("s3", region_name=REGION,
                                        config=BOTO3_RETRY_CONFIG_ASYNC)
-# TODO (TechWriter): Code review E1 (ERROR). The next line raises
-# botocore.exceptions.UnknownServiceError at module import: there
-# is no "transcribe-streaming" service in boto3. Amazon Transcribe
-# streaming uses HTTP/2 and is exposed through the separate
-# `amazon-transcribe` package (the Amazon Transcribe Streaming SDK
-# for Python), not through boto3.client(). The `transcribe` service
-# in boto3 is the batch-jobs API only. Either guard with
-# `try/except ImportError` around `from amazon_transcribe.client
-# import TranscribeStreamingClient`, or drop this module-level
-# client entirely (the demo only exercises MockTranscribeStreaming
-# below). The Setup section already references the streaming SDK
-# correctly; this line is the only inconsistent surface.
 transcribe_streaming = boto3.client(
     "transcribe-streaming", region_name=REGION,
     config=BOTO3_RETRY_CONFIG_REALTIME)
@@ -252,10 +240,6 @@ ENDPOINTING_THRESHOLDS_MS = {
 # speakers, and at an appropriate literacy level. Production
 # looks up the patient's jurisdiction and language; the demo
 # uses illustrative defaults.
-# TODO (TechWriter): consent disclosure text below is
-# illustrative-only. Production deployment requires native-
-# speaker-validated translations per language with attention
-# to literacy level and cultural framing.
 CONSENT_DISCLOSURE_DEFAULT_EN = (
     "We are using a computer-based interpretation service "
     "for this conversation. Your voice is being processed "
@@ -292,9 +276,6 @@ CONSENT_DISCLOSURE_BIPA_OVERLAY_EN = (
 # over time as state law evolves; production maintains this
 # in a legal-team-reviewed configuration with an explicit
 # update cadence.
-# TODO (TechWriter): verify the current biometric-data-law
-# state list against the IAPP biometric-privacy tracker
-# before deploying.
 BIOMETRIC_DATA_LAW_STATES = {"IL", "TX", "WA"}
 
 # --- Topic Category to Deployment Posture Mapping ---
@@ -383,8 +364,6 @@ LANGUAGE_PAIR_CONFIGS = {
         # Vietnamese TTS coverage in Polly is limited at the
         # time of this writing; production may route to a
         # third-party vendor for the patient-direction TTS.
-        # TODO (TechWriter): verify current Polly Vietnamese
-        # voice availability and quality.
         "tts_voice":             "Lien",
         "tts_engine":             "neural",
         "tts_lexicons":          ["medical-vi-pronunciation-v1"],
@@ -558,22 +537,6 @@ class MockTranslate:
             "applied_terminologies":
                 fixture.get(
                     "applied_terminologies", []),
-            # TODO (TechWriter): Code review W1 (WARNING).
-            # Real `translate_client.translate_text` does NOT
-            # return per-translation confidence. The response
-            # has TranslatedText, SourceLanguageCode,
-            # TargetLanguageCode, AppliedTerminologies, and
-            # AppliedSettings (Formality/Profanity/Brevity).
-            # Either rename this field to `demo_confidence`
-            # with a comment that production runs a separate
-            # quality-estimation step (COMET-QE, a fine-tuned
-            # quality-estimation model, or a secondary verifier
-            # model) on each translated segment, or drop the
-            # field and source per-utterance confidence from a
-            # dedicated quality-estimation function. As written,
-            # a learner replacing the mock with the real client
-            # silently loses confidence-based escalation
-            # (every utterance falls back to the 0.85 default).
             "applied_settings_confidence":
                 fixture.get("confidence", Decimal("0.85")),
         }

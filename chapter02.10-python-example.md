@@ -479,7 +479,7 @@ def _list_relevant_imaging_for_scenario(patient_id: str,
     queries HealthImaging's search endpoint with patient and date filters
     plus modality filters per scenario.
 
-    TODO (TechCodeReviewer): wire this to HealthImaging search. The stub
+    Wire this to HealthImaging search. The stub
     returns synthetic studies so the example runs end-to-end.
     """
     # Synthetic studies for illustration.

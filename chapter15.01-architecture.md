@@ -371,9 +371,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this in
 - [`aws-samples/amazon-sagemaker-rl-ray`](https://github.com/aws-samples/amazon-sagemaker-examples-community-fork): Community examples of Ray-based RL on SageMaker
 
 **Research and Background:**
-- TODO: Verify and add specific citation for alert fatigue statistics (150-400 alerts per patient per day in ICU settings)
-- TODO: Verify AMA administrative waste statistics citation
-- Sendelbach, S. & Funk, M. (2013). "Alarm Fatigue: A Patient Safety Concern." AACN Advanced Critical Care.
+- Sendelbach, S. & Funk, M. (2013). "Alarm Fatigue: A Patient Safety Concern." AACN Advanced Critical
+  Care. The source for the widely quoted estimate of 150 to 400 alarms per patient per day in
+  intensive care.
 - Prasad, N. et al. (2017). "A Reinforcement Learning Approach to Weaning of Mechanical Ventilation in Intensive Care Units." Conference on Uncertainty in Artificial Intelligence.
 
 ---

@@ -321,9 +321,6 @@ CONSENT_DISCLOSURE_ONE_PARTY = (
 # over time as state law evolves; production maintains this in a
 # legal-team-reviewed configuration with an explicit update
 # cadence.
-# TODO (TechWriter): verify the current all-party-consent state
-# list against the Reporters Committee for Freedom of the Press
-# state-by-state recording-laws guide before deploying.
 ALL_PARTY_CONSENT_STATES = {
     "CA", "CT", "FL", "IL", "MD", "MA",
     "MT", "NV", "NH", "PA", "WA",

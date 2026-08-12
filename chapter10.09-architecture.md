@@ -529,17 +529,6 @@ FUNCTION extract_features(session_id):
             // should be handled asynchronously via
             // Step Functions wait-for-callback rather
             // than blocking inside this Lambda.
-            // TODO (TechWriter): Expert review A7 (MEDIUM).
-            // Decompose this step into two Step Functions
-            // states: Lambda-invokes-start_job-and-returns,
-            // then Step Functions waits for the Transcribe
-            // job-completion event (or polls with backoff),
-            // then a separate Lambda step retrieves the
-            // transcript and runs extract_linguistic_features.
-            // Update the architecture diagram to show the
-            // two-step decomposition and remove the
-            // synchronous wait inside the feature-extraction
-            // Lambda.
             wait_for_transcribe(transcript_job.job_name)
             transcript_text = retrieve_transcript(
                 transcript_job.job_name)
@@ -683,24 +672,6 @@ FUNCTION score_instruments(session_id):
         scoring_completed_at: now(),
         status: "scored")
 
-    // TODO (TechWriter): Expert review S2 (HIGH). Adopt
-    // archive-reference discipline uniformly. Per-instrument
-    // score content (per_item_scores with per-phoneme
-    // expected_target / observed / score_value /
-    // supporting_evidence) is biometric-derived data
-    // classified as PHI; write the full instrument_scores
-    // structure to a per-session score-archive S3 bucket
-    // with the biometric-derived KMS key class and persist
-    // only the archive ref plus structural metadata in the
-    // session_table. Apply the same pattern to the Step 5D
-    // longitudinal / goal_progress / trajectory_patterns
-    // writes and the Step 6C edited_scores / final_summaries
-    // / edit_history (with free-text slp_reasoning) /
-    // clinical_record (with free-text free_text_observations)
-    // writes. Classify the longitudinal_table as a biometric-
-    // derived data store with the pediatric-records-
-    // extending-to-age-of-majority retention floor per
-    // Finding S1.
     RETURN scores
 ```
 
@@ -960,24 +931,6 @@ FUNCTION generate_documentation(session_id):
         },
         max_tokens: 3000)
 
-    // TODO (TechWriter): Expert review S5 (MEDIUM) and
-    // A2 (MEDIUM). Add prompt-injection mitigation and
-    // a faithfulness check between Bedrock generation
-    // and documentation persistence. Delimit patient-
-    // speech content, SLP free-text content
-    // (clinical_record, edit_history with slp_reasoning),
-    // and structured scoring output in the prompt with
-    // explicit tags (<patient_speech>, <slp_clinical_text>)
-    // and instruct the model to treat all delimited
-    // content as untrusted source material to be
-    // summarized, not as instructions. Add a
-    // run_report_faithfulness_check that validates the
-    // output against the structured scoring data with
-    // citation grounding, schema validation, contradiction
-    // detection, and (for family-summary) reading-level
-    // validation. On block, fall back to
-    // render_structured_report. Track per-population
-    // faithfulness-failure-rate as a launch gate per A1.
 
     // Step 7B: parent-and-patient-friendly summary.
     family_summary_input = {
@@ -1032,16 +985,6 @@ FUNCTION generate_documentation(session_id):
             healthlake_client.create_resource(
                 resource_type: resource.resource_type,
                 resource: resource.body)
-    // TODO (TechWriter): Expert review A3 (MEDIUM). Specify
-    // per-resource-type idempotency key for HealthLake FHIR
-    // write-back: Observation (session_id, instrument_id);
-    // Goal (session_id, goal_id, modification_type);
-    // CarePlan (session_id, careplan_revision);
-    // DocumentReference (session_id, document_type). Hold
-    // a recently-submitted-writes list per patient and
-    // return prior resource_id on idempotency-match. Use
-    // FHIR conditional-create (If-None-Exist) where
-    // HealthLake supports it.
     ELIF state.deployment_context.documentation_target ==
          "school_sis":
             sis_integration.write_assessment(
@@ -1157,26 +1100,6 @@ FUNCTION audit_and_surveillance(session_id):
                     audit_record.patient_population_profile
             })
 
-    // TODO (TechWriter): Expert review A1 (HIGH). Promote
-    // per-population accuracy monitoring with launch-gate
-    // discipline from prose to architectural primitive.
-    // Specify single-axis populations (age-band, sex,
-    // language, dialect, deployment-context, severity-band,
-    // instrument, clinical-population) and two-axis
-    // populations (language-by-age-band, severity-by-
-    // instrument, deployment-context-by-population, dialect-
-    // by-instrument). Specify per-population minimum sample
-    // size (typically N=100+ over the monitoring window),
-    // per-population threshold metrics (per-item agreement
-    // with SLP gold-standard, SLP-review-flag rate, SLP edit
-    // rate, cross-population generalization gap, sustained-
-    // utilization rate, per-instrument score-distribution
-    // drift), launch-gate logic (every population must meet
-    // its threshold; institution-wide average is
-    // informational only), and a population-disabled-feature
-    // workflow when a population drifts below threshold.
-    // Tighter thresholds for severe-impairment and pediatric
-    // populations per the recipe's own central-trap diagnoses.
 
     // Step 8C: SageMaker Model Monitor and Clarify
     // jobs run on a scheduled cadence against the

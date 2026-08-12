@@ -565,7 +565,7 @@ def _fetch_fhir_bundle_from_healthlake(patient_id: str,
     does not expose a `search_fhir_resources` method; swap in the
     SigV4-signed-HTTPS pattern when wiring up real integration.
 
-    TODO (TechCodeReviewer): replace this stub with the real HealthLake
+    Replace this stub with the real HealthLake
     SigV4 HTTPS integration. The current code returns a minimal synthetic
     bundle so the example runs end-to-end without a live datastore.
     """
@@ -822,7 +822,7 @@ def _calculate_egfr_ckd_epi_2021(demographics: dict,
     Equations to Estimate GFR without Race. NEJM 2021. Verify against your
     institutional formulary/coding before production.
 
-    TODO (TechCodeReviewer): confirm the exact CKD-EPI 2021 coefficients
+    Confirm the exact CKD-EPI 2021 coefficients
     and unit handling match the institutional lab convention (mg/dL vs
     umol/L) before using in any real deployment.
     """

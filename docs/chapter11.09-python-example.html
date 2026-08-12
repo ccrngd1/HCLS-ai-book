@@ -2160,18 +2160,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    quiet-hours discipline, and TCPA/10DLC compliance for</span>
 <span class="sd">    SMS; the demo records the engagement.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review Issue 2 (WARNING). In</span>
-    <span class="c1"># real Pinpoint, the keys of MessageRequest.Addresses</span>
-    <span class="c1"># are the actual delivery addresses (phone number for</span>
-    <span class="c1"># SMS, email for EMAIL, device token for APNS/GCM,</span>
-    <span class="c1"># endpoint ID for IN_APP), not opaque patient_ids. As</span>
-    <span class="c1"># written this will not deliver in production. Either</span>
-    <span class="c1"># switch to the EndpointIds shape (preferred for</span>
-    <span class="c1"># healthcare bots that resolve patient -&gt; endpoint via</span>
-    <span class="c1"># the Pinpoint endpoint registry on enrollment), or</span>
-    <span class="c1"># replace patient_id with a placeholder address and</span>
-    <span class="c1"># add an explicit &quot;in production, look up via Pinpoint</span>
-    <span class="c1"># endpoint registry&quot; comment.</span>
     <span class="n">pinpoint_client</span><span class="o">.</span><span class="n">send_messages</span><span class="p">(</span>
         <span class="n">ApplicationId</span><span class="o">=</span><span class="n">PINPOINT_APPLICATION_ID</span><span class="p">,</span>
         <span class="n">MessageRequest</span><span class="o">=</span><span class="p">{</span>
@@ -3989,15 +3977,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 
     <span class="c1"># Out-of-scope (dose titration). The bot should replace</span>
     <span class="c1"># with the dose-titration safe template.</span>
-    <span class="c1"># TODO (TechWriter): Code review Issue 1 (WARNING). The</span>
-    <span class="c1"># mock LLM checks &quot;furosemide&quot; before the dose-titration</span>
-    <span class="c1"># phrases, so this test never exercises the</span>
-    <span class="c1"># OUT_OF_SCOPE_DOSE_TITRATION safe template. Either</span>
-    <span class="c1"># reorder MockBedrockRuntime.invoke_response so the</span>
-    <span class="c1"># dose-titration check fires first, or change this</span>
-    <span class="c1"># message to remove &quot;furosemide&quot; (e.g., &quot;should i lower</span>
-    <span class="c1"># my heart medication tonight?&quot;) so the chained checks</span>
-    <span class="c1"># reach the dose-titration branch.</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Out-of-scope (dose titration) ---&quot;</span><span class="p">)</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;should i lower my furosemide dose tonight?&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Patient: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

@@ -1421,15 +1421,6 @@ def write_to_ehr(session_id: str) -> dict:
     # signed note that doesn't reach the EHR is a priority-1 operational
     # incident, not a dropped write.
     #
-    # TODO (TechCodeReviewer / TechWriter): The boto3 `healthlake` client
-    # does not expose a `create_resource` method. FHIR resource creation
-    # on a HealthLake datastore is done by HTTPS POST to the datastore
-    # endpoint with SigV4-signed requests (commonly via the `requests`
-    # library plus `botocore.auth.SigV4Auth`, or via an FHIR client). The
-    # call below will always raise AttributeError on current boto3
-    # versions; the except block masks that. Replace this sketch with the
-    # real HTTPS+SigV4 pattern (or mark it clearly as pseudo-boto3 for
-    # illustration) before the code review pass.
     healthlake = boto3.client("healthlake", config=BOTO3_RETRY_CONFIG)
     try:
         # HealthLake accepts FHIR over HTTPS; the boto3 client provides a

@@ -1729,15 +1729,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="c1"># signed note that doesn&#39;t reach the EHR is a priority-1 operational</span>
     <span class="c1"># incident, not a dropped write.</span>
     <span class="c1">#</span>
-    <span class="c1"># TODO (TechCodeReviewer / TechWriter): The boto3 `healthlake` client</span>
-    <span class="c1"># does not expose a `create_resource` method. FHIR resource creation</span>
-    <span class="c1"># on a HealthLake datastore is done by HTTPS POST to the datastore</span>
-    <span class="c1"># endpoint with SigV4-signed requests (commonly via the `requests`</span>
-    <span class="c1"># library plus `botocore.auth.SigV4Auth`, or via an FHIR client). The</span>
-    <span class="c1"># call below will always raise AttributeError on current boto3</span>
-    <span class="c1"># versions; the except block masks that. Replace this sketch with the</span>
-    <span class="c1"># real HTTPS+SigV4 pattern (or mark it clearly as pseudo-boto3 for</span>
-    <span class="c1"># illustration) before the code review pass.</span>
     <span class="n">healthlake</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;healthlake&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># HealthLake accepts FHIR over HTTPS; the boto3 client provides a</span>

@@ -450,13 +450,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="c1"># Haiku-class model for cost efficiency where reading-level allows.</span>
 <span class="n">CLINICIAN_NARRATIVE_MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;anthropic.claude-sonnet-4-6-v1:0&quot;</span>
 <span class="n">PATIENT_NARRATIVE_MODEL_ID</span>    <span class="o">=</span> <span class="s2">&quot;anthropic.claude-haiku-4-5-v1:0&quot;</span>
-<span class="c1"># TODO (TechWriter): Code review NOTE Finding 10.</span>
-<span class="c1"># PATIENT_NARRATIVE_MODEL_ID is defined but never referenced</span>
-<span class="c1"># because the patient-facing narrative path is not implemented in</span>
-<span class="c1"># the demo. Either remove the constant with a comment that the</span>
-<span class="c1"># patient path is in Gap to Production, or add a minimal patient-</span>
-<span class="c1"># facing narrative function (templated only is fine) so the</span>
-<span class="c1"># constant is wired up to a real call site.</span>
 
 <span class="c1"># --- DynamoDB Table Names ---</span>
 <span class="c1"># Five tables. Keep them separate so access patterns stay clean and</span>
@@ -853,14 +846,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    out None-valued dimensions: CloudWatch rejects them and the</span>
 <span class="sd">    rejected request loses the rest of the metric data too.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE Finding 9. _emit_metric</span>
-    <span class="c1"># is defined but never called. Either wire it into the load-</span>
-    <span class="c1"># bearing observation points (recommendation served, validator</span>
-    <span class="c1"># outcome, cohort follow-rate disparity, OOD-flag rate, drift</span>
-    <span class="c1"># severity) or remove the helper with a comment in the</span>
-    <span class="c1"># surveillance section pointing to CloudWatch as a production</span>
-    <span class="c1"># gap. The recipe text describes CloudWatch alarms as load-</span>
-    <span class="c1"># bearing observability; the helper is well-formed but unused.</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">clean_dims</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)[:</span><span class="mi">255</span><span class="p">]}</span>
@@ -1498,19 +1483,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">    production picks the appropriate decision-point Q model from</span>
 <span class="sd">    the patient&#39;s trajectory state.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review WARNING Finding 2. Thread</span>
-    <span class="c1"># decision_point_index into _q_policy and have the OPE</span>
-    <span class="c1"># estimators (DR / IS / FQE) pass each step&#39;s</span>
-    <span class="c1"># decision_point_index when evaluating. Q-learning with backward</span>
-    <span class="c1"># induction trains one Q model per horizon index; using</span>
-    <span class="c1"># q_models[0] for every step silently evaluates a stationary</span>
-    <span class="c1"># policy at decision point 0 rather than the trained backward-</span>
-    <span class="c1"># induction policy. The OPE point estimates and CIs do not then</span>
-    <span class="c1"># represent the trained policy&#39;s value. Acceptable alternative:</span>
-    <span class="c1"># clamp horizon_decision_points = 1 in SAMPLE_REGIME so backward</span>
-    <span class="c1"># induction collapses to one model and the simplification is</span>
-    <span class="c1"># correct by construction; the trade-off is loss of pedagogical</span>
-    <span class="c1"># value for the backward-induction concept.</span>
     <span class="n">n_actions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">regime</span><span class="p">[</span><span class="s2">&quot;action_catalog&quot;</span><span class="p">])</span>
     <span class="c1"># Use the first valid Q model in the horizon for the demo. Real</span>
     <span class="c1"># serving uses the Q model corresponding to the patient&#39;s current</span>
@@ -1953,15 +1925,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 
     <span class="c1"># Step 5F: build the structured recommendation record. This is</span>
     <span class="c1"># the system of record; the narrative renders on top.</span>
-    <span class="c1"># TODO (TechWriter): Code review WARNING Finding 1. Persist</span>
-    <span class="c1"># cohort_features (race_ethnicity, language, age_band,</span>
-    <span class="c1"># comorbidity_tier) on the recommendation record from</span>
-    <span class="c1"># patient_profile so run_surveillance can read them. The current</span>
-    <span class="c1"># state dict only contains state_schema features; surveillance</span>
-    <span class="c1"># then reads r[&quot;state&quot;][&quot;cohort&quot;][axis] which never exists,</span>
-    <span class="c1"># collapsing every patient to &quot;unknown&quot; cohort across every</span>
-    <span class="c1"># axis and silently disabling cohort-disparity alerting that</span>
-    <span class="c1"># the recipe describes as non-negotiable.</span>
     <span class="n">recommended_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s2">&quot;recommended_value&quot;</span><span class="p">])</span>
     <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;recommendation_id&quot;</span><span class="p">:</span>   <span class="n">recommendation_id</span><span class="p">,</span>
@@ -2575,16 +2538,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
             <span class="s2">&quot;Recommendation </span><span class="si">%s</span><span class="s2"> not found for action capture&quot;</span><span class="p">,</span>
             <span class="n">recommendation_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">{}</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE Finding 6. Implement the</span>
-    <span class="c1"># identity-boundary check the pseudocode names: capture</span>
-    <span class="c1"># served_to_clinician_id at serve time and validate</span>
-    <span class="c1"># action_taken_payload[&quot;clinician_id&quot;] against it here.</span>
-    <span class="c1"># Mismatch should log a security violation and reject the</span>
-    <span class="c1"># update (return {&quot;status&quot;: &quot;rejected&quot;, &quot;reason&quot;:</span>
-    <span class="c1"># &quot;identity_boundary_mismatch&quot;}). Validate action_id is in the</span>
-    <span class="c1"># known action set (recommended_action plus alternatives) or</span>
-    <span class="c1"># explicit out_of_catalog. Idempotency: if rec.action_taken is</span>
-    <span class="c1"># already set, treat as replay and return without re-mutating.</span>
 
     <span class="n">action_id</span> <span class="o">=</span> <span class="n">action_taken_payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action_id&quot;</span><span class="p">)</span>
     <span class="n">valid_action_ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;action_id&quot;</span><span class="p">]</span>
@@ -2641,19 +2594,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
         <span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
         <span class="k">pass</span>
-    <span class="c1"># TODO (TechWriter): Code review WARNING Finding 3. The</span>
-    <span class="c1"># pseudocode&#39;s record_action_taken appends the post-decision</span>
-    <span class="c1"># (decision_point_index, timestamp, state, action,</span>
-    <span class="c1"># recommendation_id, followed_regime) tuple to the patient&#39;s</span>
-    <span class="c1"># trajectory record so in-production trajectories continuously</span>
-    <span class="c1"># feed the next training cycle. The Python omits this</span>
-    <span class="c1"># trajectory append, breaking the load-bearing feedback loop</span>
-    <span class="c1"># the recipe says turns the regime from a static artifact into</span>
-    <span class="c1"># a living one. Either implement _append_to_trajectory (read</span>
-    <span class="c1"># existing blob from S3, append, write back; update</span>
-    <span class="c1"># trajectory-metadata pointer) or call it out as a deliberate</span>
-    <span class="c1"># demo simplification with explicit production-pattern</span>
-    <span class="c1"># reference.</span>
     <span class="k">return</span> <span class="n">update</span>
 
 <span class="k">def</span> <span class="nf">run_surveillance</span><span class="p">(</span><span class="n">regime_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">surveillance_window</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -2675,13 +2615,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 
     <span class="c1"># Production: a (regime_id, action_recorded_at) GSI; the demo</span>
     <span class="c1"># scans because the example does not provision indexes.</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE Finding 5. Replace Scan</span>
-    <span class="c1"># with a Query on a (regime_id, action_recorded_at) GSI plus</span>
-    <span class="c1"># LastEvaluatedKey pagination. The demo Scan has no pagination,</span>
-    <span class="c1"># so production volumes silently truncate at 1MB; surveillance</span>
-    <span class="c1"># metrics computed on a truncated subset look complete but are</span>
-    <span class="c1"># biased toward whichever rows landed first. Document the GSI</span>
-    <span class="c1"># in the IAM permissions list in Setup.</span>
     <span class="n">recs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">rec_table</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
@@ -2722,16 +2655,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="c1"># Step 6B: outcome surveillance against OPE baseline. The demo</span>
     <span class="c1"># uses observed reward as a proxy; production wires real outcome</span>
     <span class="c1"># tracking (A1c trajectories, AKI events, hospitalizations).</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE Finding 11. Rename</span>
-    <span class="c1"># observed_reward to avg_predicted_value and clarify in the</span>
-    <span class="c1"># comment that this is population-level predicted-value drift</span>
-    <span class="c1"># (a coarse proxy detecting patient-mix shift), not</span>
-    <span class="c1"># calibration-against-observed-outcomes drift. Real</span>
-    <span class="c1"># calibration drift requires joining recommendation predictions</span>
-    <span class="c1"># to follow-up observed outcomes and computing per-decision</span>
-    <span class="c1"># residuals; the demo proxy detects something closer to</span>
-    <span class="c1"># patient-mix drift. See expert review A4 (HIGH) for the</span>
-    <span class="c1"># production architecture.</span>
     <span class="n">observed_reward</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span>
         <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;recommended_action_value&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recs</span>
     <span class="p">]))</span> <span class="k">if</span> <span class="n">recs</span> <span class="k">else</span> <span class="mf">0.0</span>
@@ -3041,26 +2964,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="c1"># The Bedrock call is mocked at the helper level so the demo</span>
     <span class="c1"># runs offline.</span>
     <span class="c1">#</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE Finding 4. Add an</span>
-    <span class="c1"># explicit &quot;running offline against unprovisioned tables&quot;</span>
-    <span class="c1"># disclaimer here, and reframe the run_full_demo_cycle prints</span>
-    <span class="c1"># to describe what each step would do in a provisioned</span>
-    <span class="c1"># environment rather than what executes in the offline run.</span>
-    <span class="c1"># Persistence calls are wrapped in try/except so the demo</span>
-    <span class="c1"># completes; the print messages should not imply state</span>
-    <span class="c1"># transitions that did not actually happen. Heavier</span>
-    <span class="c1"># alternative: provide DynamoDB-Local + Kinesis-Local + S3-</span>
-    <span class="c1"># mock docker-compose so the demo runs end-to-end.</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE Finding 8. Replace</span>
-    <span class="c1"># bare except Exception: pass around Kinesis put_record calls</span>
-    <span class="c1"># (seven sites: build_trajectories, estimate_behavior_policy,</span>
-    <span class="c1"># train_regime, run_ope, _emit_recommendation_event,</span>
-    <span class="c1"># record_action_taken, run_surveillance, plus the</span>
-    <span class="c1"># narrative_validator_fallback emit) with except Exception</span>
-    <span class="c1"># as exc: logger.warning(...). The DynamoDB and S3 paths use</span>
-    <span class="c1"># the better pattern; the Kinesis paths swallow failures</span>
-    <span class="c1"># silently and a developer with logger.setLevel(WARNING) sees</span>
-    <span class="c1"># nothing.</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building synthetic patient (Sara) and seeding demo state...&quot;</span><span class="p">)</span>
@@ -3146,13 +3049,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
         <span class="p">}</span>
 
     <span class="nb">globals</span><span class="p">()[</span><span class="s2">&quot;_bedrock_invoke_clinician_narrative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_mock_bedrock</span>
-    <span class="c1"># TODO (TechWriter): Code review NOTE Finding 7. Add an</span>
-    <span class="c1"># explanatory comment for the globals() mock-injection pattern:</span>
-    <span class="c1"># this works because the calling functions resolve the</span>
-    <span class="c1"># _bedrock_invoke_clinician_narrative name against the module</span>
-    <span class="c1"># global namespace at call time, and globals() in __main__</span>
-    <span class="c1"># returns this module&#39;s dict. Production never bypasses this;</span>
-    <span class="c1"># the real Bedrock calls run.</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Patient: </span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2"> (Sara)&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  State: A1c </span><span class="si">{</span><span class="n">sara_state</span><span class="p">[</span><span class="s1">&#39;current_a1c&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>

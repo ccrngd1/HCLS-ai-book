@@ -523,9 +523,13 @@ The pseudocode and architecture above demonstrate the shape of a disease progres
 - [`amazon-healthlake-toolkit`](https://github.com/aws-samples/amazon-healthlake-toolkit): HealthLake data ingestion, FHIR queries, and clinical data pipeline patterns
 
 **Clinical and Technical References:**
-- TODO: Verify link for MIMIC-IV dataset documentation (PhysioNet)
-- TODO: Verify link for CMS Synthetic Public Use Files
-- TODO: Verify link for lifelines Python survival analysis library documentation
+- [MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/): schema and module reference for the MIMIC-IV
+  critical care dataset; access to the data itself is credentialed through PhysioNet
+- [CMS Data Entrepreneurs' Synthetic Public Use File (DE-SynPUF)](https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files/cms-2008-2010-data-entrepreneurs-synthetic-public-use-file-de-synpuf):
+  free synthetic Medicare beneficiary, inpatient, outpatient, carrier and Part D claims files, useful
+  for pipeline development without touching real PHI
+- [lifelines documentation](https://lifelines.readthedocs.io/): Python survival analysis library,
+  including Kaplan-Meier, Cox proportional hazards and time-varying covariates
 
 ---
 

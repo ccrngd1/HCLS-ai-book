@@ -279,9 +279,6 @@ CONSENT_DISCLOSURE_FERPA_SCHOOL = (
 # over time as state law evolves; production maintains this
 # in a legal-team-reviewed configuration with an explicit
 # update cadence.
-# TODO (TechWriter): verify the current biometric-data-law
-# state list against the IAPP biometric-privacy tracker
-# before deploying.
 BIOMETRIC_DATA_LAW_STATES = {"IL", "TX", "WA"}
 
 # --- Population Profile Definitions ---

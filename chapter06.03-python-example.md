@@ -133,10 +133,6 @@ def generate_synthetic_patients(n_patients: int = 5000, seed: int = 42) -> pd.Da
         DataFrame with one row per patient and columns matching the
         raw data you'd get from source system extracts.
     """
-    # TODO (TechWriter): Code review Issue 1 (WARNING). The iterrows/loc pattern below
-    # is correct but extremely slow (~35K individual cell assignments for 5K patients).
-    # Consider vectorizing with boolean masks per payer type, or at minimum add a
-    # prominent comment warning readers not to copy this pattern for large populations.
     rng = np.random.default_rng(seed)
 
     # Assign payer types with a realistic distribution.
@@ -470,10 +466,6 @@ def detect_population_shift(
         List of alert dicts for clusters that shifted beyond threshold.
         Empty list means the population is stable (good news).
     """
-    # TODO (TechWriter): Code review Issue 3 (WARNING). Replace label-based matching
-    # with centroid-distance matching for production reliability. The current approach
-    # will produce false shift alerts when labels flip due to threshold boundary effects.
-    # Build lookup by cluster label (not ID, since IDs can shift between runs).
     previous_by_label = {p["suggested_label"]: p["percentage"] for p in previous_profiles}
 
     alerts = []

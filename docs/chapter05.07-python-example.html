@@ -1294,24 +1294,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
         <span class="s2">&quot;reference_data_versions&quot;</span><span class="p">:</span>  <span class="n">reference_data</span><span class="o">.</span><span class="n">versions_used</span><span class="p">(),</span>
         <span class="s2">&quot;matcher_config_version&quot;</span><span class="p">:</span>   <span class="n">MATCHER_CONFIG_VERSION</span><span class="p">,</span>
         <span class="s2">&quot;trigger_event_id&quot;</span><span class="p">:</span>         <span class="n">trigger_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event_id&quot;</span><span class="p">),</span>
-        <span class="c1"># TODO (TechWriter): Code review Finding 1 (ERROR). The</span>
-        <span class="c1"># detection envelope must propagate `explicit_sensitivity_class`</span>
-        <span class="c1"># from the trigger event so `_classify_sensitivity` (which reads</span>
-        <span class="c1"># `candidate.get(&quot;explicit_sensitivity_class&quot;)`) can see it.</span>
-        <span class="c1"># Without this line, Trigger 4&#39;s GENDER_AFFIRMING path silently</span>
-        <span class="c1"># defaults to GENERAL: the envelope&#39;s permitted_display_contexts</span>
-        <span class="c1"># collapses to [] under the patient&#39;s masked preference, audit</span>
-        <span class="c1"># rules retain the GENERAL defaults, and propagate_to_dependents</span>
-        <span class="c1"># selects the 9-consumer GENERAL fan-out instead of the</span>
-        <span class="c1"># 6-consumer restricted fan-out. Add:</span>
-        <span class="c1">#   &quot;explicit_sensitivity_class&quot;:</span>
-        <span class="c1">#       trigger_event.get(&quot;explicit_sensitivity_class&quot;),</span>
-        <span class="c1"># then re-run the demo and verify Trigger 4&#39;s printed</span>
-        <span class="c1"># sensitivity_class is GENDER_AFFIRMING, permitted_display_contexts</span>
-        <span class="c1"># is [&#39;treatment_with_clinical_relevance&#39;], audit_rules include</span>
-        <span class="c1"># every_disclosure_logged: True and every_query_logged: True,</span>
-        <span class="c1"># and the consumer fan-out is the 6-consumer restricted set</span>
-        <span class="c1"># including audit_summary_to_patient.</span>
         <span class="s2">&quot;detected_at&quot;</span><span class="p">:</span>              <span class="n">_now_iso</span><span class="p">(),</span>
     <span class="p">}</span>
 </pre></div>
@@ -1679,33 +1661,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># In production: dynamodb.meta.client.transact_write_items(...).</span>
         <span class="c1"># The demo writes per table for readability.</span>
-        <span class="c1"># TODO (TechWriter): Code review Finding 2 (WARNING). The</span>
-        <span class="c1"># ConditionExpression below references `expected_event_version`,</span>
-        <span class="c1"># which is not an attribute on either the new item or any</span>
-        <span class="c1"># existing item at the same primary key (the actual attribute</span>
-        <span class="c1"># is `event_version` on the new item, and the IDENTITY_TABLE</span>
-        <span class="c1"># row carries `current_event_version`). Combined with</span>
-        <span class="c1"># `attribute_not_exists(event_id) AND ...`, this evaluates to</span>
-        <span class="c1"># false on every put_item, so production calls would always</span>
-        <span class="c1"># raise ConditionalCheckFailedException; the bug is masked in</span>
-        <span class="c1"># the demo by the broad `except Exception` swallow below.</span>
-        <span class="c1"># Two corrections (pick the intent that matches the</span>
-        <span class="c1"># architectural design):</span>
-        <span class="c1">#   (a) For &quot;this (identity_id, event_version) row is new&quot;</span>
-        <span class="c1">#       on the EVENT_HISTORY_TABLE: use</span>
-        <span class="c1">#         ConditionExpression=&quot;attribute_not_exists(identity_id)&quot;</span>
-        <span class="c1">#       and drop the ExpressionAttributeValues.</span>
-        <span class="c1">#   (b) For optimistic concurrency on the IDENTITY_TABLE</span>
-        <span class="c1">#       computed-current-state row: move the version check</span>
-        <span class="c1">#       to the IDENTITY_TABLE put with</span>
-        <span class="c1">#         ConditionExpression=&quot;current_event_version = :ev&quot;</span>
-        <span class="c1">#       (the actual attribute name) and use</span>
-        <span class="c1">#         attribute_not_exists(identity_id) on the</span>
-        <span class="c1">#       EVENT_HISTORY_TABLE put for append-only enforcement.</span>
-        <span class="c1"># Code review Finding 5 (NOTE): the four put_item calls are</span>
-        <span class="c1"># not atomic; production wraps them in TransactWriteItems so</span>
-        <span class="c1"># the event log, search index, identity table, and outbox</span>
-        <span class="c1"># stay consistent on partial failure.</span>
         <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">EVENT_HISTORY_TABLE</span><span class="p">)</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
             <span class="n">Item</span><span class="o">=</span><span class="n">identity_event_record</span><span class="p">,</span>
             <span class="n">ConditionExpression</span><span class="o">=</span><span class="p">(</span>

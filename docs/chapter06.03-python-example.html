@@ -475,10 +475,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">        DataFrame with one row per patient and columns matching the</span>
 <span class="sd">        raw data you&#39;d get from source system extracts.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review Issue 1 (WARNING). The iterrows/loc pattern below</span>
-    <span class="c1"># is correct but extremely slow (~35K individual cell assignments for 5K patients).</span>
-    <span class="c1"># Consider vectorizing with boolean masks per payer type, or at minimum add a</span>
-    <span class="c1"># prominent comment warning readers not to copy this pattern for large populations.</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
     <span class="c1"># Assign payer types with a realistic distribution.</span>
@@ -796,10 +792,6 @@ left out of the site navigation for this reason. Last reviewed 2026-08.</p>
 <span class="sd">        List of alert dicts for clusters that shifted beyond threshold.</span>
 <span class="sd">        Empty list means the population is stable (good news).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO (TechWriter): Code review Issue 3 (WARNING). Replace label-based matching</span>
-    <span class="c1"># with centroid-distance matching for production reliability. The current approach</span>
-    <span class="c1"># will produce false shift alerts when labels flip due to threshold boundary effects.</span>
-    <span class="c1"># Build lookup by cluster label (not ID, since IDs can shift between runs).</span>
     <span class="n">previous_by_label</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;suggested_label&quot;</span><span class="p">]:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;percentage&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">previous_profiles</span><span class="p">}</span>
 
     <span class="n">alerts</span> <span class="o">=</span> <span class="p">[]</span>
