@@ -38,9 +38,6 @@ Constraints come in two flavors, and the distinction matters enormously for solv
 - A weekly hour ceiling, where facility policy or the bargaining agreement sets one
 - Approved PTO days are blocked
 
-Two of those are commonly encoded wrong, and getting them wrong produces a model that is either
-illegal or infeasible. 
-
 **Soft constraints** are preferences. You want to satisfy them, but violating them doesn't make the schedule illegal. Instead, each violation incurs a penalty in the objective function. Examples:
 
 - Nurses prefer not to work more than 3 consecutive days
