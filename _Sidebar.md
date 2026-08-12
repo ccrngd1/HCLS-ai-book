@@ -1,9 +1,5 @@
 ### Table of Contents
 
-**[Home](Home)**
-
----
-
 **[Introduction](README)**
 
 ---
