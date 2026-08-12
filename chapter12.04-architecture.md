@@ -108,7 +108,7 @@ flowchart LR
 
 #### Walkthrough
 
-**Step 1: Ingest and harmonize incoming lab results.** The pipeline starts by consuming HL7 ORU messages or FHIR Observation resources from the EHR feed and normalizing them. Each result gets its test code mapped to a canonical LOINC code, its units converted to the canonical UCUM unit for that LOINC code, and any analyzer or method metadata preserved. This is the unglamorous foundation; if you skip it, every downstream step compares apples to oranges and your trends are noise.
+**Step 1: Ingest and harmonize incoming lab results.** The pipeline starts by consuming HL7 ORU messages or FHIR Observation resources from the EHR feed and normalizing them. Each result gets its test code mapped to a canonical LOINC code, its units converted to the canonical UCUM unit for that LOINC code, and any analyzer or method metadata preserved. This is the unglamorous foundation; if you skip it, every downstream step compares values that are not comparable and your trends are noise.
 
 ```text
 FUNCTION harmonize_lab_result(raw_result):

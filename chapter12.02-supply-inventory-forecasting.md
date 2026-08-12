@@ -125,7 +125,7 @@ That's the whole concept. History, segmentation, model, reorder point, deliver. 
 
 ## The Honest Take
 
-The model selection question gets way more attention than it deserves. As with appointment forecasting, Prophet, ETS, and SARIMA are within a few percentage points of each other on the smooth SKUs that drive most of your inventory dollars. The hard work is in the segmentation logic and the master-data plumbing. Spend your time there.
+The model selection question gets far more attention than it deserves. As with appointment forecasting, Prophet, ETS, and SARIMA are within a few percentage points of each other on the smooth SKUs that drive most of your inventory dollars. The hard work is in the segmentation logic and the master-data plumbing. Spend your time there.
 
 The thing that surprised me the first time I built one of these: the value isn't in the forecast itself, it's in the reorder point updates. Materials managers don't sit around looking at forecasts. They live and die by par levels. If the pipeline produces beautiful forecasts but doesn't translate them into updated reorder points that flow into the ERP, you've built a research project, not an operational system. Invest disproportionately in the integration layer.
 

@@ -117,7 +117,7 @@ That's the whole concept. Stream, features, model, forecast, deliver. The real c
 
 ## The Honest Take
 
-The model selection question gets way more attention than it deserves. For most ED arrival forecasting problems, a Poisson regression with thoughtful features lands within a few percentage points of Prophet, which lands within a few percentage points of DeepAR. The hard work is in the data quality (clean ADT history, accurate ESI labels, integrated weather feed, maintained event calendar), not in the choice of forecasting algorithm. Spend your time on the data plumbing.
+The model selection question gets far more attention than it deserves. For most ED arrival forecasting problems, a Poisson regression with thoughtful features lands within a few percentage points of Prophet, which lands within a few percentage points of DeepAR. The hard work is in the data quality (clean ADT history, accurate ESI labels, integrated weather feed, maintained event calendar), not in the choice of forecasting algorithm. Spend your time on the data plumbing.
 
 The thing that surprised me the first time I built one of these: the forecast that the charge nurse actually wants is not the volume forecast. It's the answer to "do I need to call someone in?" That question is a function of forecast volume, current census, current acuity mix, current boarder count, current staff level, and the operational definition of "overwhelmed." The forecast is one input. The decision is the integration of all of them. Build the dashboard around the decision, not around the model output.
 

@@ -702,7 +702,7 @@ FUNCTION sweep_stale_pending_recommendations(run_date_minus_1):
             emit_metric("stale_pending_escalated", value = 1)
 ```
 
-**Step 8: Run long-horizon outcome evaluation periodically.** Independent of the weekly batch run, a quarterly or semi-annual outcome-evaluation job compares the clinical and cost trajectories of recommended-and-engaged members against matched controls. The output drives the medical director's program-renewal decisions and surfaces evidence (or counter-evidence) for whether each program is actually moving the needle. Skip this and you can't honestly answer the question of whether the wellness investment is paying off.
+**Step 8: Run long-horizon outcome evaluation periodically.** Independent of the weekly batch run, a quarterly or semi-annual outcome-evaluation job compares the clinical and cost trajectories of recommended-and-engaged members against matched controls. The output drives the medical director's program-renewal decisions and surfaces evidence (or counter-evidence) for whether each program is actually changing outcomes. Skip this and you can't honestly answer the question of whether the wellness investment is paying off.
 
 ```pseudocode
 FUNCTION run_outcome_evaluation(programs, evaluation_window):

@@ -92,7 +92,7 @@ That's the whole concept. History, features, model, forecast, deliver. The rest 
 
 ## The Honest Take
 
-The model selection question gets way more attention than it deserves. For most appointment forecasting problems, Prophet, ETS, and ARIMA are within a few percentage points of each other on accuracy. The hard work is in the data preparation and the operational integration, not in the choice of forecasting algorithm. Spend your time there.
+The model selection question gets far more attention than it deserves. For most appointment forecasting problems, Prophet, ETS, and ARIMA are within a few percentage points of each other on accuracy. The hard work is in the data preparation and the operational integration, not in the choice of forecasting algorithm. Spend your time there.
 
 The thing that surprised me the first time I built one of these: the prediction intervals are more useful than the point forecasts. Operations leaders want to know "what's the worst plausible Monday in the next month so I can staff for it?" not "what's the expected count for next Monday?" Build the user interface around the intervals, not the point estimate.
 

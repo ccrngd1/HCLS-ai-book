@@ -22,7 +22,7 @@ This is distinct from a few related things that sometimes get conflated:
 
 **Diagnostic analytics** tells you why something happened. "Patients readmitted within 30 days were more likely to have multiple comorbidities and lack a follow-up appointment." That's useful for understanding patterns but doesn't produce an actionable score for today's discharge list.
 
-**Prescriptive analytics** tells you what to do about it. "For this patient, a home health visit on day 3 post-discharge reduces readmission probability by 15%." That's the holy grail, but it requires causal reasoning that goes beyond what most predictive models can deliver. (We touch on this in Recipe 7.10, and it connects to the reinforcement learning chapter.)
+**Prescriptive analytics** tells you what to do about it. "For this patient, a home health visit on day 3 post-discharge reduces readmission probability by 15%." That is the goal worth wanting, but it requires causal reasoning that goes beyond what most predictive models can deliver. (We touch on this in Recipe 7.10, and it connects to the reinforcement learning chapter.)
 
 Predictive analytics sits in the middle: it tells you *who* is at risk and *how much* risk they carry. The "what to do about it" part still requires clinical judgment, care management protocols, and operational capacity to act. A risk score without an intervention pathway is just an anxiety generator.
 

@@ -72,7 +72,7 @@ This is where knowledge graphs earn their keep. A terminology mapping system is 
 
 **Version management.** Each edge can carry metadata: which version of the mapping introduced it, whether it's been deprecated, what the provenance is. Temporal queries ("what was the correct mapping as of January 2024?") become graph traversals with date filters.
 
-The alternative to a graph is a relational database with a bunch of join tables. It works for simple lookups, but the moment you need multi-hop traversals, hierarchy navigation, or transitive reasoning, the SQL gets ugly fast and the performance degrades. Graphs are the natural data structure for this problem.
+The alternative to a graph is a relational database with a stack of join tables. It works for simple lookups, but the moment you need multi-hop traversals, hierarchy navigation, or transitive reasoning, the SQL gets ugly fast and the performance degrades. Graphs are the natural data structure for this problem.
 
 ### The UMLS: Your Starting Point
 

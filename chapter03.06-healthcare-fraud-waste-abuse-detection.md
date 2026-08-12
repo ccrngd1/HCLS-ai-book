@@ -106,7 +106,7 @@ FWA detection pulls from a wider range of methods than any other recipe in this 
 
 A realistic progression: start with rules (for the legally-grounded patterns) plus statistical baselining (for upcoding and drift patterns) plus a first pass at graph features (provider-patient-referral concentration). Add Isolation Forest on provider features once enough data exists. Add supervised re-ranking once labels accumulate. Add GNN embeddings and advanced graph analytics as the program matures. Don't try to build all layers at once; you'll end up with a system you can't explain.
 
-### The Graph Is the Secret Sauce
+### The Graph Is Where the Leverage Is
 
 If there's one piece of the FWA detection toolkit that differentiates mature programs from immature ones, it's the relationship graph. Everything else can be done with flat tabular analytics and you'll catch a fraction of the money. The graph is where the big schemes live.
 

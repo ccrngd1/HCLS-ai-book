@@ -588,7 +588,7 @@ The pseudocode and architecture above give you the shape of the system. Here's w
 
 **No clinical validation suite.** Before any pharmacogenomic recommendation reaches a clinician, the system must pass validation against a curated set of known-correct cases (patients with established genotypes and guideline-concordant recommendations). You need hundreds of these test cases covering edge cases: compound heterozygotes, multi-gene interactions, and population-specific variants.
 
-**Diplotype calling is hand-waved.** The pseudocode assumes diplotypes arrive as input. In reality, you receive raw VCF data from sequencing and must call star alleles, which is a hard bioinformatics problem (especially for CYP2D6 with its structural variants, gene deletions, and hybrid alleles). Tools like PharmCAT handle this, but integrating them is a significant pipeline addition.
+**Diplotype calling is glossed over here.** The pseudocode assumes diplotypes arrive as input. In reality, you receive raw VCF data from sequencing and must call star alleles, which is a hard bioinformatics problem (especially for CYP2D6 with its structural variants, gene deletions, and hybrid alleles). Tools like PharmCAT handle this, but integrating them is a significant pipeline addition.
 
 **No pharmacist review workflow.** When the system produces a recommendation with moderate evidence or when multiple conflicting recommendations exist, a pharmacist must review before the alert reaches the ordering physician. This requires a review queue, a UI, and a feedback loop that updates the system based on pharmacist decisions.
 

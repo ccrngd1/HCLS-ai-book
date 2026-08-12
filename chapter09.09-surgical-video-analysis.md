@@ -78,7 +78,7 @@ The honest assessment: surgical video analysis is at the boundary between resear
 
 **Anatomy recognition** is still primarily research-stage. The CholecSeg8k and other datasets have enabled progress, but clinical deployment requires higher accuracy than current models achieve, given the safety implications of misidentifying anatomy.
 
-**Real-time intraoperative feedback** is the holy grail and is not yet standard of care anywhere. A few research systems have demonstrated feasibility, but regulatory clearance, liability concerns, and workflow integration challenges remain significant barriers.
+**Real-time intraoperative feedback** is the furthest-reaching version of this and is not yet standard of care anywhere. A few research systems have demonstrated feasibility, but regulatory clearance, liability concerns, and workflow integration challenges remain significant barriers.
 
 For this recipe, we'll focus on a post-hoc analysis pipeline: processing recorded surgical video after the procedure for quality improvement, training, and research purposes. This sidesteps the real-time latency requirements and regulatory complexity of intraoperative systems while still delivering substantial value.
 

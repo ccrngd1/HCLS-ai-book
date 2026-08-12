@@ -12,7 +12,7 @@ The answer, frustratingly, is usually yes. The signals were there months ago. Th
 
 Patient churn (or disenrollment, depending on whether you're a health plan or a provider organization) is one of those problems where the business impact is enormous and the data signals are surprisingly readable. A single Medicare Advantage member represents $12,000-$15,000 in annual revenue. A commercial family of four might be $25,000-$40,000. When you lose them, you don't just lose this year's revenue; you lose the lifetime value of a relationship you've already invested in building.
 
-The cruel part: retention interventions actually work. A well-timed outreach from a care coordinator, a resolved grievance, a proactive network adequacy fix, a personalized benefits reminder during open enrollment. These things move the needle. But they only work if you know who to target and when to act. By the time someone submits a disenrollment form, it's too late. The decision was made weeks or months earlier.
+The cruel part: retention interventions actually work. A well-timed outreach from a care coordinator, a resolved grievance, a proactive network adequacy fix, a personalized benefits reminder during open enrollment. These things work. But they only work if you know who to target and when to act. By the time someone submits a disenrollment form, it's too late. The decision was made weeks or months earlier.
 
 This is a prediction problem. And it's one where the ROI math is straightforward enough that even skeptical CFOs will fund it.
 

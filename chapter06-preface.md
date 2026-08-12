@@ -14,7 +14,7 @@ This is one of those areas where the technology is genuinely mature, the algorit
 
 ## What Clustering Actually Does
 
-At its core, clustering is unsupervised learning. You hand the algorithm a bunch of data points (patients, providers, encounters, whatever) described by a set of features, and you ask: "find me groups of things that are more similar to each other than they are to things in other groups." No labels. No training examples. No "here's what a high-risk patient looks like." Just: find the structure.
+At its core, clustering is unsupervised learning. You hand the algorithm a set of data points (patients, providers, encounters, whatever) described by a set of features, and you ask: "find me groups of things that are more similar to each other than they are to things in other groups." No labels. No training examples. No "here's what a high-risk patient looks like." Just: find the structure.
 
 This is fundamentally different from classification, where you already know the categories and you're training a model to assign new items to existing buckets. Clustering *discovers* the buckets. That's both its power and its danger. Power because it can find patterns humans never thought to look for. Danger because it can also find patterns that are statistically real but clinically meaningless.
 

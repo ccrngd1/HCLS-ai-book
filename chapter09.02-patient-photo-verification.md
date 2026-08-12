@@ -86,7 +86,7 @@ The thing that surprised me most: the enrollment photo quality matters more than
 
 My other hard-won lesson: never make face comparison a gate. Make it a signal. The moment your system denies someone care because a face match failed, you've created a patient safety incident, a legal liability, and probably a PR disaster. The design must always degrade gracefully to human verification. The face match should make the process faster and more secure when it works, not create a new failure mode when it doesn't.
 
-The bias question is real and you can't hand-wave it. Test your system. Publish your results internally. Set up monitoring dashboards that track match rates by available demographic data. If you see disparities, fix them before scaling. The healthcare industry has a long history of deploying technology that works differently for different populations. Don't add to that history.
+The bias question is real and you cannot dismiss it. Test your system. Publish your results internally. Set up monitoring dashboards that track match rates by available demographic data. If you see disparities, fix them before scaling. The healthcare industry has a long history of deploying technology that works differently for different populations. Don't add to that history.
 
 ---
 
