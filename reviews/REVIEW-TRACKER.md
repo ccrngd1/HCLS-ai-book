@@ -16,6 +16,7 @@ Single place to track feedback from all reviewers. One row per finding.
 | ID | Reviewer | Role | Artifact reviewed | Received | Notes |
 |----|----------|------|-------------------|----------|-------|
 | V | Vince Skinner (vskin) | Sr TAM, AWS HCLS | `book.pdf`, 268pp, 57,466 words | 2026-08-11 | Reviewed the 2026-07-30 build, so a number of findings were already fixed. Retracted two of his own findings unprompted. |
+| A | Nick Lawson (author) | Author | own work items, not review findings | ongoing | Prefix `A-` distinguishes author-raised tasks from reviewer findings. |
 | R | (radwin) | — | Digital edition (site) | 2026-08-11 | Short-form feedback, 110 words, 5 findings. Focused on reader accessibility and site structure rather than technical content. |
 
 ---
@@ -24,11 +25,10 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 55 |
+| DONE | 56 |
 | OPEN | 33 |
-| NEEDS DECISION | 1 |
-| WONTFIX | 5 |
-| **total** | **94** |
+| WONTFIX | 6 |
+| **total** | **95** |
 
 ---
 
@@ -175,6 +175,16 @@ Single place to track feedback from all reviewers. One row per finding.
 | R-8 | `SUMMARY.md` is an internal project-status document but is published to the site | Significant | OPEN | Found while fixing R-6. It renders to `docs/SUMMARY.html`, and its content is authoring status: a "Planning Doc" column pointing at `categories/*.md`, per-chapter DONE flags, and writing rules. A reader arriving from search sees the book's construction scaffolding. Either exclude it from the site build the way `plan_docs` is excluded, or rewrite it as reader-facing front matter. |
 | R-9 | `categories/` is tracked in git but is not published and is superseded | Minor | OPEN | 15 files from the pre-split structure, tracked but absent from `docs/`. It is the target of several broken cross-references already logged as `[NEEDS HUMAN]` findings in the todo files, so it actively misleads. Decide whether to delete it or move it under an ignored path. |
 | R-11 | Internal draft markers are live on published pages | Significant | DONE | Fixed. Four resolved directly: the bogus `Recipe 14.3 (TODO: Lab Workflow Optimization)` cross-reference in `chapter09.08` now points at 14.7 OR Case Sequencing, since 14.3 is actually Inventory Reorder Optimization and no lab-workflow recipe exists; the three unverified reference links in `chapter07.08-architecture` were verified and added (MIMIC-IV docs, CMS DE-SynPUF, lifelines); the alert-fatigue citation `chapter15.01-architecture` asked for was already two lines below it (Sendelbach & Funk 2013 is the source of the 150-400 figure) so the two were merged; and the `13.06-architecture` code comment was reworded as an integration point rather than an unfinished note. **67 persona-named review blocks across 16 files were relocated** to their `chapterNN.RR-todo.md` files by `relocate_review_todos.py` (idempotent, dry-run default), tagged `[NEEDS HUMAN]` with the source file and line, because the content is genuine engineering work and deleting it would lose it. Three more sat in Python docstrings with no comment prefix and were de-personalised in place, since the surrounding docstring already explained the stub. Result: published prose pages with `TODO` went 6 to 0, and persona-named markers 67 to 0. The 18 Python companions that still carry plain `# TODO: replace with real X` were left deliberately: those are honest stub markers in code that is banner-marked illustrative and kept out of the navigation. Print was never affected. |
+
+---
+
+## 13. Author-owned work (not reviewer findings)
+
+Items the author raised, tracked here so the central list stays the single place to look.
+
+| ID | Item | Sev | Status | Notes |
+|----|------|-----|--------|-------|
+| A-1 | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Significant | OPEN | **Why it was withheld:** the Honest Take is the author's own voice and judgement, written in the first person. Publishing an opinion about a recipe the author has not personally reviewed asserts a position he has not actually taken. The recipes themselves are fine to publish; the opinion is what needs review first. So the gate is per-recipe author review, not a date. **Mechanism:** `honest_takes.py --restore 7.3` returns one recipe's section byte-for-byte from `honest-takes-stash/` and removes it from the stash, so `--status` reports real progress. `--restore` with no arguments returns all 137. Round trip verified exact against git HEAD. **Progress:** 0 of 137 restored. **Loose end when they return:** roughly a dozen companion pages contain in-body references such as "as noted in the recipe's honest take", which read oddly while the sections are absent and correct themselves when they come back; about 100 more are a stock footer and need nothing. **Do not** hand-edit files in the stash: restore the section, then edit the recipe. |
 
 ---
 

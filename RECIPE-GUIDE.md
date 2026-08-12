@@ -273,4 +273,16 @@ _Last updated: 2026-03-05_
 The 15 flagship recipes that ship in print keep their Honest Take. For the other
 137 the section is withheld for now. It is not deleted: `honest_takes.py --remove`
 stashes each section verbatim in `honest-takes-stash/`, and `--restore` puts it back
-byte-for-byte. Do not hand-edit files in the stash; edit the restored section instead.
+byte-for-byte. Do not hand-edit files in the stash; restore the section first, then edit the recipe.
+
+The gate is per-recipe author review, not a date: the Honest Take is first-person
+judgement, and publishing an opinion about an unreviewed recipe asserts a position the
+author has not taken. Restore them individually as each recipe is reviewed:
+
+```bash
+python3 honest_takes.py --status        # how many are still withheld
+python3 honest_takes.py --restore 7.3   # return one recipe's section
+python3 honest_takes.py --restore       # return all 137
+```
+
+Tracked as A-1 in `reviews/REVIEW-TRACKER.md`.

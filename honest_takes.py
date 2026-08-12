@@ -100,12 +100,19 @@ def do_remove(apply: bool) -> int:
     return 0
 
 
-def do_restore(apply: bool) -> int:
+def do_restore(apply: bool, only: list[str] | None = None) -> int:
+    """Restore stashed sections. ``only`` accepts recipe ids like 7.3 or 07.03."""
     if not STASH.is_dir():
         print(f"  no {STASH}/ directory; nothing to restore")
         return 1
+    wanted = None
+    if only:
+        wanted = {f"{int(a)}.{int(b)}" for a, b in
+                  (s.split(".") for s in (x.replace("chapter", "") for x in only))}
     n = 0
     for stash_file in sorted(STASH.glob("*.md")):
+        if wanted is not None and recipe_id(stash_file.name) not in wanted:
+            continue
         target = Path(f"{stash_file.stem}.md")
         if not target.exists():
             print(f"  SKIP: {target} not found")
@@ -121,6 +128,7 @@ def do_restore(apply: bool) -> int:
         n += 1
         if apply:
             target.write_text(text[:i] + section.rstrip("\n") + "\n\n" + text[i:], encoding="utf-8")
+            stash_file.unlink()  # so --status reflects real progress
         else:
             print(f"  would restore into {target.name}")
     verb = "restored" if apply else "would restore"
@@ -133,9 +141,21 @@ def main() -> int:
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--remove", action="store_true")
     g.add_argument("--restore", action="store_true")
+    ap.add_argument(
+        "recipes", nargs="*",
+        help="with --restore, limit to these recipe ids (e.g. 7.3 12.05); default is all",
+    )
+    ap.add_argument("--status", action="store_true", help="show how many are withheld")
     args = ap.parse_args()
+    if args.status:
+        total = len(non_flagship_mains())
+        withheld = len(list(STASH.glob("*.md"))) if STASH.is_dir() else 0
+        print(f"  non-flagship recipes: {total}")
+        print(f"  Honest Take withheld: {withheld}")
+        print(f"  restored so far:      {total - withheld}")
+        return 0
     if args.restore:
-        return do_restore(True)
+        return do_restore(True, args.recipes or None)
     if args.remove:
         return do_remove(True)
     print("  DRY RUN (pass --remove or --restore)\n")
