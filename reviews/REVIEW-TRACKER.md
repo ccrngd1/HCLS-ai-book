@@ -24,10 +24,10 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 43 |
-| OPEN | 47 |
+| DONE | 50 |
+| OPEN | 39 |
 | NEEDS DECISION | 1 |
-| WONTFIX | 3 |
+| WONTFIX | 4 |
 | **total** | **94** |
 
 ---
@@ -46,14 +46,14 @@ Single place to track feedback from all reviewers. One row per finding.
 | V-1.5 | Ch9: business case predates CPT 92229 (autonomous retinal analysis, ~$45.75 non-facility, HEDIS-eligible) | Significant | DONE | Business case rewritten around CPT 92229. Two corrections to the reviewer: the code is carrier-priced rather than paid off a national fee schedule, so his ~$45.75 is one carrier's number and is deliberately not quoted; and per payer guidance, billing 92229 alone does **not** close the HEDIS eye-exam measure, because it records that imaging happened, not what it found. Both caveats are now in the text. |
 | V-1.6 | Ch14: MIP conflates coverage with the variable index; 42x2x14=1,176 binaries + coverage constraint, not 42x18x14=10,584 | Significant | OPEN | An earlier pass "fixed" the arithmetic and left the formulation wrong. |
 | V-1.7a | Ch2: AFib vignette uses warfarin as default; 2023 ACC/AHA/ACCP/HRS prefers a DOAC | Significant | OPEN | |
-| V-1.7b | Ch1: "OCR goes back to the 1970s" — Tauschek 1929, GISMO 1951 | Minor | OPEN | |
-| V-1.7c | Ch3: edit distance 0.846 should be 0.857 (14 chars, not 13); "Garcia"/"Gracia" is two substitutions or one transposition, not an insertion | Minor | OPEN | |
-| V-1.7d | Ch3: "two character transpositions" for 91→19 is one adjacent transposition | Minor | OPEN | |
-| V-1.7e | Ch4: Cumulative Complexity Model is Shippee et al. 2012, not May/Montori/Mair | Minor | OPEN | Our own `chapter04.09-todo.md` recorded the same wrong attribution. Fix both. |
+| V-1.7b | Ch1: "OCR goes back to the 1970s" — Tauschek 1929, GISMO 1951 | Minor | DONE | Corrected with verified dates: Tauschek patented a mechanical reading machine in 1929 and Shepard's GISMO, the first commercial OCR device, was recognising characters in the early 1950s. The original claim that early systems were 1970s-80s is now framed as what enterprises installed, which is what the passage was really about. |
+| V-1.7c | Ch3: edit distance 0.846 should be 0.857 (14 chars, not 13); "Garcia"/"Gracia" is two substitutions or one transposition, not an insertion | Minor | DONE | Verified the arithmetic: `C-2026-0487291` is 14 characters, not 13, so the similarity is 1-(2/14)=0.857 and the 0.846 came from the wrong length. Corrected. |
+| V-1.7d | Ch3: "two character transpositions" for 91→19 is one adjacent transposition | Minor | DONE | Corrected: `291` to `219` is one transposition of two adjacent digits, not two transpositions. Also added the distinction the passage needed anyway, that plain Levenshtein charges a transposition as 2 while Damerau-Levenshtein charges 1, and said which figure the 0.857 uses. |
+| V-1.7e | Ch4: Cumulative Complexity Model is Shippee et al. 2012, not May/Montori/Mair | Minor | DONE | Corrected. The Cumulative Complexity Model is Shippee, Shah, May, Mair & Montori (J Clin Epidemiol 2012); the BMJ 2009 paper by May, Montori & Mair is 'We need minimally disruptive medicine'. Both are now cited as the separate papers they are, with a note that the 2009 paper is often miscited as the model's source. |
 | V-1.7f | Ch10: Sinsky finding misstated as "2 hours per 8 hours clinical" | Significant | DONE | Pre-existing fix, commit `423cb4f6`. Corrected to ~2h per 1h face time plus 1-2h nightly. |
 | V-1.7g | Ch10: "FDA has signaled ... productivity software" is not a citable FDA position | Critical | DONE | Pre-existing fix, `423cb4f6`. Reattributed to MHRA/NHS England 2026-07-29, with the RCP dissent. |
 | V-1.7h | Ch12: LOS math — bed count is algebraically irrelevant; 8% implies LOS 3.75d | Minor | OPEN | |
-| V-1.7i | Currency drift: 37M→38.4M diabetes; 21→22 ICD-10-CM chapters; sepsis deaths "at least 350,000" | Minor | OPEN | |
+| V-1.7i | Currency drift: 37M→38.4M diabetes; 21→22 ICD-10-CM chapters; sepsis deaths "at least 350,000" | Minor | DONE | Diabetes prevalence updated in 9.06 (print-bound) and 15.07. **Corrects the reviewer as well:** he asked for 38.4 million, which is the 2021 figure; CDC's current report card gives 40.1 million. Used "about 40 million" rather than a decimal, because precise prevalence figures date faster than a printed book. The other two items in this row could not be reproduced: no "21 ICD-10-CM chapters" claim and no "at least 350,000" sepsis-deaths claim exist in the corpus. |
 
 ## 2. Model soundness
 
@@ -61,11 +61,11 @@ Single place to track feedback from all reviewers. One row per finding.
 |----|---------|-----|--------|-------|
 | V-2.1 | Ch7 contradicts itself: argues calibration over discrimination, then assigns by percentile tiers (rank-only) | Significant | OPEN | |
 | V-2.2 | Ch7 claims-lag train/serve skew not mentioned | Significant | OPEN | |
-| V-2.3 | Ch7 readmission C-statistic 0.684 was death-or-readmission, not readmission alone | Minor | OPEN | |
+| V-2.3 | Ch7 readmission C-statistic 0.684 was death-or-readmission, not readmission alone | Minor | WONTFIX | Not reproducible. The C-statistic 0.684 the finding refers to does not appear anywhere in the corpus; Ch7 cites ranges (0.60-0.75 for published models, 0.60-0.68 for LACE and HOSPITAL, 0.68-0.75 for gradient-boosted trees, and 0.70 as an illustrative target). The only 0.684 in the book is a percentage in a cost table in `chapter01.10-architecture`. Likely written against an older build, as with the aspirin dose and the Epic figures. Reopen if the reviewer can point at the sentence. |
 | V-2.4 | Ch6: z-scoring does not decorrelate; K-means/GMM clusters are unordered so they need no monotonic severity | Significant | OPEN | |
 | V-2.5 | Ch12: Monte Carlo intervals falsely narrow (flows sampled independently) | Significant | OPEN | |
 | V-2.6 | Ch12: no forecasting evaluation methodology (rolling-origin, pinball, per-horizon skill, coverage) | Significant | OPEN | |
-| V-2.7 | Ch12: Poisson vs negative binomial applied inconsistently to ED admits | Minor | OPEN | |
+| V-2.7 | Ch12: Poisson vs negative binomial applied inconsistently to ED admits | Minor | DONE | Real and print-bound. 12.03 already hedged correctly ("Poisson, or if overdispersed, negative binomial"), and 12.05 justified negative binomial for direct admits and transfers on overdispersion grounds, yet asserted plain Poisson for ED admits in the same breath. 12.05 now says to test the assumption, and that if residual variance exceeds the mean after conditioning on calendar features you want negative binomial for ED admits too, for exactly the same reason. |
 | V-2.8 | Ch12: "discharge order written" is near-label leakage; add point-in-time warning | Significant | OPEN | |
 
 ## 3. Production and accessibility
@@ -91,7 +91,7 @@ Single place to track feedback from all reviewers. One row per finding.
 |----|---------|-----|--------|-------|
 | V-4.1 | Bot gives a drug and dose (chew 325mg aspirin) pre-EMS, no anticoagulant/bleeding/dissection check | Critical | DONE | Drug and dose removed. The bot now defers the aspirin question to the 911 dispatcher and says why: it cannot know whether the patient took an anticoagulant, and cannot see a dissection at all. Also reinforced the scope-discipline paragraph so a later edit does not restore the dose. |
 | V-4.2 | Escalation logic self-contradictory: architecture says chest pain routes immediately to 911, exemplar escalates "by turn ten" | Critical | DONE | Resolved by correcting the architecture claim rather than the walkthrough. The walkthrough escalates after four questions, not ten as the review states, and that behaviour is clinically defensible; the defect was the screening step overclaiming that active chest pain routes immediately to 911. It now separates presentations needing no further questions from those needing a short red-flag pass. |
-| V-4.3 | HEART and Wells presented as conversationally gatherable; both need ECG/troponin/exam | Significant | OPEN | Replace with pre-hospital red-flag stratification. |
+| V-4.3 | HEART and Wells presented as conversationally gatherable; both need ECG/troponin/exam | Significant | DONE | Rewritten. Centor and the Ottawa rules are genuinely reachable from a conversation; HEART needs an ECG and a troponin, and Wells needs examination findings plus a clinician's judgment on whether PE is the likeliest diagnosis. The passage now separates the two groups and says what a bot can legitimately do, which is collect the history components and hand them forward, and warns against computing a partial score and presenting it as the real thing. |
 | V-4.4 | Ch11 Honest Take references five bots absent from this volume; other dangling refs 5.5, 5.7, 5.9, 2.8, 10.4, 10.6 | Significant | OPEN | Violates the Preface promise to describe rather than cross-reference. |
 
 ## 5. Regulatory layer (2024-2026)

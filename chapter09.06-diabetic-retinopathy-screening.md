@@ -6,7 +6,7 @@
 
 ## The Problem
 
-There are roughly 37 million people with diabetes in the United States. Every single one of them should get an annual dilated eye exam to check for diabetic retinopathy, the leading cause of blindness in working-age adults. The actual screening rate? Somewhere around 60%. That means roughly 15 million diabetic patients in the US alone are not getting their eyes checked on schedule.
+There are about 40 million people with diabetes in the United States. Every single one of them should get an annual dilated eye exam to check for diabetic retinopathy, the leading cause of blindness in working-age adults. The actual screening rate? Somewhere around 60%. That means roughly 15 million diabetic patients in the US alone are not getting their eyes checked on schedule.
 
 The reasons are depressingly predictable. Patients with diabetes already have a dozen appointments to manage: endocrinology, primary care, podiatry, lab work. Adding an ophthalmology visit (which may require pupil dilation, meaning you can't drive home, meaning you need someone to take you) is the one that falls off the list. Rural patients may not have an ophthalmologist within 50 miles. And even when patients do show up, the ophthalmology workforce is stretched thin. There simply aren't enough retinal specialists to screen every diabetic patient annually.
 

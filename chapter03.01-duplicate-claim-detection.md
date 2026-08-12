@@ -68,7 +68,7 @@ The neat thing about this architecture is that each layer is independently tunab
 
 The core of Layer 2 is "fuzzy" field matching. Let's dive into that, because it's where most teams either overcomplicate things or, more commonly, oversimplify them.
 
-Consider just the claim number field. Two claims land with numbers `C-2026-0487291` and `C-2026-0487219`. Are those the same claim with a typo, or two different claims? You compute an edit distance (Levenshtein, for example): the two strings differ by two character transpositions, edit distance 2 out of length 13. A common heuristic is a similarity threshold like `1 - (edit_distance / max_length)`. Here that gives 0.846. High enough to warrant a look.
+Consider just the claim number field. Two claims land with numbers `C-2026-0487291` and `C-2026-0487219`. Are those the same claim with a typo, or two different claims? You compute an edit distance (Levenshtein, for example): the two strings differ by a single transposition of two adjacent digits, `91` becoming `19`. Plain Levenshtein charges that as 2, one substitution each way, out of length 14; Damerau-Levenshtein, which treats a transposition as one operation, charges 1. A common heuristic is a similarity threshold like `1 - (edit_distance / max_length)`. Taking the Levenshtein figure, that gives 0.857. High enough to warrant a look.
 
 Now consider the patient name field. "John Smith" vs "Jon Smyth." Edit distance is 2. By the same formula you'd get about 0.8. Same score as the claim number typos. But those two names are almost certainly the same person, while "C-2026-0487291" and "C-2026-0487219" might be two genuinely distinct claims. The pure string-edit-distance metric throws away useful information about what each field represents.
 
