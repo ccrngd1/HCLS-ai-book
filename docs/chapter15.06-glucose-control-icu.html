@@ -403,13 +403,6 @@
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter15.06-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
-<h2 id="the-honest-take">The Honest Take</h2>
-<p>Here's what I've learned from working on this class of problem: the RL formulation is the easy part. Getting the data pipeline right is 70% of the work.</p>
-<p>EHR data for glucose control is a mess. Glucose measurements come from different sources (point-of-care meters, arterial blood gas analyzers, continuous glucose monitors) with different accuracies and different timestamps. Insulin orders don't always match insulin administrations (a nurse might hold a dose if the patient is eating). Nutrition data is often incomplete or delayed in charting. You'll spend months cleaning and aligning temporal data before you can train anything.</p>
-<p>The reward function is where clinical and ML expertise must collaborate. I've seen teams spend weeks tuning the reward shape, only to realize that their hypoglycemia penalty wasn't steep enough and the policy was trading a 2% increase in time-in-range for a 1% increase in hypoglycemia. That's a terrible trade clinically, but the numbers looked good on the aggregate metric. Always report hypoglycemia rates separately from time-in-range. Never let them get averaged into a single score.</p>
-<p>The biggest surprise: the safety constraint layer often matters more than the RL policy itself. A simple PID controller with good safety constraints can outperform a sophisticated RL policy with weak constraints. The constraints encode decades of clinical knowledge about what's dangerous. The RL policy adds value at the margins (better personalization, better anticipation of trends), but the constraints keep patients alive.</p>
-<p>Clinician trust is the deployment bottleneck, not model accuracy. Even if your OPE shows a 15% improvement in time-in-range, ICU nurses and physicians won't follow recommendations from a system they don't understand. Plan for extensive education, transparent reasoning displays, and a long period of &quot;shadow mode&quot; where the system makes recommendations that are logged but not displayed.</p>
-<hr />
 <h2 id="related-recipes">Related Recipes</h2>
 <ul>
 <li><strong>Recipe 15.4 (Sepsis Treatment Optimization):</strong> Uses the same offline RL framework for a different clinical decision (fluids and vasopressors). Shares the OPE and safety constraint patterns.</li>

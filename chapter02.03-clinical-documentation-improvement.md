@@ -92,20 +92,6 @@ The RAG pattern here is: extract diagnoses from the note, retrieve relevant codi
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter02.03-architecture). The Python example is linked from there.
 
-## The Honest Take
-
-CDI is one of those problems where the AI part is actually the easy part. Getting a model to identify specificity gaps in clinical notes is straightforward with modern LLMs. The hard parts are everything around it: EHR integration, physician workflow, compliance review, alert fatigue management, and organizational change management.
-
-The 70-85% accuracy range for suggestions sounds mediocre until you compare it to the alternative: most notes never getting CDI review at all. A system that reviews 100% of notes at 75% accuracy catches more real gaps than a human team that reviews 15% of notes at 95% accuracy. The math works in your favor even with imperfect AI.
-
-The thing that surprised me most: physician acceptance rates are highly sensitive to suggestion phrasing, not suggestion accuracy. A technically correct suggestion phrased poorly ("Documentation deficiency: heart failure type not specified") gets rejected. The same suggestion phrased respectfully ("The echo shows EF 35%. Would you characterize this as systolic heart failure?") gets accepted. Invest heavily in prompt engineering for the query generation step. It matters more than the gap detection step.
-
-Alert fatigue is your biggest operational risk. Start with a high confidence threshold and low maximum suggestions per note. It's better to catch 50% of gaps with high physician trust than to catch 90% of gaps while physicians learn to ignore your system entirely. You can always lower the threshold once you've established credibility.
-
-One more thing: the financial ROI on CDI is easy to measure (compare DRG weights before and after), which makes this one of the easier AI projects to get funded. But don't lead with revenue. Lead with documentation accuracy and patient safety (accurate documentation supports better care transitions). The revenue follows naturally from accurate documentation.
-
----
-
 ## Related Recipes
 
 - **Recipe 2.1 (Patient Message Response Drafting):** Shares the Bedrock inference pattern but for a different text generation use case

@@ -267,3 +267,10 @@ Check these sources for deployable solutions, reference architectures, and deep-
 ---
 
 _Last updated: 2026-03-05_
+
+## Honest Take: currently withheld from digital-only recipes
+
+The 15 flagship recipes that ship in print keep their Honest Take. For the other
+137 the section is withheld for now. It is not deleted: `honest_takes.py --remove`
+stashes each section verbatim in `honest-takes-stash/`, and `--restore` puts it back
+byte-for-byte. Do not hand-edit files in the stash; edit the restored section instead.

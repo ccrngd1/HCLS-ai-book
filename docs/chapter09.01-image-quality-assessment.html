@@ -399,15 +399,6 @@
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter09.01-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
-<h2 id="the-honest-take">The Honest Take</h2>
-<p>This is one of those problems where the technology is genuinely ready but the deployment is harder than the ML. The model itself is straightforward: binary classification on images with clear labels (your PACS already tracks rejections). Training takes a few days. Inference is fast. The accuracy is good enough.</p>
-<p>The hard parts are all operational:</p>
-<p><strong>Getting the training data out of your PACS.</strong> Radiology departments track rejections, but the data is often in a proprietary system with no clean export path. You'll spend more time on data extraction than on model training. Budget for it.</p>
-<p><strong>Calibrating thresholds per site.</strong> What I said earlier about site-specific calibration is not optional. I've seen systems that worked beautifully at one hospital and rejected 40% of images at another because the equipment was older and the baseline noise floor was higher. Plan for a calibration phase at every deployment site.</p>
-<p><strong>Technologist trust.</strong> If the system rejects images that the technologist thinks are fine, they'll stop trusting it within a week. Start with a &quot;shadow mode&quot; where the system assesses images but doesn't alert anyone. Compare its decisions against actual radiologist rejections for a month. Only go live when the agreement rate is high enough that technologists see it as helpful, not annoying.</p>
-<p><strong>The feedback loop problem.</strong> Once you deploy the system and technologists start retaking flagged images, your rejection rate drops. Great. But now your model's training data (historical rejections) no longer represents the current distribution of quality problems. The model needs periodic retraining on the new failure modes that slip through.</p>
-<p>The part that surprised me: the biggest ROI is not in radiology. It's in clinical photography. Wound care photos, dermatology images, dental radiographs. These are taken by non-imaging-specialists (nurses, medical assistants) with consumer-grade cameras, and the quality variance is enormous. A simple blur-and-exposure check on clinical photos catches more actionable problems than a sophisticated model on radiologist-acquired X-rays.</p>
-<hr />
 <h2 id="related-recipes">Related Recipes</h2>
 <ul>
 <li><strong>Recipe 9.2 (Patient Photo Verification):</strong> Uses similar image preprocessing but for identity matching rather than quality scoring</li>

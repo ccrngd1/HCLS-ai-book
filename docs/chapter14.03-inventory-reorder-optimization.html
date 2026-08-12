@@ -422,14 +422,6 @@
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter14.03-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
-<h2 id="the-honest-take">The Honest Take</h2>
-<p>The math here is well-understood. Inventory optimization has been a solved problem in manufacturing and retail for decades. The hard part in healthcare isn't the solver; it's the data.</p>
-<p>Your ERP's inventory levels are probably wrong. Not dramatically wrong, but off by enough to matter. Supplies get consumed without being scanned. Items move between departments informally. Par levels get adjusted manually without updating the system. The optimization model will faithfully produce optimal policies for the inventory levels it sees, which may not match reality. Garbage in, garbage out, but with a veneer of mathematical rigor that makes it harder to spot.</p>
-<p>The criticality classification is where politics enters. Everyone thinks their department's supplies are &quot;critical.&quot; You need clinical leadership to define and enforce the tiers, because the optimizer will allocate more budget and space to critical items at the expense of standard ones. That's a resource allocation decision disguised as a technical parameter.</p>
-<p>Expiration management is the sleeper complexity. The model above handles it as a constraint (don't order more than you can use before expiry), but real expiration management requires FIFO tracking, rotation policies, and redistribution logic for items approaching their date. That's a separate operational system that the optimizer needs to integrate with, not replace.</p>
-<p>The thing that surprised me most: the biggest savings often come not from optimizing individual item policies, but from consolidating orders across items to hit volume discount breakpoints. A model that optimizes items independently misses these cross-item synergies. Adding order consolidation logic (grouping items by distributor, timing orders to hit price breaks) can double the cost savings, but it also doubles the model complexity.</p>
-<p>Start with the basic model. Get the data pipeline right. Prove value on a subset of items. Then add sophistication.</p>
-<hr />
 <h2 id="related-recipes">Related Recipes</h2>
 <ul>
 <li><strong>Recipe 12.2 (Supply Inventory Forecasting):</strong> Provides the demand forecasting component that feeds into this optimization. Use 12.2's output as input to Step 2 here.</li>
