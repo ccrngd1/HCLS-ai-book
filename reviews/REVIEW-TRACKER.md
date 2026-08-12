@@ -3,7 +3,7 @@
 Single place to track feedback from all reviewers. One row per finding.
 
 **Status values:** `DONE` · `OPEN` · `IN PROGRESS` · `WONTFIX` (with reason) ·
-`NEEDS DECISION` (author call required) · `NEEDS EXPERT` (coder, counsel, clinician)
+`DEFERRED` (revisit at a named milestone) · `NEEDS DECISION` (author call required) · `NEEDS EXPERT` (coder, counsel, clinician)
 
 **Conventions**
 - Never delete a row. Flip it to `DONE` with the commit SHA so we keep the audit trail.
@@ -27,8 +27,9 @@ Single place to track feedback from all reviewers. One row per finding.
 |--------|------:|
 | DONE | 56 |
 | OPEN | 33 |
+| DEFERRED | 1 |
 | WONTFIX | 6 |
-| **total** | **95** |
+| **total** | **96** |
 
 ---
 
@@ -185,6 +186,7 @@ Items the author raised, tracked here so the central list stays the single place
 | ID | Item | Sev | Status | Notes |
 |----|------|-----|--------|-------|
 | A-1 | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Significant | OPEN | **Why it was withheld:** the Honest Take is the author's own voice and judgement, written in the first person. Publishing an opinion about a recipe the author has not personally reviewed asserts a position he has not actually taken. The recipes themselves are fine to publish; the opinion is what needs review first. So the gate is per-recipe author review, not a date. **Mechanism:** `honest_takes.py --restore 7.3` returns one recipe's section byte-for-byte from `honest-takes-stash/` and removes it from the stash, so `--status` reports real progress. `--restore` with no arguments returns all 137. Round trip verified exact against git HEAD. **Progress:** 0 of 137 restored. **Loose end when they return:** roughly a dozen companion pages contain in-body references such as "as noted in the recipe's honest take", which read oddly while the sections are absent and correct themselves when they come back; about 100 more are a stock footer and need nothing. **Do not** hand-edit files in the stash: restore the section, then edit the recipe. |
+| A-2 | About the Author orphan: decide at physical proof | Minor | DEFERRED | The page runs to 336 words and spans pages 3 and 4, with only 37 words landing on page 4. Author decision 2026-08-12: leave as is and judge it on the physical proof, since orphans read differently on paper than on screen. Three options when the proof arrives: split the acknowledgements onto their own Acknowledgements page, which is conventional and keeps every word; cut roughly 40 words to fit one page; or accept it. **Do not silently 'fix' this in a later tidying pass.** Note the growth had a useful side effect: the interior went from 263 to 264 pages, so it is now even and needs no trailing blank to end on a verso. |
 
 ---
 
