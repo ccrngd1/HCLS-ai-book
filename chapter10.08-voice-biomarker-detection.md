@@ -404,7 +404,7 @@ Voice biomarker detection, done well for the right indications, is one of the mo
 - **Recipe 3.7 (Patient Deterioration Early Warning):** Chapter 3, anomaly detection. Voice biomarker trajectory deltas can serve as one of several signals into a broader patient-deterioration-detection pipeline.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Chapter 4, personalization. Voice biomarkers for medication-response monitoring (for example, dopaminergic-medication response in Parkinson's) inform medication-management interventions.
 - **Recipe 5.8 (Privacy-Preserving Record Linkage):** Chapter 5, privacy-preserving computation. Federated voice-biomarker validation across institutions uses analogous privacy-preserving patterns.
-- **Recipe 7.x (Predictive Analytics chapter):** Chapter 7, risk scoring. Voice biomarkers are one of many signals into broader risk scores; the integration is multi-modal.
+- **Recipe 7.x (Predictive Risk Modeling):** Chapter 7, risk scoring. Voice biomarkers are one of many signals into broader risk scores; the integration is multi-modal.
 
 ---
 

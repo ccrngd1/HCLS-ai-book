@@ -357,10 +357,10 @@ People matter most, even when they're invisible. The clinicians who first see th
 - **Recipe 3.7 (Patient Deterioration Early Warning):** Calibration, subgroup performance, alert-volume management, and the workflow-as-product lesson all apply.
 - **Recipe 3.8 (Readmission Risk Anomaly Detection):** Time-series anomaly detection, baseline non-stationarity, and the patient-population segmentation patterns transfer.
 - **Recipe 3.9 (Cybersecurity / Access Pattern Anomalies):** Cluster detection on graph data, signal-detection in low-base-rate settings, and the multi-source fusion patterns share conceptual foundations with surveillance.
-- **Recipe 2.x (LLM / Generative AI):** Cluster narrative generation and investigator-copilot patterns use techniques from Chapter 2.
-- **Recipe 8.x (NLP / Traditional):** Chief-complaint and triage-note classification use NLP patterns from Chapter 8.
-- **Recipe 12.x (Time Series Analysis / Forecasting):** Baseline computation, seasonal-trend decomposition, and CUSUM/EWMA control charting use techniques from Chapter 12.
-- **Recipe 13.x (Knowledge Graphs / Ontology):** The syndrome taxonomy, the geography hierarchy, and the pathogen ontology are all knowledge-graph instances of the broader patterns covered in Chapter 13.
+- **Recipe 2.x (Clinical Text Generation):** Cluster narrative generation and investigator-copilot patterns use techniques from Chapter 2.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** Chief-complaint and triage-note classification use NLP patterns from Chapter 8.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Baseline computation, seasonal-trend decomposition, and CUSUM/EWMA control charting use techniques from Chapter 12.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** The syndrome taxonomy, the geography hierarchy, and the pathogen ontology are all knowledge-graph instances of the broader patterns covered in Chapter 13.
 
 ---
 

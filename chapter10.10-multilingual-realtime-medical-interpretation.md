@@ -503,7 +503,7 @@ Real-time medical interpretation, done responsibly, can extend language access t
 - **Recipe 2.5 (After-Visit Summary Generation):** Chapter 2, LLM-driven patient-facing summary generation. Combined with this recipe for multilingual after-visit summaries.
 - **Recipe 2.6 (Clinical Note Summarization):** Chapter 2, LLM-driven structured-data-to-prose generation with faithfulness checks. The faithfulness scaffolding transfers directly to LLM-based translation.
 - **Recipe 2.10 (Multi-Modal Clinical Reasoning):** Chapter 2, faithfulness and grounding for LLM-based clinical content. Faithfulness patterns apply to translation as well as to summarization and reasoning.
-- **Recipe 11.x (Conversational AI chapter):** Chapter 11, virtual-assistant patterns. Multilingual virtual-assistant deployments combine recipe 10.10 with conversational AI patterns.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Chapter 11, virtual-assistant patterns. Multilingual virtual-assistant deployments combine recipe 10.10 with conversational AI patterns.
 
 ---
 

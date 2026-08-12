@@ -144,10 +144,10 @@ Finally: the explanation matters even more than in lab trend analysis, because t
 - **Recipe 12.4 (Lab Result Trend Analysis):** The shorter-horizon, single-lab counterpart that handles the chronic-trend signal. Trajectory modeling builds on the harmonization and baseline layers used there but extends to multi-year, multi-variable forecasting with counterfactual scenarios.
 - **Recipe 12.7 (Vital Sign Trajectory Monitoring):** The acute-context counterpart focused on real-time inpatient deterioration. Different cadence, different clinical workflow, but shares the state-space and credible-interval machinery.
 - **Recipe 12.9 (Epidemic Forecasting):** Population-level forecasting with comparable uncertainty-management challenges; trajectory modeling is per-patient, epidemic forecasting is per-population, but the calibration and communication patterns are similar.
-- **Recipe 6.x (Cohort Analysis and Clustering):** Cohort definition is the foundation of trajectory modeling. The phenotype-clustering recipes in Chapter 6 inform the cohort identification strategies used here.
-- **Recipe 7.x (Predictive Analytics and Risk Scoring):** Risk scoring is essentially a one-step-ahead version of trajectory modeling. The two recipes share architectural primitives; the trajectory recipe extends to long horizons and counterfactual reasoning.
+- **Recipe 6.x (Clustering & Patient Segmentation):** Cohort definition is the foundation of trajectory modeling. The phenotype-clustering recipes in Chapter 6 inform the cohort identification strategies used here.
+- **Recipe 7.x (Predictive Risk Modeling):** Risk scoring is essentially a one-step-ahead version of trajectory modeling. The two recipes share architectural primitives; the trajectory recipe extends to long horizons and counterfactual reasoning.
 - **Recipe 4.10 (Dynamic Treatment Regime Recommendation):** The reinforcement-learning approach to treatment-decision-making at multiple time points; conceptually adjacent to the counterfactual layer in trajectory modeling.
-- **Recipe 13.x (Knowledge Graphs and Ontology):** Disease cohort definitions, drug classifications, and clinical phenotype hierarchies live in the broader clinical-terminology ecosystem covered there.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Disease cohort definitions, drug classifications, and clinical phenotype hierarchies live in the broader clinical-terminology ecosystem covered there.
 
 ---
 

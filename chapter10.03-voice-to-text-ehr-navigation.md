@@ -443,10 +443,10 @@ The last thing, because it matters here even more than in the other recipes in t
 - **Recipe 10.4 (Medical Transcription / Dictation):** Same chapter, the long-form-transcription analog. Voice navigation and voice dictation are distinct product categories; this recipe deliberately defers dictation to 10.4.
 - **Recipe 10.5 (Patient-Facing Voice Assistant):** Same chapter, patient-facing voice analog with very different user-acceptance and accessibility constraints.
 - **Recipe 10.7 (Ambient Clinical Documentation):** Same chapter, the higher-complexity tier where voice listens passively rather than reactively. Voice navigation often deploys alongside ambient documentation; the integration patterns are an emerging engineering practice.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** The intent classification and slot extraction techniques map directly onto the conversational assistants in chapter 11.
-- **Recipe 8.x (Traditional NLP):** The intent classification and slot extraction draw from the broader NLP techniques covered in chapter 8.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** The intent classification and slot extraction techniques map directly onto the conversational assistants in chapter 11.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** The intent classification and slot extraction draw from the broader NLP techniques covered in chapter 8.
 - **Recipe 5.1 (Internal Duplicate Patient Detection):** The patient-slot resolution faces the same duplicate-patient problem; this recipe consumes the patient-index pipeline that 5.1 produces.
-- **Recipe 2.x (LLM / Generative AI):** The LLM-based fallback classifier and the optional command-suggestion features draw from the LLM patterns in chapter 2.
+- **Recipe 2.x (Clinical Text Generation):** The LLM-based fallback classifier and the optional command-suggestion features draw from the LLM patterns in chapter 2.
 
 ---
 

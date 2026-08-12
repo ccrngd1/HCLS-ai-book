@@ -344,7 +344,7 @@ Last point, because it is specific to the regulatory context: the 21st Century C
 - **Recipe 1.1 (Insurance Card Scanning):** The patient-portal coverage self-service flow can also surface cross-facility consent updates; the OCR and identity-extraction patterns from 1.1 feed both flows.
 - **Recipe 1.9 (Medical Records Request Extraction):** Cross-facility patient matching is the foundation that medical-records-request workflows depend on; matching quality directly affects record-request fulfillment.
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Cross-facility data on the patient's prior care informs prior-authorization decisions, particularly for specialty-care referrals.
-- **Recipe 7.x (Predictive Analytics):** Cross-facility data enriches risk-scoring features (a patient with care patterns across multiple organizations has different risk profile than one with all care concentrated at a single organization).
+- **Recipe 7.x (Predictive Risk Modeling):** Cross-facility data enriches risk-scoring features (a patient with care patterns across multiple organizations has different risk profile than one with all care concentrated at a single organization).
 
 ---
 

@@ -174,7 +174,7 @@ The part that took me the longest to internalize is that this is fundamentally a
 - **Recipe 12.4 (Lab Result Trend Analysis):** Adjacent recipe in the time-series chapter. Shares the FHIR-based ingestion pattern and the survival-style modeling for some variants.
 - **Recipe 12.6 (Revenue Cycle Cash Flow Forecasting):** Different domain (financial, not operational) but similar structure: forecasting flows that compose into a level (cash on hand, like census). The methods carry over.
 - **Recipe 12.7 (Vital Sign Trajectory Monitoring):** The patient-level acute counterpart. Real-time vital-sign trajectories feed into the discharge-readiness signal that the survival model in this recipe consumes.
-- **Recipe 14.x (Optimization / Operations Research):** The downstream consumer of census forecasts. Bed assignment, OR scheduling, and staffing optimization all live in that chapter and use the forecast outputs from this recipe as constraint inputs.
+- **Recipe 14.x (Optimization & Resource Allocation):** The downstream consumer of census forecasts. Bed assignment, OR scheduling, and staffing optimization all live in that chapter and use the forecast outputs from this recipe as constraint inputs.
 
 ---
 

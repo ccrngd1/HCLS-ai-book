@@ -338,9 +338,9 @@ Patients matter most, even when they're invisible in the operational workflow. T
 - **Recipe 3.7 (Patient Deterioration Early Warning):** Calibration, subgroup performance, alert-volume management, and the workflow-as-product lesson all apply.
 - **Recipe 3.8 (Readmission Risk Anomaly Detection):** Engagement-decay detection (a previously-engaged patient who stops engaging) shares statistical foundations with workforce-behavior baselining.
 - **Recipe 3.10 (Epidemic / Outbreak Detection):** Cluster-detection on graph data and signal-detection in low-base-rate settings overlap conceptually.
-- **Recipe 2.x (LLM / Generative AI):** Case narrative generation and investigator-copilot patterns use techniques from Chapter 2.
-- **Recipe 8.x (NLP / Traditional):** Break-glass override reason extraction and policy-text analysis use NLP patterns from Chapter 8.
-- **Recipe 13.x (Knowledge Graphs / Ontology):** The relationship graph is a healthcare-specific instance of the broader knowledge-graph patterns covered in Chapter 13.
+- **Recipe 2.x (Clinical Text Generation):** Case narrative generation and investigator-copilot patterns use techniques from Chapter 2.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** Break-glass override reason extraction and policy-text analysis use NLP patterns from Chapter 8.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** The relationship graph is a healthcare-specific instance of the broader knowledge-graph patterns covered in Chapter 13.
 
 ---
 

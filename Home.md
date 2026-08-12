@@ -38,23 +38,23 @@ current vendor documentation.
 
 ## Categories Covered
 
-| Category | Description |
-|----------|-------------|
-| Document Intelligence / OCR | Paper digitization and extraction |
-| LLM / Generative AI | Text generation and synthesis |
-| Anomaly Detection | Finding outliers and unusual patterns |
-| Personalization | Tailoring experiences and recommendations |
-| Entity Resolution | Matching and linking records |
-| Cohort Analysis / Clustering | Patient similarity and grouping |
-| Predictive Analytics | Risk scoring and forecasting |
-| NLP (Non-LLM) | Traditional text processing |
-| Computer Vision | Medical imaging and visual analysis |
-| Speech / Voice AI | Audio processing and voice interfaces |
-| Conversational AI | Chatbots and virtual assistants |
-| Time Series Analysis | Temporal patterns and trends |
-| Knowledge Graphs | Ontologies and relationship modeling |
-| Optimization | Resource allocation and scheduling |
-| Reinforcement Learning | Adaptive decision-making |
+| Ch | Chapter | What it covers |
+|---:|---------|----------------|
+| 1 | Document Intelligence | Paper digitization and extraction, including optical character recognition (OCR) |
+| 2 | Clinical Text Generation | Large language models and generative AI applied to clinical text |
+| 3 | Anomaly & Outlier Detection | Finding outliers and unusual patterns |
+| 4 | Recommendation & Personalization | Tailoring experiences and recommendations |
+| 5 | Entity Resolution & Record Linkage | Matching and linking records |
+| 6 | Clustering & Patient Segmentation | Patient similarity and grouping |
+| 7 | Predictive Risk Modeling | Risk scoring and prediction |
+| 8 | Clinical NLP & Information Extraction | Traditional, non-LLM text processing and information extraction |
+| 9 | Medical Imaging & Computer Vision | Medical imaging and visual analysis |
+| 10 | Speech & Voice AI | Audio processing and voice interfaces |
+| 11 | Conversational AI & Virtual Agents | Chatbots and virtual agents |
+| 12 | Forecasting & Time-Series Analysis | Temporal patterns, trends and forecasting |
+| 13 | Knowledge Graphs & Clinical Reasoning | Ontologies and relationship modeling |
+| 14 | Optimization & Resource Allocation | Resource allocation and scheduling |
+| 15 | Sequential Decision-Making & Reinforcement Learning | Adaptive decision-making and reinforcement learning (RL) |
 
 ## Healthcare Context
 

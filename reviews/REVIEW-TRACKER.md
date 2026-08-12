@@ -24,12 +24,12 @@ Single place to track feedback from all reviewers. One row per finding.
 
 | Status | Count |
 |--------|------:|
-| DONE | 27 |
-| OPEN | 53 |
+| DONE | 28 |
+| OPEN | 55 |
 | NEEDS DECISION | 4 |
 | NEEDS EXPERT | 3 |
 | WONTFIX | 2 |
-| **total** | **89** |
+| **total** | **92** |
 
 ---
 
@@ -170,7 +170,10 @@ Single place to track feedback from all reviewers. One row per finding.
 | R-3 | Digital edition bottom page navigation: missing on some pages, broken on others | Significant | OPEN | Root-caused, and it is the same defect as V-3.1. Footers are hand-written in four shapes across the corpus: italic (129), table row (11), bare links (4), bold label (1), and absent on 24 files (all chapter-level: prefaces, ch1 index, ch1 executive summary). The print build now strips them; the digital edition still renders whatever was hand-written. Real fix is to generate the footer from the manifest rather than maintain it by hand, which closes R-3 and V-3.1 permanently. |
 | R-4 | Some chapters have both an overview and a preface; only one is needed, combine | Minor | OPEN | Chapter 1 only. It carries `chapter01-index.md` (sidebar "Overview"), `chapter01-preface.md`, and `chapter01-executive-summary.md`, where chapters 2-15 have a preface alone. All three share the identical H1 "Chapter 1: Document Intelligence", so the site shows three differently-scoped pages under one title. Note the content does not overlap: index is What You'll Learn / Prerequisites / Chapter Architecture / Recipes, preface is the conceptual essay, exec summary is for leadership. So this is a naming and navigation problem more than a duplication problem. |
 | R-5 | Some chapters' overview is just the first recipe | Significant | NEEDS DECISION | Could not reproduce, need the reviewer to point at one. Ruled out: no chapter preface duplicates its first recipe (max text similarity 0.02 across all 15), `Home.md` and `README.md` contain no chapter links at all, and the sidebar links chapters only to prefaces and recipes. Two candidates for what was actually seen: the sidebar has no chapter landing page for 2-15, so a chapter name is unclickable text and the first thing under it is a recipe; or R-4's Ch1 "Overview" was read as the pattern and found missing elsewhere. |
-| R-6 | Chapter titles disagree between the sidebar and the chapter pages | Significant | OPEN | Found while investigating R-5, not reported by either reviewer. Sidebar vs page H1: "Anomaly Detection" / "Anomaly & Outlier Detection", "Personalization / Recommendations" / "Recommendation & Personalization", "Cohort Analysis / Clustering" / "Clustering & Patient Segmentation", "Predictive Analytics" / "Predictive Risk Modeling", "NLP (Non-LLM)" / "Clinical NLP & Information Extraction", "Time Series Analysis" / "Forecasting & Time-Series", "Reinforcement Learning" / "Sequential Decision-Making", "LLM / Generative AI" / "Clinical Text Generation". README's category table is a third variant. Affects print, site and Appendix B. Needs one canonical list. |
+| R-6 | Chapter titles disagree between the sidebar and the chapter pages | Significant | DONE | Fixed. Canonical set is the preface/manifest family, which already held 3 of the 4 sources and reads as book titles rather than ML taxonomy. Applied to `_Sidebar.md`, `README.md`, `Home.md`, `SUMMARY.md` and `print/manifest.json` (Ch15 `& RL` spelled out, which also serves R-1). All 15 chapters now agree across all four sources. Author kept the Family A titles for Ch2 and Ch8, with the searchable terms (`LLM`, `generative AI`, `non-LLM`) moved into the description column so discoverability is preserved. Also normalized 120 chapter cross-references across 46 recipes that used 29 different names for the 15 chapters; guarded by requiring the reference's chapter number to match the name, so 1,038 legitimate recipe titles in the same idiom were left untouched, and 0 mismatches were found. |
+| R-7 | Complexity labels leak into the `**Recipe N.x (...)**` cross-reference idiom | Minor | OPEN | Found while normalizing R-6. The parenthetical should carry a recipe title or chapter name, but ~20 references carry a complexity value instead: `Complex` (8), `Medium-Complex` (5), `Simple-Medium` (4), `Medium` (3). Almost certainly residue from the retired Complexity field. Reader-facing in the digital edition. Mechanical to fix once each is mapped to the intended target. |
+| R-8 | `SUMMARY.md` is an internal project-status document but is published to the site | Significant | OPEN | Found while fixing R-6. It renders to `docs/SUMMARY.html`, and its content is authoring status: a "Planning Doc" column pointing at `categories/*.md`, per-chapter DONE flags, and writing rules. A reader arriving from search sees the book's construction scaffolding. Either exclude it from the site build the way `plan_docs` is excluded, or rewrite it as reader-facing front matter. |
+| R-9 | `categories/` is tracked in git but is not published and is superseded | Minor | OPEN | 15 files from the pre-split structure, tracked but absent from `docs/`. It is the target of several broken cross-references already logged as `[NEEDS HUMAN]` findings in the todo files, so it actively misleads. Decide whether to delete it or move it under an ignored path. |
 
 ---
 

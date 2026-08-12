@@ -341,12 +341,12 @@ Lives are saved here too, just less dramatically than in Recipe 3.7. The signal 
 - **Recipe 3.5 (Lab Result Outlier Detection):** Patient-specific baseline establishment for labs is a closely related problem; the techniques for identifying patient-specific normal ranges transfer.
 - **Recipe 3.7 (Patient Deterioration Early Warning):** Inpatient deterioration is the same fundamental problem on a different timescale, with different sensors and different intervention windows. Many architectural patterns transfer.
 - **Recipe 3.9 (Cybersecurity / Access Pattern Anomalies):** Behavioral baseline establishment and engagement-decay detection share statistical foundations.
-- **Recipe 4.x (Personalization / Recommendation):** Outreach channel optimization, message timing, and content personalization for patient-facing communication overlap with personalization patterns in Chapter 4.
-- **Recipe 7.x (Predictive Analytics / Risk Scoring):** The discharge-time readmission risk score that feeds this recipe is a Chapter 7 problem. The composite scoring layer in this recipe is also predictive analytics, and many of the validation patterns transfer.
-- **Recipe 12.x (Time Series Analysis / Forecasting):** Trajectory forecasting and residual-based anomaly detection are core time-series patterns covered in Chapter 12.
-- **Recipe 2.x (LLM / Generative AI):** Outreach script generation, narrative explanations, and case summaries use patterns from Chapter 2.
-- **Recipe 8.x (NLP / Traditional):** Care management note extraction uses NLP patterns from Chapter 8.
-- **Recipe 11.x (Conversational AI):** Patient-facing conversational check-ins use patterns from Chapter 11.
+- **Recipe 4.x (Recommendation & Personalization):** Outreach channel optimization, message timing, and content personalization for patient-facing communication overlap with personalization patterns in Chapter 4.
+- **Recipe 7.x (Predictive Risk Modeling):** The discharge-time readmission risk score that feeds this recipe is a Chapter 7 problem. The composite scoring layer in this recipe is also predictive analytics, and many of the validation patterns transfer.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Trajectory forecasting and residual-based anomaly detection are core time-series patterns covered in Chapter 12.
+- **Recipe 2.x (Clinical Text Generation):** Outreach script generation, narrative explanations, and case summaries use patterns from Chapter 2.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** Care management note extraction uses NLP patterns from Chapter 8.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Patient-facing conversational check-ins use patterns from Chapter 11.
 
 ---
 

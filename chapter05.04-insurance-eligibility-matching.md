@@ -343,7 +343,7 @@ Last point, because it is specific to the regulatory context: the No Surprises A
 - **Recipe 1.8 (EOB Processing):** Explanation of Benefits documents are the downstream artifact of claims that depended on eligibility matches; tying EOB processing back to the originating eligibility match closes the revenue-cycle loop.
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Prior-auth workflows depend on accurate eligibility identification of the member.
 - **Recipe 3.1 (Duplicate Claim Detection):** Eligibility match outcomes feed claims-side anomaly detection (a claim submitted under a member ID the eligibility matcher rejected is a strong duplicate-or-fraud signal).
-- **Recipe 7.x (Predictive Analytics):** Coverage churn and benefit-design features derived from the eligibility-match store contribute to risk-scoring models.
+- **Recipe 7.x (Predictive Risk Modeling):** Coverage churn and benefit-design features derived from the eligibility-match store contribute to risk-scoring models.
 
 ---
 

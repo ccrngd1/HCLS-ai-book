@@ -278,9 +278,9 @@ Last point, because it's specific to this use case: members are people, and well
 - **Recipe 4.6 (Care Gap Prioritization):** Uses the per-member-need scoring pattern from this recipe to prioritize among multiple care gaps for a single patient. Shares the clinical-need model infrastructure.
 - **Recipe 4.7 (Care Management Program Enrollment):** Extends this recipe's allocator with more sophisticated optimization (LP-based, multiple resource constraints) and higher clinical stakes. The uplift modeling investment in 4.4 transfers directly.
 - **Recipe 4.10 (Dynamic Treatment Regime Recommendation):** The sequential-recommendation extension above is a small step toward this recipe; both share the multi-time-step decision pattern.
-- **Recipe 7.x (Predictive Analytics / Risk Scoring):** The clinical-need model in this recipe is structurally a risk-scoring problem; Chapter 7's risk-scoring patterns and validation methodology apply directly.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** Member-facing assistants can call this recommender to surface program options conversationally when a member asks "what programs am I eligible for?"
-- **Recipe 14.x (Optimization / Operations Research):** The capacity-aware allocator graduates to integer programming when constraints multiply; Chapter 14 covers the formal optimization techniques.
+- **Recipe 7.x (Predictive Risk Modeling):** The clinical-need model in this recipe is structurally a risk-scoring problem; Chapter 7's risk-scoring patterns and validation methodology apply directly.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Member-facing assistants can call this recommender to surface program options conversationally when a member asks "what programs am I eligible for?"
+- **Recipe 14.x (Optimization & Resource Allocation):** The capacity-aware allocator graduates to integer programming when constraints multiply; Chapter 14 covers the formal optimization techniques.
 
 ---
 

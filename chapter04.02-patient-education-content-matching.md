@@ -223,7 +223,7 @@ One last point, because it's specific to this use case: be careful with the fram
 - **Recipe 4.4 (Wellness Program Recommendations):** Same recommender architecture applied to a different catalog (wellness programs instead of education content). The infrastructure built here is mostly reusable.
 - **Recipe 2.2 (Medical Terminology Simplification):** A complementary capability for content tailoring; can be used to dynamically simplify content snippets for low-health-literacy patients without modifying the underlying catalog.
 - **Recipe 2.5 (After-Visit Summary Generation):** A common consumer of this recommender; the AVS generator calls in to attach 2-3 recommended education items based on the visit's clinical context.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** Patient-facing assistants can call this recommender mid-conversation to surface educational material when the patient asks a question.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Patient-facing assistants can call this recommender mid-conversation to surface educational material when the patient asks a question.
 
 ---
 

@@ -308,8 +308,8 @@ Last point, because it is specific to the regulatory context: provider directory
 - **Recipe 5.5 (Cross-Facility Patient Matching for HIE):** Provider-NPI assignments are part of the HIE participant data; the matching infrastructure carries forward.
 - **Recipe 5.6 (Claims-to-Clinical Data Linkage):** Claims carry billing NPI, rendering NPI, attending NPI, and other provider identifiers; linking those to internal provider records uses the matcher built here.
 - **Recipe 4.3 (Provider Directory Search Optimization):** A clean provider-NPI assignment table with current addresses and taxonomies is the foundation for provider-directory search optimization.
-- **Recipe 7.x (Predictive Analytics):** Provider-attributed quality measures and risk-adjusted outcomes depend on accurate provider-attribution, which depends on accurate NPI matching.
-- **Recipe 13.x (Knowledge Graphs):** A clean provider identity is an anchor in any provider-centric or patient-provider knowledge graph; the matcher's output feeds the entity-resolution layer underneath the graph.
+- **Recipe 7.x (Predictive Risk Modeling):** Provider-attributed quality measures and risk-adjusted outcomes depend on accurate provider-attribution, which depends on accurate NPI matching.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** A clean provider identity is an anchor in any provider-centric or patient-provider knowledge graph; the matcher's output feeds the entity-resolution layer underneath the graph.
 
 ---
 

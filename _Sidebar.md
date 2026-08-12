@@ -8,7 +8,7 @@
 
 ---
 
-#### Ch 1: Document Intelligence / OCR
+#### Ch 1: Document Intelligence
 
 * [Overview](chapter01-index)
 * [Preface](chapter01-preface)
@@ -35,7 +35,7 @@
 
 ---
 
-#### Ch 2: LLM / Generative AI
+#### Ch 2: Clinical Text Generation
 
 * [Preface](chapter02-preface)
 * [2.1 — Patient Message Response Drafting](chapter02.01-patient-message-response-drafting)
@@ -61,7 +61,7 @@
 
 ---
 
-#### Ch 3: Anomaly Detection
+#### Ch 3: Anomaly & Outlier Detection
 
 * [Preface](chapter03-preface)
 * [3.1 — Duplicate Claim Detection](chapter03.01-duplicate-claim-detection)
@@ -87,7 +87,7 @@
 
 ---
 
-#### Ch 4: Personalization / Recommendation
+#### Ch 4: Recommendation & Personalization
 
 * [Preface](chapter04-preface)
 * [4.1 — Appointment Reminder Channel Optimization](chapter04.01-appointment-reminder-channel-optimization)
@@ -113,7 +113,7 @@
 
 ---
 
-#### Ch 5: Entity Resolution / Record Linkage
+#### Ch 5: Entity Resolution & Record Linkage
 
 * [Preface](chapter05-preface)
 * [5.1 — Internal Duplicate Patient Detection](chapter05.01-internal-duplicate-patient-detection)
@@ -139,7 +139,7 @@
 
 ---
 
-#### Ch 6: Cohort Analysis / Clustering
+#### Ch 6: Clustering & Patient Segmentation
 
 * [Preface](chapter06-preface)
 * [6.1 — Geographic Patient Clustering](chapter06.01-geographic-patient-clustering)
@@ -165,7 +165,7 @@
 
 ---
 
-#### Ch 7: Predictive Analytics / Risk Scoring
+#### Ch 7: Predictive Risk Modeling
 
 * [Preface](chapter07-preface)
 * [7.1 — Appointment No-Show Prediction](chapter07.01-appointment-no-show-prediction)
@@ -195,7 +195,7 @@
 
 ---
 
-#### Ch 8: NLP (Non-LLM)
+#### Ch 8: Clinical NLP & Information Extraction
 
 * [Preface](chapter08-preface)
 * [8.1 — Chief Complaint Classification](chapter08.01-chief-complaint-classification)
@@ -221,7 +221,7 @@
 
 ---
 
-#### Ch 9: Computer Vision / Medical Imaging
+#### Ch 9: Medical Imaging & Computer Vision
 
 * [Preface](chapter09-preface)
 * [9.1 — Image Quality Assessment](chapter09.01-image-quality-assessment)
@@ -247,7 +247,7 @@
 
 ---
 
-#### Ch 10: Speech / Voice AI
+#### Ch 10: Speech & Voice AI
 
 * [Preface](chapter10-preface)
 * [10.1 — IVR Call Routing Enhancement](chapter10.01-ivr-call-routing-enhancement)
@@ -273,7 +273,7 @@
 
 ---
 
-#### Ch 11: Conversational AI / Virtual Assistants
+#### Ch 11: Conversational AI & Virtual Agents
 
 * [Preface](chapter11-preface)
 * [11.1 — FAQ Chatbot](chapter11.01-faq-chatbot)
@@ -299,7 +299,7 @@
 
 ---
 
-#### Ch 12: Time Series Analysis / Forecasting
+#### Ch 12: Forecasting & Time-Series Analysis
 
 * [Preface](chapter12-preface)
 * [12.1 — Appointment Volume Forecasting](chapter12.01-appointment-volume-forecasting)
@@ -325,7 +325,7 @@
 
 ---
 
-#### Ch 13: Knowledge Graphs / Ontology
+#### Ch 13: Knowledge Graphs & Clinical Reasoning
 
 * [Preface](chapter13-preface)
 * [13.1 — Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)
@@ -351,7 +351,7 @@
 
 ---
 
-#### Ch 14: Optimization / Operations Research
+#### Ch 14: Optimization & Resource Allocation
 
 * [Preface](chapter14-preface)
 * [14.1 — Appointment Slot Optimization](chapter14.01-appointment-slot-optimization)
@@ -377,7 +377,7 @@
 
 ---
 
-#### Ch 15: Reinforcement Learning
+#### Ch 15: Sequential Decision-Making & Reinforcement Learning
 
 * [Preface](chapter15-preface)
 * [15.1 — Alert Threshold Optimization](chapter15.01-alert-threshold-optimization)

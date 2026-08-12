@@ -450,9 +450,9 @@ Last point, because it is specific to the use case: TEFCA is the substrate for p
 - **Recipe 5.7 (Longitudinal Patient Matching Across Name Changes):** The identity-history representation from 5.7 feeds the cross-network matcher's tolerance under the temporal-aware-matching extension. Sensitivity flags from 5.7 propagate through the cross-network response under the sensitivity-aware-matching extension.
 - **Recipe 5.8 (Privacy-Preserving Record Linkage):** PPRL may operate through TEFCA's routing layer for cross-organizational use cases where the trust framework prohibits direct exchange. The cross-network matcher's response can be a PPRL-encoded payload rather than a plaintext demographic-feature payload, depending on the use case.
 - **Recipe 5.10 (Deceased Patient Resolution):** Deceased-patient events from 5.10 propagate to the cross-network matcher; the cross-network responses suppress deceased-patient candidates per the use-case-appropriate handling.
-- **Recipe 7.x (Predictive Analytics):** Cohort definitions for risk-scoring may depend on cross-network linkages; the federated-analytics extension provides the population-scale analytic substrate for predictive analytics.
-- **Recipe 8.x (NLP / Traditional NLP):** Cross-organizational text-mining use cases may require the federation's routing layer to retrieve clinical notes from multiple participating organizations.
-- **Recipe 13.x (Knowledge Graphs):** Federated knowledge-graph construction across organizations may use TEFCA's routing layer for the entity-linkage step at federation scale.
+- **Recipe 7.x (Predictive Risk Modeling):** Cohort definitions for risk-scoring may depend on cross-network linkages; the federated-analytics extension provides the population-scale analytic substrate for predictive analytics.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** Cross-organizational text-mining use cases may require the federation's routing layer to retrieve clinical notes from multiple participating organizations.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Federated knowledge-graph construction across organizations may use TEFCA's routing layer for the entity-linkage step at federation scale.
 
 ---
 

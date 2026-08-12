@@ -262,9 +262,9 @@ One last point, because it's specific to this use case: the directory is often t
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** Provides the patient profile, preference store, and engagement event pipeline this recipe consumes; the patient context object used here is the same one used there.
 - **Recipe 4.2 (Patient Education Content Matching):** Shares the candidate-generation-plus-re-ranking pattern and the engagement attribution pipeline. The search and embedding infrastructure stood up here is reusable for content search variations.
 - **Recipe 4.7 (Care Management Program Enrollment):** Reuses the fairness re-ranking patterns from this recipe (exposure caps, safety-net floors) for a different resource-allocation problem.
-- **Recipe 5.x (Entity Resolution / Record Linkage):** The provider match-and-merge step in ingestion is itself an entity resolution problem; the techniques covered in Chapter 5 apply directly to provider deduplication and match scoring.
-- **Recipe 6.x (Cohort Analysis / Clustering):** Network adequacy analysis depends on cohort-level views of provider availability against member geographies. The clustering techniques in Chapter 6 support that analysis upstream of this recipe.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** Patient-facing assistants can call this recommender mid-conversation to surface providers when the patient describes a symptom or asks "who should I see?"
+- **Recipe 5.x (Entity Resolution & Record Linkage):** The provider match-and-merge step in ingestion is itself an entity resolution problem; the techniques covered in Chapter 5 apply directly to provider deduplication and match scoring.
+- **Recipe 6.x (Clustering & Patient Segmentation):** Network adequacy analysis depends on cohort-level views of provider availability against member geographies. The clustering techniques in Chapter 6 support that analysis upstream of this recipe.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Patient-facing assistants can call this recommender mid-conversation to surface providers when the patient describes a symptom or asks "who should I see?"
 
 ---
 

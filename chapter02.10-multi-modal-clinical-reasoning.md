@@ -239,10 +239,10 @@ One more thing, a personal note. The patients who benefit from this the most are
 - **Recipe 2.7 (Literature Search and Evidence Synthesis):** Retrieval and citation patterns that inform the guideline and case-analog layer of the reasoning pipeline.
 - **Recipe 2.8 (Ambient Clinical Documentation):** Produces the conversational-context modality that, in some variants, becomes an input to reasoning.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** The structured-data counterpart of multi-modal reasoning. Most of the architectural patterns (safety checks, retrieval, validation, provenance) are shared.
-- **Recipe 9.x (Computer Vision / Medical Imaging):** Cleared imaging AI components and vision-language model patterns that produce the imaging modality inputs. 
-- **Recipe 12.x (Time Series Analysis / Forecasting):** Trend and trajectory modeling for lab and vital-sign modalities. 
-- **Recipe 13.x (Knowledge Graphs / Ontology):** Relationship modeling across drugs, diseases, guidelines, and anatomical structures that can augment the retrieval layer. 
-- **Recipe 7.x (Predictive Analytics / Risk Scoring):** Risk scores as inputs to the reasoning layer and as triggers for reasoning runs. 
+- **Recipe 9.x (Medical Imaging & Computer Vision):** Cleared imaging AI components and vision-language model patterns that produce the imaging modality inputs. 
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Trend and trajectory modeling for lab and vital-sign modalities. 
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Relationship modeling across drugs, diseases, guidelines, and anatomical structures that can augment the retrieval layer. 
+- **Recipe 7.x (Predictive Risk Modeling):** Risk scores as inputs to the reasoning layer and as triggers for reasoning runs. 
 
 ---
 

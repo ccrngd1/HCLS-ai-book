@@ -769,10 +769,10 @@ The last thing: care coordination is the use case where the cumulative effect of
 - **Recipe 4.7 (Care Management Program Enrollment):** Chapter 4. The coordination assistant is one tier in a multi-tier care-management program; high-risk patients identified by the assistant may be promoted to higher-touch nurse case management.
 - **Recipe 5.5 (Cross-Facility Patient Matching):** Chapter 5. Cross-organizational data integration depends on patient-matching across organizations; the coordination assistant inherits the entity-resolution work.
 - **Recipe 5.6 (Claims-to-Clinical Data Linkage):** Chapter 5. The coordination assistant's claims-feed integration depends on claims-to-clinical linkage to make claims data clinically actionable.
-- **Recipe 7.x (Predictive Analytics, Chapter 7):** Risk scores including readmission-risk, ED-utilization-risk, and total-cost-of-care prediction inform coordination intensity.
+- **Recipe 7.x (Predictive Risk Modeling):** Risk scores including readmission-risk, ED-utilization-risk, and total-cost-of-care prediction inform coordination intensity.
 - **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. Voice-channel coordination support builds on voice-assistant ASR/TTS patterns.
-- **Recipe 12.x (Time Series Analysis):** Chapter 12. Longitudinal symptom-tracking and biometric-trend analysis benefits from time-series patterns.
-- **Recipe 13.x (Knowledge Graphs):** Chapter 13. Patient-and-care-network knowledge graphs (clinicians, organizations, relationships, referral histories, claims patterns) underpin coordination-state synthesis.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Chapter 12. Longitudinal symptom-tracking and biometric-trend analysis benefits from time-series patterns.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Chapter 13. Patient-and-care-network knowledge graphs (clinicians, organizations, relationships, referral histories, claims patterns) underpin coordination-state synthesis.
 
 ---
 

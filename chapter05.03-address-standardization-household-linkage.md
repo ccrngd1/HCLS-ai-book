@@ -316,9 +316,9 @@ Last point, because it is specific to the regulatory context: HIPAA's de-identif
 - **Recipe 5.8 (Privacy-Preserving Record Linkage):** Privacy-preserving household linkage uses the same cryptographic foundations as privacy-preserving identity linkage; closely related architecturally.
 - **Recipe 4.2 (Patient Education Content Matching):** Outreach personalization based on patient location requires standardized addresses for accurate geographic and SDOH targeting.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Adherence interventions often involve direct mail or in-home outreach; address quality directly affects intervention reach.
-- **Recipe 6.x (Cohort Analysis and Clustering):** Geographic and SDOH-derived cohorts depend on standardized addresses geocoded to census tract.
-- **Recipe 7.x (Predictive Analytics):** SDOH risk-adjustment models depend on standardized addresses for census-tract-level feature derivation.
-- **Recipe 13.x (Knowledge Graphs):** Household relationships and patient-location graphs build on the address-and-household substrate.
+- **Recipe 6.x (Clustering & Patient Segmentation):** Geographic and SDOH-derived cohorts depend on standardized addresses geocoded to census tract.
+- **Recipe 7.x (Predictive Risk Modeling):** SDOH risk-adjustment models depend on standardized addresses for census-tract-level feature derivation.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Household relationships and patient-location graphs build on the address-and-household substrate.
 
 ---
 

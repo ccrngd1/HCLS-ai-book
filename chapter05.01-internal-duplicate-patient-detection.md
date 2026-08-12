@@ -293,9 +293,9 @@ Last point, because it is specific to this domain: duplicate patient records are
 - **Recipe 5.8 (Privacy-Preserving Record Linkage):** Adds cryptographic layers to the matching primitives developed here for cross-organizational matching without raw-data exchange.
 - **Recipe 5.9 (National-Scale Patient Matching, TEFCA):** Extends the patterns to national-scale infrastructure with thousands of participating organizations.
 - **Recipe 5.10 (Deceased Patient Resolution):** Combines this recipe's deduplication with mortality-source matching for record reconciliation.
-- **Recipe 4.x (Personalization):** A clean MPI directly improves every personalization recipe in Chapter 4 by ensuring patient features are computed against complete, deduplicated histories.
-- **Recipe 7.x (Predictive Analytics):** Risk scores computed against a deduplicated patient base are more accurate than scores computed against fragmented records; the dedup is foundational for Chapter 7.
-- **Recipe 13.x (Knowledge Graphs):** A clean patient identity is the anchor for any patient-centric knowledge graph; the MPI from this recipe is the entity-resolution layer underneath the graph.
+- **Recipe 4.x (Recommendation & Personalization):** A clean MPI directly improves every personalization recipe in Chapter 4 by ensuring patient features are computed against complete, deduplicated histories.
+- **Recipe 7.x (Predictive Risk Modeling):** Risk scores computed against a deduplicated patient base are more accurate than scores computed against fragmented records; the dedup is foundational for Chapter 7.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** A clean patient identity is the anchor for any patient-centric knowledge graph; the MPI from this recipe is the entity-resolution layer underneath the graph.
 
 ---
 

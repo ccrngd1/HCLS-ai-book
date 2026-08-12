@@ -235,8 +235,8 @@ The fifth trap is shipping without an explicit equity commitment. Studies of nur
 - **Recipe 7.1+ (Predictive Analytics / Risk Scoring, Chapter 7):** The clinical-decision rules used in the triage bot are a specific class of risk-scoring tools.
 - **Recipe 10.1 (IVR Call Routing Enhancement):** Chapter 10. The voice-channel deployment of the triage bot integrates with the institution's IVR routing infrastructure.
 - **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for the triage bot builds on the voice assistant's ASR/TTS patterns.
-- **Recipe 12.x (Time Series Analysis):** Chapter 12. The outcome-correlation pipeline benefits from time-series patterns for tracking subsequent care utilization.
-- **Recipe 13.x (Knowledge Graphs):** Chapter 13. The clinical-protocol corpus may be modeled as a knowledge graph for richer cross-protocol querying.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Chapter 12. The outcome-correlation pipeline benefits from time-series patterns for tracking subsequent care utilization.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Chapter 13. The clinical-protocol corpus may be modeled as a knowledge graph for richer cross-protocol querying.
 
 ---
 

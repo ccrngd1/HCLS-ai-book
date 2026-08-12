@@ -455,8 +455,8 @@ The last thing, because it is the easiest one to get wrong: medical dictation pr
 - **Recipe 10.7 (Ambient Clinical Documentation):** Same chapter, the most clinically-related recipe. Ambient is the conversational, multi-speaker, passively-captured analog of intentional dictation. Many institutions deploy both; the integration patterns are an emerging engineering practice.
 - **Recipe 2.6 (Clinical Note Summarization):** Chapter 2, LLM-driven post-processing of clinical text. The LLM-formatting layer in this recipe shares engineering patterns with note summarization; the faithfulness concerns are similar.
 - **Recipe 2.3 (Clinical Documentation Improvement):** Chapter 2, LLM-driven note quality. The dictation quality-scoring extension above draws from this pattern.
-- **Recipe 8.x (Traditional NLP):** The structured-field extraction draws from the named-entity-recognition and clinical-NLP patterns covered in chapter 8.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** The voice-command vocabulary management and command-versus-content disambiguation patterns map onto the conversational-assistant patterns in chapter 11.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** The structured-field extraction draws from the named-entity-recognition and clinical-NLP patterns covered in chapter 8.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** The voice-command vocabulary management and command-versus-content disambiguation patterns map onto the conversational-assistant patterns in chapter 11.
 
 ---
 

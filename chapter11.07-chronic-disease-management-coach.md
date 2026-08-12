@@ -743,8 +743,8 @@ The last thing: the chronic disease coach is the recipe in this chapter where th
 - **Recipe 4.10 (Dynamic Treatment Regime Recommendation):** Chapter 4. Dynamic-treatment-regime recommendations may feed the care-plan-revision process informed by coach-tracked outcomes.
 - **Recipe 7.1+ (Predictive Analytics / Risk Scoring, Chapter 7):** Risk scores inform coach intensity, escalation thresholds, and care-team-attention prioritization.
 - **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for coaching builds on the voice assistant's ASR/TTS patterns.
-- **Recipe 12.x (Time Series Analysis):** Chapter 12. Biometric-data trend analysis benefits from time-series patterns; outcome-correlation benefits from longitudinal cohort analysis.
-- **Recipe 13.x (Knowledge Graphs):** Chapter 13. The clinical-guideline corpus may be modeled as a knowledge graph for richer cross-condition querying.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Chapter 12. Biometric-data trend analysis benefits from time-series patterns; outcome-correlation benefits from longitudinal cohort analysis.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Chapter 13. The clinical-guideline corpus may be modeled as a knowledge graph for richer cross-condition querying.
 
 ---
 

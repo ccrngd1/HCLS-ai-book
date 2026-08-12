@@ -188,8 +188,8 @@ Finally: the forecast is the conversation, not the artifact. A forecast that is 
 - **Recipe 12.5 (Hospital Census Forecasting):** Inpatient census forecasting that integrates with regional epidemic forecasts to anticipate surge-driven admissions and ICU capacity needs.
 - **Recipe 12.8 (Disease Progression Trajectory Modeling):** Per-patient long-horizon forecasting that shares the calibration and scenario-forecasting machinery used here at the population level.
 - **Recipe 12.4 (Lab Result Trend Analysis):** Per-patient lab trajectory tracking; the chronic-trend-detection patterns extend conceptually to population-level signal-trajectory tracking in this recipe.
-- **Recipe 13.x (Knowledge Graphs and Ontology):** Pathogen taxonomies, ICD-10-coded condition hierarchies, and surveillance-system metadata live in the broader clinical-terminology infrastructure covered there.
-- **Recipe 14.x (Optimization):** Resource allocation problems (PPE distribution, vaccine-clinic siting, ventilator allocation) that consume epidemic forecasts as their primary input.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Pathogen taxonomies, ICD-10-coded condition hierarchies, and surveillance-system metadata live in the broader clinical-terminology infrastructure covered there.
+- **Recipe 14.x (Optimization & Resource Allocation):** Resource allocation problems (PPE distribution, vaccine-clinic siting, ventilator allocation) that consume epidemic forecasts as their primary input.
 
 ---
 

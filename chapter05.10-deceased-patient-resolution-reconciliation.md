@@ -414,8 +414,8 @@ Last point, because it is specific to the use case: the deceased-patient-resolut
 - **Recipe 5.8 (Privacy-Preserving Record Linkage):** The privacy-preserving-linkage encoded payloads are updated to reflect the deceased status with appropriate freshness signaling; the cross-organizational PPRL flows accommodate the deceased-patient handling.
 - **Recipe 5.9 (National-Scale Patient Matching):** The cross-network match infrastructure suppresses deceased-patient candidates with appropriate per-jurisdiction handling; the TEFCA federation may propagate the deceased-patient signal to participating organizations through the federation routing.
 - **Recipe 3.6 (Healthcare Fraud, Waste, and Abuse Detection):** Deceased-patient pharmacy-dispensing patterns and deceased-patient claims-submission patterns are fraud signals; the deceased-patient signal flows to 3.6's fraud-detection pipeline.
-- **Recipe 7.x (Predictive Analytics):** Cohort definitions for risk-scoring depend on accurate deceased-patient data; the cohort-survival analyses rely on the consolidated date-of-death from recipe 5.10.
-- **Recipe 12.x (Time Series Analysis):** Time-series cohort analyses rely on the consolidated date-of-death for the right-censoring-and-event-time computation.
+- **Recipe 7.x (Predictive Risk Modeling):** Cohort definitions for risk-scoring depend on accurate deceased-patient data; the cohort-survival analyses rely on the consolidated date-of-death from recipe 5.10.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Time-series cohort analyses rely on the consolidated date-of-death for the right-censoring-and-event-time computation.
 
 ---
 

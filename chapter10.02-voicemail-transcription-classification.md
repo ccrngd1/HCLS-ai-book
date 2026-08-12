@@ -421,8 +421,8 @@ The last thing, because it's specific to healthcare and to this recipe in partic
 - **Recipe 10.4 (Medical Transcription / Dictation):** Shares Transcribe Medical and the medical-vocabulary tuning concerns; the dictation use case has higher accuracy requirements but uses the same core ASR substrate.
 - **Recipe 10.6 (Speech-to-Text for Telehealth Documentation):** Shares the streaming-ASR-and-confidence-aware pipeline patterns; adds multi-party diarization that voicemail does not need.
 - **Recipe 10.7 (Ambient Clinical Documentation):** The structured-output-from-speech pattern at a higher complexity tier; voicemail triage is the simpler analog of the ambient documentation pipeline.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** The intent and urgency classification techniques used in this recipe map directly onto the conversational AI assistants in chapter 11.
-- **Recipe 8.x (Traditional NLP):** The intent and urgency classification, entity extraction, and rule-based scanning techniques draw from the broader NLP methods covered in chapter 8.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** The intent and urgency classification techniques used in this recipe map directly onto the conversational AI assistants in chapter 11.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** The intent and urgency classification, entity extraction, and rule-based scanning techniques draw from the broader NLP methods covered in chapter 8.
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** The voicemail pipeline produces signal that feeds the channel-optimization model: patients who reliably respond to voicemail, patients who never call back, patients who consistently use after-hours voicemail.
 - **Recipe 5.1 (Internal Duplicate Patient Detection):** The ANI-based patient lookup hits the same duplicate-patient problem; this recipe consumes the patient-index pipeline that recipe 5.1 produces.
 - **Recipe 2.5 (After-Visit Summary Generation):** The summarization-from-conversation pattern used in the voicemail triage record's machine-generated summary draws from the LLM-summarization techniques covered in chapter 2.

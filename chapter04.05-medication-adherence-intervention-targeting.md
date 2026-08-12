@@ -322,10 +322,10 @@ Last point, because it's specific to this use case: medication non-adherence is 
 - **Recipe 4.6 (Care Gap Prioritization):** Adherence is one form of care gap; the prioritization patterns from 4.6 apply to selecting which adherence target to address first when a patient has multiple non-adherent medications.
 - **Recipe 4.7 (Care Management Program Enrollment):** A patient with multiple non-adherent medications and high clinical risk is a candidate for care-management enrollment; this recipe and 4.7 share inputs and patients, and the cross-recipe orchestration matters.
 - **Recipe 4.10 (Dynamic Treatment Regime Recommendation):** The sequential-intervention extension above is a small step toward 4.10; both share the multi-time-step decision pattern.
-- **Recipe 7.x (Predictive Analytics / Risk Scoring):** The clinical-need model in this recipe is a risk-scoring problem; Chapter 7's risk-scoring patterns and validation methodology apply directly.
-- **Recipe 8.x (NLP Non-LLM):** Pharmacist consult notes can be parsed by NLP techniques to extract structured barrier labels; the labels feed the supervised barrier classifier. Free-text-to-structured-label pipelines are a Chapter 8 problem.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** Member-facing assistants can call this recommender to answer "why am I getting reminders for X" or to capture a member-reported barrier directly through conversation.
-- **Recipe 14.x (Optimization / Operations Research):** The heterogeneous-capacity allocator graduates to integer programming or column-generation when constraints multiply; Chapter 14 covers the formal techniques.
+- **Recipe 7.x (Predictive Risk Modeling):** The clinical-need model in this recipe is a risk-scoring problem; Chapter 7's risk-scoring patterns and validation methodology apply directly.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** Pharmacist consult notes can be parsed by NLP techniques to extract structured barrier labels; the labels feed the supervised barrier classifier. Free-text-to-structured-label pipelines are a Chapter 8 problem.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Member-facing assistants can call this recommender to answer "why am I getting reminders for X" or to capture a member-reported barrier directly through conversation.
+- **Recipe 14.x (Optimization & Resource Allocation):** The heterogeneous-capacity allocator graduates to integer programming or column-generation when constraints multiply; Chapter 14 covers the formal techniques.
 
 ---
 

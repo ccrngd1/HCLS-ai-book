@@ -327,10 +327,10 @@ The moral tension: FWA work involves accusing people, sometimes wrongly. A wrong
 - **Recipe 3.4 (Medication Dispensing Anomalies):** Pharmacy-specific fraud patterns (controlled substance diversion, prescription mills) overlap with medication dispensing anomaly detection. Shared architecture for pharmacy claim processing and prescriber-dispenser graph analysis.
 - **Recipe 3.5 (Lab Result Outlier Detection):** Toxicology lab billing patterns (one of the most prolific FWA categories) benefit from both lab-side outlier detection and FWA-side billing pattern detection. The same lab showing anomalous testing intensity and anomalous billing patterns is a strong multi-layered signal.
 - **Recipe 3.9 (EHR Access Pattern Anomalies):** Insider fraud (employees accessing data to facilitate fraud schemes) uses access pattern anomaly techniques. Shared architectural patterns for behavior-baseline detection.
-- **Recipe 5.x (Entity Resolution):** Entity resolution is foundational to FWA detection. Provider, organization, patient, and ownership entity resolution drives the quality of the entire downstream pipeline.
+- **Recipe 5.x (Entity Resolution & Record Linkage):** Entity resolution is foundational to FWA detection. Provider, organization, patient, and ownership entity resolution drives the quality of the entire downstream pipeline.
 - **Recipe 8.x (NLP / Clinical Text Normalization):** Documentation review for medical necessity and clone detection uses clinical NLP techniques.
-- **Recipe 13.x (Knowledge Graphs):** The FWA relationship graph is a domain-specific clinical and financial knowledge graph. Chapter 13 covers graph construction and maintenance patterns that apply directly.
-- **Recipe 2.x (LLM / Generative AI):** LLM-assisted documentation review, case summarization, and investigator assistance use patterns from Chapter 2.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** The FWA relationship graph is a domain-specific clinical and financial knowledge graph. Chapter 13 covers graph construction and maintenance patterns that apply directly.
+- **Recipe 2.x (Clinical Text Generation):** LLM-assisted documentation review, case summarization, and investigator assistance use patterns from Chapter 2.
 
 ---
 

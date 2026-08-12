@@ -184,7 +184,7 @@ And the trap worth flagging, because it's the most common failure mode I've seen
 - **Recipe 4.2 (Patient Education Content Matching):** Consumes the patient preference and engagement data this recipe produces; demonstrates content-level personalization on top of channel-level personalization.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Extends the bandit pattern from channel selection to intervention-type selection, where the action space is larger and the reward horizon is longer.
 - **Recipe 4.6 (Care Gap Prioritization):** Reuses the same engagement-history feature store this recipe populates, applied to a different decision (which care gap to surface to whom).
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** The reminder confirmation dialog is a natural touchpoint for light conversational AI (handling reschedule requests, answering FAQ-level questions). The recipes in Chapter 11 build the assistant; this recipe hands it the channel.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** The reminder confirmation dialog is a natural touchpoint for light conversational AI (handling reschedule requests, answering FAQ-level questions). The recipes in Chapter 11 build the assistant; this recipe hands it the channel.
 
 ---
 

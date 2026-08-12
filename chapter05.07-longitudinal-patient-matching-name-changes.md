@@ -386,7 +386,7 @@ Last point, because it is specific to the regulatory context: the information-bl
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Handwritten notes from prior decades may surface names different from the current canonical name; the recipe's historical-record retrofit consumes the digitized notes as evidence for backfill.
 - **Recipe 1.10 (Historical Chart Migration):** Migrating paper or legacy-system charts surfaces records under names that may not be in the current institution's name history; the migration's matcher hands off to this recipe's resolution path.
 - **Recipe 2.6 (Clinical Note Summarization):** Notes referencing the patient by name may be regenerated under the current name (or kept under the original name with a sensitivity-aware overlay) depending on the access-control envelope; the summarization service consumes the envelope at render time.
-- **Recipe 7.x (Predictive Analytics):** Cohort definitions for risk-scoring depend on the unified longitudinal identity; missed name-change linkages produce fragmented cohorts and biased model training. The longitudinal-name-change recipe is upstream of every multi-year predictive-analytics use case.
+- **Recipe 7.x (Predictive Risk Modeling):** Cohort definitions for risk-scoring depend on the unified longitudinal identity; missed name-change linkages produce fragmented cohorts and biased model training. The longitudinal-name-change recipe is upstream of every multi-year predictive-analytics use case.
 
 ---
 

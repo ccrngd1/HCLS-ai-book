@@ -424,8 +424,8 @@ Speech-therapy assessment and monitoring, done well, is one of the more rewardin
 - **Recipe 2.5 (After-Visit Summary Generation):** Chapter 2, LLM-driven patient-facing summary generation. The patient-and-parent-facing summary patterns from 2.5 apply directly to family-summary generation.
 - **Recipe 2.6 (Clinical Note Summarization):** Chapter 2, LLM-driven structured-data-to-prose generation. The SLP-report generation patterns are closely related.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Chapter 4, personalization patterns. Home-practice prompt scheduling and parent-coaching content selection use related personalization patterns.
-- **Recipe 7.x (Predictive Analytics chapter):** Chapter 7, risk scoring and trajectory analysis. Speech-therapy progress prediction and discharge-readiness scoring are predictive-analytics extensions of the longitudinal data.
-- **Recipe 8.x (NLP chapter):** Chapter 8, traditional NLP. Linguistic-feature extraction from connected-speech transcripts uses traditional NLP primitives in addition to the LLM-driven extraction.
+- **Recipe 7.x (Predictive Risk Modeling):** Chapter 7, risk scoring and trajectory analysis. Speech-therapy progress prediction and discharge-readiness scoring are predictive-analytics extensions of the longitudinal data.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** Chapter 8, traditional NLP. Linguistic-feature extraction from connected-speech transcripts uses traditional NLP primitives in addition to the LLM-driven extraction.
 
 ---
 

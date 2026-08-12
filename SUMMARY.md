@@ -6,7 +6,7 @@ An O'Reilly-style technical cookbook covering AI/ML applications in healthcare. 
 
 ## Current Status
 
-- **Chapter 1 (Document Intelligence / OCR): COMPLETE** — 10 recipes written, reviewed, and edited
+- **Chapter 1 (Document Intelligence): COMPLETE** — 10 recipes written, reviewed, and edited
 - **Chapters 2-15: NOT STARTED** — planning docs exist in `categories/` and `planning/`
 
 ## Structure
@@ -31,21 +31,21 @@ An O'Reilly-style technical cookbook covering AI/ML applications in healthcare. 
 
 | # | Category | Recipes | Planning Doc |
 |---|----------|---------|--------------|
-| 1 | Document Intelligence / OCR | 10 | DONE |
-| 2 | LLM / Generative AI | 10 | categories/02-llm-generative.md |
-| 3 | Anomaly Detection | 10 | categories/03-anomaly-detection.md |
-| 4 | Personalization / Recommendation | 10 | categories/04-personalization.md |
-| 5 | Entity Resolution / Record Linkage | 10 | categories/05-entity-resolution.md |
-| 6 | Cohort Analysis / Clustering | 10 | categories/06-cohort-clustering.md |
-| 7 | Predictive Analytics / Risk Scoring | 10 | categories/07-predictive-analytics.md |
-| 8 | NLP (Non-LLM) | 10 | categories/08-nlp-traditional.md |
-| 9 | Computer Vision / Medical Imaging | 10 | categories/09-computer-vision.md |
-| 10 | Speech / Voice AI | 10 | categories/10-speech-voice.md |
-| 11 | Conversational AI / Virtual Assistants | 10 | categories/11-conversational-ai.md |
-| 12 | Time Series Analysis / Forecasting | 10 | categories/12-time-series.md |
-| 13 | Knowledge Graphs / Ontology | 10 | categories/13-knowledge-graphs.md |
-| 14 | Optimization / Operations Research | 10 | categories/14-optimization.md |
-| 15 | Reinforcement Learning | 10 | categories/15-reinforcement-learning.md |
+| 1 | Document Intelligence | 10 | DONE |
+| 2 | Clinical Text Generation | 10 | categories/02-llm-generative.md |
+| 3 | Anomaly & Outlier Detection | 10 | categories/03-anomaly-detection.md |
+| 4 | Recommendation & Personalization | 10 | categories/04-personalization.md |
+| 5 | Entity Resolution & Record Linkage | 10 | categories/05-entity-resolution.md |
+| 6 | Clustering & Patient Segmentation | 10 | categories/06-cohort-clustering.md |
+| 7 | Predictive Risk Modeling | 10 | categories/07-predictive-analytics.md |
+| 8 | Clinical NLP & Information Extraction | 10 | categories/08-nlp-traditional.md |
+| 9 | Medical Imaging & Computer Vision | 10 | categories/09-computer-vision.md |
+| 10 | Speech & Voice AI | 10 | categories/10-speech-voice.md |
+| 11 | Conversational AI & Virtual Agents | 10 | categories/11-conversational-ai.md |
+| 12 | Forecasting & Time-Series Analysis | 10 | categories/12-time-series.md |
+| 13 | Knowledge Graphs & Clinical Reasoning | 10 | categories/13-knowledge-graphs.md |
+| 14 | Optimization & Resource Allocation | 10 | categories/14-optimization.md |
+| 15 | Sequential Decision-Making & Reinforcement Learning | 10 | categories/15-reinforcement-learning.md |
 
 ## Writing Rules
 

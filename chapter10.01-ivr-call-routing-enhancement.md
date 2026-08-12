@@ -342,10 +342,10 @@ The last thing, because it's specific to healthcare: the IVR is, for many patien
 - **Recipe 10.5 (Patient-Facing Voice Assistant):** Extends the IVR pattern to a richer voice assistant that handles broader request scopes; the underlying conversational AI infrastructure is shared.
 - **Recipe 10.6 (Speech-to-Text for Telehealth Documentation):** Real-time multi-party diarization and transcription; reuses the streaming-ASR-and-confidence-aware pipeline patterns.
 - **Recipe 10.10 (Multilingual Real-Time Medical Interpretation):** The multilingual extension of the IVR's NLU layer, with much higher latency and accuracy requirements; shares the streaming-translation infrastructure.
-- **Recipe 11.x (Conversational AI / Virtual Assistants):** The full conversational-AI assistant pattern in a digital channel; shares intent design and dialog management with the voice-channel IVR.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** The full conversational-AI assistant pattern in a digital channel; shares intent design and dialog management with the voice-channel IVR.
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** The IVR is one channel in the broader patient-communication channel mix; the channel-optimization model can recommend voice as the right channel for specific patient segments.
 - **Recipe 5.1 (Internal Duplicate Patient Detection):** The caller-verification step has to handle the case where a phone number matches multiple records (which is exactly the duplicate-patient problem); the IVR consumes the patient-index pipeline.
-- **Recipe 8.x (Traditional NLP):** The intent-classification techniques used in the IVR draw from the broader NLP-classification methods covered in chapter 8.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** The intent-classification techniques used in the IVR draw from the broader NLP-classification methods covered in chapter 8.
 
 ---
 

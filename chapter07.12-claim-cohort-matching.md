@@ -178,8 +178,8 @@ Let's be real about what this approach can and can't do.
 ## Related Recipes
 
 - **Recipe 7.11 (Claim Denial / Prior-Auth Determination Prediction):** The primary supervised classifier this recipe complements. Use 7.11 as the workhorse predictor; use 7.12 for confidence estimation, novelty detection, and case-based explanation.
-- **Recipe 6.x (Cohort Analysis / Clustering):** The clustering techniques for denial archetype segmentation draw from the same algorithmic foundations as the patient clustering recipes in Chapter 6. If you're building denial archetype clusters, the infrastructure patterns from Chapter 6 apply directly.
-- **Recipe 5.x (Entity Resolution / Record Linkage):** The similarity search and distance-metric concepts here are cousins of the record-matching techniques in Chapter 5. Both involve computing feature vectors for healthcare records and finding the closest matches. The difference is intent: Chapter 5 asks "is this the same entity?"; this recipe asks "did similar entities have similar outcomes?"
+- **Recipe 6.x (Clustering & Patient Segmentation):** The clustering techniques for denial archetype segmentation draw from the same algorithmic foundations as the patient clustering recipes in Chapter 6. If you're building denial archetype clusters, the infrastructure patterns from Chapter 6 apply directly.
+- **Recipe 5.x (Entity Resolution & Record Linkage):** The similarity search and distance-metric concepts here are cousins of the record-matching techniques in Chapter 5. Both involve computing feature vectors for healthcare records and finding the closest matches. The difference is intent: Chapter 5 asks "is this the same entity?"; this recipe asks "did similar entities have similar outcomes?"
 
 ---
 

@@ -695,7 +695,7 @@ The last thing: mental-health support bots are a category where the operational,
 - **Recipe 4.7 (Care Management Program Enrollment):** Chapter 4. Patients identified as appropriate for behavioral-health care management may receive bot support as part of their program.
 - **Recipe 7.1+ (Predictive Analytics / Risk Scoring, Chapter 7):** Risk scores including suicide-risk and hospitalization-risk prediction inform bot intensity, screening sensitivity, and care-team-attention prioritization.
 - **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. Voice-channel mental-health support builds on voice-assistant ASR/TTS patterns with crisis-pathway integrity preserved.
-- **Recipe 12.x (Time Series Analysis):** Chapter 12. Mood and symptom-tracking trend analysis benefits from time-series patterns.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Chapter 12. Mood and symptom-tracking trend analysis benefits from time-series patterns.
 
 ---
 

@@ -177,11 +177,11 @@ A note about patient engagement. The patient-facing narrative is the surface are
 - **Recipe 4.7 (Care Management Program Enrollment):** Care management enrollment status from 4.7 determines the care manager's role in the plan; an enrolled patient has the care manager as a primary owner; an unenrolled patient sees the program as a candidate action.
 - **Recipe 4.8 (Treatment Response Prediction):** CATE estimates from 4.8 inform treatment-related actions in 4.9. The plan integrates the comparison-briefing output for treatment-decision actions; the regulatory posture from 4.8 carries into the treatment-related sections of the plan.
 - **Recipe 4.10 (Dynamic Treatment Regime Recommendation):** 4.9 is the substrate for 4.10. 4.9 produces the plan at a point in time; 4.10 produces sequences of plan adjustments over time as the patient's state evolves.
-- **Recipe 2.x (LLM / Generative AI):** The narrative generation and validator pattern uses techniques developed across Chapter 2; the validator pattern from 2.5 (After-Visit Summary) and 2.9 (Clinical Decision Support Synthesis) applies directly.
-- **Recipe 7.x (Predictive Analytics / Risk Scoring):** Risk-stratification scores feed the plan input record; high-risk patients get more frequent plan review cadences and more action-focused plans.
-- **Recipe 12.x (Time Series Analysis / Forecasting):** Disease-trajectory forecasting from Chapter 12 informs the goal horizons and the action timing.
-- **Recipe 13.x (Knowledge Graphs):** The clinical content library, with relationships between conditions, goals, actions, contraindications, and guideline references, is naturally modeled as a knowledge graph at higher sophistication levels.
-- **Recipe 11.x (Conversational AI):** Patient-facing conversational interfaces can deliver and adapt the plan interactively, leveraging the structured plan as the source of truth for the conversation.
+- **Recipe 2.x (Clinical Text Generation):** The narrative generation and validator pattern uses techniques developed across Chapter 2; the validator pattern from 2.5 (After-Visit Summary) and 2.9 (Clinical Decision Support Synthesis) applies directly.
+- **Recipe 7.x (Predictive Risk Modeling):** Risk-stratification scores feed the plan input record; high-risk patients get more frequent plan review cadences and more action-focused plans.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Disease-trajectory forecasting from Chapter 12 informs the goal horizons and the action timing.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** The clinical content library, with relationships between conditions, goals, actions, contraindications, and guideline references, is naturally modeled as a knowledge graph at higher sophistication levels.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Patient-facing conversational interfaces can deliver and adapt the plan interactively, leveraging the structured plan as the source of truth for the conversation.
 
 ---
 

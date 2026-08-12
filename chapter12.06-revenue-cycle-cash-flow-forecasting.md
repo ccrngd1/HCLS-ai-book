@@ -153,8 +153,8 @@ The thing I would do differently if I were starting over: build the per-payer ba
 - **Recipe 12.3 (ED Arrival Forecasting):** The canonical inflow-forecast template that chapter 12 establishes; this recipe extends the pattern from operational arrivals to financial inflows.
 - **Recipe 12.4 (Lab Result Trend Analysis):** Adjacent recipe sharing the survival-style modeling framing and the harmonization-first discipline. The FHIR-adjacent ingestion pattern applies to the 837/835 feed here.
 - **Recipe 12.5 (Hospital Census Forecasting):** Operational counterpart to this financial recipe. The "flow, not volume" framing from census forecasting carries over: cash inflow is a flow of payments, not a static AR balance.
-- **Recipe 13.x (Knowledge Graphs / Ontology):** The contract-metadata layer in this recipe (payer hierarchies, plan hierarchies, contract effective dates, fee-schedule mappings) is a small knowledge graph in disguise. Chapter 13's modeling patterns apply directly.
-- **Recipe 14.x (Optimization / Operations Research):** The downstream consumer of cash-flow forecasts: working-capital optimization, payer-mix optimization, and AR-follow-up prioritization are all optimization problems that consume the prediction intervals this recipe produces.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** The contract-metadata layer in this recipe (payer hierarchies, plan hierarchies, contract effective dates, fee-schedule mappings) is a small knowledge graph in disguise. Chapter 13's modeling patterns apply directly.
+- **Recipe 14.x (Optimization & Resource Allocation):** The downstream consumer of cash-flow forecasts: working-capital optimization, payer-mix optimization, and AR-follow-up prioritization are all optimization problems that consume the prediction intervals this recipe produces.
 
 ---
 

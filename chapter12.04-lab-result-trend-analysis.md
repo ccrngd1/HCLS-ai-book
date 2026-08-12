@@ -117,7 +117,7 @@ Finally: the explanation matters as much as the detection. Clinicians are patter
 - **Recipe 12.8 (Disease Progression Trajectory Modeling):** The longer-horizon, multi-lab counterpart that models full disease trajectories rather than single-lab trends. Builds on the harmonization and baseline layers used here.
 - **Recipe 3.5 (Lab Result Outlier Detection):** Single-value outlier detection on the same data stream. Complementary: outlier detection catches the dramatic single-value spikes; trend analysis catches the slow drifts.
 - **Recipe 3.7 (Patient Deterioration Early Warning):** Multi-modal early warning that uses lab trends as one input alongside vital signs and other clinical signals.
-- **Recipe 13.x (Knowledge Graphs / Ontology):** LOINC and UCUM live in the broader clinical terminology ecosystem covered there. Harmonization quality benefits from the terminology services that chapter develops.
+- **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** LOINC and UCUM live in the broader clinical terminology ecosystem covered there. Harmonization quality benefits from the terminology services that chapter develops.
 
 ---
 

@@ -415,7 +415,7 @@ Last point, because it is specific to the regulatory context: information-blocki
 - **Recipe 2.6 (Clinical Note Summarization):** Linked encounters with their constituent claims are richer summarization inputs than encounters alone; the claims context informs the summary's framing for cost-and-quality discussions.
 - **Recipe 3.1 (Duplicate Claim Detection):** Duplicate-claim detection runs on the claims side; the linkage's claim-clustering step reuses the same claim-version-and-resubmission logic.
 - **Recipe 3.6 (Healthcare Fraud, Waste, and Abuse Detection):** Linked encounters where the claims and clinical data disagree substantially are signals for the fraud-detection pipeline; the link surfaces the candidates for downstream analysis.
-- **Recipe 7.x (Predictive Analytics):** Risk-scoring features depend heavily on linked claims-and-clinical data; readmission prediction, total-cost-of-care prediction, and condition-progression models all consume the linkage output.
+- **Recipe 7.x (Predictive Risk Modeling):** Risk-scoring features depend heavily on linked claims-and-clinical data; readmission prediction, total-cost-of-care prediction, and condition-progression models all consume the linkage output.
 
 ---
 

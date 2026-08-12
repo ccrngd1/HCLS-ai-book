@@ -310,11 +310,11 @@ Lives are saved sometimes. I want to say this clearly because it's easy to get l
 - **Recipe 3.4 (Medication Dispensing Anomalies):** Some deterioration events are medication-related (opioid-induced respiratory depression, insulin-induced hypoglycemia). Integration of medication-event signals into deterioration prediction overlaps with anomaly detection on dispensing patterns.
 - **Recipe 3.5 (Lab Result Outlier Detection):** Lab outliers are a feature class for deterioration prediction. The lab outlier detection pipeline produces clean, contextualized lab features that the deterioration model consumes.
 - **Recipe 3.8 (Readmission Risk Anomaly Detection):** Post-discharge deterioration is the same phenomenon, monitored on a different timescale and through different sensors. Many architectural patterns transfer.
-- **Recipe 7.x (Predictive Analytics / Risk Scoring):** Deterioration prediction is a specific application of clinical risk scoring. Chapter 7 covers the broader patterns for risk model construction and validation that apply here.
-- **Recipe 12.x (Time Series Analysis / Forecasting):** Trajectory features and time-series modeling techniques for deterioration overlap heavily with time-series forecasting patterns.
-- **Recipe 2.x (LLM / Generative AI):** LLM-based explanation generation, end-of-shift summaries, and case narrative drafting use patterns from Chapter 2.
-- **Recipe 8.x (NLP / Traditional):** Nursing note feature extraction (Rothman-Index-style) uses NLP techniques covered in Chapter 8.
-- **Recipe 11.x (Conversational AI):** Some deterioration alerts are surfaced via clinical chatbot interfaces ("What's going on with bed 17?"); patterns in Chapter 11 apply.
+- **Recipe 7.x (Predictive Risk Modeling):** Deterioration prediction is a specific application of clinical risk scoring. Chapter 7 covers the broader patterns for risk model construction and validation that apply here.
+- **Recipe 12.x (Forecasting & Time-Series Analysis):** Trajectory features and time-series modeling techniques for deterioration overlap heavily with time-series forecasting patterns.
+- **Recipe 2.x (Clinical Text Generation):** LLM-based explanation generation, end-of-shift summaries, and case narrative drafting use patterns from Chapter 2.
+- **Recipe 8.x (Clinical NLP & Information Extraction):** Nursing note feature extraction (Rothman-Index-style) uses NLP techniques covered in Chapter 8.
+- **Recipe 11.x (Conversational AI & Virtual Agents):** Some deterioration alerts are surfaced via clinical chatbot interfaces ("What's going on with bed 17?"); patterns in Chapter 11 apply.
 
 ---
 
