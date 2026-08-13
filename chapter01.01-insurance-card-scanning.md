@@ -6,7 +6,7 @@
 
 ## The Problem
 
-Picture the front desk at a primary care clinic on a Monday morning. Six patients are already waiting. The person checking them in is asking each one to hand over their insurance card, typing the member ID by hand into the EHR, squinting at the group number, asking "is that a zero or an O?" The patient behind them is sighing. The phone is ringing.
+Picture the front desk at a primary care clinic on a Monday morning. Six patients are already waiting. The person checking them in is asking each one to hand over their insurance card, typing the member ID by hand into the electronic health record (EHR), squinting at the group number, asking "is that a zero or an O?" The patient behind them is sighing. The phone is ringing.
 
 This is not a rare scenario. It's the default state of healthcare administration in 2026.
 
@@ -22,7 +22,7 @@ Let's talk about how this works.
 
 ### OCR: The Basics
 
-OCR stands for Optical Character Recognition. At its simplest, it's the process of taking an image of text and turning it into a machine-readable string. The concept goes back to the 1970s, but modern OCR is a completely different beast. Early systems were template-matching engines: they'd compare pixels against stored character shapes. Brittle, font-dependent, and deeply unhappy about anything that wasn't clean laser-printed text in a known typeface.
+Optical character recognition (OCR), at its simplest, is the process of taking an image of text and turning it into a machine-readable string. The concept goes back to the 1970s, but modern OCR is a completely different beast. Early systems were template-matching engines: they'd compare pixels against stored character shapes. Brittle, font-dependent, and deeply unhappy about anything that wasn't clean laser-printed text in a known typeface.
 
 Modern OCR uses deep learning. A convolutional neural network processes the image, identifies character regions, and classifies each region into a character. The models are trained on millions of document images across languages, fonts, handwriting styles, and image qualities. The result is something that can read a crumpled Post-it note photographed at an angle under fluorescent lighting and get most of it right.
 
@@ -79,7 +79,7 @@ At a conceptual level, the pipeline looks like this:
 
 **Normalize Fields:** The extracted key-value pairs come back with whatever labels the card happened to use. You need a normalization layer that maps "Mem ID", "Member #", "Subscriber ID", and "ID Number" all to a canonical `member_id` field. This mapping is straightforward to build but requires ongoing maintenance as you encounter new payer layouts. It's not glamorous work. It's necessary work.
 
-**Store:** Structured extraction results need to live somewhere durable and queryable. A document store, relational database, or key-value store all work here. The right choice depends on your access patterns: are you looking up by member ID? By scan date? By payer? In healthcare, you also need to think about encryption at rest and audit logging, because insurance cards contain PHI.
+**Store:** Structured extraction results need to live somewhere durable and queryable. A document store, relational database, or key-value store all work here. The right choice depends on your access patterns: are you looking up by member ID? By scan date? By payer? In healthcare, you also need to think about encryption at rest and audit logging, because insurance cards contain protected health information (PHI).
 
 **Expose via API:** Downstream systems (EHRs, eligibility verification services, patient portals) need to consume the structured data. A REST or GraphQL API is the standard interface. Design it around the consuming system's needs: a point-of-care app needs a synchronous response in under 3 seconds; a batch eligibility verification job can tolerate asynchronous processing.
 

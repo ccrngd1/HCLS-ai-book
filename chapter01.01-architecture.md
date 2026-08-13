@@ -10,7 +10,7 @@ Let's get specific. Here's how I'd build this on AWS, and why each service is th
 
 ### Why These Services
 
-**Amazon Textract for OCR and KVP extraction.** Textract is AWS's managed document extraction service, and it's the obvious choice here because of one feature: the `AnalyzeDocument` API with `FORMS` feature type. Rather than just returning raw text (like basic OCR would), the FORMS feature analyzes the spatial layout of the document and returns explicit key-value pairs. It already understands the relationship between a label and its nearby value. You get back structured data, not a wall of characters you have to parse yourself. For single-page semi-structured documents like insurance cards, it's exactly the right abstraction.
+**Amazon Textract for optical character recognition (OCR) and KVP extraction.** Textract is AWS's managed document extraction service, and it's the obvious choice here because of one feature: the `AnalyzeDocument` API with `FORMS` feature type. Rather than just returning raw text (like basic OCR would), the FORMS feature analyzes the spatial layout of the document and returns explicit key-value pairs. It already understands the relationship between a label and its nearby value. You get back structured data, not a wall of characters you have to parse yourself. For single-page semi-structured documents like insurance cards, it's exactly the right abstraction.
 
 **Amazon S3 for image storage.** You need a durable, encrypted place to receive card images before processing and to retain them afterward (for audit, reprocessing, and human review workflows). S3 with SSE-KMS encryption is the standard choice. The S3 event notification system also gives you a clean trigger for the processing pipeline: image lands in the bucket, Lambda fires automatically.
 
@@ -205,9 +205,9 @@ FUNCTION flag_low_confidence(fields):
 
 > **Human Review Infrastructure**
 >
-> This recipe flags low-confidence fields for human review but does not implement the review workflow itself. The full human review infrastructure, including Amazon A2I integration with a private HIPAA-trained workforce, reviewer interface configuration, correction audit trails, and feedback loops, is built in Recipe 1.6. For production deployments, apply Recipe 1.6's A2I pattern to the flagged fields from this recipe. Key requirements: reviewers must be HIPAA-trained staff operating under a BAA, corrections must be traceable in the audit record, and the review queue message format should be consistent across recipes to enable a unified review interface.
+> This recipe flags low-confidence fields for human review but does not implement the review workflow itself. The full human review infrastructure, including Amazon A2I integration with a private HIPAA-trained workforce, reviewer interface configuration, correction audit trails, and feedback loops, is built in Recipe 1.6. For production deployments, apply Recipe 1.6's A2I pattern to the flagged fields from this recipe. Key requirements: reviewers must be HIPAA-trained staff operating under a business associate agreement (BAA), corrections must be traceable in the audit record, and the review queue message format should be consistent across recipes to enable a unified review interface.
 
-**Step 5: Store results.** The final step writes everything to the database: the high-confidence fields ready for immediate use, the flagged fields awaiting human verification, and a timestamp for the audit trail. Every record includes a `needs_review` flag so downstream systems and review queues can instantly identify cards that require attention. In healthcare, every system touching PHI needs an auditable record: what was processed, when, and what came out. This step creates that record. It also enables reprocessing: if Textract releases a new model version with improved accuracy, you can identify historical scans with low-confidence fields and run them through again.
+**Step 5: Store results.** The final step writes everything to the database: the high-confidence fields ready for immediate use, the flagged fields awaiting human verification, and a timestamp for the audit trail. Every record includes a `needs_review` flag so downstream systems and review queues can instantly identify cards that require attention. In healthcare, every system touching protected health information (PHI) needs an auditable record: what was processed, when, and what came out. This step creates that record. It also enables reprocessing: if Textract releases a new model version with improved accuracy, you can identify historical scans with low-confidence fields and run them through again.
 
 ```pseudocode
 FUNCTION store_result(image_key, fields, flagged):
@@ -279,7 +279,7 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 **Front and back extraction.** Accept two images, extract both, and merge into a single unified record. The Rx BIN/PCN/Group fields are almost always on the back. A simple merge strategy: canonical fields from the front win on conflict; pharmacy fields are populated from the back.
 
-**Auto-eligibility verification.** Pipe the extracted member ID and group number directly into a 270/271 eligibility transaction (see Recipe 8.1: Insurance Eligibility Matching). Close the loop from card scan to verified coverage in a single workflow.
+**Auto-eligibility verification.** Pipe the extracted member ID and group number directly into an X12 270 eligibility inquiry and read back the matching X12 271 eligibility response (see Recipe 8.1: Insurance Eligibility Matching). Close the loop from card scan to verified coverage in a single workflow.
 
 ---
 
