@@ -1,22 +1,29 @@
 #!/usr/bin/env python3
 """Check that abbreviations are spelled out on first use (R-1).
 
-Deterministic gate for the R-1 ralph pass, so 152 tasks are verified by a script rather
-than only by a persona reading prose. Exits non-zero on any violation.
+Deterministic gate for the R-1 ralph pass. Exits non-zero on any violation.
 
-    python3 check_abbreviations.py chapter07.03          # a recipe: main + architecture
-    python3 check_abbreviations.py --all                 # whole corpus
-    python3 check_abbreviations.py --report              # ranked worst-first, no failure
+    python3 check_abbreviations.py chapter07.03           # first-use check
+    python3 check_abbreviations.py chapter07.03 --diff     # plus: nothing else changed
+    python3 check_abbreviations.py --report               # ranked, always exit 0
+
+The --diff mode exists because the first trial run showed the prose check alone is not
+enough of a guardrail. In four sample recipes the agent also rewrote AWS networking
+architecture on a line containing no in-scope term at all, and deleted a "(PHI)"
+reference rather than expanding it. Both passed the prose check, because both left the
+page's first-use state valid. So --diff compares the working tree against HEAD and fails
+any edit that is not an abbreviation expansion.
 
 Rules enforced:
-  * First PROSE use of an in-scope abbreviation on a page must carry its expansion.
-  * Later uses on the same page must stay bare, so the pass cannot bloat the text by
-    expanding every occurrence.
-  * Code fences, inline code, link targets, and HTML comments are never prose.
-  * Scope is per page, not per book: the architecture companion is a page a reader can
-    land on directly, so it needs its own first-use expansion.
-  * Python companions are out of scope. They are illustrative sketches kept out of the
-    site navigation, and they are mostly code, where an abbreviation is an identifier.
+  * First PROSE use of an in-scope abbreviation must carry its expansion, verbatim from
+    abbreviations.json, in the canonical casing.
+  * Later uses stay bare, so the pass cannot bloat the text.
+  * Not prose, and never touched: code fences, inline code, link targets, HTML comments,
+    and TABLE ROWS. Tables are compact reference material, and in a 6x9 trim, expanding a
+    bold row label like **BAA** into **business associate agreement (BAA)** triples the
+    column width. A term appearing only in tables therefore needs no expansion.
+  * Python companions are out of scope: illustrative sketches, kept out of the site
+    navigation, mostly code, where an abbreviation is an identifier.
 """
 from __future__ import annotations
 
@@ -24,6 +31,7 @@ import argparse
 import glob
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -31,7 +39,6 @@ DATA = Path("abbreviations.json")
 
 
 def load_terms() -> dict[str, str]:
-    """Return {abbreviation: required first-use form} for in-scope terms only."""
     raw = json.loads(DATA.read_text(encoding="utf-8"))
     terms: dict[str, str] = {}
     for group, body in raw.items():
@@ -46,32 +53,41 @@ def load_terms() -> dict[str, str]:
 
 
 def prose_of(text: str) -> str:
-    """Blank out everything that is not prose, preserving offsets so indices stay valid."""
+    """Blank non-prose while preserving offsets, so reported line numbers stay right."""
     def blank(m: re.Match) -> str:
         return re.sub(r"\S", " ", m.group(0))
 
-    text = re.sub(r"```.*?```", blank, text, flags=re.S)   # fenced code
+    text = re.sub(r"```.*?```", blank, text, flags=re.S)
     text = re.sub(r"~~~.*?~~~", blank, text, flags=re.S)
-    text = re.sub(r"`[^`\n]*`", blank, text)               # inline code
-    text = re.sub(r"<!--.*?-->", blank, text, flags=re.S)  # comments
-    text = re.sub(r"\]\([^)]*\)", blank, text)             # link targets
-    text = re.sub(r"^\s{4,}\S.*$", blank, text, flags=re.M)  # indented code blocks
+    text = re.sub(r"`[^`\n]*`", blank, text)
+    text = re.sub(r"<!--.*?-->", blank, text, flags=re.S)
+    text = re.sub(r"\]\([^)]*\)", blank, text)
+    text = re.sub(r"^\s{4,}\S.*$", blank, text, flags=re.M)
+    text = re.sub(r"^\s*\|.*$", blank, text, flags=re.M)      # table rows
     return text
 
 
 def pages_for(recipe: str) -> list[Path]:
-    """Main recipe and architecture companion for a recipe id like chapter07.03."""
-    out = []
-    for p in sorted(glob.glob(f"{recipe}-*.md")):
-        if p.endswith(("-todo.md", "-python-example.md")):
-            continue
-        out.append(Path(p))
-    return out
+    return [
+        Path(p)
+        for p in sorted(glob.glob(f"{recipe}-*.md"))
+        if not p.endswith(("-todo.md", "-python-example.md"))
+    ]
+
+
+def _expansion_positions(prose: str, abbr: str, form: str) -> list[int]:
+    """Where the canonical expansion appears. Case-exact, bar a sentence-initial capital."""
+    if abbr.isdigit():
+        return [m.start() for m in re.finditer(rf"X12\s+{re.escape(abbr)}\b", prose)]
+    variants = {form, form[0].upper() + form[1:]}
+    out: list[int] = []
+    for v in variants:
+        out += [m.start() for m in re.finditer(re.escape(v), prose)]
+    return sorted(out)
 
 
 def check_page(path: Path, terms: dict[str, str]) -> list[str]:
-    text = path.read_text(encoding="utf-8")
-    prose = prose_of(text)
+    prose = prose_of(path.read_text(encoding="utf-8"))
     problems: list[str] = []
 
     for abbr, form in terms.items():
@@ -79,45 +95,26 @@ def check_page(path: Path, terms: dict[str, str]) -> list[str]:
         if not hits:
             continue
         first = hits[0].start()
-
-        # Two satisfaction styles, because the terms are not all the same shape.
-        # Letter abbreviations take a parenthetical: "optical character recognition (OCR)".
-        # X12 transaction numbers are digits, so a parenthetical reads badly and the book
-        # glosses them in prose instead: "an X12 837 claim submission". Checking every term
-        # for a parenthetical made the numeric ones unsatisfiable, so a claims recipe would
-        # have looped until it exhausted its retries.
-        if abbr.isdigit():
-            expanded_at = [m.start() for m in re.finditer(rf"X12\s+{re.escape(abbr)}\b", prose)]
-        else:
-            expanded_at = [
-                m.start()
-                for m in re.finditer(rf"[A-Za-z][\w,\- ]{{6,80}}\({re.escape(abbr)}\)", prose)
-            ]
+        expanded_at = _expansion_positions(prose, abbr, form)
+        line = prose[:first].count("\n") + 1
 
         if not expanded_at:
-            line = prose[:first].count("\n") + 1
-            problems.append(f"{path.name}:{line}: {abbr} never expanded (expected: {form})")
-            continue
-
-        # The expansion must be at the first use, not buried later in the page. For the
-        # numeric terms the gloss contains the number itself, so the first qualifying
-        # occurrence IS the first use and comparing positions directly would misfire.
-        if abbr.isdigit():
-            if min(expanded_at) > first:
-                line = prose[:first].count("\n") + 1
+            # Distinguish "absent" from "present but miscased or reworded", because the
+            # fix is different and a vague message sends the agent hunting.
+            loose = re.search(rf"[A-Za-z][\w,\- ]{{6,80}}\({re.escape(abbr)}\)", prose)
+            if loose and not abbr.isdigit():
                 problems.append(
-                    f"{path.name}:{line}: {abbr} used bare before its first X12 gloss"
+                    f"{path.name}:{line}: {abbr} expanded as {loose.group(0)!r}; "
+                    f"use the canonical form verbatim: {form!r}"
                 )
-                continue
-        elif min(expanded_at) > first:
-            line = prose[:first].count("\n") + 1
-            exp_line = prose[: min(expanded_at)].count("\n") + 1
-            problems.append(
-                f"{path.name}:{line}: {abbr} used bare before its expansion on line {exp_line}"
-            )
+            else:
+                problems.append(f"{path.name}:{line}: {abbr} never expanded (expected: {form})")
             continue
 
-        # Guard against expanding every occurrence, which would bloat the prose.
+        if min(expanded_at) > first:
+            problems.append(f"{path.name}:{line}: {abbr} used bare before its expansion")
+            continue
+
         if len(expanded_at) > 1 and not abbr.isdigit():
             problems.append(
                 f"{path.name}: {abbr} expanded {len(expanded_at)} times; only the first use should be"
@@ -125,8 +122,69 @@ def check_page(path: Path, terms: dict[str, str]) -> list[str]:
     return problems
 
 
+def check_diff(recipe: str, terms: dict[str, str]) -> list[str]:
+    """Fail any change that is not an abbreviation expansion."""
+    names = [p.name for p in pages_for(recipe)]
+    if not names:
+        return []
+    try:
+        raw = subprocess.run(
+            ["git", "diff", "-U0", "HEAD", "--"] + names,
+            capture_output=True, text=True, timeout=60, check=False,
+        ).stdout
+    except Exception as exc:                                  # pragma: no cover
+        return [f"could not read git diff: {exc}"]
+
+    problems: list[str] = []
+    current = ""
+    for line in raw.split("\n"):
+        if line.startswith("+++ b/"):
+            current = line[6:]
+            continue
+        if not line or line[0] not in "+-" or line.startswith(("+++", "---")):
+            continue
+        body = line[1:]
+        if not body.strip():
+            continue
+
+        # A table row must not be edited at all: tables are out of scope by policy.
+        if body.lstrip().startswith("|"):
+            problems.append(f"{current}: table row edited, which is out of scope: {body.strip()[:80]}")
+            continue
+
+        # Every edited line must involve an in-scope term. This is what catches a
+        # technical rewrite dressed up as an abbreviation pass.
+        touched = [
+            a for a, f in terms.items()
+            if re.search(rf"\b{re.escape(a)}\b", body) or f.lower() in body.lower()
+        ]
+        if not touched:
+            problems.append(
+                f"{current}: edited a line with no in-scope abbreviation, so it is not part "
+                f"of this task: {body.strip()[:80]}"
+            )
+
+    # No in-scope term may lose occurrences: expanding must not delete a reference.
+    for page in pages_for(recipe):
+        old = subprocess.run(
+            ["git", "show", f"HEAD:{page.name}"], capture_output=True, text=True, check=False
+        ).stdout
+        if not old:
+            continue
+        new = page.read_text(encoding="utf-8")
+        for abbr in terms:
+            pat = rf"\b{re.escape(abbr)}\b"
+            before, after = len(re.findall(pat, old)), len(re.findall(pat, new))
+            if after < before:
+                problems.append(
+                    f"{page.name}: {abbr} occurrences dropped {before} -> {after}; "
+                    "expanding must not remove a reference"
+                )
+    return problems
+
+
 def recipes() -> list[str]:
-    seen = []
+    seen: list[str] = []
     for f in sorted(glob.glob("chapter*.md")):
         m = re.match(r"(chapter\d+\.\d+)-", f)
         if m and m.group(1) not in seen:
@@ -136,9 +194,10 @@ def recipes() -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("recipe", nargs="?", help="e.g. chapter07.03")
+    ap.add_argument("recipe", nargs="?")
     ap.add_argument("--all", action="store_true")
-    ap.add_argument("--report", action="store_true", help="rank pages worst-first, always exit 0")
+    ap.add_argument("--diff", action="store_true", help="also verify nothing else changed")
+    ap.add_argument("--report", action="store_true")
     args = ap.parse_args()
 
     terms = load_terms()
@@ -146,30 +205,33 @@ def main() -> int:
     if not targets:
         ap.error("give a recipe id, or --all / --report")
 
-    all_problems: dict[str, list[str]] = {}
+    problems: dict[str, list[str]] = {}
     for r in targets:
         for page in pages_for(r):
             probs = check_page(page, terms)
             if probs:
-                all_problems[page.name] = probs
+                problems[page.name] = probs
+        if args.diff:
+            d = check_diff(r, terms)
+            if d:
+                problems[f"{r} (diff)"] = d
 
     if args.report:
         print(f"  in-scope abbreviations: {len(terms)}")
         print(f"  pages checked: {sum(len(pages_for(r)) for r in targets)}")
-        print(f"  pages with at least one violation: {len(all_problems)}\n")
-        for name, probs in sorted(all_problems.items(), key=lambda kv: -len(kv[1]))[:15]:
+        print(f"  pages with violations: {len(problems)}")
+        for name, probs in sorted(problems.items(), key=lambda kv: -len(kv[1]))[:12]:
             print(f"    {name[:58]:60} {len(probs):3d}")
-        total = sum(len(v) for v in all_problems.values())
-        print(f"\n  total violations: {total}")
+        print(f"\n  total violations: {sum(len(v) for v in problems.values())}")
         return 0
 
-    for probs in all_problems.values():
+    for probs in problems.values():
         for p in probs:
             print(f"  {p}")
-    if all_problems:
-        print(f"\n  FAIL: {sum(len(v) for v in all_problems.values())} violation(s)")
+    if problems:
+        print(f"\n  FAIL: {sum(len(v) for v in problems.values())} violation(s)")
         return 1
-    print("  OK: abbreviations expanded on first use")
+    print("  OK: abbreviations expanded on first use, and nothing else changed")
     return 0
 
 
