@@ -114,7 +114,7 @@ A naive product approach would be: take a generalist LLM, give it a chat surface
 
 **The model has no scope discipline about therapy.** A generalist LLM, prompted to be supportive, will drift into therapeutic conversations that resemble therapy without being therapy. The drift is gradual and is bad. The bot must explicitly stay in the structured-content-delivery and crisis-screen-and-route lanes; the prompt, the output safety, and the sampled review process all reinforce this.
 
-**The model invents clinical content when grounding is weak.** A bot freestyling CBT, freestyling DBT skills, or freestyling mindfulness instructions is delivering content the institution has not reviewed and has not validated. The therapeutic-content RAG with strict citation grounding is the architectural floor; the LLM delivers content from the reviewed library, not from its parametric memory.
+**The model invents clinical content when grounding is weak.** A bot freestyling CBT, freestyling DBT skills, or freestyling mindfulness instructions is delivering content the institution has not reviewed and has not validated. The therapeutic-content retrieval-augmented generation (RAG) with strict citation grounding is the architectural floor; the LLM delivers content from the reviewed library, not from its parametric memory.
 
 **The model has no theory of harmful-coping-strategy detection.** Patients sometimes describe coping strategies that are themselves harmful (restrictive eating, alcohol use, self-injury behaviors, isolation, dangerous risk-taking). The bot does not endorse, facilitate, or workshop these. The harm-content classifier and the therapeutic-content discipline together ensure the bot recognizes and routes appropriately.
 
@@ -124,7 +124,7 @@ A naive product approach would be: take a generalist LLM, give it a chat surface
 
 **The model has clinical-decision-rule arithmetic problems for screening instruments.** PHQ-9 scoring, GAD-7 scoring, AUDIT scoring, and similar instruments are arithmetic on structured inputs. The LLM does this poorly. The deterministic clinical-rule tools encapsulate the computation; the LLM gathers the inputs and presents the result with the institutional-standard interpretation.
 
-**The model has compliance implications specific to mental health.** The conversation contains highly sensitive PHI: psychiatric diagnoses, medication adherence, suicidality, substance use, trauma history, and disclosures with potential mandatory-reporting implications. Some states have specific privacy protections for mental-health records that exceed HIPAA's baseline. The audit, retention, access-control, and downstream-clinical-workflow integration story has to handle each of these with state-specific precision.
+**The model has compliance implications specific to mental health.** The conversation contains highly sensitive protected health information (PHI): psychiatric diagnoses, medication adherence, suicidality, substance use, trauma history, and disclosures with potential mandatory-reporting implications. Some states have specific privacy protections for mental-health records that exceed HIPAA's baseline. The audit, retention, access-control, and downstream-clinical-workflow integration story has to handle each of these with state-specific precision.
 
 **The model has no theory of mandatory reporting.** Disclosures of child abuse, elder abuse, intimate-partner violence, and certain mental-health crisis types trigger statutory reporting obligations for licensed clinical staff. The bot is not a licensed clinician. The bot's response routes to a licensed human (mandatory reporter) with the conversation context attached. The routing is not optional and is institutionally specified.
 
@@ -206,7 +206,7 @@ A few practical updates worth knowing.
 
 **Equity and access disparities in mental-health AI are an active concern.** Digital mental-health tools have shown variability in adoption, engagement, cultural fit, and outcomes across patient demographics. Per-cohort monitoring with explicit equity focus is essential.
 
-**Build-vs-buy is mature for some segments.** Several mature commercial vendors offer mental-health support products at major-payer and major-employer scale, with EHR integration, crisis-pathway integration, FDA-authorized digital-therapeutic content for some products, and hybrid-coaching workforces. Most major institutions deploying in this space run a hybrid: build a thin-orchestration layer in-house, partner with vendors for licensed therapeutic content and (sometimes) for the licensed-clinician workforce, and integrate with the institution's care-management, telehealth, and clinical-record infrastructure.
+**Build-vs-buy is mature for some segments.** Several mature commercial vendors offer mental-health support products at major-payer and major-employer scale, with electronic health record (EHR) integration, crisis-pathway integration, FDA-authorized digital-therapeutic content for some products, and hybrid-coaching workforces. Most major institutions deploying in this space run a hybrid: build a thin-orchestration layer in-house, partner with vendors for licensed therapeutic content and (sometimes) for the licensed-clinician workforce, and integrate with the institution's care-management, telehealth, and clinical-record infrastructure.
 
 ---
 
@@ -654,7 +654,7 @@ A few cross-cutting design points specific to the mental-health support bot.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Chapter 4. The bot's psychiatric-medication-adherence support builds on adherence-intervention targeting; the bot is one delivery channel.
 - **Recipe 4.7 (Care Management Program Enrollment):** Chapter 4. Patients identified as appropriate for behavioral-health care management may receive bot support as part of their program.
 - **Recipe 7.1+ (Predictive Analytics / Risk Scoring, Chapter 7):** Risk scores including suicide-risk and hospitalization-risk prediction inform bot intensity, screening sensitivity, and care-team-attention prioritization.
-- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. Voice-channel mental-health support builds on voice-assistant ASR/TTS patterns with crisis-pathway integrity preserved.
+- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. Voice-channel mental-health support builds on voice-assistant automatic speech recognition (ASR)/text-to-speech (TTS) patterns with crisis-pathway integrity preserved.
 - **Recipe 12.x (Forecasting & Time-Series Analysis):** Chapter 12. Mood and symptom-tracking trend analysis benefits from time-series patterns.
 
 ---
