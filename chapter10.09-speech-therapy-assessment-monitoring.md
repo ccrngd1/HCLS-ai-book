@@ -364,7 +364,7 @@ A few cross-cutting design points the architecture has to bake in.
 
 - **Recipe 10.1 (IVR Call Routing Enhancement):** Same chapter, simplest analog. The audio capture and speech-recognition primitives appear here at much lower clinical stakes.
 - **Recipe 10.2 (Voicemail Transcription and Classification):** Same chapter, asynchronous single-speaker analog. The async-audio-processing pattern is the closest pattern to the asynchronous speech-therapy scoring path.
-- **Recipe 10.3 (Voice-to-Text for EHR Navigation):** Same chapter, single-speaker voice-input analog. Different goal but same audio-capture infrastructure foundation.
+- **Recipe 10.3 (Voice-to-Text for electronic health record (EHR) Navigation):** Same chapter, single-speaker voice-input analog. Different goal but same audio-capture infrastructure foundation.
 - **Recipe 10.4 (Medical Transcription / Dictation):** Same chapter, single-speaker high-quality-capture analog. The custom-vocabulary patterns from 10.4 inform the linguistic-feature pipelines for connected-speech analysis.
 - **Recipe 10.5 (Patient-Facing Voice Assistant):** Same chapter, patient-facing voice-interaction analog. The patient-acceptance and consent patterns from 10.5 inform patient-facing home-practice deployments.
 - **Recipe 10.6 (Speech-to-Text for Telehealth Documentation):** Same chapter, telehealth-audio analog. The per-cohort accuracy discipline from 10.6 transfers directly to per-population speech-therapy validation discipline.
@@ -375,7 +375,7 @@ A few cross-cutting design points the architecture has to bake in.
 - **Recipe 2.6 (Clinical Note Summarization):** Chapter 2, LLM-driven structured-data-to-prose generation. The SLP-report generation patterns are closely related.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Chapter 4, personalization patterns. Home-practice prompt scheduling and parent-coaching content selection use related personalization patterns.
 - **Recipe 7.x (Predictive Risk Modeling):** Chapter 7, risk scoring and trajectory analysis. Speech-therapy progress prediction and discharge-readiness scoring are predictive-analytics extensions of the longitudinal data.
-- **Recipe 8.x (Clinical NLP & Information Extraction):** Chapter 8, traditional NLP. Linguistic-feature extraction from connected-speech transcripts uses traditional NLP primitives in addition to the LLM-driven extraction.
+- **Recipe 8.x (Clinical natural language processing (NLP) & Information Extraction):** Chapter 8, traditional NLP. Linguistic-feature extraction from connected-speech transcripts uses traditional NLP primitives in addition to the LLM-driven extraction.
 
 ---
 
