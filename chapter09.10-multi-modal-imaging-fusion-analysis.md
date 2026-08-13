@@ -66,7 +66,7 @@ Once images are registered (aligned to the same coordinate system), fusion combi
 
 **Computational scale.** Medical images are big. A single high-resolution MRI volume is 256 x 256 x 180 voxels, often with multiple contrast sequences. Adding a PET volume, a CT volume, and running deformable registration between them requires significant compute. Real-time or near-real-time fusion for intraoperative guidance adds latency constraints on top of the compute demands.
 
-**DICOM complexity.** Medical images live in DICOM format, which encodes not just pixel data but spatial orientation, patient positioning, slice spacing, and dozens of metadata fields that are critical for correct registration. Getting the coordinate transforms right (from image space to patient space to a common world space) requires meticulous attention to DICOM headers that commercial viewers handle transparently but custom pipelines must get right.
+**Digital Imaging and Communications in Medicine (DICOM) complexity.** Medical images live in DICOM format, which encodes not just pixel data but spatial orientation, patient positioning, slice spacing, and dozens of metadata fields that are critical for correct registration. Getting the coordinate transforms right (from image space to patient space to a common world space) requires meticulous attention to DICOM headers that commercial viewers handle transparently but custom pipelines must get right.
 
 ### Where the Field Is Today
 

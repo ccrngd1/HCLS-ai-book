@@ -6,7 +6,7 @@
 
 ## Why These Services
 
-**Amazon S3 for DICOM storage and processing pipeline.** Medical imaging generates massive data volumes. A single PET-CT study can be 500+ MB of DICOM files. S3 provides the durable, encrypted, high-throughput storage needed to receive studies from PACS, stage them for processing, and retain results. S3 event notifications trigger the processing pipeline when a complete study arrives. Lifecycle policies handle archival of processed studies to cheaper storage tiers.
+**Amazon S3 for Digital Imaging and Communications in Medicine (DICOM) storage and processing pipeline.** Medical imaging generates massive data volumes. A single PET-CT study can be 500+ MB of DICOM files. S3 provides the durable, encrypted, high-throughput storage needed to receive studies from PACS, stage them for processing, and retain results. S3 event notifications trigger the processing pipeline when a complete study arrives. Lifecycle policies handle archival of processed studies to cheaper storage tiers.
 
 **Amazon SageMaker for ML model hosting and batch inference.** The registration and fusion models (deep learning-based deformable registration, multi-modal segmentation networks) need GPU compute. SageMaker provides managed GPU instances for both training and inference. For batch processing (nightly fusion runs on new studies), SageMaker Processing Jobs or Batch Transform handle the compute without persistent infrastructure. For near-real-time clinical use, SageMaker endpoints with GPU-backed instances provide consistent latency.
 
@@ -382,7 +382,7 @@ Pipeline times assume a warm SageMaker endpoint. Cold-start (first request after
 
 **Longitudinal fusion for treatment response assessment.** Rather than fusing modalities from a single time point, fuse the same modality across time points (baseline vs. post-treatment) to quantify change. Align baseline and follow-up scans, compute voxel-wise change maps, and classify regions as responding, stable, or progressing. Adds temporal registration challenges and needs RECIST/RANO response criteria implementation.
 
-**Federated multi-modal model training.** Training fusion models requires multi-modal datasets that are rare and expensive to curate. Federated learning allows training across institutions without centralizing PHI. Each site trains on its local data and shares model weight updates. The architecture adds a federated aggregation server (potentially using SageMaker's built-in federated training capabilities or custom orchestration) while keeping imaging data at the source institution.
+**Federated multi-modal model training.** Training fusion models requires multi-modal datasets that are rare and expensive to curate. Federated learning allows training across institutions without centralizing protected health information (PHI). Each site trains on its local data and shares model weight updates. The architecture adds a federated aggregation server (potentially using SageMaker's built-in federated training capabilities or custom orchestration) while keeping imaging data at the source institution.
 
 ---
 
