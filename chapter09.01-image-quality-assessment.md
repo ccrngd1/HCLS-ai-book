@@ -82,7 +82,7 @@ I called this recipe "simple" in the chapter overview, and it is, relative to di
 
 **Alert or Archive.** If the image passes, it flows to the PACS normally. If it fails, an alert goes to the technologist (ideally at the modality console) with specific feedback: "Image rejected: motion blur detected. Recommend retake." The failed image is still archived (you never discard medical images), but it's flagged so the radiologist knows a retake was requested.
 
-The key architectural decision: where in the imaging chain do you insert the assessment? Closer to the modality means faster feedback but requires edge compute. At the PACS/VNA level means simpler deployment but the patient may have left. The ideal is at the modality or the DICOM router, with sub-second latency.
+The key architectural decision: where in the imaging chain do you insert the assessment? Closer to the modality means faster feedback but requires edge compute. At the PACS/VNA level means simpler deployment but the patient may have left. The ideal is at the modality or the Digital Imaging and Communications in Medicine (DICOM) router, with sub-second latency.
 
 ---
 
