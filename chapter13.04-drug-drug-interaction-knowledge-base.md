@@ -10,6 +10,9 @@
 > and they must not be used to make prescribing decisions. Interaction content belongs in a
 > licensed, versioned drug knowledge base owned by your pharmacy team.
 
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
+
 ## The Problem
 
 A physician is prescribing warfarin to a 72-year-old patient with atrial fibrillation. The patient is already on amiodarone, metoprolol, lisinopril, and atorvastatin. The physician clicks "Sign" on the order, and the electronic health record (EHR) fires an alert: "Warfarin + Amiodarone: Major interaction. Increased anticoagulant effect and risk of bleeding." Good. That's a real, clinically significant interaction that requires dose adjustment.

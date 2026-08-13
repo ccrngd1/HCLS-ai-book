@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Picture a Tuesday morning at a mid-sized multispecialty group. The scheduling coordinator is looking at today's grid. Seventy-two providers across fourteen clinics, about 1,100 scheduled visits. By the end of the day, somewhere between 140 and 200 of those slots will go empty. The coordinator already knows this because she does this math every Tuesday. The question she cannot answer before 9 a.m. is *which* 140 to 200.

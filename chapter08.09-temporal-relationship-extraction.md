@@ -12,6 +12,9 @@
 > Nothing here is a validated clinical tool. Any production use needs clinical
 > ownership and review by your own clinical, legal, and compliance teams.
 
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
+
 ## The Problem
 
 A discharge summary reads: "Patient admitted on March 3 with acute cholecystitis. Started on IV antibiotics. Pain improved after 48 hours. Laparoscopic cholecystectomy performed on March 6. Discharged home on postoperative day 1 in stable condition."

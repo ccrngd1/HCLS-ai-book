@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 There's a supply closet on every hospital floor. Inside it, someone has taped a handwritten note to the shelf: "Reorder when down to 2 boxes." That note was written by a nurse who got burned once by running out of IV start kits on a Friday night. The reorder point is based on gut feel, not math. The order quantity is whatever fits in the cabinet.

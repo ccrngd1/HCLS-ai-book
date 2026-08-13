@@ -356,6 +356,10 @@
         <h1 id="recipe-22-medical-terminology-simplification">Recipe 2.2: Medical Terminology Simplification</h1>
 <p><strong>Effort:</strong> 1 of 5</p>
 <hr />
+<!-- phi-callout -->
+<blockquote>
+<p><strong>Before you build this, settle the data-governance questions.</strong> This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See &quot;Before You Send Protected Health Information Anywhere&quot; at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.</p>
+</blockquote>
 <h2 id="the-problem">The Problem</h2>
 <p>A patient gets discharged from the hospital after a cardiac event. They're handed a sheet of paper that says: &quot;Patient presented with acute ST-elevation myocardial infarction of the LAD territory. Percutaneous coronary intervention performed with drug-eluting stent placement. Initiated dual antiplatelet therapy with aspirin 81mg and ticagrelor 90mg BID. Echocardiogram demonstrated EF of 45% with apical hypokinesis. Follow up with cardiology in 2 weeks for reassessment of ventricular function.&quot;</p>
 <p>The patient nods, walks to their car, and has absolutely no idea what just happened to them.</p>
@@ -398,7 +402,7 @@
 <p><strong>Simplify with Constraints.</strong> Pass each segment to the LLM with specific instructions: target reading level, terms that must be preserved verbatim (medication names, dosages, dates, provider names), maximum output length, and whether to add brief explanations of medical terms or just replace them.</p>
 <p><strong>Validate Readability.</strong> Run the output through readability scoring algorithms. If the simplified text still scores above your target grade level, flag it for re-simplification or manual review. This is your automated quality gate.</p>
 <p><strong>Verify Preservation.</strong> Check that critical content from the source appears in the output. Medication names, dosages, appointment dates, and provider names should survive simplification unchanged. If any are missing or altered, flag for review.</p>
-<p><strong>Output.</strong> The simplified document is ready for delivery to the patient through whatever channel your organization uses: patient portal, printed handout, or integration with the EHR's patient education system.</p>
+<p><strong>Output.</strong> The simplified document is ready for delivery to the patient through whatever channel your organization uses: patient portal, printed handout, or integration with the patient education system inside the electronic health record (EHR).</p>
 <p>The key design principle: simplification is a transformation with verifiable properties. You can measure whether the output is simpler (readability scores). You can verify whether critical content survived (entity matching). This makes it far easier to validate than open-ended generation tasks.</p>
 <hr />
 <blockquote>
@@ -409,7 +413,7 @@
 <li><strong>Recipe 2.1 (Patient Message Response Drafting):</strong> Uses similar LLM patterns with Bedrock and Guardrails for patient-facing text generation</li>
 <li><strong>Recipe 2.5 (After-Visit Summary Generation):</strong> Generates patient-facing summaries from clinical encounters; could use this recipe's simplification as a post-processing step</li>
 <li><strong>Recipe 8.1 (Medical Entity Extraction):</strong> Uses Comprehend Medical for entity extraction, the same technique used here for preservation verification</li>
-<li><strong>Recipe 1.6 (Handwritten Clinical Note Digitization):</strong> Upstream OCR that might produce the clinical text this recipe simplifies</li>
+<li><strong>Recipe 1.6 (Handwritten Clinical Note Digitization):</strong> Upstream optical character recognition (OCR) that might produce the clinical text this recipe simplifies</li>
 </ul>
 <hr />
 <h2 id="tags">Tags</h2>

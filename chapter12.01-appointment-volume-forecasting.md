@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 It's 9:47 on a Tuesday morning at a multi-specialty clinic. The waiting room is full. Three medical assistants are pulled from rooming patients to help check people in. One provider is running 40 minutes behind. Another is sitting in their office because their first two patients were no-shows and the system put nothing in those slots. The clinic manager is trying to call in a per-diem nurse for tomorrow because she has a feeling it's going to be busy, but she doesn't actually know.

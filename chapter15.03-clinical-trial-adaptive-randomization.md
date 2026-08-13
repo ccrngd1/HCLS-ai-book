@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Here's the ethical tension at the heart of every clinical trial: you're randomizing patients to treatment arms, and as data accumulates, you start to see that one arm is working better than the others. But you keep assigning patients to the inferior arm because the protocol says 50/50 randomization. Every patient assigned to the losing arm after you have reasonable evidence is a patient who could have received the better treatment.

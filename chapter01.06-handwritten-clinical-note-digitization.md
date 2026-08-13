@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Every recipe in this chapter has hedged. Recipe 1.1 said it. Recipe 1.2 said it. Recipe 1.4, where we built the Bedrock reasoning layer for prior authorization, said it at least twice. Recipe 1.5 said it again while building document boundary detection for claims packages. The footnote has been consistent: "this approach struggles with handwritten text."

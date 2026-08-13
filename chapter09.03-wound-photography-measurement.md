@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A home health nurse kneels beside a patient's recliner, peels back a dressing, and looks at a pressure ulcer on the patient's sacrum. She needs to document the wound dimensions. Length, width, depth if she can estimate it. She pulls out a disposable ruler, holds it next to the wound, eyeballs the edges, and writes "4.2 cm x 3.1 cm" in her notes. Tomorrow, a different nurse visits. She measures the same wound and writes "3.8 cm x 3.5 cm." Did the wound shrink in one direction and grow in another overnight? Almost certainly not. Two humans just measured the same irregular shape differently.

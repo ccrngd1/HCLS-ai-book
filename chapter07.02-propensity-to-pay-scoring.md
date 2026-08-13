@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Revenue cycle teams in healthcare have a dirty secret: they treat every patient balance the same. A $47 copay from a retired teacher with a perfect payment history gets the same collection sequence as a $3,200 surgical balance from a 24-year-old who has already ignored three statements. Same letters. Same timing. Same phone calls. Same escalation path.

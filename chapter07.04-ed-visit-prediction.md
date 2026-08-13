@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Here's a frustrating fact about emergency departments in the United States: somewhere between 30% and 70% of ED visits (depending on the study and definition) are for conditions that could have been managed in a primary care or urgent care setting. Not all of them. Not even most of them. But a significant chunk. A patient with poorly controlled diabetes shows up at 2 AM because their blood sugar is at 400 and they ran out of insulin three days ago. A COPD patient who missed their last two pulmonary rehab appointments comes in gasping because their exacerbation wasn't caught early. A kid with recurrent asthma arrives by ambulance because the family didn't have a nebulizer at home and the after-hours clinic was closed.

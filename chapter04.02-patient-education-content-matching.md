@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A primary care patient walks out of a 15-minute visit with a brand-new diagnosis of type 2 diabetes. The clinician spent maybe four minutes of that visit explaining the condition. Half of those four minutes were eaten up by managing the patient's anxiety, which is appropriate, but doesn't leave much room for the actual teaching. As the patient is leaving, the MA hands them a folder. Inside the folder: a generic brochure about diabetes from 2014, a printout from the patient portal that's seven pages of dense clinical text, and a one-pager about the hospital's diabetes class that meets on Tuesdays at 10 AM (the patient works Tuesdays at 10 AM).

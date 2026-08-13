@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Picture a claims operations supervisor at a mid-size payer on a Monday morning. Her team of twenty-two examiners processes roughly 180,000 claims per month. Her SIU (Special Investigations Unit) pulled a report last week showing that somewhere between 1% and 3% of paid claims in the prior quarter were duplicates. That's money that went out the door for services the payer had already paid for. Some of it was fraud (the kind of bad actor who submits the same claim to three clearinghouses and hopes one of them pays). Most of it was not. Most of it was ordinary operational noise.

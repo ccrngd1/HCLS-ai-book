@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 It's 17:42 on a Wednesday in February at a regional emergency department. The waiting room has thirty-one people in it. Two ambulance bays are full. The charge nurse has been pulling extra staff from the floor for the last hour because what looked like a normal afternoon at noon turned into a freight train of arrivals between 14:00 and 17:00. There were warning signs, if anyone had been looking: a flu surveillance report flagging elevated activity in three surrounding zip codes, a high-school basketball tournament downtown, and a cold front that pushed the wind chill into single digits. The next shift change is in eighteen minutes. The on-call attending physician for the surge protocol just declined because they're already on a different shift tomorrow. Inpatient is at 96% capacity and has been holding the boarders the ED sent up two hours ago.

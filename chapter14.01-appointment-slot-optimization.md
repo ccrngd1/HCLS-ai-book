@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Here's a scene that plays out at every outpatient clinic in the country: a scheduler stares at a template that says "30-minute slots, 8am to 5pm" and tries to fit a complex diabetic follow-up, a quick blood pressure recheck, and a new patient evaluation into the same rigid grid. The diabetic follow-up runs 45 minutes. The blood pressure recheck takes 10. The new patient needs a full hour. But the template doesn't care. Every slot is 30 minutes. So the follow-up runs over, the recheck patient waits 20 minutes for a 10-minute visit, and the new patient gets rushed.

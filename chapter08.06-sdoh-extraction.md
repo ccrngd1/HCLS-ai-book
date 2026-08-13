@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A 62-year-old patient with poorly controlled diabetes shows up to their endocrinologist every three months, gets their A1c checked, gets a medication adjustment, and goes home. The A1c never improves. The care team adjusts insulin, adds a GLP-1, tries a CGM. Nothing sticks. What nobody has surfaced from the chart is a social worker note from eight months ago mentioning the patient lives alone, lost their job, and has been skipping meals because they can't afford food consistently.

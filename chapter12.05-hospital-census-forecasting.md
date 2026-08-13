@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 It's 06:30 on a Monday at a community hospital with several hundred beds. The bed huddle has just started. The house supervisor is reading off the census from a printed report that captured the state of the hospital at midnight. Five and a half hours ago. Since then, the ED admitted nine patients overnight, three more are being held in ED beds waiting for a floor assignment, the cath lab has two procedures starting at 07:00 that will need step-down beds by 11:00, and PACU is holding a post-op orthopedic case who needs a med-surg bed in the next hour. Discharge planning thinks today's discharge volume will be "around 38 to 42, maybe a little less because the doctor is on vacation," which is the kind of guess that ends with the chief operating officer asking, at 16:00, why nobody saw the bed crisis coming.

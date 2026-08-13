@@ -12,6 +12,9 @@
 > Nothing here is a validated clinical tool. Any production use needs clinical
 > ownership and review by your own clinical, legal, and compliance teams.
 
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
+
 ## The Problem
 
 It is 4:50 p.m. on a Friday at a mid-sized internal medicine practice. The clinical-support phone line has been forwarded to voicemail since the front desk left for the day. Over the next sixty-four hours, until someone arrives Monday morning, the practice's voicemail box accumulates forty-seven new messages.

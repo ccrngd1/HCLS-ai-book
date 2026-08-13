@@ -12,6 +12,9 @@
 > Nothing here is a validated clinical tool. Any production use needs clinical
 > ownership and review by your own clinical, legal, and compliance teams.
 
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
+
 ## The Problem
 
 Maria is 58. Three years ago her primary care physician told her, in the unhurried voice clinicians use when they have already had this conversation three times that week, that her A1c was 8.2 and that she had Type 2 diabetes. The doctor wrote a prescription for metformin, gave her a glucose meter, gave her a stack of pamphlets, scheduled her for diabetes education, and asked her to come back in three months. Maria left the office holding the pamphlets and feeling, in roughly equal measure, scared, embarrassed, and confused. She was 55 then. She had a job, two adult children who lived a few states away, a husband whose blood pressure she also worried about, a small dog, and a life that did not include space for "managing a chronic disease." She did not know what an A1c was. She did not know what the metformin would do. She had been told she should change her diet, but the pamphlets had a lot of charts and not very many actual answers about what she should make for dinner on Tuesday.

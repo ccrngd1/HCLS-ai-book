@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A coder is staring at a clinical note that says "patient presents with chest pain, ruled out MI, final diagnosis: costochondritis." They need to assign the right ICD-10 code. They know it's somewhere under musculoskeletal, probably in the M94 range, but is it M94.0? M94.1? And wait, is costochondritis actually Tietze syndrome or is that different? They open the ICD-10 lookup tool, type "costochondritis," get three results, and now they need to understand how those codes relate to each other in the hierarchy. Is one more specific than another? Does the parent code capture the same concept at a less granular level?

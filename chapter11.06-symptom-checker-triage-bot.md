@@ -11,6 +11,9 @@
 > ownership, validation against the protocol your organization actually uses, and review by
 > your own clinical, legal, and compliance teams.
 
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
+
 ## The Problem
 
 It is 2:14 AM on a Tuesday. Devon is 47. He has woken up with a heavy, uncomfortable feeling in the middle of his chest. Not stabbing. Not tearing. More like a pressure, vaguely in the center, that came on while he was sleeping and is now keeping him awake. His left arm feels a little odd, but he is not sure if that is because he was sleeping on it. He is sweating slightly, but the bedroom is warm. He is 47 and otherwise healthy except for the fact that he has been told for several years that his cholesterol is "borderline." His father had a heart attack at 58. Devon's wife is asleep next to him. Devon does not want to wake her up over what is "probably nothing."

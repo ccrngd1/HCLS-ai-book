@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 It is the second week of October, and a state epidemiologist is staring at three dashboards on three monitors trying to decide whether something is happening. The first dashboard shows respiratory virus PCR positivity from the state public health lab, climbing from 4.1% to 6.8% over the last fourteen days. The second shows emergency department chief-complaint counts for "fever," "cough," and "shortness of breath" from the syndromic surveillance feed, drifting upward across most of the state's reporting hospitals but not in a way that would individually cross any single alert threshold. The third shows wastewater SARS-CoV-2 RNA concentrations from twelve sentinel sites, with two sites in the same county already two-and-a-half standard deviations above their summer baseline. None of these signals alone is screaming. Together they are saying, quietly but consistently, that something is starting.

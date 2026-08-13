@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Here's a number that should make every revenue cycle leader lose sleep: the average health system's initial claim denial rate sits between 10% and 15%. That sounds manageable until you do the math. A mid-size hospital submitting 500,000 claims per year at a 12% denial rate means 60,000 claims bouncing back. Each denied claim costs $25 to $118 to rework (depending on complexity and how many times it ping-pongs), and about 60% of denied claims are never resubmitted at all. That's revenue evaporating because the rework process is too expensive or too slow to justify the effort.

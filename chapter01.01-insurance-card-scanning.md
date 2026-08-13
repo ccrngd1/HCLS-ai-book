@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Picture the front desk at a primary care clinic on a Monday morning. Six patients are already waiting. The person checking them in is asking each one to hand over their insurance card, typing the member ID by hand into the electronic health record (EHR), squinting at the group number, asking "is that a zero or an O?" The patient behind them is sighing. The phone is ringing.

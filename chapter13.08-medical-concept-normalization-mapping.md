@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Here's a scenario that plays out every single day in healthcare data integration. A hospital system acquires a physician practice. The practice has been coding diagnoses in ICD-10-CM. The hospital's analytics platform uses SNOMED CT for clinical decision support (CDS). The quality reporting system needs Healthcare Effectiveness Data and Information Set (HEDIS) value sets that reference both. The pharmacy system speaks RxNorm. The lab system uses Logical Observation Identifiers Names and Codes (LOINC). And someone in the C-suite wants a unified patient dashboard that pulls from all of them.

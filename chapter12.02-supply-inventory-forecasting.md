@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 It's a Tuesday afternoon at a 400-bed community hospital. The materials management coordinator just got a call from the OR: they're out of a particular size of surgical staple cartridge, the one the orthopedic surgeons use for a procedure that's on the schedule for tomorrow. The vendor's next-day delivery cutoff is in two hours. She places an emergency order, pays a 35% expedite fee, and adds another data point to the running tally of stockouts she's been keeping all year. Down the hall, a different problem is playing out in the central supply room: there are eighteen months' worth of a respiratory mask still sitting on the shelf from the pandemic-era surge buy that never got drawn down, taking up space and quietly approaching its expiration date.

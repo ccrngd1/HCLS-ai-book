@@ -12,6 +12,9 @@
 > Nothing here is a validated clinical tool. Any production use needs clinical
 > ownership and review by your own clinical, legal, and compliance teams.
 
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
+
 ## The Problem
 
 Eleanor is 71. She takes seven prescription medications: lisinopril for blood pressure, metformin for type 2 diabetes, atorvastatin for cholesterol, levothyroxine for her thyroid, gabapentin for neuropathic pain, sertraline for depression, and a low-dose aspirin her cardiologist recommended after a coronary calcium scan. She has been taking most of them for years. Her primary care physician sees her every three months, her endocrinologist twice a year, and the rest of her care is the slow background labor of staying on top of seven prescriptions, three pharmacies (because her insurance moved one of them to mail-order in January), and the eternal question of whether the white oval pill or the white round pill is the one she takes in the morning.

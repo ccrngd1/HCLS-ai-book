@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A cardiology practice in the Midwest has a 22% no-show rate. Think about what that number actually means. For every ten scheduled slots, two go empty. The physician sits for fifteen minutes before the MA goes to reception to confirm the patient isn't stuck in traffic. They call. No answer. The slot is written off. At the end of the week, somebody calculates the lost revenue and somebody else calculates the downstream clinical impact on patients who could have been seen in that slot and won't be until the next available opening three weeks out.

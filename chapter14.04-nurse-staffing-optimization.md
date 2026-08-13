@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 It's 3 PM on a Thursday. The nurse manager for a 36-bed medical-surgical unit is building next week's schedule. She has 42 nurses on staff across full-time, part-time, and per-diem pools. She needs to fill about 18 nurse-shifts a day (two 12-hour shifts, roughly nine nurses each) while respecting union-mandated rest periods, certification requirements for charge nurse coverage, individual PTO requests, weekend rotation fairness, overtime limits, float pool availability, and the fact that three nurses just called in their two-week notice.

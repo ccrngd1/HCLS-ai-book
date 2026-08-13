@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 It's 11:47 p.m. on a Tuesday and a nurse on the cardiology step-down floor opens the chart of a patient she's never cared for. The patient was admitted earlier that day. They share a last name. They live on the same street. The nurse spends about ninety seconds in the chart, opens the demographics tab, the medication list, the discharge plan from the patient's previous admission six months ago, and then closes it. She doesn't open her assigned patients' charts again for the rest of her shift; her shift is mostly over.

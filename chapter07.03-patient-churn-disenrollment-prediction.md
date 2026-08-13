@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Here's a scenario that plays out every January at health plans across the country. Open enrollment closes. The dust settles. And then the membership reports come in: 8% of your commercial book walked. 12% of your Medicare Advantage members switched plans. The network team is scrambling because two high-volume PCPs just lost enough patients to drop below panel minimums. The finance team is re-forecasting revenue. Everyone is asking the same question: "Could we have seen this coming?"

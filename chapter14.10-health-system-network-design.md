@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A health system CEO is staring at a map with 14 hospitals, 47 ambulatory clinics, and a $400 million capital budget for the next five years. The board wants to know: Where should we build the next cancer center? Should we close the underperforming rural hospital or convert it to an urgent care? If we add cardiac surgery at the suburban campus, does that cannibalize volume from the flagship downtown, or does it capture patients currently driving to the competitor across town?

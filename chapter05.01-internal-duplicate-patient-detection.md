@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Pull up the medical records system at any reasonably-sized health system tomorrow morning and search for a common name. Maria Garcia. John Smith. Jennifer Lee. You will get hits. A lot of hits. Some of those hits are different people who happen to share a name (which, for "John Smith," should not surprise anyone). Some of them are the same person who was registered three different times by three different front-desk staff who each spelled the name slightly differently, used a different format for the date of birth, or didn't ask for an SSN this time.

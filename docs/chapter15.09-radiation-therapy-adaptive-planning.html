@@ -365,6 +365,10 @@ validated.
 Nothing here is a validated clinical tool. Any production use needs clinical
 ownership and review by your own clinical, legal, and compliance teams.</p>
 </blockquote>
+<!-- phi-callout -->
+<blockquote>
+<p><strong>Before you build this, settle the data-governance questions.</strong> This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See &quot;Before You Send Protected Health Information Anywhere&quot; at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.</p>
+</blockquote>
 <h2 id="the-problem">The Problem</h2>
 <p>Here's the thing about radiation therapy that most people outside oncology don't realize: the plan you make on day one is wrong by day fifteen.</p>
 <p>A patient gets diagnosed with a head and neck tumor. The radiation oncologist and medical physicist spend hours crafting a treatment plan. They use CT imaging to map the tumor volume. They calculate beam angles, intensities, and fractionation schedules that maximize dose to the tumor while sparing critical structures (the spinal cord, the parotid glands, the optic nerves). It's a beautiful optimization problem, and the initial solution is genuinely impressive.</p>
@@ -372,7 +376,7 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <p>This is called anatomical adaptation, and it's one of the hardest problems in radiation oncology.</p>
 <p>The current standard of care handles this crudely. Most centers create one plan and run it for the entire course. Some centers do &quot;adaptive replanning&quot; at fixed intervals (replan at fraction 15, maybe again at fraction 25). Each replan requires a new CT scan, new contouring (a physician manually outlining the tumor and organs on every slice), and new plan optimization. It takes hours of physicist and physician time. It costs the department significant resources. And the timing is arbitrary: replanning at fraction 15 might be too late for a fast-responding tumor or too early for a slow one.</p>
 <p>The question that reinforcement learning can help answer: when should you replan, and how should the new plan differ from the current one? Not on a fixed schedule, but based on what's actually happening to this specific patient's anatomy and tumor response.</p>
-<p>This is a sequential decision problem. At each fraction, you observe the patient's current state (imaging, dose delivered so far, tumor response). You decide whether to continue the current plan, make minor adjustments, or trigger a full replan. Each decision affects future options and outcomes. The reward is defined over the entire treatment course: maximize tumor control probability while minimizing normal tissue complication probability. Classic RL territory.</p>
+<p>This is a sequential decision problem. At each fraction, you observe the patient's current state (imaging, dose delivered so far, tumor response). You decide whether to continue the current plan, make minor adjustments, or trigger a full replan. Each decision affects future options and outcomes. The reward is defined over the entire treatment course: maximize tumor control probability while minimizing normal tissue complication probability. Classic reinforcement learning (RL) territory.</p>
 <hr />
 <h2 id="the-technology-reinforcement-learning-for-sequential-treatment-decisions">The Technology: Reinforcement Learning for Sequential Treatment Decisions</h2>
 <h3 id="what-reinforcement-learning-actually-is">What Reinforcement Learning Actually Is</h3>

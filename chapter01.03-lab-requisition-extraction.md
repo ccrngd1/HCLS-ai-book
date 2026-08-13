@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A physician finishes a visit with a patient who has Type 2 diabetes. She orders a hemoglobin A1c, a comprehensive metabolic panel, and a lipid panel. She scribbles the diagnosis on the lab req as "T2DM, HTN" and faxes it to the lab. The lab fax machine spits out a thermal print. Someone scans it. Another person types it into the ordering system. A third person looks up the ICD-10 codes for "T2DM" and "HTN" and keys them in. A fourth person double-checks the test panel codes for billing.

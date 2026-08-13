@@ -11,6 +11,9 @@
 > Nothing here is a validated clinical tool. Any production use needs clinical
 > ownership and review by your own clinical, legal, and compliance teams.
 
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
+
 ## The Problem
 
 It's 2:40 AM in the ICU. A hospitalist is standing over a 74-year-old man with sepsis from a presumed urinary source. The patient has chronic kidney disease (eGFR 28), atrial fibrillation on apixaban, heart failure with reduced ejection fraction, a sulfa allergy (rash, not anaphylaxis), and a history of C. diff colitis two years ago. The local antibiogram favors piperacillin-tazobactam for urinary sepsis, but the patient's renal function argues for dose adjustment. The pharmacist is at home. The infectious disease fellow is covering three other floors. The hospitalist has roughly four minutes to decide on an empiric antibiotic regimen before the next rapid response pages her.

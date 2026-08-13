@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 Picture a payment integrity analyst at a regional payer on a Thursday afternoon. Her dashboard shows 142,000 claims adjudicated this week across roughly 18,000 billing providers. Somewhere inside that pile are patterns that shouldn't be there. A dermatology practice that billed 97110 (therapeutic exercise) on eighty-four claims this quarter, a code that most dermatology practices would bill approximately zero times a year. An internist who, after being flat at two Current Procedural Terminology (CPT) codes per visit for a decade, suddenly jumped to five codes per visit two months ago. A small urgent care in the suburbs where the distribution of evaluation and management levels went from a reasonable-looking bell curve centered at 99213 (level 3) to a distribution that leans almost entirely on 99214 and 99215 (levels 4 and 5). (In 2021 a similar shift happened across the entire industry as a consequence of the CMS/AMA E/M documentation overhaul, which is exactly why peer comparisons matter as much as self-comparisons; the upcoding signal is the shift relative to peers, not the shift in absolute terms.) None of these patterns are duplicates. None of them are necessarily fraud. Some of them are legitimate practice evolution. A few of them are seven-figure problems hiding in plain sight.

@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 You've just done something kind of remarkable in Recipe 1.1: a staff member photographs an insurance card, and seconds later your electronic health record (EHR) has a clean, structured JSON record. One image, one page, a handful of fields, result in under three seconds. It almost feels like cheating.

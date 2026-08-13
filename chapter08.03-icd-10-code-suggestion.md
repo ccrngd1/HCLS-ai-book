@@ -4,6 +4,9 @@
 
 ---
 
+
+<!-- phi-callout -->
+> **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
 
 A medical coder opens her queue at 7 AM. There are 147 encounters from yesterday waiting for diagnosis coding. She opens the first one: a progress note from a primary care visit. The patient has Type 2 diabetes with peripheral neuropathy, essential hypertension, chronic kidney disease stage 3, and was seen today for a medication adjustment after their A1c came back at 8.2. The coder reads the entire note. She identifies the relevant diagnoses. She navigates the ICD-10-CM code tree. She considers whether E11.40 (Type 2 diabetes with diabetic neuropathy, unspecified) or E11.42 (Type 2 diabetes with diabetic polyneuropathy) is more appropriate given the documentation. She checks whether the CKD stage is explicitly documented, because she is not allowed to infer it from the eGFR sitting right there on the lab panel: the note says stage 3 without saying 3a or 3b, so the code is N18.30. She does not pick I10 for the hypertension, because hypertension documented together with chronic kidney disease takes a combination code from I12, which is I12.9 at this stage. And because ICD-10-CM presumes a causal link between diabetes and the conditions indexed beneath it, the kidney disease is coded as diabetic kidney disease, E11.22, sequenced ahead of the hypertensive code. Four codes, and three of them required her to know a convention rather than read a word off the page. She submits and moves to the next encounter.
