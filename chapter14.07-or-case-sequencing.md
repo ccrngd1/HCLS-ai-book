@@ -32,7 +32,7 @@ You don't enumerate all possibilities. Instead, you formulate the problem mathem
 
 There are two main families of solvers:
 
-**Mixed-Integer Programming (MIP) solvers.** These formulate the problem as a set of linear equations with some variables constrained to be integers (typically 0 or 1, representing "yes this case goes in this slot" or "no it doesn't"). The solver uses branch-and-bound algorithms to systematically explore the solution space, pruning branches that can't possibly beat the best solution found so far. Commercial MIP solvers (Gurobi, CPLEX) are remarkably good at this. They can prove optimality: "this is the best possible solution given your constraints." Open-source options (COIN-OR CBC, HiGHS, SCIP) are capable but slower on large instances.
+**Mixed-integer programming (MIP) solvers.** These formulate the problem as a set of linear equations with some variables constrained to be integers (typically 0 or 1, representing "yes this case goes in this slot" or "no it doesn't"). The solver uses branch-and-bound algorithms to systematically explore the solution space, pruning branches that can't possibly beat the best solution found so far. Commercial MIP solvers (Gurobi, CPLEX) are remarkably good at this. They can prove optimality: "this is the best possible solution given your constraints." Open-source options (COIN-OR CBC, HiGHS, SCIP) are capable but slower on large instances.
 
 **Constraint Programming (CP) solvers.** These are particularly well-suited to scheduling problems because they natively understand concepts like "this task must come before that task" and "these two tasks can't overlap on the same resource." CP solvers use propagation and search: they infer consequences of partial assignments (if case A is in room 3 at 8 AM, then case B can't be in room 3 until at least 10:30 AM) and use those inferences to prune the search space. Google's OR-Tools CP-SAT solver is excellent and free.
 
@@ -106,7 +106,7 @@ Most production systems need both: batch for the initial plan, real-time for adj
 
 **Solver engine.** The optimization core. Accepts the constraint model and produces an optimal or near-optimal schedule. Should support both batch mode (full optimization from scratch) and warm-start mode (fix completed cases, re-optimize the rest).
 
-**Schedule output and visualization.** The optimized schedule needs to be consumable by humans (perioperative coordinators, charge nurses, surgeons) and by systems (EHR, patient tracking boards, equipment management). A Gantt-style visualization showing rooms on the Y-axis and time on the X-axis is the standard display.
+**Schedule output and visualization.** The optimized schedule needs to be consumable by humans (perioperative coordinators, charge nurses, surgeons) and by systems (electronic health record (EHR), patient tracking boards, equipment management). A Gantt-style visualization showing rooms on the Y-axis and time on the X-axis is the standard display.
 
 **Replan trigger.** Monitors real-time events (case completions, cancellations, add-ons, duration overruns) and decides when to trigger re-optimization. Not every event needs a full replan. A case finishing 5 minutes early doesn't warrant disruption. A case finishing 45 minutes late, or a cancellation that frees a room, does.
 

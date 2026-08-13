@@ -14,7 +14,7 @@
 
 **Amazon DynamoDB for case data and schedule state.** The current schedule, case metadata, and constraint parameters need low-latency reads (for the real-time replan path) and consistent writes (to prevent conflicting schedule updates). DynamoDB's single-digit-millisecond reads and conditional writes fit perfectly.
 
-**Amazon EventBridge for real-time event routing.** Case completions, cancellations, and add-ons arrive as events from the EHR integration. EventBridge routes these to the replan trigger logic, which decides whether to invoke re-optimization.
+**Amazon EventBridge for real-time event routing.** Case completions, cancellations, and add-ons arrive as events from the electronic health record (EHR) integration. EventBridge routes these to the replan trigger logic, which decides whether to invoke re-optimization.
 
 **Amazon S3 for historical data and model artifacts.** Duration prediction models, historical case logs, and optimization run artifacts (for audit and analysis) live in S3.
 
@@ -409,7 +409,7 @@ FUNCTION publish_schedule(schedule):
 **Optimization Solver Resources:**
 - [Google OR-Tools CP-SAT Solver](https://developers.google.com/optimization/cp/cp_solver) - Free, high-performance constraint programming solver
 - [HiGHS Optimization Solver](https://highs.dev/) - Open-source linear and mixed-integer programming solver
-- [COIN-OR CBC](https://github.com/coin-or/Cbc) - Open-source MIP solver
+- [COIN-OR CBC](https://github.com/coin-or/Cbc) - Open-source mixed-integer programming (MIP) solver
 
 **AWS Solutions and Blogs:**
 - [AWS HPC and Batch Computing](https://aws.amazon.com/hpc/) - Patterns for compute-intensive workloads including optimization
