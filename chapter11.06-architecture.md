@@ -8,9 +8,9 @@
 
 ### Why These Services
 
-**Amazon Bedrock for the LLM and the embeddings.** Same selection criteria as recipes 11.1 through 11.5. The triage bot specifically benefits from a model with strong tool-use, strong instruction-following for the protocol-grounding and conservative-bias discipline, and conversational warmth for distress-context conversations. Claude Sonnet-class models or comparable frontier models for the orchestration; smaller models for intent classification, emergency screening, and clinical-decision-rule input parsing. Bedrock provides HIPAA-eligible deployment under BAA.
+**Amazon Bedrock for the LLM and the embeddings.** Same selection criteria as recipes 11.1 through 11.5. The triage bot specifically benefits from a model with strong tool-use, strong instruction-following for the protocol-grounding and conservative-bias discipline, and conversational warmth for distress-context conversations. Claude Sonnet-class models or comparable frontier models for the orchestration; smaller models for intent classification, emergency screening, and clinical-decision-rule input parsing. Bedrock provides HIPAA-eligible deployment under a business associate agreement (BAA).
 
-**Amazon Bedrock Knowledge Bases for the clinical-protocol corpus.** The clinical triage protocols (whether licensed Schmitt-Thompson, an institutional adaptation, or institution-built) are the bot's grounded retrieval source. Knowledge Bases provides the managed RAG layer with vector indexing and filtered retrieval. The chunking is per-protocol-section with metadata (protocol_id, protocol_version, decision_point_id, pediatric_vs_adult, special_population_flags, effective_date) to support precise protocol-and-version-scoped retrieval.
+**Amazon Bedrock Knowledge Bases for the clinical-protocol corpus.** The clinical triage protocols (whether licensed Schmitt-Thompson, an institutional adaptation, or institution-built) are the bot's grounded retrieval source. Knowledge Bases provides the managed retrieval-augmented generation (RAG) layer with vector indexing and filtered retrieval. The chunking is per-protocol-section with metadata (protocol_id, protocol_version, decision_point_id, pediatric_vs_adult, special_population_flags, effective_date) to support precise protocol-and-version-scoped retrieval.
 
 **Amazon Bedrock Agents for tool orchestration.** Same selection rationale as the previous chapter 11 recipes. The bot's tools (chart_context_lookup, intent_classify, emergency_screen, protocol_select, protocol_retrieve, clinical_rule_compute, recommendation_compose, nurse_line_escalate, telehealth_book, urgent_care_locate, and others) are defined as Agents action groups with OpenAPI schemas.
 
@@ -18,7 +18,7 @@
 
 **Amazon OpenSearch Service (or Bedrock-managed vector store) for the retrieval index.** The clinical-protocol corpus is the institution's protocol library plus any reference materials cited within it. OpenSearch Serverless is the typical default for managed vector workloads on AWS.
 
-**AWS HealthLake (optional) for FHIR-native chart-context data.** Where the institution stores patient demographics, problem list, medication list, allergies, and encounter history in FHIR resources, HealthLake provides a managed FHIR data store the chart-context tool queries directly.
+**AWS HealthLake (optional) for Fast Healthcare Interoperability Resources (FHIR)-native chart-context data.** Where the institution stores patient demographics, problem list, medication list, allergies, and encounter history in FHIR resources, HealthLake provides a managed FHIR data store the chart-context tool queries directly.
 
 **AWS Lambda for the chat handler, tool implementations, and clinical-decision-rule computation.** Same pattern as the previous chapter 11 recipes. The clinical-decision-rule Lambdas implement HEART, Wells, Centor, Ottawa, and other rules as deterministic functions.
 
@@ -1039,7 +1039,7 @@ The DynamoDB tables on the real-time hot path hold structural references and met
 **Archive path (S3 with Object Lock):** Full protocol-content text used at recommendation time, full clinical-decision-rule input/output detail, full chart-context detail, full conversation transcript, full tool-call argument and response payloads. Each class is encrypted with a per-class KMS key for blast-radius containment.
 
 **Retention floors.** Per-record-class retention is the longest of:
-- HIPAA's six-year minimum for PHI
+- HIPAA's six-year minimum for protected health information (PHI)
 - State-specific medical-record retention rules (typically 7-10+ years for adult records; pediatric records often retained until age of majority plus the state's adult retention period, sometimes producing 25+ year retention windows)
 - FDA SaMD post-market obligations where applicable
 - Per-channel retention obligations (TCPA/10DLC for SMS; voice-channel recording retention rules)
@@ -1493,13 +1493,13 @@ Bot:     Stay safe. The ambulance team is trained
 - **Disclosures of intimate-partner violence, child abuse, or elder abuse.** Patients who disclose these during the conversation. Mitigation: the disclosure triggers a specific escalation pathway with a licensed clinician (mandatory reporter), with the conversation context attached and statutory-reporting awareness.
 - **Stale chart context.** A patient whose chart context is several months old may have new conditions or new medications the bot cannot account for. Mitigation: chart-context as-of-date is explicit; bot asks confirmatory questions about high-risk medications and active treatment plans when relevant.
 - **Cross-language asset gaps.** Validated translations of protocols, regulatory disclaimers, emergency instructions, and red-flag symptom lists are difficult to maintain. Mitigation: per-language asset development with native-speaker review and clinical-leadership sign-off; per-language launch-gate equity monitoring.
-- **Voice-channel ASR errors propagating into protocol questioning.** "Sharp pain" misheard as "shoulder pain" propagates into wrong protocol selection. Mitigation: explicit confirmation step plus voice-tuned ASR; conservative-bias defaults when ASR confidence is low.
+- **Voice-channel automatic speech recognition (ASR) errors propagating into protocol questioning.** "Sharp pain" misheard as "shoulder pain" propagates into wrong protocol selection. Mitigation: explicit confirmation step plus voice-tuned ASR; conservative-bias defaults when ASR confidence is low.
 - **Patients who do not follow the recommendation.** A patient told to call 911 who waits until morning. Mitigation: the institutional policy and the audit pathway record what was recommended; the responsibility for following the recommendation is the patient's; the bot's recommendation is delivered with appropriate urgency framing.
 - **Patients who repeatedly ask the bot to give a diagnosis or prescribe a medication.** Mitigation: scope-violation screening replaces diagnostic or prescriptive responses with appropriate redirects; persistent off-scope questioning escalates to a nurse.
 - **Patients in social situations where the recommended care level is not feasible.** A patient told to go to an ED who has no transportation, no childcare, and is afraid of the bill. Mitigation: care-navigation handoff for patients whose recommended care level is not reachable; institutional policy on social-determinants overlay.
 - **Protocol gaps and ambiguities.** Real protocols have decision points where the formal answer is "consult clinical judgment." Mitigation: the protocol logic returns "ambiguous, escalate to nurse" rather than letting the LLM guess.
 - **Outcome correlation bias.** A patient who was told to go to the ED and chose not to never appears in the ED-encounter records, which can make the bot's accuracy look better than it is. Mitigation: outcome correlation includes 72-hour follow-up across all care settings, plus member-survey sampling for self-reported outcomes.
-- **Regulatory positioning shifts.** FDA guidance on patient-facing CDS continues to evolve; the institutional positioning may shift over time. Mitigation: the regulatory-strategy artifact is reviewed regularly; architectural changes preserve flexibility for either non-regulated or registered SaMD positioning.
+- **Regulatory positioning shifts.** FDA guidance on patient-facing clinical decision support (CDS) continues to evolve; the institutional positioning may shift over time. Mitigation: the regulatory-strategy artifact is reviewed regularly; architectural changes preserve flexibility for either non-regulated or registered SaMD positioning.
 - **Adversarial inputs.** Patients (or others) attempting prompt injection to extract diagnostic content, manipulate recommendations, or test the system. Mitigation: input-safety pipeline with prompt-injection detection; output-safety pipeline with scope verification; per-language jailbreak-test corpus including triage-specific injection cases.
 - **Health-equity disparities.** Per-cohort monitoring may reveal that the bot's over-triage and under-triage rates differ by sex, race, age, or language in ways that do not reflect underlying clinical reality. Mitigation: per-cohort monitoring as launch-gate; periodic clinical-quality review with explicit equity focus; protocol-revision process incorporates equity findings.
 
@@ -1529,7 +1529,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Mandatory-reporting pathway integration.** Disclosures of child abuse, elder abuse, intimate-partner violence, and certain mental-health crisis types trigger statutory reporting obligations for licensed clinicians. The bot's response routes to a licensed clinician (mandatory reporter) with the conversation context attached. The institutional policy specifies the routing per state and per disclosure type.
 
-**Voice-channel deployment with accessibility considerations.** Patients without smartphones, patients with disabilities, patients preferring voice over text. The voice channel uses the same bot logic with ASR/TTS layers and voice-specific design adjustments including slower pacing, explicit confirmation of high-stakes inputs, and tighter latency budgets.
+**Voice-channel deployment with accessibility considerations.** Patients without smartphones, patients with disabilities, patients preferring voice over text. The voice channel uses the same bot logic with ASR and text-to-speech (TTS) layers and voice-specific design adjustments including slower pacing, explicit confirmation of high-stakes inputs, and tighter latency budgets.
 
 **Multi-language deployment with validated translations.** Per-language asset development includes validated protocol translations, validated emergency-instruction translations, validated regulatory disclaimer translations, validated red-flag symptom lists, per-language tone calibration, and per-language equity monitoring. The translations are reviewed by the institution's language-services team and clinical leadership; ad-hoc machine translation is not acceptable for triage content.
 
@@ -1611,7 +1611,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [FDA Clinical Decision Support Software Final Guidance (2022)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software): the FDA's framework for distinguishing regulated and non-regulated CDS software
 - [FDA Software as a Medical Device (SaMD)](https://www.fda.gov/medical-devices/digital-health-center-excellence/software-medical-device-samd): the FDA's overall framework for digital-health-product regulation
 - [FDA Digital Health Center of Excellence](https://www.fda.gov/medical-devices/digital-health-center-excellence): central resource for digital-health regulatory updates
-- [HL7 FHIR Patient Resource](https://www.hl7.org/fhir/patient.html): the FHIR Patient resource specification
+- [Health Level Seven (HL7) FHIR Patient Resource](https://www.hl7.org/fhir/patient.html): the FHIR Patient resource specification
 - [HL7 FHIR Condition Resource](https://www.hl7.org/fhir/condition.html): the FHIR Condition resource specification (for problem list)
 - [HL7 FHIR MedicationStatement Resource](https://www.hl7.org/fhir/medicationstatement.html): the FHIR resource for current-medication retrieval
 - [HL7 FHIR AllergyIntolerance Resource](https://www.hl7.org/fhir/allergyintolerance.html): the FHIR resource for allergy retrieval

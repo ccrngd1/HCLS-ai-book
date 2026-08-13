@@ -111,7 +111,7 @@ A generalist LLM with a chat surface and some triage text pasted in breaks in sp
 
 **Clinical-decision rules as deterministic tools.** LLMs compute HEART, Wells, Centor, and Ottawa scores poorly. The rule runs as code with structured inputs and outputs; the LLM gathers the inputs conversationally, calls the tool, and presents the score and its risk stratum. The tool version is audited.
 
-**A defensible audit trail.** A regulated triage answer must show its work: the protocol consulted, the question sequence, the patient's responses, the computed acuity, and the basis for the recommendation. Without the structured ledger plus the conversation log, the recommendation is unreviewable and the regulatory position is untenable. This is also where the conversation's dense PHI, and any sensitive disclosures, are governed.
+**A defensible audit trail.** A regulated triage answer must show its work: the protocol consulted, the question sequence, the patient's responses, the computed acuity, and the basis for the recommendation. Without the structured ledger plus the conversation log, the recommendation is unreviewable and the regulatory position is untenable. This is also where the conversation's dense protected health information (PHI), and any sensitive disclosures, are governed.
 
 **Nurse-line escalation as a first-class primitive.** The bot ships with a backstop nurse line, not a fallback. Escalation triggers on low confidence, protocol hand-off points, poor protocol fit, an explicit patient request, or any safety flag, and hands off the full transcript, protocol, answer set, and computed recommendation so the patient never starts over.
 
@@ -147,9 +147,9 @@ A few practical updates worth knowing.
 
 **Clinical-decision rules are increasingly used as triage components, but read their inputs before you promise one.** The Centor score (streptococcal pharyngitis) and the Ottawa ankle and knee rules are within reach of a conversation, because their inputs are history and a small number of things a patient can report or check. HEART and Wells are not. HEART needs an ECG and a troponin; Wells needs physical examination findings and a clinician's judgment about whether pulmonary embolism is the most likely diagnosis. A conversational bot cannot complete either one, and a design that implies otherwise will either stall waiting for inputs it can never collect or, worse, compute a score from partial data and present it as if it were the real thing. What a bot can legitimately do is collect the history components, hand them forward, and let the score be computed where the ECG and the blood draw happen.
 
-**The FDA's posture continues to evolve.** The 2022 Clinical Decision Support guidance clarified the regulated-versus-non-regulated line, but patient-facing triage faces more scrutiny than clinician-facing CDS, because the patient cannot independently verify the recommendation against their own judgment. Institutions deploying at scale work with FDA-experienced counsel from the design phase.
+**The FDA's posture continues to evolve.** The 2022 Clinical Decision Support guidance clarified the regulated-versus-non-regulated line, but patient-facing triage faces more scrutiny than clinician-facing clinical decision support (CDS), because the patient cannot independently verify the recommendation against their own judgment. Institutions deploying at scale work with FDA-experienced counsel from the design phase.
 
-**Build-vs-buy is mature.** Several conversational-triage vendors operate at institution scale with EHR integration, multilingual support, and regulatory frameworks. Most institutions run a hybrid: build the member-facing bot in-house, license the clinical protocols, and integrate with the existing nurse-line, telehealth, and care-navigation infrastructure.
+**Build-vs-buy is mature.** Several conversational-triage vendors operate at institution scale with electronic health record (EHR) integration, multilingual support, and regulatory frameworks. Most institutions run a hybrid: build the member-facing bot in-house, license the clinical protocols, and integrate with the existing nurse-line, telehealth, and care-navigation infrastructure.
 
 ---
 
@@ -241,7 +241,7 @@ The fifth trap is shipping without an explicit equity commitment. Studies of nur
 - **Recipe 4.8 (Treatment Response Prediction):** Chapter 4. The triage bot's chart-context integration may include treatment-response signals for active-treatment-plan patients.
 - **Recipe 7.1+ (Predictive Analytics / Risk Scoring, Chapter 7):** The clinical-decision rules used in the triage bot are a specific class of risk-scoring tools.
 - **Recipe 10.1 (IVR Call Routing Enhancement):** Chapter 10. The voice-channel deployment of the triage bot integrates with the institution's IVR routing infrastructure.
-- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for the triage bot builds on the voice assistant's ASR/TTS patterns.
+- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for the triage bot builds on the voice assistant's automatic speech recognition (ASR) and text-to-speech (TTS) patterns.
 - **Recipe 12.x (Forecasting & Time-Series Analysis):** Chapter 12. The outcome-correlation pipeline benefits from time-series patterns for tracking subsequent care utilization.
 - **Recipe 13.x (Knowledge Graphs & Clinical Reasoning):** Chapter 13. The clinical-protocol corpus may be modeled as a knowledge graph for richer cross-protocol querying.
 
