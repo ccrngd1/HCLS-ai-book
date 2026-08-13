@@ -245,7 +245,7 @@ The pipeline has four logical components: a member-feature ingestion path that p
 
 **Equity instrumentation is built in.** Every batch run produces cohort-sliced metrics: who got recommended, who didn't, by demographic and engagement-history cohorts. Dashboards highlight drift in those distributions. Equity floors in the allocator (capacity reserved for under-engaged cohorts, capacity reserved for highest-clinical-need members regardless of engagement prediction) are configurable policy levers that the operations team can tune.
 
-**Care-team integration is a parallel feedback loop.** Some plans want the primary care team to know about wellness recommendations: "your patient was recommended for DPP this week; here's the structured talking points." The recommender writes those alerts into the EHR's inbox or care-team dashboard. The PCP's response (endorsed, declined, deferred) is itself a signal that flows back to refine the recommender; a PCP override on a recommendation is a strong negative label that should be respected and learned from.
+**Care-team integration is a parallel feedback loop.** Some plans want the primary care team to know about wellness recommendations: "your patient was recommended for DPP this week; here's the structured talking points." The recommender writes those alerts into the electronic health record (EHR)'s inbox or care-team dashboard. The PCP's response (endorsed, declined, deferred) is itself a signal that flows back to refine the recommender; a PCP override on a recommendation is a strong negative label that should be respected and learned from.
 
 ---
 
