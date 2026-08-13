@@ -8,11 +8,11 @@
 
 ### Why These Services
 
-**Amazon SageMaker for model training and experimentation.** Sepsis RL training involves iterating on state representations, reward functions, and algorithm hyperparameters. SageMaker provides managed notebook instances for exploration, training jobs with configurable compute (GPU instances for neural network-based approaches), and experiment tracking to compare policy variants. The managed infrastructure means you're not maintaining GPU clusters between training runs.
+**Amazon SageMaker for model training and experimentation.** Sepsis reinforcement learning (RL) training involves iterating on state representations, reward functions, and algorithm hyperparameters. SageMaker provides managed notebook instances for exploration, training jobs with configurable compute (GPU instances for neural network-based approaches), and experiment tracking to compare policy variants. The managed infrastructure means you're not maintaining GPU clusters between training runs.
 
-**Amazon S3 for data lake storage.** The preprocessed EHR trajectories, trained model artifacts, evaluation results, and audit logs all live in S3. Versioning tracks which dataset version produced which policy. Lifecycle policies manage the retention of intermediate artifacts.
+**Amazon S3 for data lake storage.** The preprocessed electronic health record (EHR) trajectories, trained model artifacts, evaluation results, and audit logs all live in S3. Versioning tracks which dataset version produced which policy. Lifecycle policies manage the retention of intermediate artifacts.
 
-**AWS Glue for ETL and cohort construction.** Extracting sepsis cohorts from raw EHR data involves complex SQL-like transformations: joining diagnosis tables with lab results, vital signs, and medication administration records; applying Sepsis-3 criteria; constructing time-aligned trajectories. Glue handles this at scale without provisioning Spark clusters manually.
+**AWS Glue for extract, transform, and load (ETL) and cohort construction.** Extracting sepsis cohorts from raw EHR data involves complex SQL-like transformations: joining diagnosis tables with lab results, vital signs, and medication administration records; applying Sepsis-3 criteria; constructing time-aligned trajectories. Glue handles this at scale without provisioning Spark clusters manually.
 
 **Amazon DynamoDB for policy serving (discrete state space path).** If you discretize the continuous state space into clusters (typically ~750 k-means clusters over the physiological feature space), the resulting policy is a lookup table: cluster ID maps to action ID. DynamoDB provides single-digit-millisecond lookups for this table. This path trades off representational fidelity for interpretability and serving simplicity. The tradeoff: discretization loses information between cluster boundaries, but the policy is easy to inspect, audit, and explain.
 
@@ -534,9 +534,9 @@ FUNCTION serve_recommendation(patient_state, policy_endpoint):
 
 The pseudocode and architecture above demonstrate the pattern. Deploying this as a clinical decision support tool requires addressing several gaps that are intentionally outside the scope of a cookbook recipe:
 
-**Regulatory pathway.** An RL-based treatment recommendation system likely falls under FDA oversight as a Clinical Decision Support (CDS) tool. The regulatory pathway depends on whether it meets the criteria for exemption under 21st Century Cures Act Section 3060. If it provides specific treatment recommendations (which it does), it likely requires FDA clearance or approval. This is a multi-year process.
+**Regulatory pathway.** An RL-based treatment recommendation system likely falls under FDA oversight as a clinical decision support (CDS) tool. The regulatory pathway depends on whether it meets the criteria for exemption under 21st Century Cures Act Section 3060. If it provides specific treatment recommendations (which it does), it likely requires FDA clearance or approval. This is a multi-year process.
 
-**Prospective validation.** Off-policy evaluation is necessary but not sufficient. Before clinical deployment, you need a prospective observational study: run the system in shadow mode (generate recommendations but don't show them to clinicians), then retrospectively compare its recommendations against actual outcomes. This requires IRB approval, institutional buy-in, and months of data collection.
+**Prospective validation.** Off-policy evaluation is necessary but not sufficient. Before clinical deployment, you need a prospective observational study: run the system in shadow mode (generate recommendations but don't show them to clinicians), then retrospectively compare its recommendations against actual outcomes. This requires institutional review board (IRB) approval, institutional buy-in, and months of data collection.
 
 **Model updating and drift.** Treatment patterns change. New drugs become available. Patient populations shift. The model needs a retraining pipeline with drift detection. But retraining an RL policy on new data and validating it is not a simple model refresh; it requires re-running the full evaluation pipeline.
 

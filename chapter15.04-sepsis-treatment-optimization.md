@@ -18,7 +18,7 @@ There's no single "right answer" for sepsis management. The Surviving Sepsis Cam
 
 The question that's been driving a decade of research: can we learn, from the thousands of sepsis cases already treated, a treatment policy that would have produced better outcomes than what clinicians actually did? Not replacing clinicians. Augmenting them. Identifying patterns in the data that suggest "patients like this one tend to do better when you give more fluid earlier" or "backing off vasopressors sooner in this patient profile reduces organ damage."
 
-This is a reinforcement learning problem. The patient's physiological state evolves over time. Each treatment decision changes that trajectory. The goal is to learn a policy (a mapping from patient states to treatment actions) that maximizes some measure of patient outcome. And it's one of the most studied RL applications in healthcare, which means we know a lot about both the promise and the pitfalls.
+This is a reinforcement learning (RL) problem. The patient's physiological state evolves over time. Each treatment decision changes that trajectory. The goal is to learn a policy (a mapping from patient states to treatment actions) that maximizes some measure of patient outcome. And it's one of the most studied RL applications in healthcare, which means we know a lot about both the promise and the pitfalls.
 
 ---
 
@@ -26,7 +26,7 @@ This is a reinforcement learning problem. The patient's physiological state evol
 
 ### What Is Reinforcement Learning?
 
-Reinforcement learning (RL) is a framework for learning optimal decision-making in sequential settings. Unlike supervised learning (where you have labeled examples of correct answers), RL learns from the consequences of actions. An agent observes a state, takes an action, receives a reward signal, transitions to a new state, and repeats. Over many episodes, the agent learns which actions in which states lead to the best cumulative reward.
+Reinforcement learning is a framework for learning optimal decision-making in sequential settings. Unlike supervised learning (where you have labeled examples of correct answers), RL learns from the consequences of actions. An agent observes a state, takes an action, receives a reward signal, transitions to a new state, and repeats. Over many episodes, the agent learns which actions in which states lead to the best cumulative reward.
 
 The core components:
 
@@ -78,7 +78,7 @@ The standard formulation (following the influential work by Komorowski et al., 2
 
 **Confounding.** Clinicians don't treat randomly. Sicker patients get more aggressive treatment. If you naively learn from observational data, you might conclude that vasopressors cause death (because patients who received high-dose vasopressors died more often). This is confounding, not causation. Addressing it requires careful state representation (include enough variables to capture the patient's true severity) or explicit causal inference methods.
 
-**Partial observability.** The state representation never captures everything the clinician knew. The nurse noticed the patient looked "off." The attending had a gut feeling based on 20 years of experience. The family mentioned the patient had been declining for days before admission. None of this is in the structured EHR data. The RL agent is making decisions based on an incomplete picture.
+**Partial observability.** The state representation never captures everything the clinician knew. The nurse noticed the patient looked "off." The attending had a gut feeling based on 20 years of experience. The family mentioned the patient had been declining for days before admission. None of this is in the structured electronic health record (EHR) data. The RL agent is making decisions based on an incomplete picture.
 
 **Non-stationarity.** Treatment protocols change over time. A policy learned from 2015-2018 data may not be optimal for 2026 patients, because the standard of care has shifted, new drugs are available, and patient populations have changed.
 
