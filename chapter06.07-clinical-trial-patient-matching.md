@@ -12,7 +12,7 @@ The research coordinator has a list of 180,000 patients in the health system's d
 
 This is not an edge case. This is the default state of clinical trial recruitment in 2026. The Tufts Center for the Study of Drug Development has reported that 80% of clinical trials fail to meet enrollment timelines. Not because eligible patients don't exist, but because finding them is a manual, exhausting process that doesn't scale. Sites leave money on the table. Patients who could benefit from experimental therapies never hear about them. Trials take longer, cost more, and sometimes fail entirely because they can't recruit fast enough.
 
-The information needed to determine eligibility is already in the EHR. Lab results, medication lists, diagnosis codes, procedure histories, clinical notes. It's all there. The problem is that eligibility criteria are expressed in clinical language ("no history of pancreatitis") while the data lives in structured codes (ICD-10: K85.x, K86.1) and unstructured notes ("Patient reports episode of acute pancreatitis in 2019"). Bridging that gap at scale is the core technical challenge.
+The information needed to determine eligibility is already in the electronic health record (EHR). Lab results, medication lists, diagnosis codes, procedure histories, clinical notes. It's all there. The problem is that eligibility criteria are expressed in clinical language ("no history of pancreatitis") while the data lives in International Classification of Diseases (ICD)-10 codes (K85.x, K86.1) and unstructured notes ("Patient reports episode of acute pancreatitis in 2019"). Bridging that gap at scale is the core technical challenge.
 
 When this works, a research coordinator starts her day with a pre-screened list of 200 likely-eligible patients instead of a registry of 180,000. She spends her time on the nuanced judgment calls (is this patient actually willing to participate? does their schedule allow weekly visits?) rather than on mechanical chart review. Enrollment timelines compress. More patients get access to experimental therapies. Trials complete faster.
 
@@ -27,19 +27,19 @@ Clinical trial eligibility criteria are deceptively complex. A typical Phase III
 Consider a single exclusion criterion: "No history of cardiovascular event within the past 12 months." To evaluate this computationally, you need to:
 
 1. Define what counts as a "cardiovascular event" (MI, stroke, TIA, unstable angina, heart failure hospitalization, PCI, CABG?)
-2. Map each of those to the relevant ICD-10, CPT, and SNOMED codes
+2. Map each of those to the relevant ICD-10, Current Procedural Terminology (CPT), and Systematized Nomenclature of Medicine (SNOMED) codes
 3. Search the patient's problem list, encounter diagnoses, and procedure history
 4. Apply the temporal constraint (within 12 months of what? screening date? enrollment date?)
 5. Handle negation in clinical notes ("no history of MI" should not trigger a match)
 6. Handle uncertainty ("possible TIA in 2023, workup inconclusive")
 
-Multiply that by 40 criteria and you start to see why this is hard. Each criterion is a mini-NLP and data integration problem.
+Multiply that by 40 criteria and you start to see why this is hard. Each criterion is a miniature natural language processing (NLP) and data integration problem.
 
 ### Structured vs. Unstructured Data
 
 Patient eligibility information lives in two places, and you need both.
 
-**Structured data** includes diagnosis codes (ICD-10), procedure codes (CPT, HCPCS), medication lists (RxNorm), lab results (LOINC), vital signs, and demographics. This is the easy part. You can write deterministic rules: "A1C between 7.5 and 10.5" maps directly to a LOINC code and a value range. "On metformin for at least 90 days" maps to an active medication with a start date.
+**Structured data** includes diagnosis codes (ICD-10), procedure codes (CPT, HCPCS), medication lists (RxNorm), lab results coded in Logical Observation Identifiers Names and Codes (LOINC), vital signs, and demographics. This is the easy part. You can write deterministic rules: "A1C between 7.5 and 10.5" maps directly to a LOINC code and a value range. "On metformin for at least 90 days" maps to an active medication with a start date.
 
 **Unstructured data** includes clinical notes, discharge summaries, pathology reports, and radiology reports. This is where the hard cases live. "No history of pancreatitis" might only be documented in a note from three years ago. "Willing to discontinue SGLT2 inhibitors" is a patient preference that exists nowhere in structured data until someone asks. Allergies, surgical history, social history, and family history are often documented in free text even when structured fields exist.
 
