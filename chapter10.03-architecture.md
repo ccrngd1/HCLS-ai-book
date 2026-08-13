@@ -1,4 +1,4 @@
-# Recipe 10.3 Architecture and Implementation: Voice-to-Text for EHR Navigation
+# Recipe 10.3 Architecture and Implementation: Voice-to-Text for Electronic health record (EHR) Navigation
 
 *Companion to [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
@@ -8,13 +8,13 @@
 
 ### Why These Services
 
-**Amazon Transcribe (streaming) for ASR.** Transcribe's streaming API delivers low-latency partial transcripts over WebSocket, supports vocabulary biasing through custom vocabularies and custom language models, returns per-word confidence, and is HIPAA-eligible under BAA. For short-command navigation specifically, the streaming variant is the right default. Transcribe Medical is also an option when the command vocabulary includes substantial clinical terminology (medication names, lab panel names); for pure navigation without clinical entity slots, the general-purpose Transcribe with a custom vocabulary is usually sufficient and lower-cost. 
+**Amazon Transcribe (streaming) for automatic speech recognition (ASR).** Transcribe's streaming API delivers low-latency partial transcripts over WebSocket, supports vocabulary biasing through custom vocabularies and custom language models, returns per-word confidence, and is HIPAA-eligible under business associate agreement (BAA). For short-command navigation specifically, the streaming variant is the right default. Transcribe Medical is also an option when the command vocabulary includes substantial clinical terminology (medication names, lab panel names); for pure navigation without clinical entity slots, the general-purpose Transcribe with a custom vocabulary is usually sufficient and lower-cost. 
 
 **Amazon Lex for intent classification and slot filling.** Lex is the managed conversational-AI platform that ships with intent definition, slot types (built-in support for dates, numbers, person names; custom slot types for clinical entities), and dialog management. For an EHR navigation MVP, Lex is the pragmatic starting point: a small set of intents, a few sample utterances per intent, and the platform handles the NLU layer with sub-second latency. Lex bot builds are HIPAA-eligible under BAA. For institutions that prefer LLM-based classification, Bedrock is the alternative; the trade-offs were discussed above.
 
 **Amazon Bedrock for fallback and complex slot extraction.** When the rule-based or Lex layer cannot confidently classify a command, a Bedrock-hosted foundation model can serve as a fallback that handles the long tail of unusual phrasings. Bedrock is also useful for complex slot extraction (extracting structured note metadata from a free-form date description, for example). The same caveats from recipe 10.2 apply: validate output against your taxonomy, treat the transcript as untrusted user input in the prompt, and instrument the disagreement-with-human-review metric.
 
-**AWS Lambda for command execution and EHR integration.** The execution stage runs in a Lambda that authenticates as the clinician (typically via the SMART on FHIR launch context's access token), translates the structured command into one or more EHR API calls, and returns the result. Lambda's per-invocation isolation matches the per-command execution model; cold-start latency on Lambda's recent Java/Node/Python runtimes is acceptable for the latency budget when the function is warm.
+**AWS Lambda for command execution and EHR integration.** The execution stage runs in a Lambda that authenticates as the clinician (typically via the SMART on Fast Healthcare Interoperability Resources (FHIR) launch context's access token), translates the structured command into one or more EHR API calls, and returns the result. Lambda's per-invocation isolation matches the per-command execution model; cold-start latency on Lambda's recent Java/Node/Python runtimes is acceptable for the latency budget when the function is warm.
 
 **Amazon API Gateway for the client-facing endpoint.** The voice-navigation client (the SMART on FHIR app, the mobile app, the desktop client) calls API Gateway endpoints that proxy to the Lambda functions. API Gateway provides authentication enforcement, rate limiting, request logging, and a stable contract.
 
@@ -22,7 +22,7 @@
 
 **Amazon DynamoDB for session state, command audit, and configuration.** A session-state table tracks the active command session per device (current patient context, last command, staleness timestamp). A command-audit table durably records every command issued, parsed, executed, with all confidences and outcomes. A configuration table holds the intent taxonomy, the read-write classification rules, the per-clinician preferences. All tables encrypted with customer-managed KMS.
 
-**Amazon S3 for audio recordings (when retained) and audit-log archive.** Audio recordings of commands are PHI-class and must be encrypted with customer-managed KMS. Many deployments retain audio briefly for QA and disagreement review, then discard it; the architecture supports both retain-briefly and discard-immediately patterns. Audit logs flow to S3 via Kinesis Data Firehose for long-term retention with Object Lock in compliance mode.
+**Amazon S3 for audio recordings (when retained) and audit-log archive.** Audio recordings of commands are protected health information (PHI)-class and must be encrypted with customer-managed KMS. Many deployments retain audio briefly for QA and disagreement review, then discard it; the architecture supports both retain-briefly and discard-immediately patterns. Audit logs flow to S3 via Kinesis Data Firehose for long-term retention with Object Lock in compliance mode.
 
 **AWS KMS for cryptographic-key custody.** Customer-managed KMS keys for the audio bucket, the audit bucket, the DynamoDB tables, the Secrets Manager secrets. Different keys per data class for blast-radius containment.
 
@@ -1027,7 +1027,7 @@ The clinician is the speaker in this recipe (unlike patient-facing recipes where
 
 **Eye-tracking integration for context-aware commands.** When eye tracking is available (some clinical workstations include it), the system can disambiguate commands based on what the clinician is looking at: "show last labs" issued while looking at the medications panel might mean "show the labs related to medication monitoring." The architectural extension is the eye-tracking integration and the context-aware slot resolution that uses gaze location as a slot.
 
-**Real-time clinical decision support hooks.** When voice commands surface specific data (a lab result, a medication), CDS hooks can fire alongside: an abnormal potassium result triggers a CDS alert about the patient's ACE inhibitor; a medication-related command triggers an interaction check. The architectural extension is the CDS Hooks integration and the careful UX that surfaces alerts without overwhelming the clinician.
+**Real-time clinical decision support (CDS) hooks.** When voice commands surface specific data (a lab result, a medication), CDS hooks can fire alongside: an abnormal potassium result triggers a CDS alert about the patient's ACE inhibitor; a medication-related command triggers an interaction check. The architectural extension is the CDS Hooks integration and the careful UX that surfaces alerts without overwhelming the clinician.
 
 **Compliance reporting and proactive disparity detection.** Per-clinician usage telemetry combined with per-patient outcome data lets the institution detect whether voice-navigation adoption correlates with quality metrics. The dashboard surfaces adoption gaps (clinicians who never use the system), clinical-outcome correlations, and disparities (does the system work equally well across the practice's clinician demographics?). The architectural extension is the analytics layer and the privacy-preserving design that surfaces patterns without exposing individual clinician performance to other clinicians inappropriately.
 
@@ -1060,7 +1060,7 @@ The clinician is the speaker in this recipe (unlike patient-facing recipes where
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Lex," "Transcribe," "voice assistant" for relevant case studies
 
 **External References (Standards and Frameworks):**
-- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
+- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
 - [SMART on FHIR](https://docs.smarthealthit.org/): the launch-context and authorization specification for clinically-aware EHR apps
 - [SMART App Launch Framework](https://hl7.org/fhir/smart-app-launch/): the formal specification for SMART app launch with clinician and patient context
 - [FHIR R4 Resource Reference](https://www.hl7.org/fhir/R4/resourcelist.html): the resource catalog used by most production EHR FHIR APIs in 2026 
