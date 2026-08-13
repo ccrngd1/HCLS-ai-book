@@ -42,7 +42,7 @@
 
 **Amazon CloudWatch for operational metrics and alarms.** Per-pair end-to-end latency, per-pair confidence distributions, per-pair escalation rates, per-population disparity metrics. Alarms on per-pair quality drift, on escalation-rate spikes, on latency-budget overruns, on per-population disparity widening.
 
-**AWS CloudTrail for API-level audit.** All access to PHI-bearing and biometric-bearing resources is logged. ASR, MT, and TTS invocations are logged with metadata only (not full content, to avoid persisting biometric and PHI in CloudTrail). Lambda invocations and KMS key uses are logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
+**AWS CloudTrail for API-level audit.** All access to PHI-bearing and biometric-bearing resources is logged. ASR, MT, and TTS invocations are logged with metadata only (not full content, to avoid persisting biometric and protected health information (PHI) in CloudTrail). Lambda invocations and KMS key uses are logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
 
 **Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon QuickSight (optional) for quality analytics and surveillance.** Per-utterance audit data streams to S3 via Firehose. Glue catalogs the data. Athena provides SQL access for the per-pair quality analysis and the per-population disparity analysis. QuickSight renders the language-access compliance dashboards and the per-pair quality dashboards.
 
@@ -1189,6 +1189,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [GDPR Article 9](https://gdpr-info.eu/art-9-gdpr/): EU regulation on processing of biometric and health data
 
 **Standards and Frameworks:**
+
+The two most relevant standards to reference here are the Fast Healthcare Interoperability Resources (FHIR) specification from Health Level Seven (HL7), which models patient-language and communication-preference resources, and the ISO and ASTM standards that codify medical-interpreting practice.
+
 - [HL7 FHIR Specification](https://www.hl7.org/fhir/): healthcare data interoperability framework, including patient-language and communication-preference resources
 - [FHIR Patient Communication Preferences](https://www.hl7.org/fhir/patient.html): canonical FHIR resource for capturing patient language preferences
 - [ISO 13611 (Community interpreting)](https://www.iso.org/standard/54082.html): international standard for community interpreting that includes healthcare contexts 
