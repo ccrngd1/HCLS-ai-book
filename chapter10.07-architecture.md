@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**AWS HealthScribe as the primary managed service.** HealthScribe is a HIPAA-eligible managed service that performs ASR, multi-speaker diarization with clinician-patient role assignment, clinical entity extraction, and structured clinical note drafting from conversational audio. It is designed for exactly this use case. For most institutions, HealthScribe is the right primary service because it collapses most of the hard pipeline steps (medical-tuned ASR, movement-robust diarization, joint speaker-attributed decoding, clinical-content classification, structured-fact extraction, transcript-to-note traceability) into one API surface. 
+**AWS HealthScribe as the primary managed service.** HealthScribe is a HIPAA-eligible managed service that performs automatic speech recognition (ASR), multi-speaker diarization with clinician-patient role assignment, clinical entity extraction, and structured clinical note drafting from conversational audio. It is designed for exactly this use case. For most institutions, HealthScribe is the right primary service because it collapses most of the hard pipeline steps (medical-tuned ASR, movement-robust diarization, joint speaker-attributed decoding, clinical-content classification, structured-fact extraction, transcript-to-note traceability) into one API surface. 
 
 **Amazon Transcribe Medical for institutions building a custom pipeline.** Transcribe Medical is the medical-tuned ASR service, available separately from HealthScribe. Institutions that want more control over the pipeline (custom diarization, custom clinical-content classification, custom note-generation prompting) use Transcribe Medical as the ASR primitive and assemble the downstream pipeline themselves. Transcribe Medical supports specialty-specific models (primary care, cardiology, oncology, neurology, urology, radiology) for institutions where the specialty terminology dominates.
 
@@ -16,7 +16,7 @@
 
 **Amazon Bedrock Guardrails for content filtering and contextual grounding.** Guardrails apply contextual-grounding checks to the Bedrock-generated note against the transcript as the grounding source, plus content filters and prompt-attack filters. The transcript is free-text user-adjacent content and should be treated as untrusted input by the Guardrails configuration.
 
-**Amazon Comprehend Medical for structured entity extraction.** After the transcript is produced, Comprehend Medical extracts clinical entities (medications, conditions, anatomy, procedures) with RxNorm and ICD-10 coding. The extracted entities support the must-include validation (are the entities in the transcript also in the note?) and the structured medication and problem-list reconciliation with the EHR.
+**Amazon Comprehend Medical for structured entity extraction.** After the transcript is produced, Comprehend Medical extracts clinical entities (medications, conditions, anatomy, procedures) with RxNorm and ICD-10 coding. The extracted entities support the must-include validation (are the entities in the transcript also in the note?) and the structured medication and problem-list reconciliation with the electronic health record (EHR).
 
 **Amazon Chime SDK or third-party device integration for in-room audio capture.** For the device-in-the-room workflow, several patterns are deployed. A clinician's iPad or iPhone with a vendor app that captures audio and streams to the cloud (works with the device's built-in microphone). A dedicated capture hardware device (a wall-mount or desk-mount with a microphone array, beamforming DSP, and network connectivity) that streams to the cloud. An EHR-embedded experience that uses the clinician's workstation microphone or a paired Bluetooth-connected microphone array. Chime SDK supports browser-based and mobile-app-based audio capture for institution-built experiences; for institutions deploying commercial hardware, the device's vendor SDK handles the capture and networking. The audio path between the device and the cloud ASR is the integration responsibility.
 
@@ -44,7 +44,7 @@
 
 **Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon QuickSight (optional) for analytics.** Audit and telemetry flow to S3 via Firehose. Glue catalogs the data. Athena provides SQL access for operational analytics (per-clinician adoption, per-cohort accuracy, edit-distance distributions, faithfulness-failure rates by specialty). QuickSight renders the dashboards.
 
-**AWS HealthLake (optional) for FHIR-based EHR integration.** HealthLake stores FHIR resources and supports writing completed notes as FHIR DocumentReference resources. For EHR integrations that use Epic, Oracle Health, or other vendor APIs, a vendor-specific integration layer (built on Lambda or using a HealthLake-sourced feed) handles the write-back.
+**AWS HealthLake (optional) for Fast Healthcare Interoperability Resources (FHIR)-based EHR integration.** HealthLake stores FHIR resources and supports writing completed notes as FHIR DocumentReference resources. For EHR integrations that use Epic, Oracle Health, or other vendor APIs, a vendor-specific integration layer (built on Lambda or using a HealthLake-sourced feed) handles the write-back.
 
 ### Notes on the Services
 
@@ -56,11 +56,11 @@ The thing about Amazon Comprehend Medical specifically: the RxNorm and ICD-10 li
 
 ### In-Room Device-to-Cloud Audio Path
 
-The audio path between the in-room device and the cloud ASR service is the highest-risk data-in-transit segment in the pipeline, because it carries raw biometric PHI (the patient's and clinician's voices) over a network hop that varies by device pattern.
+The audio path between the in-room device and the cloud ASR service is the highest-risk data-in-transit segment in the pipeline, because it carries raw biometric protected health information (PHI), namely the patient's and clinician's voices, over a network hop that varies by device pattern.
 
 **Per-device-pattern data-in-transit posture.** TLS in transit is the minimum for all patterns. For dedicated-capture-hardware (wall-mount or desk-mount appliances with built-in microphone arrays), mTLS is preferred: the device presents a client certificate provisioned during physical installation, and the cloud endpoint validates it. Per-encounter session tokens, scoped to the visit duration and the specific encounter ID, limit the blast radius of a compromised session. For clinician phone-or-tablet patterns (vendor app on the clinician's personal or institutional device), the vendor app establishes a TLS session authenticated via the clinician's identity token plus a per-encounter session token. For EHR-embedded patterns (workstation microphone or Bluetooth-paired array), the EHR's existing secure session governs the audio path.
 
-**Per-pattern BAA scope.** The phone-or-tablet vendor app pattern requires that the vendor's BAA explicitly covers audio data-in-transit and at-rest within the vendor's pipeline before the audio reaches the institution's AWS environment. The dedicated-capture-hardware pattern requires that the hardware vendor's BAA covers device firmware and the update channel (firmware updates are a vector for supply-chain compromise of a biometric-data-capture device). The EHR-embedded pattern requires that the EHR vendor's BAA covers audio capture and transit from the workstation to the cloud ASR endpoint.
+**Per-pattern business associate agreement (BAA) scope.** The phone-or-tablet vendor app pattern requires that the vendor's BAA explicitly covers audio data-in-transit and at-rest within the vendor's pipeline before the audio reaches the institution's AWS environment. The dedicated-capture-hardware pattern requires that the hardware vendor's BAA covers device firmware and the update channel (firmware updates are a vector for supply-chain compromise of a biometric-data-capture device). The EHR-embedded pattern requires that the EHR vendor's BAA covers audio capture and transit from the workstation to the cloud ASR endpoint.
 
 **Platform-specific certification.** For each device pattern, require the vendor's HITRUST CSF certification or SOC 2 Type II report covering the audio-capture and data-in-transit components. Where the institution operates its own dedicated-capture-hardware fleet, the institution's own compliance program covers the device firmware lifecycle (update cadence, vulnerability response, end-of-life decommissioning).
 
@@ -1318,13 +1318,13 @@ Failover detection triggers on consecutive API failures (typically three within 
 
 Per-language quality metrics and launch gates apply independently: a language is not launched until its per-cohort accuracy meets the same threshold as the primary language. Cross-reference recipe 10.10 for the deeper multilingual patterns including real-time interpretation scenarios.
 
-**Real-time clinical-decision-support integration.** During the encounter, the live transcript triggers clinical-decision-support prompts to the clinician on a discreet display. The patient mentions a medication; the system surfaces drug-interaction warnings against the patient's current medication list. The patient describes symptoms; the system surfaces relevant differential diagnoses. The architectural extension is the streaming-transcript-to-CDS connector and the in-encounter discreet display. This is a higher-stakes feature than basic transcription because the suggestions can influence clinical decisions in real time. Recipe 2.9 (clinical decision support synthesis) covers the LLM-driven CDS pattern.
+**Real-time clinical decision support (CDS) integration.** During the encounter, the live transcript triggers clinical-decision-support prompts to the clinician on a discreet display. The patient mentions a medication; the system surfaces drug-interaction warnings against the patient's current medication list. The patient describes symptoms; the system surfaces relevant differential diagnoses. The architectural extension is the streaming-transcript-to-CDS connector and the in-encounter discreet display. This is a higher-stakes feature than basic transcription because the suggestions can influence clinical decisions in real time. Recipe 2.9 (clinical decision support synthesis) covers the LLM-driven CDS pattern.
 
 **Patient pre-visit voice intake.** Before the encounter starts, the patient records a brief audio summary of their concerns at a kiosk, on their phone, or to a virtual intake assistant. The system transcribes and structures this into a pre-visit summary that the clinician reviews before entering the room. The architectural extension is the asynchronous-audio-intake workflow and the integration with the clinician's pre-visit-prep view.
 
 **Voice-driven order entry from the conversation.** When the clinician verbalizes an order during the encounter ("let's get a chest X-ray and a CBC"), the system extracts the order, presents it for confirmation, and creates the order in the EHR's order-entry workflow. The architectural extension is the order-extraction-and-confirmation flow with explicit clinician approval before the order is signed.
 
-**Quality-measure capture from encounter content.** Standardized quality measures (HEDIS, CMS Quality Programs, institutional quality measures) require specific documentation elements. The system identifies which measure-relevant content is present in the encounter and which is missing, and prompts the clinician for the missing elements before sign. The architectural extension is the measure-coverage analyzer and the in-review clinician prompts.
+**Quality-measure capture from encounter content.** Standardized quality measures such as the Healthcare Effectiveness Data and Information Set (HEDIS), CMS Quality Programs, and institutional quality measures require specific documentation elements. The system identifies which measure-relevant content is present in the encounter and which is missing, and prompts the clinician for the missing elements before sign. The architectural extension is the measure-coverage analyzer and the in-review clinician prompts.
 
 **Automated billing-code suggestion.** The generated note plus the structured extractions feed an evaluation-and-management code suggester that proposes billing codes based on the encounter content. The clinician reviews and confirms. The architectural extension is the billing-code suggester, with explicit framing as a suggestion-not-decision pattern. This is a higher-stakes feature because billing codes affect reimbursement and can attract auditor attention.
 
@@ -1376,13 +1376,13 @@ Per-language quality metrics and launch gates apply independently: a language is
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "HealthScribe," "clinical documentation," "ambient" for current case studies and implementation deep dives
 
 **External References (Standards and Frameworks):**
-- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for EHR integration
+- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for EHR integration
 - [FHIR DocumentReference Resource](https://www.hl7.org/fhir/documentreference.html): canonical FHIR resource for clinical-note write-back
 - [FHIR Encounter Resource](https://www.hl7.org/fhir/encounter.html): canonical FHIR resource linking the visit to the documentation
 - [SMART on FHIR](https://docs.smarthealthit.org/): the launch-context and authorization specification
 - [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): standard medication terminology
 - [ICD-10-CM](https://www.cms.gov/medicare/coding-billing/icd-10-codes): standard diagnosis terminology
-- [LOINC](https://loinc.org/): standard lab and observation terminology
+- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): standard lab and observation terminology
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in voice interactions and clinical documentation
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [42 CFR Part 2](https://www.ecfr.gov/current/title-42/chapter-I/subchapter-A/part-2): governs substance-use disorder treatment records
