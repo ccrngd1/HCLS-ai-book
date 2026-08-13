@@ -6,7 +6,7 @@
 
 ## Why These Services
 
-**Amazon Comprehend for sentiment and entity detection.** Comprehend is AWS's managed NLP service. Its sentiment analysis API classifies text as positive, negative, neutral, or mixed, with confidence scores for each. Crucially for healthcare, it also has a medical variant (Comprehend Medical) that detects PHI entities, which you need for the preprocessing step. You don't need to train, host, or scale any models. The tradeoff: Comprehend's built-in sentiment is document-level and uses generic categories. For aspect-level analysis, you'll need the custom classification feature or a separate model.
+**Amazon Comprehend for sentiment and entity detection.** Comprehend is AWS's managed natural language processing (NLP) service. Its sentiment analysis API classifies text as positive, negative, neutral, or mixed, with confidence scores for each. Crucially for healthcare, it also has a medical variant (Comprehend Medical) that detects protected health information (PHI) entities, which you need for the preprocessing step. You don't need to train, host, or scale any models. The tradeoff: Comprehend's built-in sentiment is document-level and uses generic categories. For aspect-level analysis, you'll need the custom classification feature or a separate model.
 
 **Amazon Comprehend Custom Classification for aspect detection.** Comprehend lets you train custom classifiers on your labeled data. Train one model on your aspect taxonomy (wait_time, provider_communication, billing, etc.) and a second for fine-grained sentiment if the built-in model doesn't capture healthcare-specific nuance well enough. Custom models run on the same managed infrastructure, so you still don't manage servers.
 
@@ -75,7 +75,7 @@ flowchart LR
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): General Comprehend examples including sentiment analysis, custom classification, and entity detection
-> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare-specific: integrating Comprehend Medical with FHIR for clinical NLP pipelines
+> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare-specific: integrating Comprehend Medical with Fast Healthcare Interoperability Resources (FHIR) for clinical NLP pipelines
 
 **Step 1: PHI detection and redaction.** Before any analysis, the system scans incoming feedback for protected health information. Patient comments routinely mention provider names, specific diagnoses, medication names, and dates of service. The PHI detection pass identifies these entities and either redacts them (replaces with placeholder tokens like `[PROVIDER_NAME]`) or tags them for downstream handling. This step is non-negotiable for any pipeline processing patient-generated text. The redacted version is what flows to sentiment analysis, so your sentiment models never need access to identifiable information. Skip this step and you're running PHI through analytics services without proper safeguards.
 

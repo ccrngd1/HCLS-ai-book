@@ -30,7 +30,7 @@ The field has been around since the early 2000s. Early approaches used hand-craf
 
 Modern approaches use machine learning. A model trained on thousands of labeled examples learns the relationship between word patterns and sentiment. The dominant architecture for the past few years has been transformer-based models (BERT and its variants), fine-tuned on domain-specific data. These models understand context, handle negation, and capture subtle sentiment signals that word lists miss entirely.
 
-(A quick note: LLMs like GPT-4 can absolutely do sentiment analysis, and often quite well. This recipe focuses on traditional NLP approaches because they're faster, cheaper, more predictable, and perfectly adequate for this use case. You don't need a rocket to deliver a pizza. Recipe 2.1 covers when LLMs make sense for text analysis.)
+(A quick note: LLMs like GPT-4 can absolutely do sentiment analysis, and often quite well. This recipe focuses on traditional natural language processing (NLP) approaches because they're faster, cheaper, more predictable, and perfectly adequate for this use case. You don't need a rocket to deliver a pizza. Recipe 2.1 covers when LLMs make sense for text analysis.)
 
 ### Aspect-Based Sentiment: The Real Value
 
@@ -71,7 +71,7 @@ Standard sentiment analysis tooling was built for product reviews and social med
 
 **Cultural and demographic variation.** Sentiment expression varies significantly across age groups, cultural backgrounds, and education levels. Older patients tend to rate everything higher (acquiescence bias). Patients from cultures where direct criticism is impolite will express dissatisfaction through absence of praise rather than explicit negativity. Your model needs to handle this gracefully or you'll systematically undercount dissatisfaction in certain populations.
 
-**PHI contamination.** Patient feedback frequently contains protected health information: names of providers, specific diagnoses, dates of service, medication names. Any system processing this text must handle PHI appropriately. The sentiment analysis itself doesn't need the PHI (you're extracting themes, not re-identifying patients), but the pipeline must protect it.
+**Protected health information (PHI) contamination.** Patient feedback frequently contains protected health information: names of providers, specific diagnoses, dates of service, medication names. Any system processing this text must handle PHI appropriately. The sentiment analysis itself doesn't need the PHI (you're extracting themes, not re-identifying patients), but the pipeline must protect it.
 
 ---
 
