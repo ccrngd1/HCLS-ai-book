@@ -54,9 +54,9 @@ Federated querying sounds simple until you try to build it. Here's what makes it
 
 The healthcare industry is slowly converging on standards that make federation more tractable:
 
-**FHIR (Fast Healthcare Interoperability Resources)** provides a common data model for clinical concepts. While FHIR is primarily designed for patient data exchange, its resource types and terminology bindings provide a shared vocabulary that knowledge graphs can align to.
+**Fast Healthcare Interoperability Resources (FHIR)** provides a common data model for clinical concepts. While FHIR is primarily designed for patient data exchange, its resource types and terminology bindings provide a shared vocabulary that knowledge graphs can align to.
 
-**Clinical ontologies** (SNOMED CT, RxNorm, LOINC, ICD) provide canonical identifiers for clinical concepts. If every participating graph maps their local concepts to SNOMED codes, you have a shared key space for federation, even if local schemas differ.
+**Clinical ontologies** like Logical Observation Identifiers Names and Codes (LOINC), SNOMED CT, RxNorm, and ICD provide canonical identifiers for clinical concepts. If every participating graph maps their local concepts to SNOMED codes, you have a shared key space for federation, even if local schemas differ.
 
 **W3C standards for linked data** (RDF, SPARQL, SPARQL Federation extensions) provide a technical foundation for distributed graph querying. The SPARQL 1.1 Federated Query extension (`SERVICE` keyword) allows a query to explicitly delegate sub-patterns to remote endpoints.
 

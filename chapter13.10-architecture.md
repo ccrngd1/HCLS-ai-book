@@ -20,7 +20,7 @@
 
 **AWS KMS for encryption key management.** Each institution manages their own KMS CMK for their Neptune cluster and local data. The federation control plane account owns separate CMKs for the source catalog (DynamoDB) and ontology registry (S3). Cross-account query results are returned as plaintext over the PrivateLink TLS channel; the federation layer does not need decrypt access to institutional KMS keys because Neptune handles decryption internally before returning query results.
 
-**Amazon CloudWatch and AWS CloudTrail for observability and audit.** Every federated query generates audit records: who queried, what they asked, which sources responded, what was returned. CloudTrail captures API-level audit. CloudWatch captures query performance metrics, error rates, and latency distributions across the federation. Note: query content in audit logs is treated as PHI because queries may reveal patient conditions. Audit log access must be restricted to authorized compliance personnel. Consider hashing or tokenizing clinical concept identifiers in audit records while retaining the full query in a separate, access-controlled audit store for compliance investigations.
+**Amazon CloudWatch and AWS CloudTrail for observability and audit.** Every federated query generates audit records: who queried, what they asked, which sources responded, what was returned. CloudTrail captures API-level audit. CloudWatch captures query performance metrics, error rates, and latency distributions across the federation. Note: query content in audit logs is treated as protected health information (PHI) because queries may reveal patient conditions. Audit log access must be restricted to authorized compliance personnel. Consider hashing or tokenizing clinical concept identifiers in audit records while retaining the full query in a separate, access-controlled audit store for compliance investigations.
 
 **AWS Organizations for multi-account governance.** The federation operates across multiple AWS accounts (one per institution). Organizations provides centralized governance: service control policies, consolidated billing, and cross-account IAM role management.
 
@@ -454,6 +454,7 @@ FUNCTION assemble_results(partial_results_from_all_sources):
 - [Building a Biomedical Knowledge Graph with Amazon Neptune](https://aws.amazon.com/blogs/database/building-a-biomedical-knowledge-graph-with-amazon-neptune/): Architecture for biomedical knowledge graphs on Neptune, directly applicable to federated node design
 
 **External Standards:**
+Underlying specifications for terminology, transport, and federated query, including Health Level Seven (HL7) and Fast Healthcare Interoperability Resources (FHIR):
 - [SPARQL 1.1 Federated Query (W3C)](https://www.w3.org/TR/sparql11-federated-query/)
 - [SNOMED CT Browser](https://browser.ihtsdotools.org/)
 - [HL7 FHIR Knowledge Artifact Specification](https://www.hl7.org/fhir/clinicalreasoning-knowledge-artifact-representation.html)
