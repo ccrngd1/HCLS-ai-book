@@ -8,11 +8,11 @@
 
 ### Why These Services
 
-**Amazon Transcribe Medical for clinical-domain ASR.** Transcribe Medical is AWS's purpose-built clinical speech recognition service. It is trained on clinical audio with vocabulary distributions appropriate for medical dictation, supports streaming and batch modes, supports custom vocabularies for institutional formulary and specialty terms, and is HIPAA-eligible under BAA. For dictation specifically, it is the right default. The general-purpose Amazon Transcribe with a custom medical vocabulary is a viable alternative for institutions whose dictation patterns are heavily templated and lower in clinical-vocabulary density, but Transcribe Medical's specialty support (primary care, cardiology, neurology, oncology, radiology, urology) and its accuracy on medication and procedure terminology generally make it the better starting point. 
+**Amazon Transcribe Medical for clinical-domain automatic speech recognition (ASR).** Transcribe Medical is AWS's purpose-built clinical speech recognition service. It is trained on clinical audio with vocabulary distributions appropriate for medical dictation, supports streaming and batch modes, supports custom vocabularies for institutional formulary and specialty terms, and is HIPAA-eligible under a business associate agreement (BAA). For dictation specifically, it is the right default. The general-purpose Amazon Transcribe with a custom medical vocabulary is a viable alternative for institutions whose dictation patterns are heavily templated and lower in clinical-vocabulary density, but Transcribe Medical's specialty support (primary care, cardiology, neurology, oncology, radiology, urology) and its accuracy on medication and procedure terminology generally make it the better starting point. 
 
 **Amazon Bedrock for LLM-driven formatting and structuring.** Bedrock-hosted foundation models provide the post-processing layer that turns verbatim Transcribe Medical output into a formatted, sectioned clinical note. The same Bedrock layer can extract structured-field suggestions (medications, problems, allergies) for clinician review. Choose a model with healthcare instruction tuning where available, validate against held-out reference notes for faithfulness (the formatted note must not paraphrase clinical content in ways that change meaning), and treat the LLM output as a draft for clinician review.
 
-**Amazon Comprehend Medical for structured-entity extraction.** Comprehend Medical extracts medications (with RxNorm linking), conditions (with ICD-10 linking), anatomy, protected health information, and other clinical entities from text. It complements the LLM layer: the LLM handles general restructuring and formatting, Comprehend Medical handles canonical-coded entity extraction. For structured-field suggestions, Comprehend Medical's coded outputs are easier to integrate with EHR structured fields than free-form LLM output.
+**Amazon Comprehend Medical for structured-entity extraction.** Comprehend Medical extracts medications (with RxNorm linking), conditions (with International Classification of Diseases (ICD)-10 linking), anatomy, protected health information, and other clinical entities from text. It complements the LLM layer: the LLM handles general restructuring and formatting, Comprehend Medical handles canonical-coded entity extraction. For structured-field suggestions, Comprehend Medical's coded outputs are easier to integrate with electronic health record (EHR) structured fields than free-form LLM output.
 
 **AWS Lambda for orchestration.** The pipeline orchestration (initiate dictation session, route audio to Transcribe Medical, post-process with Bedrock and Comprehend Medical, hand off to EHR integration, capture user corrections, update adaptation telemetry) runs in Lambda functions. Per-stage isolation matches the pipeline structure and the per-stage retry semantics.
 
@@ -28,11 +28,11 @@
 
 **AWS KMS for cryptographic-key custody.** Customer-managed KMS keys for the audio bucket, the audit bucket, the DynamoDB tables, and Secrets Manager. Different keys per data class (audio, transcripts, signed notes, configuration) for blast-radius containment.
 
-**AWS Secrets Manager for EHR integration credentials.** The Lambda that hands the signed note off to the EHR needs credentials (SMART on FHIR backend-services signing keys, vendor-specific tokens). Secrets Manager stores them with rotation per the institutional cadence.
+**AWS Secrets Manager for EHR integration credentials.** The Lambda that hands the signed note off to the EHR needs credentials for the institution's Fast Healthcare Interoperability Resources (FHIR) integration (SMART on FHIR backend-services signing keys, vendor-specific tokens). Secrets Manager stores them with rotation per the institutional cadence.
 
 **Amazon CloudWatch for operational metrics and alarms.** Per-stage latency distributions, ASR confidence histograms, structured-field extraction acceptance rates, time-to-sign distributions, per-clinician adoption metrics, critical-error-detection alerts. Alarms on per-clinician error-rate spikes (a sudden change in correction rate for one clinician suggests an acoustic-condition change), aggregate ASR latency regressions, and EHR-integration failures.
 
-**AWS CloudTrail for API-level audit.** All access to PHI-bearing resources (the audio bucket, the DynamoDB dictation tables, the audit archive, KMS keys, Secrets Manager) is logged. Lambda invocations, Bedrock invocations, Transcribe Medical streaming session starts and stops, Comprehend Medical inference calls all flow into CloudTrail.
+**AWS CloudTrail for API-level audit.** All access to protected health information (PHI)-bearing resources (the audio bucket, the DynamoDB dictation tables, the audit archive, KMS keys, Secrets Manager) is logged. Lambda invocations, Bedrock invocations, Transcribe Medical streaming session starts and stops, Comprehend Medical inference calls all flow into CloudTrail.
 
 **Amazon EventBridge for cross-system events.** Dictation lifecycle events (started, transcribed, signed, errored) flow through EventBridge. Downstream consumers (operational dashboards, the analytics layer, the per-clinician adaptation pipeline, the EHR integration) react to events without coupling to the orchestration Lambdas.
 
@@ -1554,7 +1554,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Ambient-and-dictation hybrid workflow.** When ambient documentation (recipe 10.7) is also deployed, clinicians can use ambient during the encounter and dictation afterward for supplementary detail (the assessment and plan that the ambient system did not capture cleanly). The architectural extension is the inter-product context-sharing API and the unified review-and-sign workflow that combines ambient-generated content and dictation content into a single signed note.
 
-**Real-time clinical-decision-support hooks during dictation.** As the clinician dictates clinical content, the system can fire CDS alerts in real time: "you are dictating about chest pain; here are the relevant clinical-decision-support suggestions"; "you are dictating about a medication that interacts with the patient's current medications; here is the interaction warning." The architectural extension is the CDS Hooks integration and the careful UX that surfaces alerts without disrupting the dictation flow.
+**Real-time clinical-decision-support hooks during dictation.** As the clinician dictates clinical content, the system can fire clinical decision support (CDS) alerts in real time: "you are dictating about chest pain; here are the relevant clinical-decision-support suggestions"; "you are dictating about a medication that interacts with the patient's current medications; here is the interaction warning." The architectural extension is the CDS Hooks integration and the careful UX that surfaces alerts without disrupting the dictation flow.
 
 **Voice-driven note correction after signing.** A clinician sometimes wants to correct or amend a previously-signed note. The amendment workflow is a distinct dictation type that produces an addendum (a new, dated, signed document linked to the original); the original signed note is never modified. The architectural extension is the addendum dictation workflow and the audit trail that captures the chain of original-and-addendum.
 
@@ -1601,15 +1601,15 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Transcribe Medical," "Comprehend Medical," "Bedrock healthcare" for relevant pattern posts
 
 **External References (Standards and Frameworks):**
-- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
+- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
 - [SMART on FHIR](https://docs.smarthealthit.org/): the launch-context and authorization specification for clinically-aware EHR apps
 - [FHIR DocumentReference Resource](https://www.hl7.org/fhir/documentreference.html): the canonical FHIR resource for clinical-document references including signed notes
 - [FHIR Composition Resource](https://www.hl7.org/fhir/composition.html): the canonical FHIR resource for composed clinical documents
 - [FHIR Provenance Resource](https://www.hl7.org/fhir/provenance.html): the canonical FHIR resource for capturing authorship and revision history
 - [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): the standard medication terminology used by Comprehend Medical's RxNorm linking
 - [ICD-10-CM](https://www.cdc.gov/nchs/icd/icd10cm.htm): the standard diagnosis terminology used by Comprehend Medical's ICD-10 linking
-- [SNOMED CT](https://www.snomed.org/): the standard clinical terminology often used in modern EHR structured fields
-- [LOINC](https://loinc.org/): the standard for laboratory and clinical observation codes
+- [Systematized Nomenclature of Medicine (SNOMED) CT](https://www.snomed.org/): the standard clinical terminology often used in modern EHR structured fields
+- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): the standard for laboratory and clinical observation codes
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in dictation audio, transcripts, and signed notes
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards for ePHI access channels
 - [Joint Commission documentation standards](https://www.jointcommission.org/): clinical-documentation requirements relevant to dictated notes 
