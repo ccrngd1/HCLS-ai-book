@@ -6,7 +6,7 @@
 
 ## The Problem
 
-You've just done something kind of remarkable in Recipe 1.1: a staff member photographs an insurance card, and seconds later your EHR has a clean, structured JSON record. One image, one page, a handful of fields, result in under three seconds. It almost feels like cheating.
+You've just done something kind of remarkable in Recipe 1.1: a staff member photographs an insurance card, and seconds later your electronic health record (EHR) has a clean, structured JSON record. One image, one page, a handful of fields, result in under three seconds. It almost feels like cheating.
 
 Now the patient says "I filled out my paperwork" and slides a sheaf of five pages across the counter.
 
@@ -72,7 +72,7 @@ Intake forms are simultaneously structured and unstructured. The first half of a
 
 You can't treat an intake form as purely a forms document (just extract key-value pairs) or purely a free-text document (just extract raw text). You need both, applied to the right sections. The general pattern is to run the full extraction (FORMS + TABLES + raw text) and then sort the output into the right buckets: structured fields from key-value extraction, structured rows from table extraction, and flagged free-text blocks for downstream processing.
 
-Handwriting in mixed documents is a real problem, and I want to be direct about it. When a patient prints their name in block letters in a printed form, OCR handles it well. When they write in cursive, accuracy drops meaningfully. When they write in a hurry, which is most of the time, accuracy drops further. Recipe 1.6 addresses handwriting as its own dedicated problem with a tiered confidence pipeline and human review infrastructure. For this recipe, handwritten fields are extracted at best effort, confidence-gated conservatively, and flagged for human verification. That's the honest scope.
+Handwriting in mixed documents is a real problem, and I want to be direct about it. When a patient prints their name in block letters in a printed form, optical character recognition (OCR) handles it well. When they write in cursive, accuracy drops meaningfully. When they write in a hurry, which is most of the time, accuracy drops further. Recipe 1.6 addresses handwriting as its own dedicated problem with a tiered confidence pipeline and human review infrastructure. For this recipe, handwritten fields are extracted at best effort, confidence-gated conservatively, and flagged for human verification. That's the honest scope.
 
 ### The General Architecture Pattern
 
@@ -105,7 +105,7 @@ That's the pattern. The async job-based shape is the key conceptual shift from R
 ## Related Recipes
 
 - **Recipe 1.1 (Insurance Card Scanning):** The synchronous single-page foundation this recipe builds on. Start there if you haven't yet: the field normalization and confidence gating patterns carry forward directly.
-- **Recipe 1.3 (Lab Requisition Form Extraction):** The next step up in complexity. Adds medical NLP on top of the document extraction foundation established here: extracting ICD-10 codes and clinical entities from the free-text sections that this recipe intentionally leaves unparsed.
+- **Recipe 1.3 (Lab Requisition Form Extraction):** The next step up in complexity. Adds medical natural language processing (NLP) on top of the document extraction foundation established here: extracting ICD-10 codes and clinical entities from the free-text sections that this recipe intentionally leaves unparsed.
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Addresses the handwriting problem this recipe sidesteps. Builds the full tiered confidence pipeline and human review queue that the flagged fields from this recipe feed into.
 - **Recipe 8.1 (Insurance Eligibility Matching):** Consumes the member ID and group number from the insurance section of this recipe to verify coverage in real time.
 
