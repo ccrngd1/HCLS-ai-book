@@ -41,7 +41,7 @@ Appointment slot optimization sits in the sweet spot of operations research: com
 
 The decision space is small. You're choosing maybe 5-8 slot durations (one per visit type), 2-3 buffer configurations, and an overbooking percentage per hour block. That's maybe 30-50 decision variables. Compare that to nurse scheduling (thousands of variables) or OR block allocation (hundreds of competing constraints). A modern solver handles this in seconds.
 
-The data requirements are modest. You need historical visit durations by type (your EHR has this), no-show rates by time-of-day and day-of-week (your scheduling system has this), and patient arrival patterns (check-in timestamps). Most health systems have years of this data sitting unused.
+The data requirements are modest. You need historical visit durations by type (your electronic health record (EHR) has this), no-show rates by time-of-day and day-of-week (your scheduling system has this), and patient arrival patterns (check-in timestamps). Most health systems have years of this data sitting unused.
 
 The feedback loop is fast. You change a template, run it for two weeks, and measure the impact on throughput, wait times, and provider satisfaction. Unlike strategic decisions that take months to evaluate, template changes produce measurable results quickly.
 
@@ -79,7 +79,7 @@ expected_wait[i] <= max_wait          // no patient waits too long
 
 For a problem this size, you have several options:
 
-**Linear Programming (LP) / Mixed-Integer Programming (MIP).** If you can linearize your constraints and objective (or approximate them as linear), commercial solvers like Gurobi or CPLEX, or open-source solvers like CBC or HiGHS, will find the global optimum in milliseconds. The catch: wait time calculations involve probability distributions, which aren't naturally linear. You can approximate them with piecewise linear functions or scenario-based approaches.
+**Linear Programming (LP) / mixed-integer programming (MIP).** If you can linearize your constraints and objective (or approximate them as linear), commercial solvers like Gurobi or CPLEX, or open-source solvers like CBC or HiGHS, will find the global optimum in milliseconds. The catch: wait time calculations involve probability distributions, which aren't naturally linear. You can approximate them with piecewise linear functions or scenario-based approaches.
 
 **Constraint Programming (CP).** Better for problems with complex logical constraints ("if visit type is new patient AND provider is part-time, then slot must be at least 45 minutes"). Google's OR-Tools CP-SAT solver is excellent and free.
 

@@ -77,7 +77,7 @@ flowchart TD
 
 ## Pseudocode Walkthrough
 
-**Step 1: Extract and prepare historical data.** The pipeline begins by pulling scheduling data from your EHR system. You need actual visit durations (not scheduled durations), visit type codes, provider IDs, appointment times, check-in times, and show/no-show status. Most EHRs expose this through reporting databases or bulk export APIs. The extraction runs nightly or weekly, appending new data to the historical store. Without accurate historical durations, the entire optimization is garbage-in-garbage-out. Scheduled duration tells you what the template says; actual duration tells you what really happens.
+**Step 1: Extract and prepare historical data.** The pipeline begins by pulling scheduling data from your electronic health record (EHR) system. You need actual visit durations (not scheduled durations), visit type codes, provider IDs, appointment times, check-in times, and show/no-show status. Most EHRs expose this through reporting databases or bulk export APIs. The extraction runs nightly or weekly, appending new data to the historical store. Without accurate historical durations, the entire optimization is garbage-in-garbage-out. Scheduled duration tells you what the template says; actual duration tells you what really happens.
 
 ```pseudocode
 FUNCTION extract_scheduling_data(start_date, end_date):
@@ -448,7 +448,7 @@ FUNCTION monitor_and_rollback(provider_id, monitoring_window_days = 14):
 
 **Optimization Libraries (used within SageMaker):**
 - [Google OR-Tools](https://developers.google.com/optimization): Open-source optimization suite with CP-SAT solver, excellent for scheduling problems
-- [PuLP](https://coin-or.github.io/pulp/): Python LP/MIP modeling library that interfaces with CBC, CPLEX, and Gurobi solvers
+- [PuLP](https://coin-or.github.io/pulp/): Python LP and mixed-integer programming (MIP) modeling library that interfaces with CBC, CPLEX, and Gurobi solvers
 - [SimPy](https://simpy.readthedocs.io/): Python discrete-event simulation library, useful for multi-server validation scenarios beyond the single-provider case
 
 **AWS Solutions and Blogs:**
