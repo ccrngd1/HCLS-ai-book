@@ -1737,6 +1737,12 @@ When the bot produces incorrect outputs (false-positive acuity flags, missed fla
 
 ---
 
+#### The Model Proposes, Deterministic Code Disposes
+
+A tool-using agent's authority to act must not live in its prompt. A system prompt is guidance the model can be argued out of, prompt-injected past, or simply confused into ignoring, so anything that depends on the model choosing to behave is a property of its output, not a boundary it cannot cross. The Open Worldwide Application Security Project (OWASP) calls the failure this prevents excessive agency. The model conducts the conversation and proposes an intent; whether a consequential action happens is decided by deterministic code the model cannot overrule.
+
+This bot's write is lower-consequence than booking or prescribing but is still an action: it composes a pre-visit packet that reaches the electronic health record (EHR). The commitment that keeps that safe is that the model drafts and a clinician reviews before anything enters the chart. The packet is written to a clinician-facing staging surface, not the patient record directly (see "Pre-Visit Packet Display in EHR as Architectural Prerequisite"), so the model cannot place unreviewed content into the record no matter what it is persuaded to generate. As with the other chapter-11 agents, the action group is a fixed set of narrow typed tools with no general-purpose call, bounded by the resource-based policies described above.
+
 ## Why This Isn't Production-Ready
 
 The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.

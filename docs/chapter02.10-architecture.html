@@ -360,7 +360,7 @@
 <h3 id="why-these-services">Why These Services</h3>
 <p><strong>Amazon Bedrock for the reasoning layer.</strong> A capable generation model (Claude Sonnet or equivalent) handles the multi-hypothesis reasoning and synthesis. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, modality inventory summarization, and retrieval planning. Bedrock is the right fit because the workload needs grounded generation with structured output and because it is HIPAA-eligible under an AWS business associate agreement (BAA).</p>
 <p><strong>Amazon Bedrock Guardrails for contextual grounding enforcement.</strong> Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.</p>
-<p><strong>Amazon HealthLake for the FHIR-native patient context.</strong> HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.</p>
+<p><strong>Amazon HealthLake for the FHIR-native patient context.</strong> HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the Fast Healthcare Interoperability Resources (FHIR) bundle at the start of each run.</p>
 <p><strong>Amazon HealthImaging for Digital Imaging and Communications in Medicine (DICOM) management.</strong> HealthImaging is a HIPAA-eligible, purpose-built store for medical imaging. For a pipeline that needs to reference prior imaging, retrieve current imaging metadata, and link from the reasoning output back to the source study, HealthImaging is the right imaging-native layer. The reasoning pipeline itself typically does not perform direct pixel interpretation; it uses HealthImaging metadata and the radiology report for text-based reasoning, and deep-links back to the study in the PACS viewer for clinician review.</p>
 <p><strong>Amazon Transcribe Medical or Amazon HealthScribe when audio-derived content is in scope.</strong> For pipelines that include the conversational-context modality (the clinician's current encounter), Transcribe Medical or HealthScribe produces the transcript. This is less common in a point-of-care reasoning pipeline but applies in ambient-documentation-plus-reasoning architectures.</p>
 <p><strong>Amazon Comprehend Medical for entity extraction and ontology mapping.</strong> Notes, radiology reports, pathology reports, ECG reports all benefit from entity extraction with mapping to RxNorm, ICD-10, Systematized Nomenclature of Medicine (SNOMED), and RadLex where applicable. The resulting structured records are easier to reason over and easier to cite.</p>
@@ -1835,6 +1835,7 @@
 <li><a href="https://www.congress.gov/bill/114th-congress/house-bill/34">21st Century Cures Act Section 3060</a>: Legislative basis for the CDS exemption</li>
 </ul>
 <p><strong>Clinical Source References (primary inputs to a multi-modal reasoning corpus):</strong></p>
+<p>Standardized clinical terminologies referenced here include Logical Observation Identifiers Names and Codes (LOINC) for labs and observations.</p>
 <ul>
 <li><a href="https://www.uspreventiveservicestaskforce.org/uspstf/topic_search_results?topic_status=P">USPSTF Recommendation Statements</a>: Freely available preventive care recommendations</li>
 <li><a href="https://www.cdc.gov/library/index.html">CDC Guidelines Library</a>: Public health and infectious disease guidance</li>
@@ -1850,6 +1851,7 @@
 <li><a href="https://www.rsna.org/practice-tools/data-tools-and-standards/radlex-radiology-lexicon">RadLex</a>: Radiology lexicon</li>
 </ul>
 <p><strong>Interoperability Standards:</strong></p>
+<p>These standards include Health Level Seven (HL7) FHIR for clinical data exchange and related transport protocols.</p>
 <ul>
 <li><a href="https://www.hl7.org/fhir/">HL7 FHIR</a>: Clinical data model for patient context integration</li>
 <li><a href="https://smarthealthit.org/">SMART on FHIR</a>: Standard for EHR-launched applications</li>

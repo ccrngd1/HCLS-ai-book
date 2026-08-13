@@ -391,7 +391,7 @@
 <li>Batch event (provider departure, scheduled rebalance): trigger Step Functions, run SageMaker Processing, produce full optimization.</li>
 <li>Single-patient event (new patient registration, PCP request): invoke Lambda directly, compute scores in-memory, return the best provider in under a second.</li>
 </ul>
-<p>The incremental path caches provider capacity counts (updated on each assignment) so it doesn't need to query the EHR for every call. Cache invalidation happens when the batch optimizer runs or when a provider's status changes.</p>
+<p>The incremental path caches provider capacity counts (updated on each assignment) so it doesn't need to query the electronic health record (EHR) for every call. Cache invalidation happens when the batch optimizer runs or when a provider's status changes.</p>
 <hr />
 <h2 id="general-architecture-pattern">General Architecture Pattern</h2>
 <pre class="code code-plain"><code>[Patient &amp; Provider Data] → [Preference Scoring] → [Constraint Optimization] → [Validation] → [Human Review] → [EHR Write-back]
@@ -401,7 +401,7 @@
 <p><strong>Constraint Optimization.</strong> Feed the score matrix and constraints into a solver. Constraints include: each patient assigned to exactly one provider, no provider exceeds their panel maximum (weighted by visit frequency), and providers who've closed their panels get zero new assignments. The solver finds the assignment that maximizes total match quality while respecting all constraints.</p>
 <p><strong>Validation.</strong> After the solver runs, verify the solution makes clinical sense. Check that all patients are assigned, no capacity limits are violated, and the distribution across providers is reasonable (flag if one provider gets more than 60% of new assignments). Generate human-readable rationale for each assignment explaining why that match was chosen.</p>
 <p><strong>Human Review.</strong> Present proposed assignments to the panel management team with scores, rationale, and distribution summaries. They approve, reject, or override individual assignments. This step is non-negotiable in healthcare. Optimization suggests; humans decide.</p>
-<p><strong>EHR Write-back.</strong> After approval, update the EHR's panel attribution. This is typically an HL7 FHIR CareTeam resource update or a proprietary API call. Handle failures gracefully. A failed write-back should not leave your assignment table and the EHR out of sync.</p>
+<p><strong>EHR Write-back.</strong> After approval, update the EHR's panel attribution. This is typically a Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR) CareTeam resource update or a proprietary API call. Handle failures gracefully. A failed write-back should not leave your assignment table and the EHR out of sync.</p>
 <hr />
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter14.02-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>

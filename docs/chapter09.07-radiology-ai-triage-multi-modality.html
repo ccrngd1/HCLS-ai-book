@@ -384,7 +384,7 @@
 </ul>
 <p>Each of these is a separate model (or a multi-task model trained on that specific modality). They have different input requirements, different preprocessing pipelines, different inference times, and different performance characteristics. Orchestrating all of them behind a single triage interface is the engineering problem.</p>
 <h3 id="dicom-and-the-imaging-ecosystem">DICOM and the Imaging Ecosystem</h3>
-<p>Medical images live in DICOM format (Digital Imaging and Communications in Medicine). DICOM is not just an image format; it's a communication protocol, a metadata standard, and a workflow specification all in one. Every study that comes off a scanner is a collection of DICOM objects containing pixel data plus rich metadata: patient demographics, study description, modality, body part, acquisition parameters, referring physician, accession number.</p>
+<p>Medical images live in the Digital Imaging and Communications in Medicine (DICOM) format. DICOM is not just an image format; it's a communication protocol, a metadata standard, and a workflow specification all in one. Every study that comes off a scanner is a collection of DICOM objects containing pixel data plus rich metadata: patient demographics, study description, modality, body part, acquisition parameters, referring physician, accession number.</p>
 <p>The triage system needs to:</p>
 <ol>
 <li>Receive DICOM studies as they're produced by scanners</li>
@@ -392,7 +392,7 @@
 <li>Run inference</li>
 <li>Communicate results back to the radiologist's worklist</li>
 </ol>
-<p>That last step is the integration challenge. Radiologists work in PACS (Picture Archiving and Communication System) and read from a worklist managed by the RIS (Radiology Information System). The triage system needs to modify worklist priority without disrupting the radiologist's existing workflow. This typically happens via HL7 messages or DICOM worklist modifications, depending on the PACS vendor.</p>
+<p>That last step is the integration challenge. Radiologists work in PACS (Picture Archiving and Communication System) and read from a worklist managed by the RIS (Radiology Information System). The triage system needs to modify worklist priority without disrupting the radiologist's existing workflow. This typically happens via Health Level Seven (HL7) messages or DICOM worklist modifications, depending on the PACS vendor.</p>
 <h3 id="what-makes-this-hard-beyond-the-models">What Makes This Hard (Beyond the Models)</h3>
 <p><strong>Modality routing.</strong> When a study arrives, the system needs to determine which model(s) to run. A &quot;CT Chest&quot; might need both the PE model and the pneumothorax model. A &quot;CT Head and Neck&quot; might need the head hemorrhage model and the cervical spine model. Routing logic based on DICOM metadata (Modality, StudyDescription, BodyPartExamined) sounds simple until you encounter the wild inconsistency of how technologists populate these fields across different sites and scanner vendors.</p>
 <p><strong>Preprocessing variability.</strong> A CT from a GE scanner and a CT from a Siemens scanner have different pixel spacing, different reconstruction kernels, different windowing defaults. The model expects normalized input. Your preprocessing pipeline needs to handle this variability without manual configuration per scanner.</p>

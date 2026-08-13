@@ -361,7 +361,7 @@
 <p><strong>AWS Lambda for the constraint builder and orchestration.</strong> The constraint-building step is stateless computation: take case data, apply rules, produce a model. Lambda handles this cleanly. The orchestration layer (triggering batch runs, handling replan events) is also a natural Lambda workload.</p>
 <p><strong>Amazon ECS (Fargate) for the solver engine.</strong> Optimization solvers are CPU-intensive and memory-hungry. A 50-case problem might need 4-8 GB of RAM and several minutes of sustained CPU. Lambda's 15-minute timeout and 10 GB memory limit technically work for batch mode, but Fargate gives you more control over compute resources, no cold-start penalty for warm-start replanning, and the ability to run commercial solvers that require persistent licensing.</p>
 <p><strong>Amazon DynamoDB for case data and schedule state.</strong> The current schedule, case metadata, and constraint parameters need low-latency reads (for the real-time replan path) and consistent writes (to prevent conflicting schedule updates). DynamoDB's single-digit-millisecond reads and conditional writes fit perfectly.</p>
-<p><strong>Amazon EventBridge for real-time event routing.</strong> Case completions, cancellations, and add-ons arrive as events from the EHR integration. EventBridge routes these to the replan trigger logic, which decides whether to invoke re-optimization.</p>
+<p><strong>Amazon EventBridge for real-time event routing.</strong> Case completions, cancellations, and add-ons arrive as events from the electronic health record (EHR) integration. EventBridge routes these to the replan trigger logic, which decides whether to invoke re-optimization.</p>
 <p><strong>Amazon S3 for historical data and model artifacts.</strong> Duration prediction models, historical case logs, and optimization run artifacts (for audit and analysis) live in S3.</p>
 <p><strong>Amazon SQS (FIFO) for the replan queue.</strong> When multiple events arrive in quick succession (common during the morning rush), you don't want three concurrent replans fighting over the same schedule state. An SQS FIFO queue buffers replan requests with message-group-based ordering and deduplication ID windowing, ensuring they're processed sequentially. The FIFO ordering guarantees that replans execute in the order they were triggered, and the 5-minute deduplication window prevents replan storms from rapid-fire events.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
@@ -810,7 +810,7 @@ FUNCTION enqueue_replan(reason, **kwargs):
 <ul>
 <li><a href="https://developers.google.com/optimization/cp/cp_solver">Google OR-Tools CP-SAT Solver</a> - Free, high-performance constraint programming solver</li>
 <li><a href="https://highs.dev/">HiGHS Optimization Solver</a> - Open-source linear and mixed-integer programming solver</li>
-<li><a href="https://github.com/coin-or/Cbc">COIN-OR CBC</a> - Open-source MIP solver</li>
+<li><a href="https://github.com/coin-or/Cbc">COIN-OR CBC</a> - Open-source mixed-integer programming (MIP) solver</li>
 </ul>
 <p><strong>AWS Solutions and Blogs:</strong></p>
 <ul>

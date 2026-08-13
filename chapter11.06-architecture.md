@@ -1122,6 +1122,20 @@ Patient-facing chat surfaces are adversarial by default. The triage bot's prompt
 
 **Audit logging.** Cross-check outcomes (injection detected, blocked, logged) are written to the tool-call-ledger for security review.
 
+#### The Model Proposes, Deterministic Code Disposes
+
+The section title in the main recipe calls this bot's decision logic "conservative by default." That phrase describes how the model is prompted, and a prompt is not a control. A system prompt that says "when in doubt, escalate" can be argued with, talked around by a persistent patient, or subverted by content that reaches the model through the conversation itself. Anything that depends only on the model choosing to behave is a property of the model's output, not a boundary the model cannot cross. The Open Worldwide Application Security Project (OWASP) names the failure this prevents: excessive agency, where a language model is able to invoke actions beyond what the situation should permit.
+
+The commitment that makes this bot safe is that its authority to act does not live in the model. The model conducts the conversation and proposes an intent. Whether a consequential action then happens is decided by deterministic code that the model cannot overrule.
+
+**Consequential tools gate on computed state, not on the model's assertion.** The care-level recommendation is produced by `recommendation_compose_tool` from the answer set and, where one applies, a clinical-decision rule computed by `clinical_rule_compute_tool`. Action tools must key off that computed recommendation, not off the model's fluent summary of it. `telehealth_book_tool` should book only for a recommendation whose computed care level is one that telehealth is permitted to satisfy, checking the triage-decision record rather than the conversation text. If the model narrates "I have booked you a telehealth visit" for a case the deterministic logic scored as an emergency-department visit, no booking should occur, because the tool checks the recommendation record rather than trusting the sentence.
+
+**Emergency screening is a gate the model cannot skip, not a step it is asked to run first.** `emergency_screen_tool` runs as a separate stage in the orchestrator (see "Continuous-Emergency-Screening as Separately-Validated Pipeline"). A positive screen forces the 911 pathway regardless of what the model does next. The model is not trusted to remember to screen, nor to honor the result; the pipeline enforces both.
+
+**The model cannot widen its own tool surface.** The action group exposes a fixed set of tools. There is no general-purpose "call an API" tool, no code execution, and no tool whose effect is determined by a free-text argument from the model. Each tool does one narrow thing with a typed contract (see "Tool-Surface Contract Management"), so the worst a fully subverted model can do is call an allowed tool with in-range arguments, and the `patient_id` cross-check and resource-based policies in "IAM Resource-Based Policy and Defense-in-Depth" bound even that.
+
+**The failure mode this closes.** Without deterministic gating, a triage bot's safety rests entirely on the model never being persuaded to under-triage. That is precisely the case where a patient in distress, or an adversarial input, is most likely to persuade it. Moving the authorization out of the model means a downgrade a patient talks the model into, or a booking the model hallucinates, is caught by code that was never in the conversation. The prompt can still be conservative. It is just no longer the thing standing between a patient and the wrong care level.
+
 #### Disaster Recovery Topology
 
 Per-stage failover policy with documented behavior for each dependency outage:

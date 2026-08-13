@@ -17,13 +17,12 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 31 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 30 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Sev | Status | Item | Area |
 |----|-----|--------|------|------|
-| V-7.7 | Critical | OPEN | Tool-using LLMs have no enforced authorization boundary; frame as OWASP "ex... | Enterprise readiness |
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
 | R-1 | Significant | OPEN | Spell out technology and healthcare abbreviations and jargon on first use (... | Radwin: accessibility, register, s |
 | R-12 | Significant | OPEN | Add train/retention/residency lines to the 22 recipes that send PHI to a th... | Author-owned work |
@@ -55,7 +54,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**31 open** (Critical 1 · Significant 23 · Minor 7) · 66 closed · 97 total
+**30 open** (Significant 23 · Minor 7) · 67 closed · 97 total
 
 <!-- DIGEST:END -->
 
@@ -180,7 +179,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-7.4 | No model change-control or rollback (version pinning in the audit record, champion-challenger) | Significant | OPEN | |
 | V-7.5 | No security incident-response or breach-notification runbook for serving chapters | Significant | OPEN | |
 | V-7.6 | Automation bias unmonitored (no reviewer edit-rate tracking, no seeded errors) | Significant | OPEN | Safety argument rests on human review the book itself shows decaying. |
-| V-7.7 | Tool-using LLMs have no enforced authorization boundary; frame as OWASP "excessive agency" | Critical | OPEN | "Conservative by default" is a prompt property, not a control. |
+| V-7.7 | Tool-using LLMs have no enforced authorization boundary; frame as OWASP "excessive agency" | Critical | DONE | Addressed as an architecture-correctness point, not a governance disclaimer, so the shared-page approach used for V-7.1/7.2 did not apply. Principle stated: the model proposes, deterministic code disposes; a consequential tool call gates on tool-computed state, not on the model's assertion, and the model cannot widen its own tool surface. Framed against OWASP excessive agency. Option 3 per author: print's 11.6 got a surgical fix (dropped the 'Conservative-By-Default Decision Logic' heading that presented a prompt property as the safety story, added one sentence that the recommendation is computed and actions gate on it), keeping agentic depth out of print; the full treatment went into the digital companions. Scope measured, not guessed: an initial loose scan returned 31 recipes but was inflated by refill-prediction recipes and DynamoDB 'writes', so the genuine set of agents with an external write tool is four: 11.6 telehealth_book (done inline), 11.2 slot_book, 11.3 e_prescribe (the sharpest, a Surescripts prescription write, given the adversarial walkthrough), and 11.4 pre-visit packet (lower stakes, clinician-reviewed staging). Each companion now names its specific write tool and the deterministic gate that bounds it. Verified in both editions. |
 | V-7.8 | Ch9 liability overclaims ("absorbed the medico-legal liability", "simplifies regulatory compliance") | Significant | DONE | Both overclaims corrected. Vendors are now described as absorbing FDA clearance and the clinical validation behind it, with an explicit distinction the original conflated: a cleared device puts *product* liability on the manufacturer but does not move *professional* liability for the care decision, follow-up, or an uncompleted referral. 'Buying removes development risk, not accountability.' The physician-in-the-loop claim no longer says it 'simplifies regulatory compliance'; it now says it changes which regime applies rather than exempting you from one, and routes the question to the reader's regulatory and legal teams. |
 | V-7.9 | Ch8 specificity bias is potential False Claims Act / OIG upcoding exposure, not just training noise | Significant | DONE | Reframed. The bullet previously ended at 'your model learns whatever bias exists in your historical data', which reads as a data-quality caveat. It now says the model does not merely inherit the tendency but automates it uniformly across every encounter, names unsupported codes as the substance of coding enforcement, notes that 'the model suggested it' is no defence because the submitting organisation attests to the claim, and points out the exposure is self-documenting because inference logs record what was suggested and how often it was accepted. Routes severity drift to the compliance officer. Held to the standing constraint: it names the risk and stops short of saying what compliance requires. |
 

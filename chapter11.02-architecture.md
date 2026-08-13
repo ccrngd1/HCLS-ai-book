@@ -1448,6 +1448,12 @@ Per-endpoint review cadence: WAF rules reviewed quarterly against false-positive
 
 ---
 
+### The Model Proposes, Deterministic Code Disposes
+
+A tool-using agent's authority to act must not live in its prompt. A system prompt is guidance the model can be argued out of, prompt-injected past, or simply confused into ignoring, so anything that depends on the model choosing to behave is a property of its output, not a boundary it cannot cross. The Open Worldwide Application Security Project (OWASP) calls the failure this prevents excessive agency. The model conducts the conversation and proposes an intent; whether a consequential action happens is decided by deterministic code the model cannot overrule.
+
+For this bot the consequential tool is `slot_book`, which writes an appointment into the electronic health record (EHR) and notifies the patient. It must gate on state the model does not control: an identity verified for this session, a slot the scheduling system still holds, and a slot-type the patient is eligible for. If the model announces "you are booked for Tuesday at 3" without a held slot behind it, no booking should occur, because `slot_book` checks the scheduling system rather than the sentence. The action group exposes a fixed set of narrow tools with typed contracts and no general-purpose call, so the worst a subverted model can do is call `slot_book` with in-range arguments, which the resource-based policies and identity checks in "IAM and WAF Enforcement" already bound.
+
 ## Why This Isn't Production-Ready
 
 The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.

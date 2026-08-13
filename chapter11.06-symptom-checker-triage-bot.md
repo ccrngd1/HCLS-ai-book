@@ -74,13 +74,13 @@ Let's get into it.
 
 ---
 
-## The Technology: Protocol-Grounded Conversational Triage With Conservative-By-Default Decision Logic
+## The Technology: Protocol-Grounded Conversational Triage
 
 ### What a Triage Bot Actually Does
 
 Symptom triage has been a phone-and-nurse-centric workflow for fifty years, because the questions are symptom-specific and the calibration between care levels lives in clinical judgment. The modern shift is putting that same protocol-driven interview behind a conversational front-end.
 
-A triage bot is a tool-using LLM with a system prompt that tells it which assistant it is, the patient's authenticated context (age, sex, basic chart history, current medications, current conditions, recent visits if relevant), and access to a structured library of institution-sanctioned triage protocols. The LLM conducts the conversation. The protocols, modeled as data, encode the clinical logic. The tools handle the deterministic actions: looking up the right protocol for the symptom, retrieving the relevant chart context, computing acuity scores from clinical-decision-rule inputs, escalating to a nurse line, posting a recommendation event for downstream operations, logging crisis-detection events to the appropriate response pathway.
+A triage bot is a tool-using LLM with a system prompt that tells it which assistant it is, the patient's authenticated context (age, sex, basic chart history, current medications, current conditions, recent visits if relevant), and access to a structured library of institution-sanctioned triage protocols. The LLM conducts the conversation. The protocols, modeled as data, encode the clinical logic. The tools handle the deterministic actions: looking up the right protocol for the symptom, retrieving the relevant chart context, computing acuity scores from clinical-decision-rule inputs, escalating to a nurse line, posting a recommendation event for downstream operations, logging crisis-detection events to the appropriate response pathway. This split matters for more than tidiness: the recommendation is computed by a tool from the answer set, and the consequential actions gate on that computed result rather than on the model's say-so, so the bot's safety does not rest on the model choosing to be careful.
 
 The conversation has a structure even though the patient does not see it. The bot's task surface decomposes roughly as follows.
 

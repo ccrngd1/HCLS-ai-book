@@ -1532,6 +1532,12 @@ Bot:     Got it. I'll connect you to the scheduling
 
 ---
 
+### The Model Proposes, Deterministic Code Disposes
+
+A tool-using agent's authority to act must not live in its prompt. A system prompt is guidance the model can be argued out of, prompt-injected past, or simply confused into ignoring, so anything that depends on the model choosing to behave is a property of its output, not a boundary it cannot cross. The Open Worldwide Application Security Project (OWASP) calls the failure this prevents excessive agency. The model conducts the conversation and proposes an intent; whether a consequential action happens is decided by deterministic code the model cannot overrule.
+
+This bot has the highest-consequence action in the book: `e_prescribe` writes a prescription to the institution's Surescripts-routed e-prescribing network. Precisely because the stakes are that high, the authorization to fire it cannot rest on the model. `e_prescribe` must gate on the deterministic refill-eligibility decision (the medication is an eligible refill, within its refill count and date window, for this verified patient) and on the prescriber authorization the institution's clinical policy requires. The model's role ends at proposing that the patient wants a refill. Consider the adversarial case directly: a patient, or content injected through the conversation, talks the model into calling `e_prescribe` for a controlled substance, a larger quantity, or a medication the patient is not on. If the tool trusts the model's arguments, a prescription is written. If the tool re-derives eligibility from the medication record and refuses anything the deterministic check did not authorize, the subverted conversation produces nothing. That difference is the whole control. The prompt can still be conservative; it is no longer what stands between a conversation and a prescription.
+
 ## Why This Isn't Production-Ready
 
 The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.
