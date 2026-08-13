@@ -8,9 +8,9 @@
 
 ### Why These Services
 
-**Amazon S3 as the data lake foundation.** Claims, remittance, eligibility, provider data, external reference data, and case outcomes all land in S3. Partitioned Parquet for analytical access, JSON for raw records, Iceberg or Hudi table formats for the mutable claim data (claims get adjusted, and the lake has to reflect state changes without losing history). Customer-managed KMS encryption on every bucket. HIPAA-eligible under the BAA.
+**Amazon S3 as the data lake foundation.** Claims, remittance, eligibility, provider data, external reference data, and case outcomes all land in S3. Partitioned Parquet for analytical access, JSON for raw records, Iceberg or Hudi table formats for the mutable claim data (claims get adjusted, and the lake has to reflect state changes without losing history). Customer-managed KMS encryption on every bucket. HIPAA-eligible under the business associate agreement (BAA).
 
-**AWS Glue for the data catalog and ETL.** Schema registry for the diverse inputs, crawler-driven discovery for semi-structured sources, PySpark jobs for the transformations. Entity resolution runs as Glue jobs using fuzzy-matching libraries and external identifier APIs. Glue gives observability, job lineage, and cost governance that ad-hoc Spark would not.
+**AWS Glue for the data catalog and extract, transform, and load (ETL).** Schema registry for the diverse inputs, crawler-driven discovery for semi-structured sources, PySpark jobs for the transformations. Entity resolution runs as Glue jobs using fuzzy-matching libraries and external identifier APIs. Glue gives observability, job lineage, and cost governance that ad-hoc Spark would not.
 
 **Amazon EMR or AWS Glue for heavy batch processing.** Feature computation across the entire claim history (billions of rows over multi-year windows) is too heavy for serverless Lambda. EMR Spark clusters (transient, spun up for the batch jobs and torn down) are cost-efficient for the monthly cohort baseline rebuilds and the graph construction jobs.
 
@@ -40,7 +40,7 @@
 
 **AWS Secrets Manager for external credentials.** State business filing APIs, OIG/LEIE feeds, and third-party data vendors all require credentials. Rotated and audited.
 
-**AWS CloudTrail and Amazon CloudWatch.** CloudTrail data events on every PHI-bearing store and on case data stores. Every investigator action, every case state change, every data access is logged. CloudWatch dashboards for pipeline health and detector operating metrics. This audit trail is not optional; it's part of the regulatory posture of the program.
+**AWS CloudTrail and Amazon CloudWatch.** CloudTrail data events on every store containing protected health information (PHI) and on case data stores. Every investigator action, every case state change, every data access is logged. CloudWatch dashboards for pipeline health and detector operating metrics. This audit trail is not optional; it's part of the regulatory posture of the program.
 
 **AWS Clean Rooms (optional, for multi-payer collaboration).** Some schemes span payers (a provider billing Medicaid, Medicare Advantage, and commercial payers for the same patterns). Multi-payer intelligence sharing is regulated but permitted in specified scenarios. AWS Clean Rooms enables privacy-preserving joins across multiple payer datasets. Not a day-one feature, but worth knowing about.
 
@@ -186,7 +186,7 @@ flowchart TB
 
 #### Walkthrough
 
-**Step 1: Ingest and normalize claims plus reference data.** Claims arrive from a clearinghouse in 837 format or from internal adjudication in a proprietary format. Provider data arrives from NPPES (monthly FTP), LEIE (monthly), state filings (variable). The normalization step parses each source, canonicalizes identifiers, and lands everything in the data lake with explicit source-of-truth tracking.
+**Step 1: Ingest and normalize claims plus reference data.** Claims arrive from a clearinghouse as an X12 837 claim submission or from internal adjudication in a proprietary format. Provider data arrives from NPPES (monthly FTP), LEIE (monthly), state filings (variable). The normalization step parses each source, canonicalizes identifiers, and lands everything in the data lake with explicit source-of-truth tracking.
 
 ```pseudocode
 FUNCTION normalize_claim(raw_claim):
@@ -1226,7 +1226,7 @@ The infrastructure that makes subgroup monitoring binding: subgroup performance 
 
 **Disaster recovery and continuity.** The FWA pipeline is not in the payment-gating hot path for most architectures (payment integrity usually runs alongside or after adjudication, not inline). But the detection workload itself is essential; a quarter without FWA detection is a quarter of undetected schemes. Plan for multi-region failover or at least cross-region backup of the case management state.
 
-**Dead-letter queues and poison-message handling.** The four critical Lambdas in the pipeline (stream-normalizer, rules-engine, evidence-aggregator, outcome-capture) each need an `OnFailure` destination pointing to a dedicated SQS DLQ. CloudWatch alarms on DLQ depth alert the on-call SIU-engineering team. For the stream-normalizer DLQ specifically, the alarm threshold should be 1, because a single dropped claim is a claim that escaped scoring. Replay events from the DLQ after fixing the root cause; for events older than the regulatory-referral compliance window, escalate to compliance-team review rather than auto-replay because the timing-of-detection is itself part of the compliance posture under 42 CFR 422.504(h) and 42 CFR 438.608. A claim that was supposed to be scored in January but actually scored in April after a DLQ replay has a different compliance posture than a claim scored on time.
+**Dead-letter queues and poison-message handling.** The four critical Lambdas in the pipeline (stream-normalizer, rules-engine, evidence-aggregator, outcome-capture) each need an `OnFailure` destination pointing to a dedicated SQS dead-letter queue (DLQ). CloudWatch alarms on DLQ depth alert the on-call SIU-engineering team. For the stream-normalizer DLQ specifically, the alarm threshold should be 1, because a single dropped claim is a claim that escaped scoring. Replay events from the DLQ after fixing the root cause; for events older than the regulatory-referral compliance window, escalate to compliance-team review rather than auto-replay because the timing-of-detection is itself part of the compliance posture under 42 CFR 422.504(h) and 42 CFR 438.608. A claim that was supposed to be scored in January but actually scored in April after a DLQ replay has a different compliance posture than a claim scored on time.
 
 **Cross-border and international dimensions.** Some schemes involve offshore entities, international money flows, or providers practicing across jurisdictions. These add complexity (data-sharing restrictions, currency normalization, international sanctions lists) that domestic-focused architectures may not anticipate. Consult with legal and international compliance before handling these cases.
 
