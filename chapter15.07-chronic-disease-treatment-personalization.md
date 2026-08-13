@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Treatment selection, dosing, and
+> escalation are decisions for treating clinicians working from your institution's
+> protocols. The thresholds, policies, and sample values here exist to make the
+> architecture concrete. They are not a treatment protocol and have not been clinically
+> validated.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 A patient with type 2 diabetes walks into their quarterly endocrinology visit. Their HbA1c is 8.4%, up from 7.9% three months ago. They're on metformin monotherapy. The clinician has a decision to make: add a second agent? Which one? An SGLT2 inhibitor for the cardiovascular benefit? A GLP-1 agonist for the weight loss? A DPP-4 inhibitor because it's well-tolerated and the patient already struggles with medication adherence?

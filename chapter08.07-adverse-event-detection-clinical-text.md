@@ -4,6 +4,13 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The alerts, interaction severities, and
+> recommendations shown here are examples chosen to make the architecture concrete, not
+> clinical guidance. Decision support content must come from a maintained clinical
+> knowledge source and stay under clinician review.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 A patient receives a new blood pressure medication. Two weeks later, they mention to their cardiologist that they've been dizzy every morning since starting it. The cardiologist documents "patient reports orthostatic dizziness, likely related to new amlodipine" in the progress note. That note lives in the EHR. Nobody extracts it. Nobody routes it to pharmacovigilance. Nobody connects it to the three other patients in the same health system who reported the same symptom on the same medication at the same dose.

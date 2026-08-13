@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Treatment selection, dosing, and
+> escalation are decisions for treating clinicians working from your institution's
+> protocols. The thresholds, policies, and sample values here exist to make the
+> architecture concrete. They are not a treatment protocol and have not been clinically
+> validated.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 A hospitalist admits a patient with community-acquired pneumonia. The hospital has a clinical pathway for this: a sequence of assessments, lab orders, antibiotic choices, escalation criteria, and discharge readiness checks. It lives in a 14-page PDF on the intranet. Maybe there's a laminated card somewhere in the nursing station. The pathway was updated six months ago, but the laminated card still shows the old antibiotic recommendations.

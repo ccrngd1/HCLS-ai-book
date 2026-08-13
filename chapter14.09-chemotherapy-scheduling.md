@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Treatment selection, dosing, and
+> escalation are decisions for treating clinicians working from your institution's
+> protocols. The thresholds, policies, and sample values here exist to make the
+> architecture concrete. They are not a treatment protocol and have not been clinically
+> validated.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It's 7:15 AM at a 30-chair infusion center. The schedule says 42 patients today. Three of them have regimens that take 6+ hours. Eight need pre-medications that require a nurse to monitor for the first 30 minutes. Two are on clinical trial protocols with rigid timing windows. The pharmacy needs 45 minutes of lead time to mix each bag, and some drugs expire within 4 hours of preparation. One nurse called in sick. Chair 12 is down for maintenance.

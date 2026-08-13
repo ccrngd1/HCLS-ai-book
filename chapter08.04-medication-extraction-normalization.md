@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The drug names, doses, and interaction
+> severities in this recipe are examples chosen to make the architecture concrete. They
+> are not a clinical reference, they are not maintained, and they must not be used to make
+> prescribing or dispensing decisions. Medication content belongs in a licensed, versioned
+> drug knowledge base owned by your pharmacy team.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 A hospitalist is admitting a patient at 2 AM. The patient's medication list in the EHR says "lisinopril 10mg daily." The patient says they take "that blood pressure pill, the small white one, and also something for my cholesterol." The nursing home transfer summary mentions "Zestril 20mg PO QD" and "atorvastatin calcium 40mg QHS." The discharge summary from three months ago at a different facility lists "HCTZ/lisinopril 12.5/20" and "Lipitor 40."

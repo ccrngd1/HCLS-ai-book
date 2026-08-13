@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Triage and disposition are clinical
+> decisions. The escalation rules, red-flag lists, and sample dialogue here exist to make
+> the architecture concrete. They are not a validated triage protocol and must not be
+> deployed as one. A patient-facing system needs validation against the protocol your
+> organization actually uses.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It is 4:50 p.m. on a Friday at a mid-sized internal medicine practice. The clinical-support phone line has been forwarded to voicemail since the front desk left for the day. Over the next sixty-four hours, until someone arrives Monday morning, the practice's voicemail box accumulates forty-seven new messages.

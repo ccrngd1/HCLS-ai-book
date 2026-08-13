@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Treatment selection, dosing, and
+> escalation are decisions for treating clinicians working from your institution's
+> protocols. The thresholds, policies, and sample values here exist to make the
+> architecture concrete. They are not a treatment protocol and have not been clinically
+> validated.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 Here's a scenario that plays out thousands of times a day in ICUs around the world. A critically ill patient's blood glucose is 220 mg/dL. The nurse checks the sliding scale protocol taped to the wall, administers 4 units of insulin, and moves on to the next patient. Four hours later, the glucose is 65 mg/dL. Hypoglycemia. Now there's a code situation, dextrose is being pushed, and the patient who was already fighting sepsis has a new physiological insult to recover from.

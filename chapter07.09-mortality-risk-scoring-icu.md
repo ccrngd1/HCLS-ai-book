@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Treatment selection, dosing, and
+> escalation are decisions for treating clinicians working from your institution's
+> protocols. The thresholds, policies, and sample values here exist to make the
+> architecture concrete. They are not a treatment protocol and have not been clinically
+> validated.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 An intensivist is standing at the bedside of a 72-year-old patient on day three of a medical ICU admission. The patient has multi-organ dysfunction: kidneys failing, blood pressure requiring vasopressors, ventilator settings climbing. The family is asking "what are the chances?" The physician has clinical intuition built from years of experience, but translating that into a calibrated probability is something humans are genuinely bad at. Studies consistently show that clinicians overestimate survival in critically ill patients. They anchor on the patient they remember who beat the odds, not the twenty who didn't.

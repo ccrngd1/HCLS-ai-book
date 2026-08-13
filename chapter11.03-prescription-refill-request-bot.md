@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The drug names, doses, and interaction
+> severities in this recipe are examples chosen to make the architecture concrete. They
+> are not a clinical reference, they are not maintained, and they must not be used to make
+> prescribing or dispensing decisions. Medication content belongs in a licensed, versioned
+> drug knowledge base owned by your pharmacy team.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 Eleanor is 71. She takes seven prescription medications: lisinopril for blood pressure, metformin for type 2 diabetes, atorvastatin for cholesterol, levothyroxine for her thyroid, gabapentin for neuropathic pain, sertraline for depression, and a low-dose aspirin her cardiologist recommended after a coronary calcium scan. She has been taking most of them for years. Her primary care physician sees her every three months, her endocrinologist twice a year, and the rest of her care is the slow background labor of staying on top of seven prescriptions, three pharmacies (because her insurance moved one of them to mail-order in January), and the eternal question of whether the white oval pill or the white round pill is the one she takes in the morning.

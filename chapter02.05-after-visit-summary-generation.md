@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Triage and disposition are clinical
+> decisions. The escalation rules, red-flag lists, and sample dialogue here exist to make
+> the architecture concrete. They are not a validated triage protocol and must not be
+> deployed as one. A patient-facing system needs validation against the protocol your
+> organization actually uses.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 A 68-year-old patient with new-onset atrial fibrillation walks out of the cardiology office with a folded piece of paper. On it: the boilerplate "After-Visit Summary" the EHR auto-generated. The top half is the patient's demographic banner and the practice's phone number. The bottom half is a list of their active medications (unchanged for the last 5 years, except the addition of one), a generic statement that says "Continue current medications as prescribed," and a single line that reads "Follow up as needed."

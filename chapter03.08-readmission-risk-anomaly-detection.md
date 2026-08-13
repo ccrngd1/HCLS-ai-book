@@ -4,6 +4,13 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The alerts, interaction severities, and
+> recommendations shown here are examples chosen to make the architecture concrete, not
+> clinical guidance. Decision support content must come from a maintained clinical
+> knowledge source and stay under clinician review.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 Mr. Alvarez is 71. He was admitted ten days ago with a heart failure exacerbation, ejection fraction 30%, two days in the step-down unit, six days on the cardiology floor, diuresed gently, optimized on guideline-directed medical therapy, taught how to weigh himself daily, given a pillbox with the new med list, scheduled for cardiology follow-up in seven days, and discharged home Thursday afternoon. The discharge summary is solid. The medication reconciliation is clean. The post-discharge plan looks good on paper.

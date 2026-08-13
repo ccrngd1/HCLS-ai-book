@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The drug names, doses, and interaction
+> severities in this recipe are examples chosen to make the architecture concrete. They
+> are not a clinical reference, they are not maintained, and they must not be used to make
+> prescribing or dispensing decisions. Medication content belongs in a licensed, versioned
+> drug knowledge base owned by your pharmacy team.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 A physician is writing a prescription for atorvastatin. The patient's insurance plan covers it, but only at Tier 3. There's a therapeutically equivalent statin on Tier 1 that would save the patient $40 a month. The physician doesn't know this. The patient fills the prescription, sees the copay, calls the office, the office calls the pharmacy, the pharmacy calls the PBM, and eventually someone figures out that rosuvastatin was the preferred alternative all along.

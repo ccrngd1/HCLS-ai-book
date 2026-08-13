@@ -4,6 +4,13 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The alerts, interaction severities, and
+> recommendations shown here are examples chosen to make the architecture concrete, not
+> clinical guidance. Decision support content must come from a maintained clinical
+> knowledge source and stay under clinician review.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 A 62-year-old woman shows up in the emergency department at 11:30 PM with shortness of breath that's been getting worse over three days. She has a history of breast cancer treated five years ago with anthracycline chemotherapy, chronic kidney disease (eGFR 44), type 2 diabetes, and rheumatoid arthritis on methotrexate. Her vital signs are borderline: heart rate 108, blood pressure 112/68, respiratory rate 22, oxygen saturation 93% on room air. The triage nurse orders the usual workup. The labs come back over the next hour: troponin mildly elevated at 0.08 (reference <0.04), BNP of 840, D-dimer 1,200, creatinine up from her baseline at 1.6, a mild leukocytosis, and a chest radiograph that the overnight radiologist reads as "bibasilar opacities, cannot exclude pulmonary edema vs atypical infection vs pulmonary embolism; clinical correlation recommended."

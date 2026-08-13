@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The drug names, doses, and interaction
+> severities in this recipe are examples chosen to make the architecture concrete. They
+> are not a clinical reference, they are not maintained, and they must not be used to make
+> prescribing or dispensing decisions. Medication content belongs in a licensed, versioned
+> drug knowledge base owned by your pharmacy team.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 After the vision-model, dual-path, A2I architecture of Recipe 1.6, this recipe is deliberately focused. Prescription labels are highly structured, printed, single-page documents where the OCR-plus-NLP pipeline is the optimal choice. The goal here is to introduce medication ontology mapping (RxNorm, NDC) before the complexity returns for EOB processing in Recipe 1.8.
 
 ## The Problem

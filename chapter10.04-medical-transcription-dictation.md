@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The drug names, doses, and interaction
+> severities in this recipe are examples chosen to make the architecture concrete. They
+> are not a clinical reference, they are not maintained, and they must not be used to make
+> prescribing or dispensing decisions. Medication content belongs in a licensed, versioned
+> drug knowledge base owned by your pharmacy team.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It is 6:47 PM. The clinic schedule said the day ended at 5:00. The last patient left forty-five minutes ago. The lights in the empty waiting room are off. There is a physician in a back office who has not had dinner, has not called home to say she is running late again, and is sitting in front of a computer typing the day's notes. Her schedule had twenty-two patients today. She finished about thirty percent of her documentation between visits. The other seventy percent is now, in this office, after hours, on her own time.

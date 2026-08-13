@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Treatment selection, dosing, and
+> escalation are decisions for treating clinicians working from your institution's
+> protocols. The thresholds, policies, and sample values here exist to make the
+> architecture concrete. They are not a treatment protocol and have not been clinically
+> validated.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It's 3:14 a.m. on a 32-bed medical-surgical floor. Bed 17 is a 67-year-old woman, two days post-op from a colon resection, recovering uneventfully. The night shift charge nurse has eight patients on her side of the unit, the other charge nurse has six, and they're sharing a CNA. Vitals on bed 17 were charted at 11 p.m.: temp 37.8, HR 92, BP 118/72, RR 18, SpO2 96% on room air, mentation appropriate, pain 3/10. A little febrile, mild tachycardia, otherwise unremarkable. The next vitals aren't due until 3 a.m.

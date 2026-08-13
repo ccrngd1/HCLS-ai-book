@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Treatment selection, dosing, and
+> escalation are decisions for treating clinicians working from your institution's
+> protocols. The thresholds, policies, and sample values here exist to make the
+> architecture concrete. They are not a treatment protocol and have not been clinically
+> validated.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 Here's the situation in every oncology clinic, every day: a patient sits down for their third cycle of FOLFOX (a common colorectal cancer regimen), and the oncologist has to decide whether to keep the dose the same, reduce it, delay the cycle, or push through despite borderline lab values. The standard approach is protocol-driven: start at 100% dose, reduce by 25% if neutrophils drop below a threshold, hold the cycle if platelets are too low. Simple rules. Decades of clinical trial data behind them.

@@ -4,6 +4,13 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The alerts, interaction severities, and
+> recommendations shown here are examples chosen to make the architecture concrete, not
+> clinical guidance. Decision support content must come from a maintained clinical
+> knowledge source and stay under clinician review.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It's 2:40 AM in the ICU. A hospitalist is standing over a 74-year-old man with sepsis from a presumed urinary source. The patient has chronic kidney disease (eGFR 28), atrial fibrillation on apixaban, heart failure with reduced ejection fraction, a sulfa allergy (rash, not anaphylaxis), and a history of C. diff colitis two years ago. The local antibiogram favors piperacillin-tazobactam for urinary sepsis, but the patient's renal function argues for dose adjustment. The pharmacist is at home. The infectious disease fellow is covering three other floors. The hospitalist has roughly four minutes to decide on an empiric antibiotic regimen before the next rapid response pages her.

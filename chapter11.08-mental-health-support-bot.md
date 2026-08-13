@@ -4,6 +4,16 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** This recipe describes architecture for a
+> conversational mental health support tool. It is not a therapeutic intervention, it is
+> not crisis care, and the sample dialogue and risk language here are illustrative rather
+> than clinically validated. A real system must route any indication of crisis or self-harm
+> to human clinicians and established crisis services immediately, and must never be the
+> only thing standing between a person and help. In the United States the 988 Suicide and
+> Crisis Lifeline is reachable by call or text.
+> Nothing here is a validated clinical tool, and any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It is 11:47 PM on a Wednesday. Sam is 24. Sam has been awake for about three hours, scrolling through their phone in bed, and the thoughts have been getting louder. Not the usual late-night anxiety thoughts about the email they did not answer at work, the conversation they probably mishandled with their roommate, the credit card payment that is two days overdue. Different thoughts. The kind of thoughts Sam knows, because they have been here before, are the thoughts that mean tomorrow will be a hard day and the day after will be harder. Sam was diagnosed with major depressive disorder when they were 19, has been on sertraline for most of the time since, and has had two prior episodes that required acute care, one of which involved a brief inpatient stay that Sam still has feelings about. Sam has a therapist, but the therapist is on vacation this week. Sam's primary care physician's office is closed. Sam's parents would pick up the phone, but Sam does not want to call their parents at midnight on a Wednesday and explain why. Sam's roommate is asleep behind the closed door across the hall.

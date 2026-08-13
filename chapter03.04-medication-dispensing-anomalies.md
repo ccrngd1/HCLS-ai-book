@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** The drug names, doses, and interaction
+> severities in this recipe are examples chosen to make the architecture concrete. They
+> are not a clinical reference, they are not maintained, and they must not be used to make
+> prescribing or dispensing decisions. Medication content belongs in a licensed, versioned
+> drug knowledge base owned by your pharmacy team.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It's a Saturday night at a community hospital pharmacy. The overnight pharmacist, covering two buildings, has a queue of forty-three orders waiting for verification. An order pops in at 11:42 p.m.: vancomycin 2 grams IV every 8 hours for a 52 kg patient in the step-down unit. The pharmacist's brain does the weight-based math in the background (roughly 38 mg/kg per dose, well above the usual 15-20 mg/kg, and the frequency is aggressive for this patient's renal function based on the creatinine she glanced at earlier), flags it, pages the ordering physician, and gets it corrected to 1 gram every 12 hours before the first dose leaves the Pyxis. Thirty seconds of a pharmacist's attention just prevented an AKI.
