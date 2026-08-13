@@ -70,7 +70,7 @@ A common approach is **lexicographic optimization**: satisfy the most important 
 
 The solver choice for bed assignment is different from batch scheduling (Recipe 14.5) because of the time constraint. You need solutions in seconds, not minutes or hours.
 
-**Mixed-Integer Programming (MIP):** Still works for bed assignment, but you need to be careful about problem size. A 400-bed hospital with 30 pending assignments is a manageable MIP (hundreds of binary variables, not thousands). Modern solvers (Gurobi, OR-Tools) can solve this in under a second. But if you're re-solving every 5 minutes with a warm start, you want the solver to be fast and deterministic.
+**Mixed-integer programming (MIP):** Still works for bed assignment, but you need to be careful about problem size. A 400-bed hospital with 30 pending assignments is a manageable MIP (hundreds of binary variables, not thousands). Modern solvers (Gurobi, OR-Tools) can solve this in under a second. But if you're re-solving every 5 minutes with a warm start, you want the solver to be fast and deterministic.
 
 **Constraint Programming (CP):** Particularly well-suited for bed assignment because the constraint structure is complex and heterogeneous. CP solvers (Google OR-Tools CP-SAT, IBM CP Optimizer) handle "if-then" constraints naturally. "If patient has airborne isolation, then room must have negative pressure" is awkward in MIP (requires big-M formulations) but natural in CP.
 
@@ -94,11 +94,11 @@ Most production systems use the hybrid approach. Pure real-time is architectural
 
 Here's something that isn't obvious until you try to build this: the "current state" of the hospital is surprisingly hard to know accurately.
 
-The ADT (Admit-Discharge-Transfer) system is the source of truth, but it lags reality. A discharge order might be signed at 10 AM, but the patient doesn't physically leave until 2 PM. The bed shows as "occupied" in the ADT system until someone clicks "discharge complete." A transfer order is entered, but the patient hasn't moved yet. A bed is "available" in the system but physically has a patient's belongings still in it because transport is backed up.
+The admission, discharge, and transfer (ADT) system is the source of truth, but it lags reality. A discharge order might be signed at 10 AM, but the patient doesn't physically leave until 2 PM. The bed shows as "occupied" in the ADT system until someone clicks "discharge complete." A transfer order is entered, but the patient hasn't moved yet. A bed is "available" in the system but physically has a patient's belongings still in it because transport is backed up.
 
 Your optimization is only as good as your state data. If you're optimizing against stale state, you'll make recommendations that are already wrong by the time a human sees them. This means you need:
 
-- Real-time ADT event feeds (HL7 or FHIR messages), not periodic database polls
+- Real-time ADT event feeds using Health Level Seven (HL7) or Fast Healthcare Interoperability Resources (FHIR) messages, not periodic database polls
 - Predicted discharge times (not just "discharge order signed"), which is itself a prediction problem (see Recipe 7.7: Length of Stay Prediction)
 - Bed turnaround time estimates (cleaning, inspection, readiness)
 - A concept of "soft availability": beds that aren't available now but will be within a predictable window
