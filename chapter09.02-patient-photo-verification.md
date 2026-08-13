@@ -8,7 +8,7 @@
 
 A patient walks into an urgent care clinic. They hand over an insurance card. The front desk confirms the name. They get routed to a room, seen by a provider, billed under that member ID. Except it's not their card. It belongs to a family member, a friend, someone they bought it from. The visit is documented under the wrong patient. The claim goes out with the wrong demographics. Medical history accumulates on the wrong person's chart.
 
-Medical identity fraud costs the U.S. healthcare system an estimated $80 billion annually. But the numbers don't capture the real risk: a patient gets treated based on someone else's allergy list. A blood type mismatch goes unnoticed. A medication interaction isn't flagged because the EHR shows someone else's active prescriptions. Identity errors in healthcare aren't just billing problems. They're patient safety problems.
+Medical identity fraud costs the U.S. healthcare system an estimated $80 billion annually. But the numbers don't capture the real risk: a patient gets treated based on someone else's allergy list. A blood type mismatch goes unnoticed. A medication interaction isn't flagged because the electronic health record (EHR) shows someone else's active prescriptions. Identity errors in healthcare aren't just billing problems. They're patient safety problems.
 
 The traditional solution is manual verification: front desk staff glances at the person, glances at the name on the screen, maybe asks for a photo ID. This works when things are calm. It falls apart at 8:00 AM on a Monday when six people are waiting and the phone is ringing. It doesn't scale to telehealth, where the person on the video call could be anyone. It doesn't scale to kiosks, where there's no staff to look at anyone.
 
