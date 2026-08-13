@@ -8,19 +8,19 @@
 
 ### Why These Services
 
-**Amazon Bedrock for the LLM and the embeddings.** Same selection criteria as recipe 11.1. The scheduling bot specifically benefits from a model with strong tool-use (function-calling) support. Claude Sonnet-class or Nova Pro-class models are typical choices for the orchestration model because they handle multi-step tool-use reasoning reliably; smaller models (Haiku-class, Nova Lite-class) are reasonable for the lighter-weight intent-classification and parameter-extraction sub-tasks. Bedrock provides HIPAA-eligible deployment and a BAA-covered configuration.
+**Amazon Bedrock for the LLM and the embeddings.** Same selection criteria as recipe 11.1. The scheduling bot specifically benefits from a model with strong tool-use (function-calling) support. Claude Sonnet-class or Nova Pro-class models are typical choices for the orchestration model because they handle multi-step tool-use reasoning reliably; smaller models (Haiku-class, Nova Lite-class) are reasonable for the lighter-weight intent-classification and parameter-extraction sub-tasks. Bedrock provides HIPAA-eligible deployment and a business associate agreement (BAA)-covered configuration.
 
-**Amazon Bedrock Knowledge Bases for the institutional content.** The scheduling bot needs to look up institutional content the same way the FAQ bot does: visit-type taxonomy descriptions, provider profiles (specialty, languages spoken, accepting new patients, telehealth availability), location details (address, parking, accessibility), pre-visit prep instructions per visit type, insurance-acceptance rules. Knowledge Bases provides the managed RAG layer over this corpus.
+**Amazon Bedrock Knowledge Bases for the institutional content.** The scheduling bot needs to look up institutional content the same way the FAQ bot does: visit-type taxonomy descriptions, provider profiles (specialty, languages spoken, accepting new patients, telehealth availability), location details (address, parking, accessibility), pre-visit prep instructions per visit type, insurance-acceptance rules. Knowledge Bases provides the managed retrieval-augmented generation (RAG) layer over this corpus.
 
 **Amazon Bedrock Agents (or a custom Lambda-based orchestrator) for tool orchestration.** Bedrock Agents is the managed offering for tool-using LLMs on Bedrock: define your tools as action groups with OpenAPI schemas, define a knowledge base for grounded retrieval, and the agent handles the orchestration of LLM calls and tool invocations. The alternative is a custom orchestrator in Lambda that calls the LLM directly with function-calling, parses tool-call requests, invokes the tools, and composes the response. Agents is the faster path; the custom orchestrator is more flexible and is sometimes preferred for institutions that need fine-grained control over the orchestration behavior.
 
 **Amazon Bedrock Guardrails for scope and content filtering.** Same purpose as recipe 11.1. The scheduling bot's scope is narrower than the FAQ bot's, so the Guardrails configuration is correspondingly more restrictive (clinical-content filtering more aggressive, patient-account-specific-question filtering more aggressive).
 
-**Amazon Lex V2 (optional) for the conversational orchestration on voice channels.** When the scheduling bot is deployed on a voice channel through Amazon Connect, Lex V2 provides the conversational orchestration with built-in ASR and TTS. The bot's logic is broadly the same; the channel adapter is what changes.
+**Amazon Lex V2 (optional) for the conversational orchestration on voice channels.** When the scheduling bot is deployed on a voice channel through Amazon Connect, Lex V2 provides the conversational orchestration with built-in automatic speech recognition (ASR) and text-to-speech (TTS). The bot's logic is broadly the same; the channel adapter is what changes.
 
-**Amazon API Gateway and AWS Lambda for the chat-channel backend.** Same pattern as recipe 11.1, with one new wrinkle: the scheduling bot's tool layer involves Lambdas that call out to the institution's scheduling system (typically through a FHIR-based API gateway, a vendor-specific REST API, or a privately-networked integration). Those tool Lambdas run in VPC with controlled egress to the scheduling system's endpoints.
+**Amazon API Gateway and AWS Lambda for the chat-channel backend.** Same pattern as recipe 11.1, with one new wrinkle: the scheduling bot's tool layer involves Lambdas that call out to the institution's scheduling system (typically through a Fast Healthcare Interoperability Resources (FHIR)-based API gateway, a vendor-specific REST API, or a privately-networked integration). Those tool Lambdas run in VPC with controlled egress to the scheduling system's endpoints.
 
-**The institution's scheduling system, exposed through whatever integration interface it provides.** The bot's tool surface is a wrapper around this. Common implementations: FHIR scheduling endpoints from a major EHR (Epic Hyperspace, Oracle Health Millennium, athenahealth, eClinicalWorks), a vendor-specific scheduling API, or a custom integration through a healthcare integration engine (Mirth, Rhapsody, Cloverleaf). The bot's tool Lambdas encapsulate this integration so the rest of the bot does not depend on the specific scheduling system.
+**The institution's scheduling system, exposed through whatever integration interface it provides.** The bot's tool surface is a wrapper around this. Common implementations: FHIR scheduling endpoints from a major electronic health record (EHR) such as Epic Hyperspace, Oracle Health Millennium, athenahealth, or eClinicalWorks, a vendor-specific scheduling API, or a custom integration through a healthcare integration engine (Mirth, Rhapsody, Cloverleaf). The bot's tool Lambdas encapsulate this integration so the rest of the bot does not depend on the specific scheduling system.
 
 **Amazon DynamoDB for conversation state, session state, and tool-call ledger.** Three tables: `conversation-state` (active conversation per session-and-channel, same as recipe 11.1); `conversation-metadata` (per-conversation lifecycle and version stamps, same as recipe 11.1); `tool-call-ledger` (every tool call with arguments, results, latency, and outcome, for transactional auditing).
 
@@ -215,7 +215,7 @@ flowchart LR
 
 ### Pseudocode Walkthrough
 
-**Step 1: Receive the chat message, bootstrap the session, and run the same input safety screening as recipe 11.1.** The first turn of any scheduling conversation goes through the same input-screening pipeline: crisis detection, prompt-injection detection, PHI minimization. The greeting and disclosure tells the patient this is a chatbot, what scheduling actions it can do, and how to reach a human. Skip the input screening and a patient mentioning chest pain while asking about a follow-up has their crisis signal lost in the booking flow.
+**Step 1: Receive the chat message, bootstrap the session, and run the same input safety screening as recipe 11.1.** The first turn of any scheduling conversation goes through the same input-screening pipeline: crisis detection, prompt-injection detection, protected health information (PHI) minimization. The greeting and disclosure tells the patient this is a chatbot, what scheduling actions it can do, and how to reach a human. Skip the input screening and a patient mentioning chest pain while asking about a follow-up has their crisis signal lost in the booking flow.
 
 ```pseudocode
 ON receive_message(channel, channel_session_id, user_message,
@@ -1543,7 +1543,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Contact Center Blog](https://aws.amazon.com/blogs/contact-center/): search "healthcare," "Lex," "scheduling" for relevant case studies
 
 **External References (Standards and Frameworks):**
-- [HL7 FHIR Scheduling Module](https://www.hl7.org/fhir/scheduling-module.html): the FHIR specification for Schedule, Slot, and Appointment resources
+- [Health Level Seven (HL7) FHIR Scheduling Module](https://www.hl7.org/fhir/scheduling-module.html): the FHIR specification for Schedule, Slot, and Appointment resources
 - [HL7 FHIR Appointment Resource](https://www.hl7.org/fhir/appointment.html): the FHIR Appointment resource specification
 - [HL7 FHIR Slot Resource](https://www.hl7.org/fhir/slot.html): the FHIR Slot resource specification
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in conversational logs and patient-rights requests
