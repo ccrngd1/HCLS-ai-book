@@ -4,6 +4,13 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Symptom assessment and triage
+> disposition are clinical decisions. The escalation thresholds, red-flag lists, and sample
+> dialogue here exist to make the architecture concrete. They are not a validated triage
+> protocol and must not be deployed as one. A patient-facing triage system needs clinical
+> ownership, validation against the protocol your organization actually uses, and review by
+> your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 It is 2:14 AM on a Tuesday. Devon is 47. He has woken up with a heavy, uncomfortable feeling in the middle of his chest. Not stabbing. Not tearing. More like a pressure, vaguely in the center, that came on while he was sleeping and is now keeping him awake. His left arm feels a little odd, but he is not sure if that is because he was sleeping on it. He is sweating slightly, but the bedroom is warm. He is 47 and otherwise healthy except for the fact that he has been told for several years that his cholesterol is "borderline." His father had a heart attack at 58. Devon's wife is asleep next to him. Devon does not want to wake her up over what is "probably nothing."

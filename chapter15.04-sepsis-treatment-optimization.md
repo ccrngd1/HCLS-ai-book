@@ -4,6 +4,12 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Sepsis treatment decisions,
+> including fluid and vasopressor choices, belong to treating clinicians working from your
+> institution's protocols. The policies, rewards, and thresholds here exist to make the
+> reinforcement learning architecture concrete. They are not a treatment protocol and have
+> not been clinically validated.
+
 ## The Problem
 
 Sepsis is one of the leading causes of death in US hospitals. Roughly 1.7 million adults develop sepsis in the US each year, and somewhere between 250,000 and 350,000 of them die. The mortality rate varies wildly depending on how quickly treatment starts and how well it's managed in those critical first hours. The treatment decisions are sequential, interdependent, and time-sensitive. A clinician managing a septic patient in the ICU is making dozens of decisions per hour. How much IV fluid? Which vasopressor, and at what dose? When to start antibiotics, and which ones? When to escalate, when to hold steady, when to back off.
