@@ -14,7 +14,7 @@
 
 ## The Problem
 
-A 68-year-old patient with new-onset atrial fibrillation walks out of the cardiology office with a folded piece of paper. On it: the boilerplate "After-Visit Summary" the electronic health record (EHR) auto-generated. The top half is the patient's demographic banner and the practice's phone number. The bottom half is a list of their active medications (unchanged for the last 5 years, except the addition of one), a generic statement that says "Continue current medications as prescribed," and a single line that reads "Follow up as needed."
+A 68-year-old patient with moderate mitral stenosis and new-onset atrial fibrillation walks out of the cardiology office with a folded piece of paper. On it: the boilerplate "After-Visit Summary" the electronic health record (EHR) auto-generated. The top half is the patient's demographic banner and the practice's phone number. The bottom half is a list of their active medications (unchanged for the last 5 years, except the addition of one), a generic statement that says "Continue current medications as prescribed," and a single line that reads "Follow up as needed."
 
 What actually happened in that visit: the cardiologist started anticoagulation. She explained that the patient has a 1-in-20 risk of stroke per year without it, that the medication requires careful attention to diet (greens interact), that they need a lab draw in three days to check clotting, that they should call 911 immediately if they notice unusual bleeding or a sudden headache, and that they need to return in two weeks. None of that is on the paper.
 
