@@ -36,15 +36,15 @@ Before we talk about how to generate these with an LLM, it's worth dissecting wh
 4. **Clinical rationale for the requested service.** Why this specific service, why now, why this patient. This is where the letter has to be persuasive without overreaching factually.
 5. **Reference to payer criteria.** A direct mapping from the patient's facts to the payer's published coverage criteria. Good letters explicitly say "the patient meets criterion X because of finding Y."
 6. **Supporting evidence.** Clinical guidelines, peer-reviewed studies, professional society recommendations. This anchors the request in the medical literature.
-7. **Signature and credentials.** Provider name, NPI, specialty, license. This establishes the prescribing authority.
+7. **Signature and credentials.** Provider name, National Provider Identifier (NPI), specialty, license. This establishes the prescribing authority.
 
-Every one of those sections draws from a different source. The patient identification and clinical background come from the EHR. The treatment history requires parsing clinical notes. The payer criteria come from the payer's medical policy (typically a PDF on their provider portal). The supporting evidence comes from published guidelines and literature. The signature is provider-specific metadata.
+Every one of those sections draws from a different source. The patient identification and clinical background come from the electronic health record (EHR). The treatment history requires parsing clinical notes. The payer criteria come from the payer's medical policy (typically a PDF on their provider portal). The supporting evidence comes from published guidelines and literature. The signature is provider-specific metadata.
 
-A human writer synthesizes all of this from memory, from the chart, and from open browser tabs. An AI system has to do it from retrieval. Which is what makes this problem an archetypal RAG application.
+A human writer synthesizes all of this from memory, from the chart, and from open browser tabs. An AI system has to do it from retrieval. Which is what makes this problem an archetypal retrieval-augmented generation (RAG) application.
 
 ### Why LLMs Are Genuinely Good at This
 
-LLMs are excellent at taking a set of facts and weaving them into structured prose that follows a specific rhetorical pattern. This is a task that pre-LLM NLP could not do well. Template-based letter generation (mail merge, essentially) produced output that read as mechanical and missed the nuance of tying specific findings to specific criteria. Rule-based systems couldn't handle the variability in how clinical information is expressed.
+LLMs are excellent at taking a set of facts and weaving them into structured prose that follows a specific rhetorical pattern. This is a task that pre-LLM natural language processing (NLP) could not do well. Template-based letter generation (mail merge, essentially) produced output that read as mechanical and missed the nuance of tying specific findings to specific criteria. Rule-based systems couldn't handle the variability in how clinical information is expressed.
 
 Modern LLMs handle this well because:
 
@@ -68,11 +68,11 @@ The mitigation: never let the model generate clinical facts from its prior knowl
 
 **Citation fabrication.** Ask an LLM to cite supporting literature and it will happily generate plausible-looking journal citations that don't exist. The model confabulates author names, journal titles, and DOIs with high confidence. The mitigation: use retrieval for citations. Pull from a vetted literature corpus or a guideline repository. Never let the model generate citations from its training data alone.
 
-**Payer-specific formatting.** Most payers accept letters in PDF format submitted through a portal. Some require specific fields in specific places. Some want structured JSON submitted via API (the HL7 DaVinci project is pushing toward this, and CMS-0057-F is accelerating it). Your generation pipeline has to produce the right output format for each payer, which means the architecture has to support multiple output modalities from a common content core.
+**Payer-specific formatting.** Most payers accept letters in PDF format submitted through a portal. Some require specific fields in specific places. Some want structured JSON submitted via API (the Health Level Seven (HL7) DaVinci project is pushing toward this, and CMS-0057-F is accelerating it). Your generation pipeline has to produce the right output format for each payer, which means the architecture has to support multiple output modalities from a common content core.
 
 **Physician sign-off friction.** A generated letter is only valuable if the physician signs it. If the review workflow is cumbersome (print, read, sign, scan, upload), the time savings evaporate. The integration with clinical workflows matters as much as the letter quality.
 
-**Prompt injection from clinical content.** This is the one that security teams miss on first review. The clinical notes you feed into the model are not fully trusted input. Patient portal messages, OCR of faxed outside records, and external referral letters all originate from weakly controlled channels. An adversarial string embedded in a note field could attempt to override the model's grounding constraint (for example, instructing it to fabricate claims or cite nonexistent literature). The mitigation is layered: configure input-side prompt-attack filters (Bedrock Guardrails supports this), and treat EHR-sourced structured data (lab values, coded diagnoses) as a different trust tier from free-text narrative content. Structured data goes into the prompt with minimal transformation. Free-text content gets sanitized and filtered before it reaches the model. This is especially important because the downstream output is a legal document that goes to a payer under a physician's signature.
+**Prompt injection from clinical content.** This is the one that security teams miss on first review. The clinical notes you feed into the model are not fully trusted input. Patient portal messages, optical character recognition (OCR) of faxed outside records, and external referral letters all originate from weakly controlled channels. An adversarial string embedded in a note field could attempt to override the model's grounding constraint (for example, instructing it to fabricate claims or cite nonexistent literature). The mitigation is layered: configure input-side prompt-attack filters (Bedrock Guardrails supports this), and treat EHR-sourced structured data (lab values, coded diagnoses) as a different trust tier from free-text narrative content. Structured data goes into the prompt with minimal transformation. Free-text content gets sanitized and filtered before it reaches the model. This is especially important because the downstream output is a legal document that goes to a payer under a physician's signature.
 
 ### Grounded Generation: The Architectural Answer
 
@@ -88,7 +88,7 @@ The key architectural principle: the model is a prose composer, not a fact sourc
 
 ### Where This Differs From Simpler LLM Applications
 
-Recipe 2.1 (patient message drafting) works with a single input (the inbound message) and produces a single output (the draft reply). Recipe 2.2 (terminology simplification) works with a single input (the clinical text) and produces a transformed output. Recipe 2.3 (CDI suggestions) analyzes a single note against a set of guidelines.
+Recipe 2.1 (patient message drafting) works with a single input (the inbound message) and produces a single output (the draft reply). Recipe 2.2 (terminology simplification) works with a single input (the clinical text) and produces a transformed output. Recipe 2.3 (clinical documentation improvement (CDI) suggestions) analyzes a single note against a set of guidelines.
 
 Prior auth letter generation is different because it's fundamentally a synthesis task across multiple disparate sources. You need:
 
@@ -143,7 +143,7 @@ Let's walk through each stage conceptually.
 
 **Present for physician review.** The generated letter is shown to the prescribing physician along with source provenance: each claim links to the source fact, each citation links to the retrieved evidence. The physician reviews quickly, edits if needed, and signs. This is where the time savings live: reducing a 25-minute composition task to a 3-5 minute review task.
 
-**Finalize and submit.** The signed letter is formatted for the payer's submission mechanism: PDF for portal upload, structured data for API submission (for payers supporting the DaVinci PAS FHIR profile), or fax for legacy payers. Submission status is tracked for follow-up.
+**Finalize and submit.** The signed letter is formatted for the payer's submission mechanism: PDF for portal upload, structured data for API submission (for payers supporting the DaVinci PAS Fast Healthcare Interoperability Resources (FHIR) profile), or fax for legacy payers. Submission status is tracked for follow-up.
 
 This is a lot of machinery. The LLM call is one step in a pipeline of ten or twelve, and most of the engineering complexity lives in the non-LLM steps. Retrieval, extraction, mapping, and validation are where the system lives or dies. The generation is almost easy once you've done the rest correctly.
 
