@@ -22,7 +22,7 @@ Here's why. SDOH data lives in three places, and none of them talk to each other
 
 The result: health systems make clinical decisions without understanding the social context that determines whether those decisions will actually work. They cluster patients by disease, by utilization, by cost. But they rarely cluster by the social circumstances that explain why some patients thrive and others spiral.
 
-Social determinant phenotyping is the practice of building composite profiles of patients' social circumstances by combining NLP extraction from clinical notes, structured screening data, and community-level indicators into coherent, actionable clusters. Not just "this patient has food insecurity" but "this patient belongs to a phenotype characterized by housing instability, transportation barriers, and social isolation, and patients in this phenotype respond best to community health worker outreach rather than phone-based care management."
+Social determinant phenotyping is the practice of building composite profiles of patients' social circumstances by combining natural language processing (NLP) extraction from clinical notes, structured screening data, and community-level indicators into coherent, actionable clusters. Not just "this patient has food insecurity" but "this patient belongs to a phenotype characterized by housing instability, transportation barriers, and social isolation, and patients in this phenotype respond best to community health worker outreach rather than phone-based care management."
 
 That's what we're building.
 
@@ -54,7 +54,7 @@ The first technical challenge is extracting SDOH mentions from clinical text. Th
 
 The standard approach uses a combination of:
 
-1. **Named Entity Recognition (NER)** trained on SDOH-specific ontologies. The most common taxonomy is the Gravity Project's SDOH Clinical Care standard, which defines categories like housing instability, food insecurity, transportation insecurity, financial strain, social isolation, and interpersonal violence.
+1. **Named entity recognition (NER)** trained on SDOH-specific ontologies. The most common taxonomy is the Gravity Project's SDOH Clinical Care standard, which defines categories like housing instability, food insecurity, transportation insecurity, financial strain, social isolation, and interpersonal violence.
 
 2. **Assertion classification** to determine whether a detected mention is affirmed, negated, or hypothetical. "Patient has housing instability" (affirmed) vs. "patient denies housing instability" (negated) vs. "if patient loses housing" (hypothetical).
 

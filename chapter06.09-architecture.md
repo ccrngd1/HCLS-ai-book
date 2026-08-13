@@ -8,13 +8,13 @@
 
 ### Why These Services
 
-**Amazon Comprehend Medical for NLP extraction.** Comprehend Medical is AWS's healthcare-specific NLP service. It detects medical entities, including social history mentions, from clinical text. While it doesn't have a dedicated SDOH extraction mode, its entity detection combined with custom classification models provides the foundation. For SDOH-specific extraction beyond what Comprehend Medical handles natively, you'll supplement with Amazon SageMaker hosting a fine-tuned model.
+**Amazon Comprehend Medical for natural language processing (NLP) extraction.** Comprehend Medical is AWS's healthcare-specific NLP service. It detects medical entities, including social history mentions, from clinical text. While it doesn't have a dedicated social determinants of health (SDOH) extraction mode, its entity detection combined with custom classification models provides the foundation. For SDOH-specific extraction beyond what Comprehend Medical handles natively, you'll supplement with Amazon SageMaker hosting a fine-tuned model.
 
-**Amazon SageMaker for SDOH-specific NLP and clustering.** SageMaker provides the ML infrastructure for two pieces: (1) a fine-tuned NER model for SDOH extraction that goes beyond Comprehend Medical's built-in capabilities, and (2) the clustering algorithm itself (LCA or k-prototypes). SageMaker Processing jobs handle the feature assembly and clustering computation. SageMaker endpoints serve real-time phenotype assignment for new patients.
+**Amazon SageMaker for SDOH-specific NLP and clustering.** SageMaker provides the ML infrastructure for two pieces: (1) a fine-tuned named entity recognition (NER) model for SDOH extraction that goes beyond Comprehend Medical's built-in capabilities, and (2) the clustering algorithm itself (LCA or k-prototypes). SageMaker Processing jobs handle the feature assembly and clustering computation. SageMaker endpoints serve real-time phenotype assignment for new patients.
 
-**Amazon S3 for data lake storage.** Clinical notes, screening data, community indicator files, extracted features, and clustering results all live in S3. Organized by processing stage with lifecycle policies for PHI retention compliance.
+**Amazon S3 for data lake storage.** Clinical notes, screening data, community indicator files, extracted features, and clustering results all live in S3. Organized by processing stage with lifecycle policies for protected health information (PHI) retention compliance.
 
-**AWS Glue for ETL and feature assembly.** Glue jobs handle the integration of multiple data sources (EHR extracts, screening databases, census data) into the unified feature matrix. Glue's schema-on-read approach handles the heterogeneous source formats without requiring a rigid upfront schema.
+**AWS Glue for extract, transform, and load (ETL) and feature assembly.** Glue jobs handle the integration of multiple data sources (electronic health record (EHR) extracts, screening databases, census data) into the unified feature matrix. Glue's schema-on-read approach handles the heterogeneous source formats without requiring a rigid upfront schema.
 
 **Amazon DynamoDB for phenotype assignments.** The final phenotype label for each patient needs to be queryable in real time by care management systems. DynamoDB provides single-digit-millisecond lookups by patient ID. Each phenotype lookup at the care management integration point must be application-level audit logged: requesting user or system identity, patient_id, timestamp, and phenotype returned. This satisfies HIPAA accounting-of-disclosures requirements. The audit log is separate from CloudTrail (which captures API-level access) because the disclosure semantics require recording who requested the clinical interpretation, not just which IAM principal called GetItem.
 
@@ -426,7 +426,7 @@ FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_s
 
 This architecture demonstrates the full pipeline shape, but several gaps remain before you'd trust it with real patient populations:
 
-**NLP model training data.** The SDOH NER model requires annotated clinical text from your organization's notes. Annotation guidelines, inter-annotator agreement thresholds, and IRB-approved access to training data are prerequisites that take months. Without site-specific fine-tuning, extraction recall for indirect SDOH language will sit around 40-50% instead of the 65-80% a tuned model achieves.
+**NLP model training data.** The SDOH NER model requires annotated clinical text from your organization's notes. Annotation guidelines, inter-annotator agreement thresholds, and institutional review board (IRB)-approved access to training data are prerequisites that take months. Without site-specific fine-tuning, extraction recall for indirect SDOH language will sit around 40-50% instead of the 65-80% a tuned model achieves.
 
 **Missing input validation.** The pseudocode trusts its inputs. Production needs validation at every boundary: note text length limits, patient ID format checks, screening score range enforcement, and geocoding result plausibility checks. A single malformed input shouldn't crash the pipeline or produce a silently wrong phenotype.
 
@@ -463,7 +463,7 @@ This architecture demonstrates the full pipeline shape, but several gaps remain 
 - [Architecting for HIPAA on AWS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **AWS Sample Repos:**
-- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Comprehend Medical integration with FHIR for structured clinical data extraction
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Comprehend Medical integration with Fast Healthcare Interoperability Resources (FHIR) for structured clinical data extraction
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker example notebooks including clustering and NLP fine-tuning patterns
 
 **AWS Solutions and Blogs:**
