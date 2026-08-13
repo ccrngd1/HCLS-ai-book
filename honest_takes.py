@@ -72,6 +72,35 @@ def split_section(text: str) -> tuple[str, str, str] | None:
     return text[: m.start()], text[m.start(): end], text[end:]
 
 
+# R-1 (expand abbreviations on first use) runs across the recipes while 137 Honest Takes
+# are withheld, which is safe because the section sits at a median 80% through its
+# document and never earlier than 66%, so it is virtually never an abbreviation's first
+# use. The one real gap: 23 recipes have an abbreviation that appears ONLY in the
+# withheld section, so R-1 cannot see it and would never expand it. Rather than hold R-1
+# for however long the review backlog takes, restore reports the gap at the moment the
+# text comes back, when it is cheap to fix.
+ABBR = ("FHIR HL7 OCR ASR PHI EHR NLP API LLM RAG ICD CPT DICOM HIPAA SDOH CDS HEDIS RCM "
+        "LOS ADT CCDA SNOMED RxNorm LOINC TTS NER MIP RL GMM AUC ROC PPV NPV QALY CMS ONC "
+        "FDA").split()
+
+
+def abbr_gaps(section: str, host: str) -> list[str]:
+    """Abbreviations R-1 cannot see: used in the withheld section, absent from the recipe.
+
+    Deliberately narrow. An abbreviation that also appears in the recipe body is not a
+    gap, because R-1 expands it there and the restored section then reads as a later use.
+    Only a term that exists nowhere but the withheld text is invisible to R-1, and so
+    would come back unexpanded and stay that way. Checking the looser condition instead
+    reported 74 sections rather than 23, and a warning that cries wolf gets ignored.
+    """
+    return [
+        a
+        for a in ABBR
+        if re.search(rf"\b{re.escape(a)}\b", section)
+        and not re.search(rf"\b{re.escape(a)}\b", host)
+    ]
+
+
 def do_remove(apply: bool) -> int:
     STASH.mkdir(exist_ok=True)
     n = words = 0
@@ -126,9 +155,12 @@ def do_restore(apply: bool, only: list[str] | None = None) -> int:
             continue
         i = text.index(NEXT)
         n += 1
+        gaps = abbr_gaps(section, text)
         if apply:
             target.write_text(text[:i] + section.rstrip("\n") + "\n\n" + text[i:], encoding="utf-8")
             stash_file.unlink()  # so --status reflects real progress
+            if gaps:
+                print(f"  {target.name}: expand on first use -> {', '.join(gaps)}")
         else:
             print(f"  would restore into {target.name}")
     verb = "restored" if apply else "would restore"
@@ -146,6 +178,8 @@ def main() -> int:
         help="with --restore, limit to these recipe ids (e.g. 7.3 12.05); default is all",
     )
     ap.add_argument("--status", action="store_true", help="show how many are withheld")
+    ap.add_argument("--audit-abbr", action="store_true",
+                    help="list abbreviations that appear only in withheld sections (the R-1 gap)")
     args = ap.parse_args()
     if args.status:
         total = len(non_flagship_mains())
@@ -153,6 +187,20 @@ def main() -> int:
         print(f"  non-flagship recipes: {total}")
         print(f"  Honest Take withheld: {withheld}")
         print(f"  restored so far:      {total - withheld}")
+        return 0
+    if args.audit_abbr:
+        n = 0
+        for sf in sorted(STASH.glob("*.md")):
+            host = Path(f"{sf.stem}.md")
+            if not host.exists():
+                continue
+            sect = re.sub(r"^<!--.*?-->\s*", "", sf.read_text(encoding="utf-8"), flags=re.S)
+            gaps = abbr_gaps(sect, host.read_text(encoding="utf-8"))
+            if gaps:
+                n += 1
+                print(f"  {host.name[:58]:60} {', '.join(gaps)}")
+        print(f"\n  {n} withheld sections use an abbreviation their recipe never expands.")
+        print("  Each is reported again automatically when that section is restored.")
         return 0
     if args.restore:
         return do_restore(True, args.recipes or None)

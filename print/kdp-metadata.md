@@ -85,13 +85,14 @@ None
 ---
 
 ## Print settings (for the KDP paperback form)
+<!-- No page count or spine width here on purpose: KDP derives both from the uploaded
+     interior and its cover template generator. A copy in this file only goes stale, as it
+     did when it still said 268 pages against an actual 264. -->
 - Trim size: 6 x 9 in
 - Interior: Black & white
 - Paper: White (cream is an acceptable alternative for a text-heavy book)
 - Bleed: No bleed
 - Cover finish: Matte (recommended) or glossy
-- Interior page count: 268 (even). LOCK before generating the cover; spine width depends on it
-- Approx. spine width: 268 x 0.002252 in ≈ 0.60 in (B&W, white paper)
 
 ## Pricing
 Do not hardcode a price here. Set the list price in KDP using its printing-cost
