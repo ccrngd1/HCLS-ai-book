@@ -12,7 +12,7 @@
 
 **Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.
 
-**Amazon HealthLake for the FHIR-native patient context.** HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.
+**Amazon HealthLake for the FHIR-native patient context.** HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the Fast Healthcare Interoperability Resources (FHIR) bundle at the start of each run.
 
 **Amazon HealthImaging for Digital Imaging and Communications in Medicine (DICOM) management.** HealthImaging is a HIPAA-eligible, purpose-built store for medical imaging. For a pipeline that needs to reference prior imaging, retrieve current imaging metadata, and link from the reasoning output back to the source study, HealthImaging is the right imaging-native layer. The reasoning pipeline itself typically does not perform direct pixel interpretation; it uses HealthImaging metadata and the radiology report for text-based reasoning, and deep-links back to the study in the PACS viewer for clinician review.
 
@@ -1437,6 +1437,9 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 - [21st Century Cures Act Section 3060](https://www.congress.gov/bill/114th-congress/house-bill/34): Legislative basis for the CDS exemption
 
 **Clinical Source References (primary inputs to a multi-modal reasoning corpus):**
+
+Standardized clinical terminologies referenced here include Logical Observation Identifiers Names and Codes (LOINC) for labs and observations.
+
 - [USPSTF Recommendation Statements](https://www.uspreventiveservicestaskforce.org/uspstf/topic_search_results?topic_status=P): Freely available preventive care recommendations
 - [CDC Guidelines Library](https://www.cdc.gov/library/index.html): Public health and infectious disease guidance
 - [AHA/ACC Statements and Guidelines](https://professional.heart.org/en/guidelines-and-statements): Cardiovascular society guidance (access varies)
@@ -1451,6 +1454,9 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 - [RadLex](https://www.rsna.org/practice-tools/data-tools-and-standards/radlex-radiology-lexicon): Radiology lexicon
 
 **Interoperability Standards:**
+
+These standards include Health Level Seven (HL7) FHIR for clinical data exchange and related transport protocols.
+
 - [HL7 FHIR](https://www.hl7.org/fhir/): Clinical data model for patient context integration
 - [SMART on FHIR](https://smarthealthit.org/): Standard for EHR-launched applications
 - [CDS Hooks](https://cds-hooks.org/): HL7 standard for EHR-triggered CDS invocations
