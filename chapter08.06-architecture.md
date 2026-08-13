@@ -1,5 +1,7 @@
 # Recipe 8.6 Architecture and Implementation: Social Determinants of Health (SDOH) Extraction
 
+This is the AWS architecture companion for the recipe on extracting social determinants of health (SDOH) from clinical text.
+
 *Companion to [Recipe 8.6: Social Determinants of Health (SDOH) Extraction](chapter08.06-sdoh-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
@@ -82,7 +84,7 @@ Configure the main SQS queue (`sdoh-notes-inbox`) with a dead letter queue (`sdo
 > - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP pipeline integrating Comprehend Medical with Fast Healthcare Interoperability Resources (FHIR) for structured clinical data extraction (archived July 2024; still useful as a reference pattern)
 > - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): Custom classification and entity recognition examples for Amazon Comprehend
 
-**Step 1: Note ingestion and relevance filtering.** Clinical notes arrive from the electronic health record (EHR) feed. Before running full NLP extraction (which costs money per character), apply a quick relevance filter. Most progress notes contain zero SDOH information. A simple keyword scan (housing, homeless, food, hungry, unemployed, transportation, etc.) against the note text identifies notes worth processing in full. This isn't perfect (it'll miss implicit mentions), but it reduces processing volume by 70-80% without significantly impacting recall for explicit mentions. The keyword list should be maintained as a living configuration. Skip this step and you'll run expensive NLP on thousands of notes that contain nothing relevant, burning budget on notes about medication titrations and lab follow-ups.
+**Step 1: Note ingestion and relevance filtering.** Clinical notes arrive from the electronic health record (EHR) feed, typically as Health Level Seven (HL7) v2 messages or FHIR resources. Before running full NLP extraction (which costs money per character), apply a quick relevance filter. Most progress notes contain zero SDOH information. A simple keyword scan (housing, homeless, food, hungry, unemployed, transportation, etc.) against the note text identifies notes worth processing in full. This isn't perfect (it'll miss implicit mentions), but it reduces processing volume by 70-80% without significantly impacting recall for explicit mentions. The keyword list should be maintained as a living configuration. Skip this step and you'll run expensive NLP on thousands of notes that contain nothing relevant, burning budget on notes about medication titrations and lab follow-ups.
 
 ```pseudocode
 // SDOH relevance keywords: terms that suggest the note may contain social determinant information.
