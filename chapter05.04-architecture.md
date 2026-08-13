@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon S3 for the eligibility data lake.** Three zones: raw (every 270 inquiry payload and every 271 response payload as received, partitioned by payer and date for audit and replay), curated (parsed, normalized eligibility match outcomes keyed on inquiry hash with full provenance), and derived (cohort-stratified accuracy reports, payer-quality metrics, charity-care screening summaries). S3 is HIPAA-eligible under BAA with SSE-KMS encryption. The raw 270/271 payloads are retained for the regulatory audit window; the curated outcomes power both the real-time lookup path (via cache and DynamoDB) and the analytics path (via Athena).
+**Amazon S3 for the eligibility data lake.** Three zones: raw (every X12 270 eligibility inquiry payload and every X12 271 eligibility response payload as received, partitioned by payer and date for audit and replay), curated (parsed, normalized eligibility match outcomes keyed on inquiry hash with full provenance), and derived (cohort-stratified accuracy reports, payer-quality metrics, charity-care screening summaries). S3 is HIPAA-eligible under a business associate agreement (BAA) with SSE-KMS encryption. The raw 270/271 payloads are retained for the regulatory audit window; the curated outcomes power both the real-time lookup path (via cache and DynamoDB) and the analytics path (via Athena).
 
 **Amazon DynamoDB for the eligibility-match store.** One main table keyed on `(patient_id, payer_id, service_date)`, with a global secondary index on `(matched_member_id, payer_id)` for the reverse lookup (given a payer-side member ID, which patient records have matched against it). Item attributes hold the parsed coverage state, the financial-responsibility detail, the match confidence, the match method, and the inquiry-and-response provenance. DynamoDB's single-digit-millisecond reads support the front-desk-experience target of sub-second eligibility lookup at registration. The on-demand capacity handles the bursty pattern of morning registration peaks plus the steady volume of scheduled pre-warm.
 
@@ -54,7 +54,7 @@ Each pipeline stage has a scoped trust boundary:
 
 **Inquiry-submission Lambda.** Accepts a `caller_context.invocation_source` enum: `registration_event`, `scheduled_pre_warm`, `batch_reconciliation`, `charity_care_screening`, `refresh_on_invalidation`. Each source maps to a caller IAM role; the Lambda validates the role before processing. Per-source rate limits prevent a runaway batch job from consuming registration-flow capacity (registration: 100 TPS ceiling; batch reconciliation: 50 TPS ceiling; others: 20 TPS ceiling).
 
-**Response-evaluation Lambda.** Verifies the cryptographic signature (where the partner signs the 271) or the TLS session identity on the clearinghouse response. Rejects replays by checking `(control_number, transaction_set_id)` against a DynamoDB dedup table with a 7-day TTL. A replayed or unsigned 271 routes to the DLQ with a logged `response_integrity_violation` metric.
+**Response-evaluation Lambda.** Verifies the cryptographic signature (where the partner signs the 271) or the TLS session identity on the clearinghouse response. Rejects replays by checking `(control_number, transaction_set_id)` against a DynamoDB dedup table with a 7-day TTL. A replayed or unsigned 271 routes to the dead-letter queue (DLQ) with a logged `response_integrity_violation` metric.
 
 **Persist-eligibility-match function.** Validates that the `matched_member_id` in the response corresponds to the payer the inquiry targeted; a mismatch (wrong payer returned, or response routed to wrong inquiry) is rejected with a logged metric and DLQ routing. The conditional write uses `inquiry_hash` to enforce idempotency.
 
@@ -93,7 +93,7 @@ Eligibility events conform to the chapter-wide schema:
 Downstream consumers subscribe to specific `detail_type` values:
 
 - **Recipe 5.1 (patient matcher):** subscribes to `eligibility_resolved` when the match surfaces a previously unknown duplicate-patient signal (same member ID matched to two patient_ids).
-- **Recipe 5.5 (cross-facility HIE):** subscribes to `eligibility_resolved` when eligibility data from one facility's payer affects record reconciliation at another.
+- **Recipe 5.5 (cross-facility health information exchange (HIE)):** subscribes to `eligibility_resolved` when eligibility data from one facility's payer affects record reconciliation at another.
 - **Recipe 5.6 (claims-to-clinical linkage):** subscribes to `eligibility_resolved` and `eligibility_invalidated` because eligibility state at time of service constrains claim-to-encounter joining.
 - **Revenue-cycle pipeline:** subscribes to `eligibility_resolved` and `eligibility_invalidated` for claim-coverage refresh.
 - **Charity-care workflow:** subscribes to `eligibility_resolved` for coverage-absent confirmation.
@@ -149,7 +149,7 @@ When emitting cohort dimensions on CloudWatch metrics, use bucketed non-reversib
 The clearinghouse BAA and trading-partner agreement must specify:
 
 1. The partner will not retain submitted patient data beyond a documented operational window (typical clearinghouse retention is 7 years for HIPAA audit purposes; operational caches are typically days-to-weeks and must be specified separately).
-2. The partner will disclose all sub-processors that may handle PHI in the eligibility-verification flow.
+2. The partner will disclose all sub-processors that may handle protected health information (PHI) in the eligibility-verification flow.
 3. The partner will notify the institution within 72 hours of any data incident affecting the eligibility transaction data.
 4. The institution retains the right to audit the partner's controls annually.
 
@@ -339,7 +339,7 @@ flowchart LR
 > - The major US clearinghouses (Availity, Change Healthcare/Optum, Waystar) publish official SDKs for X12 270/271 transactions; use the official SDK rather than rolling your own X12 parser, which is a significant project. 
 > - [`pyx12`](https://github.com/azoner/pyx12): an open-source Python library for X12 transaction parsing and generation. Useful for the parsing piece even when transmission is delegated to a clearinghouse SDK. 
 > - [`bots`](https://github.com/bots-edi/bots): an open-source EDI translator with X12 support; useful as an alternative or backup parser.
-> - The HL7 FHIR Coverage and CoverageEligibilityRequest/Response resources implement the FHIR-based eligibility flow; the [HAPI FHIR](https://github.com/hapifhir/hapi-fhir) library is the canonical Java reference implementation. The HL7 FHIR specification at [hl7.org/fhir](https://www.hl7.org/fhir/) provides the resource definitions.
+> - The Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR) Coverage and CoverageEligibilityRequest/Response resources implement the FHIR-based eligibility flow; the [HAPI FHIR](https://github.com/hapifhir/hapi-fhir) library is the canonical Java reference implementation. The HL7 FHIR specification at [hl7.org/fhir](https://www.hl7.org/fhir/) provides the resource definitions.
 > - The [CAQH CORE Operating Rules](https://www.caqh.org/core/) are the operational baseline for X12-based eligibility verification in US healthcare. 
 
 #### Walkthrough
@@ -1118,7 +1118,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Predictive eligibility refresh.** Apply ML to the historical pattern of coverage changes per payer, per population segment, to predict when a cached eligibility entry is more likely to have gone stale than the policy-baseline TTL would suggest. Refresh aggressively for at-risk entries (recent coverage churn signal in a Medicaid population, near a known annual-renewal date for commercial plans) and conservatively for stable entries. Reduces aggregate clearinghouse cost while improving the cache freshness for the entries that need it.
 
-**Patient-portal coverage self-service.** Build the portal feature that shows patients their on-file coverage with a confirm-or-update flow, accepts updated card images via OCR (recipe 1.1), and triggers an immediate eligibility re-verification on update. Capture the patient's confirmation timestamp as a freshness signal. Surface the prompt on every portal session until confirmation is received. Pair with related self-service items (address update from recipe 5.3, emergency contact update) so the experience feels coherent.
+**Patient-portal coverage self-service.** Build the portal feature that shows patients their on-file coverage with a confirm-or-update flow, accepts updated card images via optical character recognition (OCR) as in recipe 1.1, and triggers an immediate eligibility re-verification on update. Capture the patient's confirmation timestamp as a freshness signal. Surface the prompt on every portal session until confirmation is received. Pair with related self-service items (address update from recipe 5.3, emergency contact update) so the experience feels coherent.
 
 **Clearinghouse-vs-direct optimization.** For the highest-volume payers, evaluate whether direct connection produces better cost-per-transaction and better latency than clearinghouse routing. The trade-off is operational: each direct connection requires a trading partner agreement, ongoing relationship management, and onboarding effort. The architecture supports both transparently; the optimization is a per-payer business decision.
 
@@ -1151,7 +1151,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
 **AWS Sample Repos:**
-- [`aws-samples/aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): Glue ETL patterns applicable to the batch-reconciliation pipeline
+- [`aws-samples/aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): Glue extract, transform, and load (ETL) patterns applicable to the batch-reconciliation pipeline
 - [`aws-samples/serverless-patterns`](https://github.com/aws-samples/serverless-patterns): API Gateway + Lambda + DynamoDB + ElastiCache patterns applicable to the real-time eligibility-lookup API
 
 **AWS Solutions and Blogs:**
