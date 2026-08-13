@@ -10,13 +10,13 @@
 
 **Amazon Web Services HealthScribe for the end-to-end ambient documentation pipeline.** HealthScribe is a HIPAA-eligible managed service that performs speech recognition, speaker diarization with clinician-patient role assignment, clinical entity extraction, and structured clinical note generation from conversational audio. It is designed explicitly for this use case. For most teams, HealthScribe is the right primary service because it collapses most of the hard pipeline steps into one API surface, and because its outputs include the transcript-to-note traceability that clinician review requires. HealthScribe supports both synchronous (batch) and streaming modes. 
 
-**Amazon Transcribe Medical as an alternative or complement to HealthScribe.** Transcribe Medical is AWS's medical-specific ASR service. It supports both batch and streaming transcription with medical vocabulary tuning and specialty-specific models (primary care, cardiology, oncology, radiology, neurology, urology). Teams that want more control over the pipeline (e.g., custom diarization, custom note-generation prompts, integration with a non-HealthScribe generation step) use Transcribe Medical as the ASR building block and assemble the downstream pipeline themselves. Teams that want the managed end-to-end path use HealthScribe and accept its opinions about diarization and note structure.
+**Amazon Transcribe Medical as an alternative or complement to HealthScribe.** Transcribe Medical is AWS's medical-specific automatic speech recognition (ASR) service. It supports both batch and streaming transcription with medical vocabulary tuning and specialty-specific models (primary care, cardiology, oncology, radiology, neurology, urology). Teams that want more control over the pipeline (e.g., custom diarization, custom note-generation prompts, integration with a non-HealthScribe generation step) use Transcribe Medical as the ASR building block and assemble the downstream pipeline themselves. Teams that want the managed end-to-end path use HealthScribe and accept its opinions about diarization and note structure.
 
 **Amazon Bedrock for custom note generation and validation.** When the institutional note template doesn't match HealthScribe's default outputs, or when the team wants to enforce specific institutional language, Bedrock provides the LLM layer for post-processing HealthScribe's structured output into an institution-specific note format. Bedrock is also the right layer for post-generation validation passes: running the draft note through a second model with a prompt that asks "verify every claim in this note against this transcript; flag unsupported claims" adds a belt-and-suspenders check beyond HealthScribe's internal grounding.
 
 **Amazon Bedrock Guardrails for content filtering and contextual grounding.** Guardrails can apply contextual grounding checks to the Bedrock-generated note against the transcript as the grounding source. This is an explicit tagging of the grounding source (not auto-detected) and uses the `amazon-bedrock-guardrailAction` field on the response (not `stop_reason`) to determine whether the Guardrail intervened. Guardrails also apply input-side prompt-attack filters, which matters because the transcript is free-text user-adjacent content that could, in pathological cases, contain prompt-shaped artifacts.
 
-**Amazon Comprehend Medical for entity extraction and ontology mapping.** After the transcript is produced, Comprehend Medical extracts clinical entities (medications, conditions, anatomy, procedures) and can map them to ontologies (RxNorm, ICD-10, SNOMED where supported). This supports must-include validation (are the drugs in the transcript also in the note?) and structured medication reconciliation with the EHR.
+**Amazon Comprehend Medical for entity extraction and ontology mapping.** After the transcript is produced, Comprehend Medical extracts clinical entities (medications, conditions, anatomy, procedures) and can map them to ontologies (RxNorm, International Classification of Diseases (ICD)-10, Systematized Nomenclature of Medicine (SNOMED) where supported). This supports must-include validation (are the drugs in the transcript also in the note?) and structured medication reconciliation with the electronic health record (EHR).
 
 **Amazon S3 for audio, transcript, and note archive.** Raw audio (retained per policy, typically encrypted, typically short-lived), transcripts, HealthScribe structured outputs, draft notes, signed notes, and full traces. SSE-KMS encryption with customer-managed keys. Lifecycle policies enforce retention. S3 Object Lock is used for signed-note immutability if the compliance posture requires it.
 
@@ -30,13 +30,13 @@
 
 **Amazon API Gateway + Amazon Cognito for clinician-facing APIs.** The ambient documentation front-end (browser app, mobile app, or EHR embed) calls into API Gateway for session management, note retrieval, and edit-and-sign actions. Cognito provides authentication. MFA is enforced for clinical-documentation access.
 
-**AWS HealthLake or direct FHIR API integration for EHR write-back.** HealthLake stores FHIR resources and supports writing completed notes as FHIR DocumentReference resources. For EHR integrations that use Epic, Oracle Health, or other vendor APIs, a vendor-specific integration layer (built on Lambda or using a HealthLake-sourced feed) handles the write-back. HL7 v2 integrations (for older EHRs) go through a translation layer (AWS HealthLake for FHIR, or a partner-provided HL7 bridge).
+**AWS HealthLake or direct Fast Healthcare Interoperability Resources (FHIR) API integration for EHR write-back.** HealthLake stores FHIR resources and supports writing completed notes as FHIR DocumentReference resources. For EHR integrations that use Epic, Oracle Health, or other vendor APIs, a vendor-specific integration layer (built on Lambda or using a HealthLake-sourced feed) handles the write-back. Health Level Seven (HL7) v2 integrations (for older EHRs) go through a translation layer (AWS HealthLake for FHIR, or a partner-provided HL7 bridge).
 
 **AWS Secrets Manager for EHR credentials.** The EHR integration requires credentials. Secrets Manager manages them with rotation where supported by the EHR vendor.
 
 **AWS CloudTrail and Amazon CloudWatch for audit, monitoring, and analytics.** Every consent capture, every HealthScribe invocation, every note drafted, every clinician edit, every sign-off, every EHR write. Dashboards track documentation turnaround time, clinician-reported quality, edit-distance between draft and signed note (a proxy for quality), and operational metrics.
 
-**AWS Key Management Service (KMS) for encryption keys.** Customer-managed CMKs for all PHI at rest. Separate keys for transcripts, audio, and notes can support finer-grained retention and deletion.
+**AWS Key Management Service (KMS) for encryption keys.** Customer-managed CMKs for all protected health information (PHI) at rest. Separate keys for transcripts, audio, and notes can support finer-grained retention and deletion.
 
 ### Architecture Diagram
 
@@ -859,7 +859,7 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 
 **FDA posture.** Ambient documentation that generates only a note for clinician review is generally not regulated as a medical device. The moment generation crosses into clinical recommendations (suggesting diagnoses, suggesting orders, inferring acuity), the regulatory posture changes. Keep the system on the "documentation assistant" side of the line, or engage regulatory counsel if you want to cross it.
 
-**Training data and model improvement.** If the vendor uses customer audio or transcripts to improve models, that must be explicitly disclosed and consented to. Many enterprise-grade offerings (including AWS HealthScribe under the AWS BAA) commit to not using customer data for model training. Verify the contract. For self-built pipelines, never use production audio in a training set without a formal de-identification and re-consent process.
+**Training data and model improvement.** If the vendor uses customer audio or transcripts to improve models, that must be explicitly disclosed and consented to. Many enterprise-grade offerings (including AWS HealthScribe under the AWS business associate agreement (BAA)) commit to not using customer data for model training. Verify the contract. For self-built pipelines, never use production audio in a training set without a formal de-identification and re-consent process.
 
 **De-identification of audio.** Voice is biometric. De-identifying a transcript by removing names and dates does not de-identify the audio. If audio needs to be shared (for research, for vendor debugging, for training data), either use de-identified synthetic audio or obtain explicit consent for the specific use.
 
@@ -903,7 +903,7 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 
 **Orders extraction and routing.** Extend the pipeline to identify orders discussed during the encounter (labs, imaging, prescriptions, referrals) and surface them as pending orders for the clinician to confirm. The clinician still reviews and signs each order (orders remain under clinician responsibility), but the data entry is materially reduced. Ties into existing EHR order entry workflows.
 
-**Coding and billing support.** Extract ICD-10 and CPT codes from the encounter content, with documentation quality assessment and CDI (clinical documentation improvement) suggestions. This sits at the intersection with Recipe 2.3 (CDI) and the coding applications in Chapter 8's NLP category. Treat as a separate assistive workflow; coding decisions remain the coder's responsibility.
+**Coding and billing support.** Extract ICD-10 and Current Procedural Terminology (CPT) codes from the encounter content, with documentation quality assessment and clinical documentation improvement (CDI) suggestions. This sits at the intersection with Recipe 2.3 (CDI) and the coding applications in Chapter 8's natural language processing (NLP) category. Treat as a separate assistive workflow; coding decisions remain the coder's responsibility.
 
 **Multi-agent triage.** For complex encounters, decompose the transcript into sub-tasks handled by specialized agents: one for symptom extraction, one for medication reconciliation, one for plan structuring. Aggregate the sub-agent outputs into the final note. More elaborate architecture than a single generation pass; can improve quality for long, complex encounters but adds substantial engineering.
 
@@ -928,7 +928,7 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 
 **AWS Sample Repos:**
 - [`amazon-healthscribe-samples`](https://github.com/aws-samples/amazon-healthscribe-samples): Sample applications demonstrating HealthScribe end-to-end patterns
-- [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock patterns including grounded generation, Guardrails, and RAG components that apply to the template rendering step
+- [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock patterns including grounded generation, Guardrails, and retrieval-augmented generation (RAG) components that apply to the template rendering step
 - [`aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): Healthcare-specific ML patterns, including clinical text processing
 - [`aws-health-ai-samples`](https://github.com/aws-samples/aws-health-ai-samples): Broader healthcare AI patterns on AWS 
 

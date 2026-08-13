@@ -8,7 +8,7 @@
 
 It's 7:15 PM on a Tuesday. A family medicine physician is in her car in the clinic parking lot. She saw her last patient at 4:45. Since then she's been sitting at her desk, charting. She has eleven notes to finish from today. Each one takes her somewhere between four and twelve minutes depending on the complexity of the visit. By the time she gets home, has dinner, and tries to catch the last half hour of her daughter's soccer game over FaceTime, she'll spend another hour finishing notes. This is normal. This is every day. This is the reason her colleagues keep quitting.
 
-The term of art for this is "pajama time" (also called "work outside of work" or "after-hours EHR work" in the formal literature). The studies have names for it and measure it; Christine A. Sinsky's work at the AMA found that for every hour physicians spend face-to-face with patients, they spend nearly two additional hours on EHR and desk work (Sinsky CA, Colligan L, Li L, et al. "Allocation of Physician Time in Ambulatory Practice: A Time and Motion Study in 4 Specialties." Ann Intern Med. 2016;165(11):753-760). A separate way to say the same thing: for every hour physicians spend face-to-face with patients, they spend roughly two hours in the EHR. The documentation burden is one of the top three reported drivers of physician burnout, and burnout is one of the top drivers of physicians leaving the profession. This is not a rounding-error problem. It is arguably the single largest operational problem in American outpatient medicine right now.
+The term of art for this is "pajama time" (also called "work outside of work" or "after-hours electronic health record (EHR) work" in the formal literature). The studies have names for it and measure it; Christine A. Sinsky's work at the AMA found that for every hour physicians spend face-to-face with patients, they spend nearly two additional hours on EHR and desk work (Sinsky CA, Colligan L, Li L, et al. "Allocation of Physician Time in Ambulatory Practice: A Time and Motion Study in 4 Specialties." Ann Intern Med. 2016;165(11):753-760). A separate way to say the same thing: for every hour physicians spend face-to-face with patients, they spend roughly two hours in the EHR. The documentation burden is one of the top three reported drivers of physician burnout, and burnout is one of the top drivers of physicians leaving the profession. This is not a rounding-error problem. It is arguably the single largest operational problem in American outpatient medicine right now.
 
 The acute version: a hospitalist on night shift admits six patients between 10 PM and 4 AM. Each admission note takes twenty-five minutes if she does it right. She doesn't have twenty-five minutes per admission; she has maybe eight, because she's also getting pages, fielding rapid responses, and running the code team. So she types frantically during the patient encounter, half-listening to the patient while she tries to capture the HPI in real time, then fills in the missing pieces from memory at 5 AM when she sits down to finish the documentation. The notes are worse than they would have been if she'd written them carefully after the encounter. The encounters are worse because she wasn't really listening. Everyone loses.
 
@@ -41,7 +41,7 @@ Each of those four is its own engineering discipline. Modern ambient documentati
 
 ### Speech Recognition, Specifically for Medicine
 
-General-purpose speech recognition (the kind that powers your phone's voice typing) has gotten remarkable over the last five years. Word error rates in clean audio for English conversational speech have dropped into the 5-10% range on standard benchmarks. That sounds great. For clinical audio in real clinic rooms, the practical word error rate on general-purpose ASR is often 15-25%, and the errors cluster on exactly the words that matter most: drug names, anatomical terms, eponymous conditions, dosing numbers.
+General-purpose speech recognition (the kind that powers your phone's voice typing) has gotten remarkable over the last five years. Word error rates in clean audio for English conversational speech have dropped into the 5-10% range on standard benchmarks. That sounds great. For clinical audio in real clinic rooms, the practical word error rate on general-purpose automatic speech recognition (ASR) is often 15-25%, and the errors cluster on exactly the words that matter most: drug names, anatomical terms, eponymous conditions, dosing numbers.
 
 Medical-specific ASR exists and performs materially better on clinical terminology. The core ideas: train on medical audio corpora (recorded clinical encounters, medical dictation), expose the model to the pronunciation patterns of drug names and eponyms, include post-processing with medical vocabulary biasing. AWS Transcribe Medical is one such offering. Nuance Dragon Medical is the long-standing commercial incumbent. Specialty-tuned models exist for specialties where terminology is especially dense (oncology drug names, cardiology device names, orthopedic anatomy).
 
@@ -119,7 +119,7 @@ A production ambient documentation system supports multiple note templates and t
 
 ### Grounded Generation and the Citation Back to the Transcript
 
-Just like in literature RAG (Recipe 2.7), clinical note summarization (Recipe 2.6), and after-visit summaries (Recipe 2.5), the generation step here needs to be grounded. The new twist is that the grounding source is conversational audio transcribed into text, which is noisier than a clean document.
+Just like in literature retrieval-augmented generation (RAG) (Recipe 2.7), clinical note summarization (Recipe 2.6), and after-visit summaries (Recipe 2.5), the generation step here needs to be grounded. The new twist is that the grounding source is conversational audio transcribed into text, which is noisier than a clean document.
 
 The trust pattern: every statement in the generated note should trace to a segment of the transcript (or to a named EHR source, for content pulled from the EHR rather than the conversation). The UX surfaces this: the clinician hovers on a sentence in the note and sees the transcript segment that generated it. Clinicians who can audit this way trust the system; clinicians who can't end up re-reading the whole transcript, defeating the purpose.
 
@@ -141,7 +141,7 @@ The validation discipline: a post-generation check verifies that each factual cl
 
 **Implicit-exam gaps.** The clinician performed a physical exam but didn't narrate it. The note has to either leave the exam section for the clinician to complete or pull from a default template. Either way, the system must not fabricate exam findings. Mitigation: conservative default template, explicit "physical exam not narrated; please complete" placeholders when the audio contains no exam content.
 
-**PHI bleeds into training data.** If the vendor uses conversations to improve the model, the training data carries PHI. Mitigation: contractual and architectural (many vendors offer a no-training option under their healthcare BAA; verify it). For self-built pipelines, never use production clinical audio in any training set without an explicit de-identification and consent step.
+**Protected health information (PHI) bleeds into training data.** If the vendor uses conversations to improve the model, the training data carries PHI. Mitigation: contractual and architectural (many vendors offer a no-training option under their healthcare business associate agreement (BAA); verify it). For self-built pipelines, never use production clinical audio in any training set without an explicit de-identification and consent step.
 
 **Re-identification risk in "de-identified" audio.** Audio is inherently re-identifiable (voice is biometric). De-identifying a transcript by removing names and dates does not de-identify the audio. Mitigation: treat audio as always PHI; do not retain it beyond operational needs; do not use it for any secondary purpose without specific consent.
 
@@ -203,7 +203,7 @@ Let me walk through each stage conceptually.
 
 **Clinician edit and sign.** The clinician edits as needed and signs. The signed note is the clinician's note; the AI-drafted version is retained as an audit artifact.
 
-**Write to EHR.** The signed note is written into the EHR via the institution's integration layer (FHIR, HL7 v2, vendor APIs). Medication reconciliation changes, problem list updates, and orders are routed to the appropriate workflows, typically still requiring clinician confirmation before execution.
+**Write to EHR.** The signed note is written into the EHR via the institution's integration layer (Fast Healthcare Interoperability Resources (FHIR), Health Level Seven (HL7) v2, vendor APIs). Medication reconciliation changes, problem list updates, and orders are routed to the appropriate workflows, typically still requiring clinician confirmation before execution.
 
 **Retain transcript and audio per policy.** Transcripts and audio are retained according to the institution's retention policy, with encryption and access controls appropriate for PHI. Retention periods vary: some institutions retain only the signed note and discard audio after signing; others retain transcripts and audio for auditing and training purposes within a closed BAA-covered scope.
 
@@ -213,7 +213,7 @@ Let me walk through each stage conceptually.
 
 ## Related Recipes
 
-- **Recipe 2.3 (Clinical Documentation Improvement):** CDI suggestions can be layered on top of ambient-generated notes to catch coding-relevant gaps before signing. Natural extension.
+- **Recipe 2.3 (Clinical Documentation Improvement):** clinical documentation improvement (CDI) suggestions can be layered on top of ambient-generated notes to catch coding-relevant gaps before signing. Natural extension.
 - **Recipe 2.5 (After-Visit Summary Generation):** Both pipelines work off encounter content. Ambient documentation produces the clinician note; AVS produces the patient-facing companion. Shared transcript source.
 - **Recipe 2.6 (Clinical Note Summarization):** Once notes accumulate in the chart, summarization over them is the next-shift or next-provider problem. Ambient documentation feeds the corpus that summarization consumes.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Ambient documentation is on the "documentation assistant" side of the line; decision support synthesis is on the "clinical recommendations" side. The same transcript-plus-EHR input can drive both, but the regulatory and liability postures diverge significantly.
