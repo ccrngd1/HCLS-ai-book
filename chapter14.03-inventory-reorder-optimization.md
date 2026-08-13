@@ -73,7 +73,7 @@ The choice of solver depends on problem structure:
 
 **Linear Programming (LP):** If your objective and constraints are all linear (no "if-then" logic, no integer requirements), LP solvers are fast and scale well. Pure inventory problems rarely stay linear because of integer order quantities and volume discount breakpoints.
 
-**Mixed-Integer Programming (MIP):** When you need integer order quantities, binary decisions (order or don't order), or piecewise-linear cost functions (volume discounts), MIP is the standard approach. Modern MIP solvers (CPLEX, Gurobi, open-source CBC/HiGHS) can handle thousands of items with reasonable solve times for batch optimization.
+**mixed-integer programming (MIP):** When you need integer order quantities, binary decisions (order or don't order), or piecewise-linear cost functions (volume discounts), MIP is the standard approach. Modern MIP solvers (CPLEX, Gurobi, open-source CBC/HiGHS) can handle thousands of items with reasonable solve times for batch optimization.
 
 **Stochastic Programming:** When you want to explicitly model demand uncertainty (not just use safety stock as a buffer), stochastic programming formulates the problem across multiple demand scenarios. More accurate but computationally expensive. Practical for strategic decisions (setting base policies), less practical for daily operational adjustments.
 

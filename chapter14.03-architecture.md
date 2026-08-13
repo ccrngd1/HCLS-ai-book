@@ -18,7 +18,7 @@
 
 **Amazon EventBridge for scheduling and event routing.** Triggers the nightly batch optimization, routes inventory-level events from the ERP integration, and dispatches order generation events.
 
-**Amazon ECS (Fargate) for the optimization solver.** MIP solvers are CPU-intensive and may need more memory and runtime than Lambda allows (15-minute limit, 10GB memory). A Fargate task with the solver installed (HiGHS, CBC, or a commercial solver) handles the heavy computation. The task spins up on demand, solves, writes results, and terminates.
+**Amazon ECS (Fargate) for the optimization solver.** mixed-integer programming (MIP) solvers are CPU-intensive and may need more memory and runtime than Lambda allows (15-minute limit, 10GB memory). A Fargate task with the solver installed (HiGHS, CBC, or a commercial solver) handles the heavy computation. The task spins up on demand, solves, writes results, and terminates.
 
 ## Architecture Diagram
 
@@ -440,7 +440,7 @@ FUNCTION check_and_reorder(inventory_event):
 
 The pseudocode demonstrates the optimization pipeline end-to-end. Moving to production requires closing several gaps:
 
-**ERP integration is bidirectional and messy.** This recipe assumes you can pull inventory levels and push purchase orders via clean APIs. In practice, ERP systems (Infor, Oracle, Workday) expose inconsistent interfaces, batch-only feeds, or require HL7/EDI translation layers. The "push PO to procurement" step alone can take months of integration work, especially when you need to handle acknowledgments, partial shipments, and order amendments flowing back.
+**ERP integration is bidirectional and messy.** This recipe assumes you can pull inventory levels and push purchase orders via clean APIs. In practice, ERP systems (Infor, Oracle, Workday) expose inconsistent interfaces, batch-only feeds, or require Health Level Seven (HL7)/EDI translation layers. The "push PO to procurement" step alone can take months of integration work, especially when you need to handle acknowledgments, partial shipments, and order amendments flowing back.
 
 **Solver infeasibility handling.** The MIP solver can return infeasible (no valid solution exists given constraints) or hit time limits without proving optimality. Production systems need graceful degradation: fall back to the previous period's policies, alert supply chain managers, and log which constraints caused infeasibility. The pseudocode assumes the solver always succeeds, which is optimistic.
 
