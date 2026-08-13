@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Comprehend Medical for entity and event detection.** Comprehend Medical's clinical NER identifies medical conditions, medications, procedures, and test results with their associated attributes (including negation and temporality markers). It provides a strong foundation for event identification. While it doesn't perform full temporal relation classification, its entity output with temporal attributes (PAST_HISTORY, OCCURRENCE) gives you a head start on event temporal anchoring.
+**Amazon Comprehend Medical for entity and event detection.** Comprehend Medical's clinical named entity recognition (NER) identifies medical conditions, medications, procedures, and test results with their associated attributes (including negation and temporality markers). It provides a strong foundation for event identification. While it doesn't perform full temporal relation classification, its entity output with temporal attributes (PAST_HISTORY, OCCURRENCE) gives you a head start on event temporal anchoring.
 
 **Amazon Comprehend (custom classification) for relation classification.** Train a custom classifier on temporal relation labeled data. Comprehend's custom classification accepts text inputs (context windows around entity pairs) and predicts relation labels. For the relation classification step, you format each candidate pair with its surrounding context as a classification input. (Note: the Python companion uses a SageMaker endpoint for this step because temporal relation classification requires sequence pair input with entity markers, which maps more naturally to a custom-hosted model. Both approaches are valid; choose based on your model architecture needs.)
 
@@ -428,7 +428,7 @@ FUNCTION generate_timeline(temporal_graph, doc_time):
 
 The pseudocode and architecture above demonstrate the pattern. Deploying this against a live clinical data warehouse requires closing several gaps that are intentionally outside the scope of a cookbook recipe:
 
-**Model retraining cadence.** Clinical documentation patterns drift. New EHR templates, new providers, new temporal conventions (oncology cycle notation, clinical trial protocol days) all introduce patterns the model hasn't seen. Plan for quarterly retraining cycles with fresh annotations. Monitor mean classification confidence over time; a downward shift signals distribution drift before accuracy metrics catch up.
+**Model retraining cadence.** Clinical documentation patterns drift. New electronic health record (EHR) templates, new providers, new temporal conventions (oncology cycle notation, clinical trial protocol days) all introduce patterns the model hasn't seen. Plan for quarterly retraining cycles with fresh annotations. Monitor mean classification confidence over time; a downward shift signals distribution drift before accuracy metrics catch up.
 
 **Annotation pipeline.** The relation classifier needs labeled training data, and that data needs to come from your institution's note population (not just a research corpus). Budget for a sustained annotation program: clinical annotators reviewing temporal pairs, adjudicating disagreements, and feeding corrections back into the training set. This is an ongoing cost, not a one-time investment.
 
@@ -465,7 +465,7 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this ag
 - i2b2 2012 Temporal Relations shared task dataset: access through n2c2 (successor to i2b2 challenges) at the Harvard DBMI n2c2 data portal.
 - TimeML specification: defines the temporal annotation standard that clinical temporal systems extend
 
-**Clinical NLP Resources:**
+**Clinical natural language processing (NLP) Resources:**
 - HeidelTime: open-source temporal expression recognition tool, available on GitHub under the HeidelTime project. Supports clinical domain extensions.
 - Apache cTAKES: temporal module documentation available at the Apache cTAKES project site. Includes temporal relation extraction components built on the THYME annotations.
 

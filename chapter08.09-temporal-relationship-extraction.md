@@ -41,7 +41,7 @@ Without temporal relationship extraction, you have a bag of clinical events floa
 
 Temporal relationship extraction (sometimes called temporal relation classification or temporal ordering) is the task of identifying how events and time expressions relate to each other in time. Given two items (events, dates, durations, or temporal markers), the system determines whether one is before, after, overlapping, contained within, or simultaneous with the other.
 
-The standard temporal relationships (formalized by TimeML and adopted by the clinical NLP community through the i2b2 2012 shared task and THYME corpus) are:
+The standard temporal relationships (formalized by TimeML and adopted by the clinical natural language processing (NLP) community through the i2b2 2012 shared task and THYME corpus) are:
 
 - **BEFORE:** Event A happened before Event B. ("Diagnosed with diabetes. Later developed neuropathy.")
 - **AFTER:** Event A happened after Event B. (Inverse of BEFORE.)
