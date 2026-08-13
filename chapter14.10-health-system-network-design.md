@@ -33,7 +33,7 @@ The healthcare version is considerably messier than the textbook version, but th
 
 The workhorse technique for facility location problems is mixed-integer programming. "Mixed-integer" means the model contains both continuous variables (how much capacity to allocate, what fraction of demand to serve) and integer variables (open or closed, build or don't build). The integer variables are what make the problem hard. A continuous optimization problem with linear constraints can be solved efficiently. Add integer constraints and the problem becomes NP-hard in the general case.
 
-In practice, modern MIP solvers (CPLEX, Gurobi, HiGHS, SCIP) use branch-and-bound algorithms with sophisticated cutting planes and heuristics that can solve problems with thousands of integer variables in reasonable time. "Reasonable" here means minutes to hours, not days. The key is formulating the problem tightly: the better your formulation (fewer unnecessary variables, tighter constraint bounds), the faster the solver converges.
+In practice, modern mixed-integer programming (MIP) solvers (CPLEX, Gurobi, HiGHS, SCIP) use branch-and-bound algorithms with sophisticated cutting planes and heuristics that can solve problems with thousands of integer variables in reasonable time. "Reasonable" here means minutes to hours, not days. The key is formulating the problem tightly: the better your formulation (fewer unnecessary variables, tighter constraint bounds), the faster the solver converges.
 
 For network design, the typical formulation looks something like:
 
