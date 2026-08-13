@@ -1,4 +1,4 @@
-# Recipe 8.6 Architecture and Implementation: Social Determinants of Health (SDOH) Extraction
+# Recipe 8.6 Architecture and Implementation: Social determinants of health (SDOH) Extraction
 
 *Companion to [Recipe 8.6: Social Determinants of Health (SDOH) Extraction](chapter08.06-sdoh-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Comprehend Medical for entity extraction.** Comprehend Medical is AWS's managed clinical NLP service. While its primary strength is medical entity extraction (medications, conditions, procedures), it also extracts "Protected Health Information" attributes and can identify social-context phrases when combined with custom classification. More importantly, it handles the foundational NLP work (tokenization, sentence detection, negation, section awareness) that you'd otherwise build from scratch. For SDOH specifically, you'll use Comprehend Medical's entity extraction as a first pass, then layer custom classification on top.
+**Amazon Comprehend Medical for entity extraction.** Comprehend Medical is AWS's managed clinical natural language processing (NLP) service. While its primary strength is medical entity extraction (medications, conditions, procedures), it also extracts "Protected Health Information" attributes and can identify social-context phrases when combined with custom classification. More importantly, it handles the foundational NLP work (tokenization, sentence detection, negation, section awareness) that you'd otherwise build from scratch. For SDOH specifically, you'll use Comprehend Medical's entity extraction as a first pass, then layer custom classification on top.
 
 **Amazon Comprehend (custom classification) for SDOH categorization.** The non-medical Comprehend service supports custom text classification. Train a multi-label classifier on annotated SDOH sentences to classify extracted mentions into domains (housing, food, transportation, etc.) and assertion statuses (active, resolved, risk). Custom classifiers in Comprehend handle the training infrastructure, hyperparameter tuning, and endpoint management.
 
@@ -79,10 +79,10 @@ Configure the main SQS queue (`sdoh-notes-inbox`) with a dead letter queue (`sdo
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
-> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP pipeline integrating Comprehend Medical with FHIR for structured clinical data extraction (archived July 2024; still useful as a reference pattern)
+> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP pipeline integrating Comprehend Medical with Fast Healthcare Interoperability Resources (FHIR) for structured clinical data extraction (archived July 2024; still useful as a reference pattern)
 > - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): Custom classification and entity recognition examples for Amazon Comprehend
 
-**Step 1: Note ingestion and relevance filtering.** Clinical notes arrive from the EHR feed. Before running full NLP extraction (which costs money per character), apply a quick relevance filter. Most progress notes contain zero SDOH information. A simple keyword scan (housing, homeless, food, hungry, unemployed, transportation, etc.) against the note text identifies notes worth processing in full. This isn't perfect (it'll miss implicit mentions), but it reduces processing volume by 70-80% without significantly impacting recall for explicit mentions. The keyword list should be maintained as a living configuration. Skip this step and you'll run expensive NLP on thousands of notes that contain nothing relevant, burning budget on notes about medication titrations and lab follow-ups.
+**Step 1: Note ingestion and relevance filtering.** Clinical notes arrive from the electronic health record (EHR) feed. Before running full NLP extraction (which costs money per character), apply a quick relevance filter. Most progress notes contain zero SDOH information. A simple keyword scan (housing, homeless, food, hungry, unemployed, transportation, etc.) against the note text identifies notes worth processing in full. This isn't perfect (it'll miss implicit mentions), but it reduces processing volume by 70-80% without significantly impacting recall for explicit mentions. The keyword list should be maintained as a living configuration. Skip this step and you'll run expensive NLP on thousands of notes that contain nothing relevant, burning budget on notes about medication titrations and lab follow-ups.
 
 ```pseudocode
 // SDOH relevance keywords: terms that suggest the note may contain social determinant information.
@@ -438,11 +438,11 @@ The pseudocode above gets you extraction results. These gaps will bite you in pr
 
 **Assertion classification needs real depth.** The rule-based `determine_assertion` heuristic (keyword matching for "resolved," "at risk," etc.) is fragile. Production systems need a second classifier or a sequence-labeling model trained specifically on assertion status. Temporal reasoning is the hard part: "was homeless last year but now in stable housing" has both an active resolved assertion and a historical active one. The keyword approach catches neither reliably.
 
-**Dead letter queue and poison-message handling.** The architecture diagram shows the DLQ, but the pseudocode doesn't handle DLQ replay or alerting. Production needs: a redrive policy (3 attempts before DLQ), a CloudWatch alarm on DLQ depth, and a replay runbook for reprocessing failed notes after a fix is deployed. Notes that repeatedly fail (malformed encoding, extreme length, unsupported languages) need a quarantine path separate from transient failures.
+**Dead letter queue and poison-message handling.** The architecture diagram shows the dead-letter queue (DLQ), but the pseudocode doesn't handle DLQ replay or alerting. Production needs: a redrive policy (3 attempts before DLQ), a CloudWatch alarm on DLQ depth, and a replay runbook for reprocessing failed notes after a fix is deployed. Notes that repeatedly fail (malformed encoding, extreme length, unsupported languages) need a quarantine path separate from transient failures.
 
 **Note chunking for long documents.** Comprehend Medical's DetectEntitiesV2 accepts up to 20,000 UTF-8 characters per request. Social work assessments, psychiatric evaluations, and discharge summaries routinely exceed this. Production code splits long notes at sentence boundaries with overlap, processes chunks independently, and merges results with proper offset tracking so negation spans align correctly across chunk boundaries.
 
-**Source text storage and PHI minimization.** The pseudocode stores `source_text` (the original sentence) directly in DynamoDB. In production, evaluate whether the fast-lookup layer needs the raw sentence at all. Storing only structured metadata (domain, assertion, codes) with a `note_id` reference lets authorized reviewers retrieve the original sentence from the source system when needed, while reducing the PHI footprint of the SDOH profiles table.
+**Source text storage and protected health information (PHI) minimization.** The pseudocode stores `source_text` (the original sentence) directly in DynamoDB. In production, evaluate whether the fast-lookup layer needs the raw sentence at all. Storing only structured metadata (domain, assertion, codes) with a `note_id` reference lets authorized reviewers retrieve the original sentence from the source system when needed, while reducing the PHI footprint of the SDOH profiles table.
 
 **Feedback loop for classifier improvement.** When care managers act on or dismiss SDOH findings, that signal is training data. "False positive: this wasn't actually food insecurity" and "missed: patient mentioned utility shut-off but it wasn't flagged" both improve the classifier. Without this loop, the system never improves beyond its initial training. Build the feedback capture from day one, even if you don't retrain immediately.
 
@@ -481,8 +481,8 @@ The pseudocode above gets you extraction results. These gaps will bite you in pr
 
 **Industry Standards and References:**
 - [Gravity Project SDOH Clinical Care Standards](https://thegravityproject.net/): Defines SDOH domain value sets, code mappings, and FHIR implementation guides
-- [CMS ICD-10-CM Z-Code Documentation](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official Z55-Z65 code definitions for social determinant documentation
-- [HL7 FHIR US Core SDOH Profiles](https://www.hl7.org/fhir/us/core/): FHIR resource profiles for representing SDOH observations and conditions
+- [CMS International Classification of Diseases (ICD)-10-CM Z-Code Documentation](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official Z55-Z65 code definitions for social determinant documentation
+- [Health Level Seven (HL7) FHIR US Core SDOH Profiles](https://www.hl7.org/fhir/us/core/): FHIR resource profiles for representing SDOH observations and conditions
 
 ---
 
