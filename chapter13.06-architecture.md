@@ -18,7 +18,7 @@
 
 **Amazon DynamoDB for gap result storage.** The output of the reasoning engine (per-patient gap lists) needs fast point lookups by patient ID for care management workflows and batch scans for population-level reporting. DynamoDB handles both access patterns efficiently.
 
-**AWS Glue for patient data assembly.** Patient facts come from multiple sources (claims databases, EHR extracts, lab feeds). Glue ETL jobs consolidate these into the fact format the reasoning engine expects, handling deduplication and temporal alignment.
+**AWS Glue for patient data assembly.** Patient facts come from multiple sources (claims databases, electronic health record (EHR) extracts, lab feeds). Glue extract, transform, and load (ETL) jobs consolidate these into the fact format the reasoning engine expects, handling deduplication and temporal alignment.
 
 ### Architecture Diagram
 
@@ -431,7 +431,7 @@ The pseudocode and architecture above demonstrate the reasoning pattern. Here's 
 
 **No audit trail for reasoning.** HIPAA and quality program audits may require you to explain why a specific gap was (or was not) identified for a specific patient. The current output records the justification, but not the full reasoning trace: which SPARQL queries ran, which hierarchy paths were traversed, which exclusions were evaluated. For auditability, log the query and result at each reasoning step.
 
-**No multi-program support.** Different quality programs (HEDIS, CMS Star Ratings, state Medicaid programs) have overlapping but non-identical measure definitions. A production system needs to evaluate the same patient against multiple program rule sets and deduplicate the output. The ontology needs program-scoped namespaces.
+**No multi-program support.** Different quality programs (Healthcare Effectiveness Data and Information Set (HEDIS), CMS Star Ratings, state Medicaid programs) have overlapping but non-identical measure definitions. A production system needs to evaluate the same patient against multiple program rule sets and deduplicate the output. The ontology needs program-scoped namespaces.
 
 ---
 
