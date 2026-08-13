@@ -56,13 +56,13 @@ Let's get into it.
 
 ### Why Refill Workflows Have Stayed Stuck
 
-For most of the last two decades, refill workflows in ambulatory care have been a relay race between four parties (patient, pharmacy, practice clinical staff, prescriber) with the baton being passed through fax, voicemail, and the EHR's inbox. The patient asks the pharmacy, the pharmacy faxes the practice, the practice's nurse triages the fax, the prescriber approves or denies, the prescriber's response goes back to the pharmacy, the pharmacy fills the prescription, the patient picks it up. Each handoff has variable latency. The whole loop frequently takes two to five business days, and during that time the patient may be off their medication.
+For most of the last two decades, refill workflows in ambulatory care have been a relay race between four parties (patient, pharmacy, practice clinical staff, prescriber) with the baton being passed through fax, voicemail, and the electronic health record (EHR)'s inbox. The patient asks the pharmacy, the pharmacy faxes the practice, the practice's nurse triages the fax, the prescriber approves or denies, the prescriber's response goes back to the pharmacy, the pharmacy fills the prescription, the patient picks it up. Each handoff has variable latency. The whole loop frequently takes two to five business days, and during that time the patient may be off their medication.
 
 The first generation of digital refill tools, roughly 2010 to 2020, replaced fax with electronic prescribing (e-prescribing) and added a patient-portal form for the patient to request refills directly. This was a meaningful improvement over fax. It did not fundamentally change the workflow shape: the patient submits a request, the request lands in the practice's queue, the nurse triages it, the prescriber acts on it, the result e-prescribes to the pharmacy. The latency improved from days to hours; the work for clinical staff stayed the same; the patient experience improved a little but still depended on the practice's queue depth.
 
 The button-tree chatbot approach to refills, when it appeared, did not work. The reason is the same as the FAQ and scheduling cases: a button-tree chatbot is a form behind a chat veneer. The patient still picks the medication from a list, still submits, still waits. The chat surface is a slightly nicer UX than the form, but the workflow shape is identical and the latency is identical.
 
-The thing that changed the workflow shape is the combination of three things. First, structured medication data became broadly available through FHIR APIs that expose the patient's MedicationRequest resources directly. Second, tool-using LLMs (the same architectural pattern from recipe 11.2) made it possible to build a bot that could understand "my blood pressure pill" as well as "lisinopril 10 milligrams" and call the right tools to act on either. Third, the recognition that most refills are protocol-driven means most refills can be handled by a bot operating against an explicit protocol, with clinical staff handling the exceptions.
+The thing that changed the workflow shape is the combination of three things. First, structured medication data became broadly available through Fast Healthcare Interoperability Resources (FHIR) APIs that expose the patient's MedicationRequest resources directly. Second, tool-using LLMs (the same architectural pattern from recipe 11.2) made it possible to build a bot that could understand "my blood pressure pill" as well as "lisinopril 10 milligrams" and call the right tools to act on either. Third, the recognition that most refills are protocol-driven means most refills can be handled by a bot operating against an explicit protocol, with clinical staff handling the exceptions.
 
 The architectural shift is from "queue everything for human triage" to "auto-approve what the protocol says is auto-approvable, route everything else to humans with reasoning attached." The bot's value is concentrated in two places: the natural-language understanding of the patient's request (so the patient does not have to know whether to type "metformin 500" or "the diabetes pill"), and the protocol-driven first-pass triage that handles the routine majority of cases without human work.
 
@@ -110,7 +110,7 @@ A naive product approach would be: take a generalist LLM, give it a chat surface
 
 **The model cannot enforce the prescriber's authority.** A medication initially prescribed by a specialist (a cardiologist's amiodarone, a rheumatologist's methotrexate) is generally not refillable through the primary care practice. The bot has to route these to the specialist's office or to a coordinated care pathway, not auto-approve them. The protocol-evaluation tool encodes the prescriber-authority rules; the LLM cannot.
 
-**The model has compliance implications for medication-related conversation.** Every refill conversation is a HIPAA-relevant interaction with PHI. The conversation log is PHI. The medication list, the lab values, the chart context that the bot retrieved are PHI. The architecture must produce the durable audit pipeline that scheduling required, plus a layer of clinical-event documentation that the scheduling bot did not need.
+**The model has compliance implications for medication-related conversation.** Every refill conversation is a HIPAA-relevant interaction with protected health information (PHI). The conversation log is PHI. The medication list, the lab values, the chart context that the bot retrieved are PHI. The architecture must produce the durable audit pipeline that scheduling required, plus a layer of clinical-event documentation that the scheduling bot did not need.
 
 ### What the Refill Bot Has To Do That the Scheduling Bot Did Not
 
@@ -158,7 +158,7 @@ A few practical updates worth knowing.
 
 **Surescripts is the practical e-prescribing channel.** In the U.S., Surescripts provides the routing layer between prescribers and pharmacies.  The practice's existing e-prescribing setup typically routes through Surescripts already; the bot's e-prescribe tool wraps this existing path.
 
-**CDS Hooks are increasingly available.** The CDS Hooks specification provides a standard way for clinical-decision-support systems to be invoked at specific decision points (including order-sign hooks for medication ordering).  Where available, the bot's protocol-evaluation tool can invoke the institution's CDS layer via CDS Hooks for interaction screening, contraindication checks, and policy enforcement.
+**Clinical decision support (CDS) Hooks are increasingly available.** The CDS Hooks specification provides a standard way for clinical-decision-support systems to be invoked at specific decision points (including order-sign hooks for medication ordering).  Where available, the bot's protocol-evaluation tool can invoke the institution's CDS layer via CDS Hooks for interaction screening, contraindication checks, and policy enforcement.
 
 **Tool-using LLMs are the default architecture.** Same as recipe 11.2. The function-calling pattern, with the LLM proposing tool calls and the tool layer executing them, is the default architecture for transactional conversational AI as of 2024 onward.
 
@@ -511,13 +511,13 @@ A few cross-cutting design points specific to the refill bot.
 - **Recipe 11.4 (Pre-Visit Intake Bot):** Same chapter. The intake bot collects clinical information before a visit, including medication updates that feed back into the refill bot's medication list.
 - **Recipe 11.7 (Chronic Disease Management Coach):** Same chapter. The chronic-disease coach can detect adherence gaps and refer to the refill bot for the refill action; the refill bot can detect adherence concerns and refer to the chronic-disease coach for the coaching follow-up.
 - **Recipe 11.8 (Mental Health Support Bot):** Same chapter. The refill bot's controlled-substance routing for psychiatric medications, the bot's handling of misuse signals, and the bot's crisis detection all reference patterns from the mental health bot.
-- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for refills builds on the voice assistant's ASR/TTS patterns; the conversational logic from the refill bot is shared.
+- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for refills builds on the voice assistant's automatic speech recognition (ASR) and text-to-speech (TTS) patterns; the conversational logic from the refill bot is shared.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Chapter 4. The adherence-detection logic from recipe 4.5 informs the refill bot's adherence-prompt behavior and the routing of adherence concerns to coaching workflows.
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** Chapter 4. The proactive-outreach patterns from recipe 4.1 inform the refill-reminder extension.
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Chapter 2. The prior-authorization workflow integration draws on recipe 2.4's patterns.
 - **Recipe 5.6 (Claims-to-Clinical Data Linkage):** Chapter 5. The lab-reconciliation pipeline that the refill bot depends on draws on recipe 5.6's data-linkage patterns.
 - **Recipe 3.4 (Medication Dispensing Anomalies):** Chapter 3. The abuse-detection telemetry that monitors for unusual fill patterns draws on recipe 3.4's anomaly-detection patterns.
-- **Recipe 8.x (RxNorm-coded medication entity extraction):** Chapter 8. The medication-resolution disambiguation supplements draws on traditional NLP patterns. 
+- **Recipe 8.x (RxNorm-coded medication entity extraction):** Chapter 8. The medication-resolution disambiguation supplements draws on traditional natural language processing (NLP) patterns. 
 
 ---
 
