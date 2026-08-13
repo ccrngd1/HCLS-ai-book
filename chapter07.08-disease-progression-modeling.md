@@ -100,7 +100,7 @@ The uncertainty should grow with prediction horizon. If your model is equally co
 
 **Individual Prediction.** Given a new patient's history up to today, generate a predicted trajectory with uncertainty bounds. This should include: predicted biomarker values at future time points, probability of reaching specific milestones (e.g., Stage 4, dialysis) within specific time windows, and confidence intervals that honestly reflect uncertainty.
 
-**Clinical Integration.** Surface predictions where clinicians make decisions. This means integration with the EHR workflow, not a standalone dashboard that nobody checks. Include explanations of what's driving the prediction (which factors are accelerating or decelerating progression) and clear communication of uncertainty. Provide actionable thresholds: "if progression continues at this rate, the patient will reach Stage 4 within 18 months, suggesting nephrology referral now."
+**Clinical Integration.** Surface predictions where clinicians make decisions. This means integration with the electronic health record (EHR) workflow, not a standalone dashboard that nobody checks. Include explanations of what's driving the prediction (which factors are accelerating or decelerating progression) and clear communication of uncertainty. Provide actionable thresholds: "if progression continues at this rate, the patient will reach Stage 4 within 18 months, suggesting nephrology referral now."
 
 ---
 

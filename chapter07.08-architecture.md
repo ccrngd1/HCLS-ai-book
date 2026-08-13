@@ -493,7 +493,7 @@ The pseudocode and architecture above demonstrate the shape of a disease progres
 
 **Drift detection with clinical feedback loops.** The monitoring system must detect not just statistical drift (feature distributions shifting) but clinical validity drift (are predictions still matching outcomes?). This requires a minimum of 6-12 months of accumulated predictions before you can assess calibration at the 12-month horizon, creating a long feedback loop. Plan for conservative operating postures during this initial deployment period.
 
-**EHR integration and workflow design.** A prediction buried in a standalone dashboard won't be used. Clinical integration requires SMART on FHIR apps or CDS Hooks that surface predictions during relevant encounters (nephrology visits, primary care chronic disease reviews), and UX that communicates uncertainty without overwhelming the clinician. Design the workflow with end users, not for them.
+**Electronic health record (EHR) integration and workflow design.** A prediction buried in a standalone dashboard won't be used. Clinical integration requires SMART on Fast Healthcare Interoperability Resources (FHIR) apps or CDS Hooks that surface predictions during relevant encounters (nephrology visits, primary care chronic disease reviews), and UX that communicates uncertainty without overwhelming the clinician. Design the workflow with end users, not for them.
 
 ---
 
@@ -527,7 +527,7 @@ The pseudocode and architecture above demonstrate the shape of a disease progres
   critical care dataset; access to the data itself is credentialed through PhysioNet
 - [CMS Data Entrepreneurs' Synthetic Public Use File (DE-SynPUF)](https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files/cms-2008-2010-data-entrepreneurs-synthetic-public-use-file-de-synpuf):
   free synthetic Medicare beneficiary, inpatient, outpatient, carrier and Part D claims files, useful
-  for pipeline development without touching real PHI
+  for pipeline development without touching real protected health information (PHI)
 - [lifelines documentation](https://lifelines.readthedocs.io/): Python survival analysis library,
   including Kaplan-Meier, Cox proportional hazards and time-varying covariates
 
