@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Comprehend Medical for clinical NER and entity extraction.** Comprehend Medical provides out-of-the-box extraction of medical conditions, medications (with dose, frequency, route, duration), lab tests and values, procedures, and temporal expressions from clinical text. It handles negation detection and attribute linkage natively. For phenotyping, it provides the foundational entity extraction layer without requiring model training or clinical NLP infrastructure from scratch.
+**Amazon Comprehend Medical for clinical named entity recognition (NER) and entity extraction.** Comprehend Medical provides out-of-the-box extraction of medical conditions, medications (with dose, frequency, route, duration), lab tests and values, procedures, and temporal expressions from clinical text. It handles negation detection and attribute linkage natively. For phenotyping, it provides the foundational entity extraction layer without requiring model training or clinical natural language processing (NLP) infrastructure from scratch.
 
 **Amazon S3 for clinical document storage.** De-identified or appropriately consented clinical notes land in S3, organized by patient and encounter. S3 provides the data lake for the phenotyping pipeline, with encryption, access logging, and lifecycle policies for research data governance.
 
@@ -511,11 +511,11 @@ FUNCTION classify_patient(patient_id, criterion_results, phenotype_definition):
 
 **Where it struggles:**
 
-- Rare phenotypes with prevalence below 1% (PPV drops due to base rate)
+- Rare phenotypes with prevalence below 1% (positive predictive value (PPV) drops due to base rate)
 - Criteria that require multi-sentence reasoning ("adequate trial" determination)
 - Notes with heavy abbreviation and shorthand (varies by institution)
 - Conflicting evidence across providers (one says "depression," another says "adjustment disorder")
-- Historical note scans with OCR artifacts that degrade NLP accuracy
+- Historical note scans with optical character recognition (OCR) artifacts that degrade NLP accuracy
 - Phenotypes that require negation of a negation ("patient no longer denies suicidal ideation")
 
 ---
@@ -532,7 +532,7 @@ This implementation demonstrates the pipeline structure and the core NLP-to-clas
 
 **No cross-institution portability testing.** A phenotype algorithm that achieves 93% PPV at your institution might drop to 75% at another site with different documentation conventions, abbreviation patterns, or clinical workflows. Before publishing a phenotype for multi-site use, you need validation data from at least 2-3 external sites confirming acceptable performance.
 
-**No pre-filter cost optimization.** The walkthrough processes every note for every patient. At scale (50,000 candidates), this means millions of API calls and hundreds of thousands of dollars in NLP costs. Production systems first screen patients using cheap structured data queries (ICD codes, medication lists) to narrow the candidate pool by 80-90% before running expensive NLP. That pre-filter step isn't optional.
+**No pre-filter cost optimization.** The walkthrough processes every note for every patient. At scale (50,000 candidates), this means millions of API calls and hundreds of thousands of dollars in NLP costs. Production systems first screen patients using cheap structured data queries (International Classification of Diseases (ICD) codes, medication lists) to narrow the candidate pool by 80-90% before running expensive NLP. That pre-filter step isn't optional.
 
 ---
 
@@ -557,7 +557,7 @@ This implementation demonstrates the pipeline structure and the core NLP-to-clas
 - [Architecting for HIPAA on AWS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **AWS Sample Repos:**
-- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates extracting medical entities and mapping them to FHIR resources
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates extracting medical entities and mapping them to Fast Healthcare Interoperability Resources (FHIR) resources
 - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): General Comprehend examples including medical entity detection patterns
 
 **External Resources:**
