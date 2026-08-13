@@ -70,7 +70,7 @@ For most organizations starting out, gradient boosted trees on structured featur
 
 Here's the part that trips up most ML teams: discrimination is not calibration.
 
-**Discrimination** (measured by AUC/c-statistic) tells you whether the model ranks patients correctly. A patient who dies should have a higher predicted risk than a patient who survives. Most modern models achieve AUC 0.85-0.92 on ICU mortality. That sounds great.
+**Discrimination** (measured by area under the curve (AUC)/c-statistic) tells you whether the model ranks patients correctly. A patient who dies should have a higher predicted risk than a patient who survives. Most modern models achieve AUC 0.85-0.92 on ICU mortality. That sounds great.
 
 **Calibration** tells you whether the predicted probabilities are accurate. If you predict 30% mortality for a group of patients, do 30% of them actually die? This is what matters for clinical decision-making. A family hearing "your father has a 70% chance of dying" needs that number to be honest, not just relatively correct.
 

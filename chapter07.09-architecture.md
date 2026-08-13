@@ -10,7 +10,7 @@
 
 **Amazon SageMaker for model training and hosting.** SageMaker provides the full ML lifecycle: training on historical ICU data, hyperparameter tuning, model registry for versioning, and real-time inference endpoints. For a model that needs to serve predictions in under a second and be retrained monthly, SageMaker's managed infrastructure eliminates the operational burden of maintaining GPU instances and model serving code. The built-in model monitoring detects data drift and prediction drift automatically.
 
-**Amazon HealthLake for FHIR-based clinical data.** HealthLake is a HIPAA-eligible, FHIR-native data store that can ingest clinical data from EHR systems. It handles the messy reality of healthcare data: different coding systems, varying data formats, and the need for a longitudinal patient view. For mortality prediction, you need a patient's full ICU trajectory in one queryable place.
+**Amazon HealthLake for FHIR-based clinical data.** HealthLake is a HIPAA-eligible, FHIR-native data store that can ingest clinical data from electronic health record (EHR) systems. It handles the messy reality of healthcare data: different coding systems, varying data formats, and the need for a longitudinal patient view. For mortality prediction, you need a patient's full ICU trajectory in one queryable place.
 
 **AWS Lambda for feature engineering orchestration.** The feature engineering pipeline (temporal aggregations, derived features, missing value imputation) runs on each prediction request or on a schedule. Lambda handles the stateless, event-driven nature of this work: a new lab result arrives, trigger a feature refresh, score the patient. For patients with ICU stays exceeding 7-10 days, the volume of vital sign data may approach Lambda's 15-minute timeout. In those cases, pre-aggregate vital signs into hourly summaries in a separate pipeline (AWS Glue or SageMaker Processing), or allocate maximum Lambda memory (10 GB) to maximize compute throughput. Include a timeout fallback that serves the most recent successful prediction rather than failing silently.
 
@@ -18,7 +18,7 @@
 
 **Amazon DynamoDB for prediction storage and serving.** Predictions need to be stored durably (for audit and outcome tracking) and served with low latency to clinical displays. DynamoDB's single-digit-millisecond reads and write-once-read-many access pattern fit perfectly.
 
-**Amazon EventBridge for orchestration.** The pipeline has multiple triggers: new data arrives, scheduled rescoring, model retraining events, drift alerts. EventBridge provides the event routing without custom integration code. In production, supplement the 4-hour schedule with event-triggered rescoring for high-acuity changes (new vasopressor started, intubation, cardiac arrest code). EventBridge rules can match specific HL7 ADT event types to trigger immediate rescoring. See Variations for implementation details.
+**Amazon EventBridge for orchestration.** The pipeline has multiple triggers: new data arrives, scheduled rescoring, model retraining events, drift alerts. EventBridge provides the event routing without custom integration code. In production, supplement the 4-hour schedule with event-triggered rescoring for high-acuity changes (new vasopressor started, intubation, cardiac arrest code). EventBridge rules can match specific Health Level Seven (HL7) admission, discharge, and transfer (ADT) event types to trigger immediate rescoring. See Variations for implementation details.
 
 **Amazon CloudWatch for model monitoring.** Custom metrics for prediction distribution, calibration drift, and feature drift. Alarms when the model's behavior changes in ways that suggest degradation.
 
@@ -84,7 +84,7 @@ flowchart TD
 >
 > - [MIMIC-IV Clinical Database](https://physionet.org/content/mimiciv/): De-identified ICU data for model development and benchmarking
 > - [Amazon SageMaker Examples](https://github.com/aws/amazon-sagemaker-examples): General SageMaker training and deployment patterns
-> - [Amazon HealthLake Documentation](https://docs.aws.amazon.com/healthlake/): FHIR data store integration patterns
+> - [Amazon HealthLake Documentation](https://docs.aws.amazon.com/healthlake/): Fast Healthcare Interoperability Resources (FHIR) data store integration patterns
 
 #### Walkthrough
 
@@ -436,7 +436,7 @@ FUNCTION store_and_serve(patient_id, admission_id, calibration_result, model_out
 
 The architecture above produces calibrated mortality predictions and serves them to a clinical dashboard. But there's a substantial gap between "predictions appear on a screen" and "predictions safely influence clinical decisions at scale." Here's what a production deployment must close:
 
-**Fairness and subgroup performance auditing.** Before you deploy a model that influences end-of-life care discussions, you must demonstrate equitable performance across patient subgroups: by race/ethnicity, age band, sex, primary diagnosis category, insurance status, and admitting unit. If the model systematically over-predicts mortality for Black patients (a documented pattern in severity scores trained on historically biased outcome data), it may trigger premature goals-of-care conversations for patients who would otherwise survive. Run stratified calibration analysis (not just AUC) on every retrain. Set alerting thresholds on subgroup calibration drift. This is both an ethical obligation and a legal exposure.
+**Fairness and subgroup performance auditing.** Before you deploy a model that influences end-of-life care discussions, you must demonstrate equitable performance across patient subgroups: by race/ethnicity, age band, sex, primary diagnosis category, insurance status, and admitting unit. If the model systematically over-predicts mortality for Black patients (a documented pattern in severity scores trained on historically biased outcome data), it may trigger premature goals-of-care conversations for patients who would otherwise survive. Run stratified calibration analysis (not just area under the curve (AUC)) on every retrain. Set alerting thresholds on subgroup calibration drift. This is both an ethical obligation and a legal exposure.
 
 **Self-fulfilling prophecy monitoring.** A mortality prediction that triggers withdrawal of life-sustaining treatment produces the outcome it predicted. If this feedback loop contaminates your retraining data, the model learns to predict treatment withdrawal decisions rather than physiological mortality risk. Track `goals_of_care_changed` alongside outcomes. Exclude or down-weight patients where treatment withdrawal was the proximate cause of death during retraining. Run counterfactual analyses periodically: among patients with high predicted mortality who received full treatment, what was the actual mortality rate?
 
@@ -450,7 +450,7 @@ The architecture above produces calibrated mortality predictions and serves them
 
 **Audit trail completeness.** Every prediction must be traceable: what model version, what feature values, what calibration parameters, what timestamp. HIPAA requires accounting of disclosures, and if predictions influence care decisions (which they will), the prediction itself becomes part of the medical record. Ensure your DynamoDB retention policy and CloudTrail configuration support the full audit lifecycle (typically 6+ years for medical records, varying by state).
 
-**PHI minimization in the inference path.** The feature engineering Lambda queries HealthLake for the full patient record (vitals, labs, medications, conditions, demographics). Not all of this data needs to persist beyond the prediction computation. The prediction record in DynamoDB stores the top contributing features with values (e.g., "lactate 4.2 mmol/L"). Define which feature values are stored in the prediction record (needed for explainability) versus which are used transiently and discarded (needed for scoring but not retention). CloudWatch logs from the Lambda should not contain raw patient data.
+**Protected health information (PHI) minimization in the inference path.** The feature engineering Lambda queries HealthLake for the full patient record (vitals, labs, medications, conditions, demographics). Not all of this data needs to persist beyond the prediction computation. The prediction record in DynamoDB stores the top contributing features with values (e.g., "lactate 4.2 mmol/L"). Define which feature values are stored in the prediction record (needed for explainability) versus which are used transiently and discarded (needed for scoring but not retention). CloudWatch logs from the Lambda should not contain raw patient data.
 
 ---
 
