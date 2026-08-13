@@ -134,7 +134,7 @@ A few practical updates worth knowing.
 
 **LLMs as a dialog backbone is becoming feasible.** Two years ago, LLM-driven dialog was too slow and too expensive for production telephony. Today, with model serving optimizations and dedicated inference infrastructure, it's increasingly realistic for the low-traffic enterprise IVR use case. For high-volume contact centers, the per-call cost is still a real consideration. Watch this space.
 
-**Vendor-managed conversational platforms have matured.** Amazon Lex, Google Dialogflow, Microsoft Azure Bot Service, IBM Watson Assistant, Twilio, NICE inContact, Genesys Cloud, and others all ship competent NLU and dialog management. The differentiation has shifted from "can you classify intents" (everyone can) to "how well do you handle edge cases, how do you integrate with my CRM and EHR, what's the operational experience like." For most healthcare organizations, the right answer is to evaluate the platform's integration depth with your existing telephony and electronic health record stack rather than the raw NLU accuracy.
+**Vendor-managed conversational platforms have matured.** Amazon Lex, Google Dialogflow, Microsoft Azure Bot Service, IBM Watson Assistant, Twilio, NICE inContact, Genesys Cloud, and others all ship competent NLU and dialog management. The differentiation has shifted from "can you classify intents" (everyone can) to "how well do you handle edge cases, how do you integrate with my CRM and electronic health record (EHR), what's the operational experience like." For most healthcare organizations, the right answer is to evaluate the platform's integration depth with your existing telephony and electronic health record stack rather than the raw NLU accuracy.
 
 **Healthcare-specific intent libraries exist as starting points.** A few vendors have published or sell pretrained intent libraries for healthcare phone interactions. These cover the standard intents (appointment, refill, billing, results, nurse line) with example utterances and slot definitions. Using one of these as a starting point can save several months of intent-design work, and you customize the long tail for your specific practice.
 
@@ -295,7 +295,7 @@ A few cross-cutting design points that the architecture has to bake in from the 
 
 **The urgency lexicon is a living document.** Maintain an explicit list of phrases that trigger clinical escalation. Review it quarterly with the clinical operations team. Add new phrases when production calls reveal misses. The list should be transparent, reviewable, and version-controlled.
 
-**Recordings are PHI; treat them accordingly.** Call recordings are PHI, full stop, regardless of whether the caller's name is captured (it usually is, somewhere in the call). The recording infrastructure runs under a BAA, encrypted at rest with customer-managed keys, with access controls that match the rest of the institution's PHI handling.
+**Recordings are protected health information (PHI); treat them accordingly.** Call recordings are PHI, full stop, regardless of whether the caller's name is captured (it usually is, somewhere in the call). The recording infrastructure runs under a business associate agreement (BAA), encrypted at rest with customer-managed keys, with access controls that match the rest of the institution's PHI handling.
 
 **Transcripts are PHI; they live under the same governance as recordings.** Transcripts generated from the ASR layer carry the same PHI classification as the recordings they derive from. They live in the secure transcript archive under the same governance as the recordings, and the audit log carries only references and structural metadata (transcript archive reference, transcript length, transcript hash), never the raw content. Any downstream system that consumes transcripts (analytics, quality assurance, bot improvement) either consumes the redacted-transcript variant or operates under the same PHI governance tier.
 
@@ -315,7 +315,7 @@ A few cross-cutting design points that the architecture has to bake in from the 
 - **Recipe 11.x (Conversational AI & Virtual Agents):** The full conversational-AI assistant pattern in a digital channel; shares intent design and dialog management with the voice-channel IVR.
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** The IVR is one channel in the broader patient-communication channel mix; the channel-optimization model can recommend voice as the right channel for specific patient segments.
 - **Recipe 5.1 (Internal Duplicate Patient Detection):** The caller-verification step has to handle the case where a phone number matches multiple records (which is exactly the duplicate-patient problem); the IVR consumes the patient-index pipeline.
-- **Recipe 8.x (Clinical NLP & Information Extraction):** The intent-classification techniques used in the IVR draw from the broader NLP-classification methods covered in chapter 8.
+- **Recipe 8.x (Clinical natural language processing (NLP) & Information Extraction):** The intent-classification techniques used in the IVR draw from the broader NLP-classification methods covered in chapter 8.
 
 ---
 
