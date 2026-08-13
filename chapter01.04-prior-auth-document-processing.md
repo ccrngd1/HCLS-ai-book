@@ -16,7 +16,7 @@ On the other end, a clinical reviewer receives that fax. They sort through the p
 
 This takes 15 to 45 minutes of a trained clinical reviewer's time for a single case. Payers process millions of these annually. The American Medical Association's prior authorization physician survey consistently finds that more than 90% of physicians report that prior auth causes delays in care, and roughly one in four physicians report that prior auth has led to a serious adverse event for a patient. The delays aren't because anyone is being malicious. They're because the document processing pipeline is manual and slow.
 
-The CMS Interoperability and Prior Authorization Final Rule (CMS-0057-F) is pushing payers hard toward faster, more automated decisions: since 1 January 2026 impacted payers must decide standard requests within seven calendar days and expedited requests within 72 hours, and must give a specific reason for every denial. The FHIR-based prior authorization API requirements land primarily on 1 January 2027. State-level prior auth reform is adding more pressure on top of that. The regulatory calendar is not waiting for the technology.
+The CMS Interoperability and Prior Authorization Final Rule (CMS-0057-F) is pushing payers hard toward faster, more automated decisions: since 1 January 2026 impacted payers must decide standard requests within seven calendar days and expedited requests within 72 hours, and must give a specific reason for every denial. The Fast Healthcare Interoperability Resources (FHIR)-based prior authorization API requirements land primarily on 1 January 2027. State-level prior auth reform is adding more pressure on top of that. The regulatory calendar is not waiting for the technology.
 
 Here's the document processing challenge at the core of all of this. A prior auth submission is not one document type. It's five to seven different document types, faxed together, in no particular order, at whatever quality the originating fax machine produces. Page 1 might be a structured cover sheet you can extract like an insurance card. Page 3 is a clinical office note with free-text diagnosis and treatment history. Page 7 is a printed lab results table. Page 11 is a typed letter from the ordering physician describing why alternative treatments were tried and failed.
 
@@ -26,9 +26,9 @@ That sounds simple. And for a while, it is. A classifier built on keyword matchi
 
 Then you hit the ceiling.
 
-The physician letter from a rural clinic uses "Service Requested Code" where everyone else uses "CPT Code." The cover sheet from a regional plan calls the diagnosis field "Dx Indication." A clinical note includes an embedded lab results grid that flips the classifier toward "lab report," burying the narrative evidence the downstream logic needs. None of these are exotic. They're just variability at healthcare scale, and the keyword-based system has no idea what to do with any of them.
+The physician letter from a rural clinic uses "Service Requested Code" as its label for the Current Procedural Terminology (CPT) field, where everyone else uses "CPT Code." The cover sheet from a regional plan calls the diagnosis field "Dx Indication." A clinical note includes an embedded lab results grid that flips the classifier toward "lab report," burying the narrative evidence the downstream logic needs. None of these are exotic. They're just variability at healthcare scale, and the keyword-based system has no idea what to do with any of them.
 
-This is where Recipes 1.1 through 1.3 end and Recipe 1.4 begins. The extraction services we've used so far are excellent at what they do. But what this problem now needs isn't more extraction. It needs something that can *read* the page, understand what it's looking at in context, and reason about the content the way a clinical reviewer would. That's where we introduce a large language model as the reasoning layer that sits between the OCR output and the extraction logic. That introduction carries through the rest of the chapter.
+This is where Recipes 1.1 through 1.3 end and Recipe 1.4 begins. The extraction services we've used so far are excellent at what they do. But what this problem now needs isn't more extraction. It needs something that can *read* the page, understand what it's looking at in context, and reason about the content the way a clinical reviewer would. That's where we introduce a large language model as the reasoning layer that sits between the optical character recognition (OCR) output and the extraction logic. That introduction carries through the rest of the chapter.
 
 ---
 
@@ -106,7 +106,7 @@ In a pure Comprehend Medical pipeline, a clinical note produces a list of entiti
 
 An LLM reads the page the way a clinical reviewer would. It extracts not just the entities but the evidence structure: what condition is being treated, what was tried, why it wasn't sufficient, what findings support the requested intervention. It produces a clinical summary that a downstream criteria-matching system can actually reason against.
 
-This is the shift: Textract is still the best tool for extracting structure from documents. Comprehend Medical is still the best tool for high-confidence ICD-10 and RxNorm code mapping. But the LLM becomes the brain that sits on top of extraction, reading what Textract extracted and producing the clinical reasoning that makes those raw entities useful.
+This is the shift: Textract is still the best tool for extracting structure from documents. Comprehend Medical is still the best tool for high-confidence International Classification of Diseases (ICD)-10 and RxNorm code mapping. But the LLM becomes the brain that sits on top of extraction, reading what Textract extracted and producing the clinical reasoning that makes those raw entities useful.
 
 ### The Model Tiering Concept
 
@@ -135,7 +135,7 @@ This recipe introduces the concept. The remaining Chapter 1 recipes build on it.
 
 ### The New Fan-Out: Two Paths, Not Four
 
-In a pure keyword-classifier architecture, the fan-out after classification sends each page type to a specialized extractor: a forms extractor for cover sheets, a clinical NLP pipeline for clinical notes, a table parser for lab results, an entity extractor for imaging reports. Four distinct paths, each optimized for its specific input type.
+In a pure keyword-classifier architecture, the fan-out after classification sends each page type to a specialized extractor: a forms extractor for cover sheets, a clinical natural language processing (NLP) pipeline for clinical notes, a table parser for lab results, an entity extractor for imaging reports. Four distinct paths, each optimized for its specific input type.
 
 With an LLM in the picture, the fan-out simplifies. The LLM handles extraction and reasoning in a single call for most page types. You don't need a separate extractor for each page type because the LLM understands all of them.
 
