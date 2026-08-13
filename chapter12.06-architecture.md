@@ -6,7 +6,7 @@
 
 ## Why These Services
 
-**Amazon S3 for raw feeds, harmonized data, curve artifacts, and forecast outputs.** Raw 837 claim files, raw 835 remittance files, 277/277CA claim-status feeds, and contract metadata all land in S3 first. Separate prefixes for each data class: raw-837, raw-835, harmonized AR ledger, per-payer curve artifacts, per-claim sample trajectories, weekly forecast outputs, and model artifacts. All prefixes encrypted with customer-managed KMS keys (one key per data class for blast-radius isolation). S3 is the canonical durable store that everything reads from and writes to; it decouples each pipeline stage and makes reruns idempotent.
+**Amazon S3 for raw feeds, harmonized data, curve artifacts, and forecast outputs.** Raw feeds land in S3 first: an X12 837 claim submission for each billed encounter, an X12 835 remittance advice for each adjudication, an X12 277 claim status response (with 277CA acknowledgements), and contract metadata. Separate prefixes for each data class: raw-837, raw-835, harmonized AR ledger, per-payer curve artifacts, per-claim sample trajectories, weekly forecast outputs, and model artifacts. All prefixes encrypted with customer-managed KMS keys (one key per data class for blast-radius isolation). S3 is the canonical durable store that everything reads from and writes to; it decouples each pipeline stage and makes reruns idempotent.
 
 **AWS Glue for AR ingestion and harmonization (Stage 1).** The unglamorous but critical work of reconciling 835 remittance records against 837 claim submissions, normalizing payer identifiers to the contract level, joining against the contract-effective-date registry, and producing the harmonized AR ledger. Glue runs as a nightly PySpark job that reads new 835 files, updates the harmonized AR ledger partitioned by payer and submission month, and handles the data-quality checks that catch clearinghouse formatting drift. The Glue service role has scoped read access to the raw prefixes and write access to the harmonized prefix, with no DynamoDB or SageMaker permissions.
 
@@ -348,12 +348,12 @@ A typical weekly run for a 380-bed community hospital with 75,000 open claims ac
 
 ### AWS Documentation
 
-- [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/): Authoritative list of services that can be used under a BAA for PHI workloads. All services in this recipe (S3, Glue, SageMaker, Lambda, Step Functions, DynamoDB, EventBridge, CloudWatch, KMS, Secrets Manager) are on this list.
+- [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/): Authoritative list of services that can be used under a business associate agreement (BAA) for protected health information (PHI) workloads. All services in this recipe (S3, Glue, SageMaker, Lambda, Step Functions, DynamoDB, EventBridge, CloudWatch, KMS, Secrets Manager) are on this list.
 - [Architecting for HIPAA Security and Compliance on AWS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html): Reference architecture for PHI handling patterns used throughout this recipe.
 - [Amazon SageMaker DeepAR Forecasting Algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html): Hierarchical multi-payer forecasting that shares strength across small-volume payers.
 - [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html): Orchestration with Retry, Catch, and Parallel states for the weekly pipeline.
 - [Amazon DynamoDB Developer Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html): Low-latency serving for the treasury dashboard.
-- [AWS Glue Developer Guide](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html): ETL for 837/835 ingestion and AR harmonization.
+- [AWS Glue Developer Guide](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html): Extract, transform, and load (ETL) for 837/835 ingestion and AR harmonization.
 
 ### External Resources
 
