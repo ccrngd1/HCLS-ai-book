@@ -18,9 +18,9 @@
 
 **AWS Step Functions (Standard Workflow) for orchestration.** The pipeline has a long-running asynchronous gap: A2I human review can take minutes to hours. Step Functions Standard Workflows support the wait-for-callback pattern where execution suspends at the A2I step and resumes when a reviewer submits. Standard (not Express) Workflows are required: they maintain durable execution state for the full duration, support executions longer than 5 minutes, and produce a complete execution history for audit purposes.
 
-**Amazon A2I for structured human review.** A2I manages the human review workflow: task creation, reviewer routing, UI serving, and output capture. The reviewer interface for this recipe shows the original page image alongside both the vision model's extraction and the Textract OCR output. Having both comparison sources makes reviewer decisions faster and more confident. A2I integrates with the Step Functions callback pattern via a task token.
+**Amazon A2I for structured human review.** A2I manages the human review workflow: task creation, reviewer routing, UI serving, and output capture. The reviewer interface for this recipe shows the original page image alongside both the vision model's extraction and the Textract optical character recognition (OCR) output. Having both comparison sources makes reviewer decisions faster and more confident. A2I integrates with the Step Functions callback pattern via a task token.
 
-**Private Workforce via Amazon Cognito.** PHI requires a private workforce: reviewers you control, authenticated via Cognito, trained on HIPAA, and operating under your organization's BAA coverage. No other workforce type is permissible for clinical note content.
+**Private Workforce via Amazon Cognito.** Protected health information (PHI) requires a private workforce: reviewers you control, authenticated via Cognito, trained on HIPAA, and operating under your organization's business associate agreement (BAA) coverage. No other workforce type is permissible for clinical note content.
 
 **AWS Lambda for stateless processing steps.** Image pre-processing, Textract response parsing, quality signal computation, Bedrock API calls, response parsing, confidence tiering, A2I preparation, review processing, result merging, and prompt example capture are all short-lived stateless operations. Lambda handles them well.
 

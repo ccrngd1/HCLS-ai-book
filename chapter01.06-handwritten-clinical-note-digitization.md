@@ -12,7 +12,7 @@ Here it is. Let's deal with it.
 
 Physician handwriting occupies a unique place in healthcare lore. It's the subject of jokes, malpractice cases, and more than a few pharmacy near-misses. Metformin misread as Methotrexate. "QD" (once daily) misread as "QID" (four times daily). The ISMP's list of dangerous abbreviations reads like a catalog of things a tired handwriting recognition system might confuse. This is not abstract. People have been harmed.
 
-And yet, handwritten clinical notes remain stubbornly common. Progress notes scrawled during patient rounds. Addenda written in chart margins when an EHR is down. Consultation letters from specialists whose practices predate or reject electronic records. Handwritten annotations layered onto typed forms because a checkbox couldn't capture the nuance. Historical charts from before EHR adoption that still matter for longitudinal care. Every payer that processes prior authorizations, claims attachments, and medical records requests encounters handwritten content regularly. It's not going away.
+And yet, handwritten clinical notes remain stubbornly common. Progress notes scrawled during patient rounds. Addenda written in chart margins when an electronic health record (EHR) is down. Consultation letters from specialists whose practices predate or reject electronic records. Handwritten annotations layered onto typed forms because a checkbox couldn't capture the nuance. Historical charts from before EHR adoption that still matter for longitudinal care. Every payer that processes prior authorizations, claims attachments, and medical records requests encounters handwritten content regularly. It's not going away.
 
 The records management team at a mid-sized health plan has a person, sometimes two, whose job is essentially to decipher handwriting. They squint at faxed pages. They call provider offices to clarify illegible medication names. They're doing this for dozens of documents a day, sometimes hundreds. It's slow, expensive, and the people doing it are constantly worried about misreading something clinically significant.
 
@@ -28,7 +28,7 @@ Recipes 1.4 and 1.5 introduced the LLM reasoning layer. Both of those recipes se
 
 ### Why Handwriting OCR Is Genuinely Hard
 
-Printed text is, from a machine learning perspective, almost a solved problem. The characters are consistent. The spacing is predictable. The font is finite. Modern OCR on clean printed documents achieves accuracy in the high 90s.
+Printed text is, from a machine learning perspective, almost a solved problem. The characters are consistent. The spacing is predictable. The font is finite. Modern optical character recognition (OCR) on clean printed documents achieves accuracy in the high 90s.
 
 Handwriting is different in almost every way. Each person's letterforms are unique. The same person's handwriting varies with writing speed, fatigue, pen type, paper texture, and angle. Letters run together, lift off the page, bleed into adjacent characters, or simply don't look like any canonical letterform. The letter 'a' looks like a '9' when written quickly by some people. The letter 'l' is indistinguishable from '1' or 'I' in many hands. Medication names get abbreviated in non-standard ways. Clinical jargon gets rendered in shorthand that only makes sense with clinical context.
 
@@ -36,7 +36,7 @@ Traditional handwriting recognition uses deep learning models, specifically recu
 
 That accuracy gap matters enormously in healthcare. A 5% error rate on insurance card field extraction (Recipe 1.1) means some cards go to human review. A 15% error rate on medication names in a clinical note is a patient safety issue.
 
-The traditional pipeline answer has been: OCR the handwriting, extract clinical entities with NLP, tier by confidence, route low-confidence items to human review. That's a solid architecture, and the original version of this recipe describes it well. But it has a structural limitation: OCR and NLP are separate stages. The OCR stage converts ink to characters without any understanding of what those characters mean. "Metfornin" is a high-confidence transcription if the letterforms are clear. The NLP stage gets "Metfornin" and has to figure out that it's probably "Metformin" with a transposed letter. The two stages are reasoning independently, passing a flat string between them.
+The traditional pipeline answer has been: OCR the handwriting, extract clinical entities with natural language processing (NLP), tier by confidence, route low-confidence items to human review. That's a solid architecture, and the original version of this recipe describes it well. But it has a structural limitation: OCR and NLP are separate stages. The OCR stage converts ink to characters without any understanding of what those characters mean. "Metfornin" is a high-confidence transcription if the letterforms are clear. The NLP stage gets "Metfornin" and has to figure out that it's probably "Metformin" with a transposed letter. The two stages are reasoning independently, passing a flat string between them.
 
 Vision models work differently. They see the image and the context simultaneously.
 
@@ -96,7 +96,7 @@ The vision model path changes the feedback mechanism. You're not fine-tuning a m
 
 This is operationally simpler than OCR model fine-tuning. You don't need a training pipeline, a labeled dataset infrastructure, or a new model deployment. You need a library of few-shot examples, and you add to it when your reviewers find errors. The model's behavior improves the next time you update the prompt.
 
-> ** PHI CROSS-CONTAMINATION RISK: Read before building the prompt library.**
+> **Protected health information (PHI) cross-contamination risk: Read before building the prompt library.**
 >
 > The feedback loop captures real patient document images as correction candidates (the `image_key` in Step 8 points to a photograph of a real clinical note). When a prompt engineer later promotes selected examples into the active `EXTRACTION_SYSTEM_PROMPT`, those images are embedded in the system prompt sent to Bedrock for every subsequent page processed, including pages from completely different patients.
 >
@@ -118,7 +118,7 @@ Prompt caching makes this cost-efficient at scale. A few-shot extraction prompt 
 
 The human review architecture from the original recipe still applies: A2I structured review, private workforce for PHI, purpose-built reviewer interface. The difference is routing volume. Vision models understand clinical context in ways that OCR+NLP pipelines don't. The fraction of entities routed to human review is lower, typically 15-25% instead of 25-40%.
 
-A private workforce remains non-negotiable. PHI cannot touch public or vendor workforces without a BAA you cannot enter into with anonymous contractors. Reviewers must be authenticated through an identity provider you control, trained on HIPAA, and governed by your organization's policies. This is an access control and policy requirement, not a technical complexity. Plan for the organizational setup time.
+A private workforce remains non-negotiable. PHI cannot touch public or vendor workforces without a business associate agreement (BAA) you cannot enter into with anonymous contractors. Reviewers must be authenticated through an identity provider you control, trained on HIPAA, and governed by your organization's policies. This is an access control and policy requirement, not a technical complexity. Plan for the organizational setup time.
 
 ### The General Architecture Pattern
 
