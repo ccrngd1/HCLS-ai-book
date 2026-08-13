@@ -8,9 +8,9 @@
 
 ### Why These Services
 
-**Amazon Comprehend Medical for clinical NER and assertion detection.** Comprehend Medical's `DetectEntitiesV2` API extracts medical conditions (category: MEDICAL_CONDITION) with associated traits including NEGATION, SYMPTOM, SIGN, and DIAGNOSIS differentiation. It also returns assertion traits (NEGATION, HYPOTHETICAL) and attributes like ACUITY (chronic vs. acute). For condition-to-code mapping, the `InferICD10CM` and `InferSNOMEDCT` APIs take clinical text and return ranked terminology codes with confidence scores. Together, these three APIs handle extraction, assertion, and normalization as managed services.
+**Amazon Comprehend Medical for clinical named entity recognition (NER) and assertion detection.** Comprehend Medical's `DetectEntitiesV2` API extracts medical conditions (category: MEDICAL_CONDITION) with associated traits including NEGATION, SYMPTOM, SIGN, and DIAGNOSIS differentiation. It also returns assertion traits (NEGATION, HYPOTHETICAL) and attributes like ACUITY (chronic vs. acute). For condition-to-code mapping, the `InferICD10CM` and `InferSNOMEDCT` APIs take clinical text and return ranked terminology codes with confidence scores. Together, these three APIs handle extraction, assertion, and normalization as managed services.
 
-**Amazon S3 for note storage and results.** Clinical notes arrive from HL7 feeds, EHR exports, or ADT messages. S3 provides encrypted staging for incoming notes, archival for extraction results, and a trigger mechanism (S3 event notifications) for automated processing.
+**Amazon S3 for note storage and results.** Clinical notes arrive from Health Level Seven (HL7) feeds, electronic health record (EHR) exports, or admission, discharge, and transfer (ADT) messages. S3 provides encrypted staging for incoming notes, archival for extraction results, and a trigger mechanism (S3 event notifications) for automated processing.
 
 **AWS Lambda for extraction orchestration.** Each note goes through a stateless pipeline: receive text, detect sections, call Comprehend Medical APIs, assemble structured output. Lambda's request-based scaling handles both real-time single-note processing and burst loads during batch operations. An SQS dead-letter queue (DLQ) catches invocation failures (throttled events, unhandled exceptions) so no note silently disappears. A CloudWatch alarm on `ApproximateNumberOfMessagesVisible` in the DLQ fires when depth exceeds zero, giving operations early warning of systemic extraction failures.
 
@@ -74,8 +74,8 @@ flowchart LR
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
-> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): End-to-end pipeline extracting clinical entities from notes and mapping to FHIR resources
-> - [`amazon-comprehend-medical-ICD10-mapping`](https://github.com/aws-samples/amazon-comprehend-medical-ICD10-mapping): ICD-10 inference from clinical text using Comprehend Medical
+> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): End-to-end pipeline extracting clinical entities from notes and mapping to Fast Healthcare Interoperability Resources (FHIR)
+> - [`amazon-comprehend-medical-ICD10-mapping`](https://github.com/aws-samples/amazon-comprehend-medical-ICD10-mapping): International Classification of Diseases (ICD)-10 inference from clinical text using Comprehend Medical
 
 #### Walkthrough
 
@@ -441,7 +441,7 @@ This pipeline extracts problems and produces recommendations. But several gaps s
 
 **No handling of conflicting assertions across notes.** One note says "diabetes, well-controlled." Another says "denies diabetes." When assertions conflict across notes, which wins? Production systems need conflict resolution logic (typically: most recent clinical note from the treating provider wins, with confidence weighting).
 
-**No SNOMED hierarchy-aware deduplication.** The reconciliation logic checks code equality, but "Type 2 diabetes mellitus" (44054006) and "Type 2 diabetes mellitus with diabetic chronic kidney disease" (721000119107) are related concepts in the SNOMED hierarchy. Without hierarchy traversal, the system might recommend adding a child concept when the parent is already on the list (or vice versa). A production system needs access to SNOMED relationship tables to detect is-a relationships between codes.
+**No Systematized Nomenclature of Medicine (SNOMED) hierarchy-aware deduplication.** The reconciliation logic checks code equality, but "Type 2 diabetes mellitus" (44054006) and "Type 2 diabetes mellitus with diabetic chronic kidney disease" (721000119107) are related concepts in the SNOMED hierarchy. Without hierarchy traversal, the system might recommend adding a child concept when the parent is already on the list (or vice versa). A production system needs access to SNOMED relationship tables to detect is-a relationships between codes.
 
 **No DLQ reprocessing workflow.** The SQS DLQ catches failed invocations, but there's no automated mechanism to inspect failures, fix the root cause, and replay messages. In practice, you need a separate Lambda or Step Functions workflow that triages DLQ messages by error type and either retries (for transient failures) or routes to human review (for malformed notes).
 
@@ -473,7 +473,7 @@ This pipeline extracts problems and produces recommendations. But several gaps s
 
 **AWS Solutions and Blogs:**
 - [Extracting Medical Information from Clinical Text with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-text-using-amazon-comprehend-medical/): Overview of entity extraction patterns for clinical documentation
-- [Building a Medical Concept Normalization Pipeline with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-pipeline-using-amazon-comprehend-medical/): End-to-end architecture for clinical NLP pipelines
+- [Building a Medical Concept Normalization Pipeline with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-pipeline-using-amazon-comprehend-medical/): End-to-end architecture for clinical natural language processing (NLP) pipelines
 
 ---
 

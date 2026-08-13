@@ -6,7 +6,7 @@
 
 ## The Problem
 
-Every patient in your EHR has a problem list. In theory, it's the authoritative summary of active diagnoses and conditions: the single place a clinician can glance to understand what's going on with this patient. In practice, problem lists are one of the most poorly maintained data assets in healthcare.
+Every patient in your electronic health record (EHR) has a problem list. In theory, it's the authoritative summary of active diagnoses and conditions: the single place a clinician can glance to understand what's going on with this patient. In practice, problem lists are one of the most poorly maintained data assets in healthcare.
 
 Here's what actually happens. A patient with diabetes, hypertension, chronic kidney disease, depression, and a resolved pneumonia from last year shows up for an annual visit. The problem list in the EHR might say "HTN" (added by the PCP three years ago), "Type 2 DM" (added during a hospitalization), and nothing else. The CKD was diagnosed six months ago but the nephrologist documented it in a consult note and never updated the problem list. The depression is mentioned in every progress note but nobody added it formally. The pneumonia is still listed as active because nobody marked it resolved.
 
@@ -22,9 +22,9 @@ The information exists. It's in progress notes, discharge summaries, consult not
 
 ### What Is Problem List Extraction?
 
-Problem list extraction is a two-stage NLP task. First, you identify mentions of clinical problems (diagnoses, conditions, symptoms) in unstructured text. Second, you classify each mention by its assertion status: is this problem currently active, historically relevant but resolved, negated ("no evidence of diabetes"), related to family history, or hypothetical ("if she develops CKD")?
+Problem list extraction is a two-stage natural language processing (NLP) task. First, you identify mentions of clinical problems (diagnoses, conditions, symptoms) in unstructured text. Second, you classify each mention by its assertion status: is this problem currently active, historically relevant but resolved, negated ("no evidence of diabetes"), related to family history, or hypothetical ("if she develops CKD")?
 
-The first stage is a variant of Named Entity Recognition (NER) focused on clinical conditions. The second stage is assertion classification, sometimes called contextual analysis or negation/temporality detection. Both stages must work together: extracting "diabetes" from a note is useless without knowing whether the patient has diabetes, used to have diabetes, doesn't have diabetes, or has a family history of diabetes.
+The first stage is a variant of named entity recognition (NER) focused on clinical conditions. The second stage is assertion classification, sometimes called contextual analysis or negation/temporality detection. Both stages must work together: extracting "diabetes" from a note is useless without knowing whether the patient has diabetes, used to have diabetes, doesn't have diabetes, or has a family history of diabetes.
 
 ### Named Entity Recognition for Clinical Problems
 
@@ -85,7 +85,7 @@ Negation of negation: "Her previous denial of chest pain is inconsistent with th
 
 In practice, you'll get 90-95% of negation right with a good model. The remaining 5-10% is where clinical NLP earns its reputation for difficulty.
 
-### Terminology Normalization: SNOMED CT and ICD-10
+### Terminology Normalization: Systematized Nomenclature of Medicine (SNOMED) CT and International Classification of Diseases (ICD)-10
 
 Once you've extracted a problem and determined it's active, you need to map it to a standard code. Two coding systems dominate:
 
@@ -124,7 +124,7 @@ The normalization challenge mirrors what we saw with RxNorm in Recipe 8.4: the s
 - **Recipe 8.4 (Medication Extraction and Normalization):** Uses the same Comprehend Medical extraction pattern but targets medications instead of conditions. Shares section detection and assertion classification concepts.
 - **Recipe 8.8 (Clinical Assertion Classification):** Dives deep into assertion detection as a standalone capability. Use that recipe's patterns to build a more sophisticated assertion engine if the built-in traits are insufficient.
 - **Recipe 8.3 (ICD-10 Code Suggestion):** Focuses on coding workflow integration. Combine with this recipe to generate ICD-10 suggestions from problem list extractions for HCC coding.
-- **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Provides the ontology navigation needed for the specificity upgrade logic in reconciliation.
+- **Recipe 13.3 (ICD and Current Procedural Terminology (CPT) Hierarchy Navigation):** Provides the ontology navigation needed for the specificity upgrade logic in reconciliation.
 
 ---
 
