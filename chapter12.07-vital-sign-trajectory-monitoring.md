@@ -82,7 +82,7 @@ The challenge isn't building the model. It's deploying it in a way that clinical
 
 **Alert Logic.** Translates trajectory features into clinical decisions: suppress (normal variation), watch (mild concern, increase monitoring), alert (escalate to nursing), alarm (immediate clinical attention needed). The alert logic must be tunable per unit, per acuity level, and ideally per patient population. A cardiac step-down unit has very different alert thresholds than a post-surgical floor.
 
-**Clinical Display.** The trajectory information reaches the clinical team through some interface: a dashboard, an in-EHR notification, a pager alert, a change to the patient's displayed status on the unit board. The display must show what's happening, why the system flagged it, and what the recommended next step is. Pure numbers without context will be ignored.
+**Clinical Display.** The trajectory information reaches the clinical team through some interface: a dashboard, an electronic health record (EHR) notification, a pager alert, a change to the patient's displayed status on the unit board. The display must show what's happening, why the system flagged it, and what the recommended next step is. Pure numbers without context will be ignored.
 
 ---
 
