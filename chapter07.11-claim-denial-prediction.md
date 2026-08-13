@@ -13,7 +13,7 @@ Here's a number that should make every revenue cycle leader lose sleep: the aver
 
 The industry collectively writes off billions annually to denials that were preventable. Not "theoretically preventable in a perfect world" preventable. Preventable in the sense that a human reviewer with enough time and context would have caught the issue before submission. The problem isn't knowledge; it's volume. A coder reviewing 80 claims per day cannot cross-reference every diagnosis-procedure pair against every payer's specific coverage rules against every modifier requirement against the patient's specific benefit plan.
 
-What if you could predict, before a claim leaves your building, whether a payer is likely to deny it? Not as a vague "this claim seems risky" flag, but as a specific probability with an explanation: "This claim has a 73% chance of denial because Payer X denies CPT 27447 without prior authorization when the patient is under 60, and this patient is 54 with no PA on file."
+What if you could predict, before a claim leaves your building, whether a payer is likely to deny it? Not as a vague "this claim seems risky" flag, but as a specific probability with an explanation: "This claim has a 73% chance of denial because Payer X denies Current Procedural Terminology (CPT) 27447 without prior authorization when the patient is under 60, and this patient is 54 with no PA on file."
 
 That prediction lets you do two distinct things. First, you can fix the claim before submission (add the missing documentation, correct the modifier, obtain the PA). Second, you can prioritize your denial management team's workload: when denials do come back, work the ones with the highest dollar value and the highest likelihood of successful appeal first.
 
@@ -43,7 +43,7 @@ For tabular data with mixed feature types (categorical codes, numerical amounts,
 
 **Missing data tolerance.** Real claims data is messy. Not every claim has every field populated. Tree models handle missing values natively (they learn which direction to send missing values at each split). This is a practical advantage over logistic regression, which requires imputation decisions for every missing feature.
 
-**Baseline models for comparison.** Always start with logistic regression as a baseline. It's fast, interpretable, and gives you a floor to beat. If logistic regression with a few well-chosen features gets you to 0.78 AUC, you know the signal is there. Random forests are a natural second baseline: they give you feature importance for free and are harder to overfit than a single gradient-boosted model.
+**Baseline models for comparison.** Always start with logistic regression as a baseline. It's fast, interpretable, and gives you a floor to beat. If logistic regression with a few well-chosen features gets you to 0.78 area under the curve (AUC), you know the signal is there. Random forests are a natural second baseline: they give you feature importance for free and are harder to overfit than a single gradient-boosted model.
 
 In practice, most production deployments use a tiered approach: payer-specific models for your top 5-10 payers by volume (where you have enough training data per payer), with a global model as fallback for low-volume payers. Start with a global model for the MVP, but plan the transition to payer-specific models before production launch. The signal difference is significant: what matters for UnitedHealthcare is very different from what matters for Medicare.
 

@@ -534,7 +534,7 @@ This architecture gives you a working denial prediction pipeline, but a producti
 
 ## Variations and Extensions
 
-**Payer-specific model ensemble.** Instead of one model for all payers, train separate models for each major payer (your top 5-10 payers by volume). Each payer has different denial patterns, different rules, and different features that matter. A UnitedHealthcare model might weight PA status heavily while a Medicare model might weight diagnosis specificity. Ensemble the payer-specific models with a generic model for low-volume payers. This typically adds 3-5 points of AUC over a single global model.
+**Payer-specific model ensemble.** Instead of one model for all payers, train separate models for each major payer (your top 5-10 payers by volume). Each payer has different denial patterns, different rules, and different features that matter. A UnitedHealthcare model might weight PA status heavily while a Medicare model might weight diagnosis specificity. Ensemble the payer-specific models with a generic model for low-volume payers. This typically adds 3-5 points of area under the curve (AUC) over a single global model.
 
 **Denial reason prediction (multi-class).** Instead of binary (deny/pay), predict the specific denial reason code (CO-4, CO-16, CO-29, CO-197, etc.). This makes the explanation more actionable: "likely denial for medical necessity (CO-50)" tells the coder exactly what documentation to attach. Implementation uses multi-class classification (one-vs-rest or softmax output). Requires sufficient training examples for each denial reason code (aggregate rare codes into categories).
 
