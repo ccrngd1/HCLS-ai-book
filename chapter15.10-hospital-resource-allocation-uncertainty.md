@@ -24,7 +24,7 @@ This is where reinforcement learning gets interesting. Resource allocation under
 
 ### Why RL Fits This Problem
 
-Resource allocation under uncertainty has three properties that make it a natural RL problem:
+Resource allocation under uncertainty has three properties that make it a natural reinforcement learning (RL) problem:
 
 **Sequential decisions with delayed consequences.** Assigning a patient to a bed right now constrains what you can do in four hours. Calling in an extra nurse costs money but prevents a potential safety issue tonight. These temporal dependencies are exactly what RL handles well. Unlike greedy optimization (which picks the best action right now), RL learns policies that balance immediate costs against future flexibility.
 
@@ -87,7 +87,7 @@ The tricky part: some rewards are immediate (a staffing ratio violation is obser
 
 The hospital state transitions according to:
 - Patient arrivals (stochastic, modeled from historical data)
-- Patient discharges (semi-predictable, conditioned on diagnosis and LOS)
+- Patient discharges (semi-predictable, conditioned on diagnosis and length of stay (LOS))
 - Patient deterioration/improvement (stochastic, acuity-dependent)
 - Staff shift changes (deterministic schedule plus stochastic callouts)
 - OR case completions (semi-predictable from schedule and case type)
@@ -166,7 +166,7 @@ The architecture has four major components: data ingestion, simulation environme
 
 **Data ingestion** pulls real-time operational data from ADT (Admit-Discharge-Transfer) systems, nurse staffing platforms, OR scheduling systems, and equipment tracking. This feeds the state vector for inference and the historical dataset for simulator calibration.
 
-A critical detail: the state aggregator must timestamp-order incoming events and apply a grace period for late arrivals (ADT systems are notorious for delayed or out-of-order messages). Current state lives in a durable store (not Lambda memory), so it survives function recycling and can be audited. Each field in the state vector carries a freshness timestamp. The inference Lambda should refuse to recommend if critical fields are stale beyond a configured threshold. For example, if staffing data is older than 15 minutes, the system cannot safely reason about nurse-to-patient ratios and should defer to the human operator rather than recommend with incomplete information.
+A critical detail: the state aggregator must timestamp-order incoming events and apply a grace period for late arrivals, because admission, discharge, and transfer (ADT) systems are notorious for delayed or out-of-order messages. Current state lives in a durable store (not Lambda memory), so it survives function recycling and can be audited. Each field in the state vector carries a freshness timestamp. The inference Lambda should refuse to recommend if critical fields are stale beyond a configured threshold. For example, if staffing data is older than 15 minutes, the system cannot safely reason about nurse-to-patient ratios and should defer to the human operator rather than recommend with incomplete information.
 
 **The simulation environment** is a discrete-event simulation of hospital operations. Patients arrive according to learned distributions. They move through the hospital (ED to inpatient, OR to PACU to floor). Length of stay follows diagnosis-specific distributions. Staff shift according to schedules. The simulator must be fast enough to run thousands of episodes for training.
 

@@ -8,11 +8,11 @@
 
 ### Why These Services
 
-**Amazon SageMaker for RL training.** SageMaker provides managed RL training with support for custom environments, multiple RL algorithms (through RLlib integration), and distributed training across multiple instances. For a complex hospital simulation environment, you need GPU instances for the policy network and CPU instances for running multiple simulator copies in parallel. SageMaker handles this orchestration.
+**Amazon SageMaker for reinforcement learning (RL) training.** SageMaker provides managed RL training with support for custom environments, multiple RL algorithms (through RLlib integration), and distributed training across multiple instances. For a complex hospital simulation environment, you need GPU instances for the policy network and CPU instances for running multiple simulator copies in parallel. SageMaker handles this orchestration.
 
 **AWS Step Functions for the training pipeline.** The end-to-end flow (data extraction, simulator calibration, training, evaluation, model registration) is a multi-step workflow with conditional logic (only deploy if evaluation metrics exceed threshold). Step Functions orchestrates this cleanly with retry logic and error handling.
 
-**Amazon Kinesis Data Streams for real-time state ingestion.** Hospital operational data arrives continuously from multiple source systems. Kinesis ingests ADT events, staffing updates, and equipment status changes in real-time, feeding the state aggregator that builds the current hospital state vector.
+**Amazon Kinesis Data Streams for real-time state ingestion.** Hospital operational data arrives continuously from multiple source systems. Kinesis ingests admission, discharge, and transfer (ADT) events, staffing updates, and equipment status changes in real-time, feeding the state aggregator that builds the current hospital state vector.
 
 **Amazon DynamoDB for state storage and action logging.** Every state observation and every recommendation (accepted or rejected) gets logged. DynamoDB's single-digit-millisecond latency supports real-time inference while its durability supports audit requirements. The time-series nature of the data maps well to DynamoDB's sort key patterns.
 
@@ -114,7 +114,7 @@ This architecture shows the structural components, but a production deployment n
 - **Human factors integration.** The dashboard needs UX research with actual charge nurses and bed coordinators. Recommendation acceptance tracking, override reason collection, and interface iteration based on real usage patterns.
 - **Continuous monitoring.** Model drift detection (is the policy still performing well as hospital patterns change?), data quality alerting (are source systems sending stale data?), and automated fallback to human-only mode if confidence drops.
 - **Operational runbook.** What happens when the model disagrees with the charge nurse? When the system goes down during a surge? When a new unit opens or staffing models change? These operational procedures are not engineering problems but they determine whether the system actually gets used.
-- **IRB/compliance review.** The reward function encodes value judgments about patient prioritization. This requires ethical review, not just technical validation.
+- **Institutional review board (IRB) and compliance review.** The reward function encodes value judgments about patient prioritization. This requires ethical review, not just technical validation.
 
 ---
 
