@@ -12,7 +12,7 @@
 
 **A note on FDA-regulated model updates:** If your triage system is classified as a medical device, model updates (retraining, architecture changes, threshold adjustments) must go through a predetermined change control plan (PCCP) or require a new regulatory submission. SageMaker Model Registry supports an approval chain (Pending/Approved/Rejected statuses, audit trail of who approved what and when), but it does not replace the regulatory process. Your QMS must define which model changes are covered by the PCCP and which require a new 510(k). SageMaker Model Packages also support SHA-256 integrity verification of model artifacts, which satisfies the artifact traceability requirements in your QMS documentation.
 
-**Amazon S3 for DICOM storage and model artifacts.** Incoming DICOM files need a durable, encrypted landing zone before and after processing. S3 with SSE-KMS encryption provides this. Model artifacts (the trained weights) also live in S3 and are loaded by SageMaker at endpoint startup.
+**Amazon S3 for Digital Imaging and Communications in Medicine (DICOM) storage and model artifacts.** Incoming DICOM files need a durable, encrypted landing zone before and after processing. S3 with SSE-KMS encryption provides this. Model artifacts (the trained weights) also live in S3 and are loaded by SageMaker at endpoint startup.
 
 **AWS Lambda for orchestration and lightweight processing.** The workflow coordination (receive notification of new study, validate metadata, trigger preprocessing, call inference endpoint, format results, send worklist update) is a series of short-lived, stateless operations. Lambda handles this without persistent infrastructure. For DICOM metadata parsing and routing decisions, Lambda is the right weight class.
 
@@ -30,7 +30,7 @@ The system must never block a study from being read because the AI is down. If t
 
 **SQS buffer for resilience:** Place an SQS queue between the study-router and the inference-caller Lambda. This decouples ingestion from inference. If the endpoint is temporarily unavailable, messages accumulate in the queue and are retried automatically when the endpoint recovers. Configure a visibility timeout of 60 seconds and a maximum receive count of 3 before sending to the Dead Letter Queue.
 
-**Dead Letter Queue (DLQ):** Configure a DLQ on the study-router Lambda (and the inference-caller, if separate). Any study that fails triage processing after retries lands in the DLQ for investigation and reprocessing. Set a CloudWatch alarm on DLQ message count > 0. Studies that fail triage should be flagged in the worklist as "AI triage unavailable" rather than silently proceeding at normal priority, so radiologists know the AI did not evaluate that study.
+**Dead-letter queue (DLQ):** Configure a DLQ on the study-router Lambda (and the inference-caller, if separate). Any study that fails triage processing after retries lands in the DLQ for investigation and reprocessing. Set a CloudWatch alarm on DLQ message count > 0. Studies that fail triage should be flagged in the worklist as "AI triage unavailable" rather than silently proceeding at normal priority, so radiologists know the AI did not evaluate that study.
 
 **Zero-downtime model updates:** Use SageMaker blue/green deployment (via deployment guardrails) for model updates. Traffic shifts gradually from the old endpoint to the new one, with automatic rollback if error rates spike. This eliminates the "endpoint unavailable during deployment" window entirely.
 

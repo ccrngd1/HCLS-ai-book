@@ -42,7 +42,7 @@ Chest X-ray triage is one of the most studied problems in medical AI, and for go
 
 ### What Makes This Hard (Despite the Advantages)
 
-**Label noise in training data.** Those large public datasets? The labels were often extracted from radiology reports using NLP, not from direct image annotation. NLP-extracted labels have error rates of 5-15% depending on the finding. Training a model on noisy labels produces a model that inherits those errors. The research community has developed techniques to handle label noise (label smoothing, confident learning, multi-reader consensus), but it remains a fundamental challenge.
+**Label noise in training data.** Those large public datasets? The labels were often extracted from radiology reports using natural language processing (NLP), not from direct image annotation. NLP-extracted labels have error rates of 5-15% depending on the finding. Training a model on noisy labels produces a model that inherits those errors. The research community has developed techniques to handle label noise (label smoothing, confident learning, multi-reader consensus), but it remains a fundamental challenge.
 
 **Distribution shift.** A model trained on images from academic medical centers (high-quality digital radiography, standardized positioning) will underperform on images from community hospitals (older equipment, portable bedside studies, suboptimal positioning). Patient populations differ too: the prevalence of findings, the distribution of body habitus, the mix of pathologies. A model needs to work on your population, not just the training population.
 
@@ -62,7 +62,7 @@ At a conceptual level, the pipeline looks like this:
 
 **PACS/Modality:** The chest X-ray is acquired on the imaging equipment and sent to the Picture Archiving and Communication System (PACS) via DICOM protocol. This is the standard radiology workflow; the AI system taps into it without changing it.
 
-**DICOM Listener:** A service that receives or queries for new DICOM studies. It filters for chest X-rays specifically (using DICOM metadata: modality code "CR" or "DX", body part "CHEST", study description). Non-chest studies are ignored.
+**Digital Imaging and Communications in Medicine (DICOM) Listener:** A service that receives or queries for new DICOM studies. It filters for chest X-rays specifically (using DICOM metadata: modality code "CR" or "DX", body part "CHEST", study description). Non-chest studies are ignored.
 
 **Preprocessing:** DICOM images need preparation before inference. This includes: extracting pixel data from the DICOM wrapper, normalizing pixel intensity values, resizing to the model's expected input dimensions, and applying any windowing or contrast adjustments the model was trained with. Preprocessing must exactly match what was used during training, or accuracy degrades.
 
@@ -70,7 +70,7 @@ At a conceptual level, the pipeline looks like this:
 
 **Priority Score:** The probability scores are converted into a single triage priority. The simplest approach: if any critical finding exceeds its threshold, the study is flagged as urgent. More sophisticated approaches weight findings by clinical severity (tension pneumothorax > small effusion) and combine them into a composite urgency score.
 
-**Worklist Update:** The priority score is communicated back to the PACS or radiology information system (RIS) to reorder the worklist. This is the integration challenge. PACS systems vary widely in how (or whether) they support external priority updates. Options include HL7 messages, DICOM worklist modifications, or proprietary APIs.
+**Worklist Update:** The priority score is communicated back to the PACS or radiology information system (RIS) to reorder the worklist. This is the integration challenge. PACS systems vary widely in how (or whether) they support external priority updates. Options include Health Level Seven (HL7) messages, DICOM worklist modifications, or proprietary APIs.
 
 ---
 
