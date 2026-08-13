@@ -107,7 +107,7 @@ What it doesn't do, and this has to be stated clearly, is remove the need for ca
 
 **Consultant silo-ing.** A consulting service's perspective is treated as gospel or as irrelevant, rather than as one opinion in a thread. Mitigation: represent consults as attributed recommendations, not as unattributed facts ("Cardiology recommended X on day 4" rather than "X is recommended").
 
-**Negation errors.** Already covered. Hardest failure mode to catch automatically. Mitigation: negation-aware extraction (clinical NLP services with negation detection handle this reasonably); explicit preservation of negating language in the structured representation.
+**Negation errors.** Already covered. Hardest failure mode to catch automatically. Mitigation: negation-aware extraction (clinical natural language processing (NLP) services with negation detection handle this reasonably); explicit preservation of negating language in the structured representation.
 
 **Over-confident language.** The model smooths "possible pulmonary embolism, CT scheduled" into "pulmonary embolism diagnosed." Mitigation: preserve clinical uncertainty language in the extraction step and instruct the generator not to strengthen it.
 
@@ -155,7 +155,7 @@ Let's walk through the conceptual stages.
 
 **Attach provenance links.** Each section or each fact in the summary gets a link or reference back to the source notes it came from. Clinicians don't trust summaries they can't audit. Good provenance is the difference between "this is a starting point I can verify" and "this is a black box output I can't defend."
 
-**Deliver to requesting clinician.** Render and display the summary in the environment the clinician is working in: the EHR's context-sensitive sidebar, a handoff tool, a separate review UI. Delivery channel affects format (an EHR sidebar is tighter than a full-page review document).
+**Deliver to requesting clinician.** Render and display the summary in the environment the clinician is working in: the electronic health record (EHR)'s context-sensitive sidebar, a handoff tool, a separate review UI. Delivery channel affects format (an EHR sidebar is tighter than a full-page review document).
 
 **Log for audit.** Every summary generated, every input set, every version. Clinical summaries that influence care decisions are part of the legal record. You need to be able to reconstruct what a summary said at a specific moment.
 
@@ -164,7 +164,7 @@ Let's walk through the conceptual stages.
 ## Related Recipes
 
 - **Recipe 2.2 (Medical Terminology Simplification):** Where clinical summarization targets clinicians (and keeps clinical terminology), simplification targets patients. Same source material, different audience, different constraints.
-- **Recipe 2.3 (Clinical Documentation Improvement):** CDI looks at notes to suggest improvements for coding and billing. The structured extraction techniques used here are closely related to what CDI tools need, and the two pipelines can share extraction infrastructure.
+- **Recipe 2.3 (Clinical Documentation Improvement):** clinical documentation improvement (CDI) looks at notes to suggest improvements for coding and billing. The structured extraction techniques used here are closely related to what CDI tools need, and the two pipelines can share extraction infrastructure.
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Another grounded-generation use case. The aggregation and validation patterns transfer; the output format differs substantially.
 - **Recipe 2.5 (After-Visit Summary Generation):** Patient-facing version of the summarization problem. Shares the grounded-generation architecture, the validation discipline, and the must-include checklist concept; differs in audience, tone, and reading level.
 - **Recipe 2.8 (Ambient Clinical Documentation):** When ambient documentation is producing the notes that get summarized, the input quality is higher and more consistent, which improves downstream summarization quality.
