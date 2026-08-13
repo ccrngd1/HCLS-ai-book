@@ -1,6 +1,6 @@
 # Recipe 13.3 Architecture and Implementation: ICD/CPT Hierarchy Navigation
 
-*Companion to [Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode walkthrough. For the problem framing, conceptual approach, and honest assessment, start with the main recipe.*
+*The AWS companion for navigating ICD-10 and Current Procedural Terminology (CPT) hierarchies. See [Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode walkthrough. For the problem framing, conceptual approach, and honest assessment, start with the main recipe.*
 
 ---
 
@@ -10,7 +10,7 @@
 
 **Amazon S3 for source file staging.** CMS and AMA publish code files as downloadable archives. These land in S3 as the first step of the ingestion pipeline. S3 also serves as the staging area for Neptune bulk load operations, which expect source data in S3.
 
-**AWS Lambda for ETL orchestration.** The parsing and loading pipeline runs periodically (annually for ICD, quarterly for CPT) and is a short-lived batch job. Lambda functions parse the source files, transform them into Neptune bulk load format (CSV with node/edge headers), and trigger the load. For the annual ICD update, this is a few minutes of compute.
+**AWS Lambda for extract, transform, and load (ETL) orchestration.** The parsing and loading pipeline runs periodically (annually for ICD, quarterly for CPT) and is a short-lived batch job. Lambda functions parse the source files, transform them into Neptune bulk load format (CSV with node/edge headers), and trigger the load. For the annual ICD update, this is a few minutes of compute.
 
 **Amazon API Gateway + Lambda for the query API.** Downstream consumers need a REST interface, not direct graph database access. API Gateway provides the HTTP layer; Lambda functions translate REST requests into openCypher queries, execute them against Neptune, and return structured JSON. This also gives you throttling, authentication, and usage tracking for free.
 
