@@ -117,7 +117,7 @@ recipe to be worth carrying.
 
 ### The architecture callout (end of General Architecture Pattern)
 
-> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter{NN}.{RR}-architecture). The Python example is linked from there.
+> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the Architecture and Implementation companion (`chapter{NN}.{RR}-architecture`). The Python example is linked from there.
 
 ---
 
@@ -146,7 +146,7 @@ recipe to be worth carrying.
 
 **Code (Pseudocode Walkthrough).** Language-agnostic pseudocode with heavy inline comments. Each step gets: a business-level explanation, what goes wrong if you skip it, and a commented pseudocode block. After the walkthrough, include the callout linking to the Python companion:
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter{NN}.{RR}-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the Python Example (`chapter{NN}.{RR}-python-example`). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 **Expected Results.** Sample JSON output, performance benchmarks table, where it struggles.
 
