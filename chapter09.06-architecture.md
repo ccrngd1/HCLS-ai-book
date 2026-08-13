@@ -16,7 +16,7 @@
 
 **Amazon DynamoDB for screening results.** Each screening event produces a structured result (patient ID, date, eye, grade, confidence, referral decision, model version). DynamoDB provides fast point lookups by patient ID and supports the audit trail requirements. Time-to-live (TTL) is not appropriate here because results must be retained indefinitely for compliance.
 
-**Amazon SNS for notifications.** When a screening result requires urgent referral (proliferative DR or significant DME), the system needs to notify the ordering provider immediately. SNS provides reliable message delivery to multiple channels (email, SMS, webhook to EHR). Configure a dead-letter queue (SQS) on each SNS topic. For the urgent-referrals topic, add a CloudWatch alarm on the DLQ message count so failed notifications trigger an immediate operational alert.
+**Amazon SNS for notifications.** When a screening result requires urgent referral (proliferative DR or significant DME), the system needs to notify the ordering provider immediately. SNS provides reliable message delivery to multiple channels: email, SMS, and webhook to the electronic health record (EHR). Configure a dead-letter queue (DLQ), backed by SQS, on each SNS topic. For the urgent-referrals topic, add a CloudWatch alarm on the DLQ message count so failed notifications trigger an immediate operational alert.
 
 **AWS Step Functions for complex workflows.** The full screening pipeline has branching logic (quality pass/fail, gradable/ungradable, referral/no-referral) and may need human review for borderline cases. Step Functions provides visual workflow orchestration with built-in retry logic and error handling.
 
@@ -302,7 +302,7 @@ This architecture demonstrates the screening pipeline's shape, but a production 
 
 **Camera-specific calibration.** Different fundus camera models produce images with different color profiles, resolutions, and fields of view. A model validated on one camera brand may underperform on another. Multi-site deployments need per-camera calibration or a preprocessing normalization step that accounts for device-specific characteristics.
 
-**EHR bidirectional integration.** The architecture stores results in DynamoDB, but clinicians need results in the EHR where they make decisions. Production requires HL7 FHIR or HL7v2 messaging to push structured results into the patient's chart, update referral orders, and close care gap flags. This integration is often the longest implementation phase.
+**EHR bidirectional integration.** The architecture stores results in DynamoDB, but clinicians need results in the EHR where they make decisions. Production requires Health Level Seven (HL7) messaging, using either HL7v2 or Fast Healthcare Interoperability Resources (FHIR), to push structured results into the patient's chart, update referral orders, and close care gap flags. This integration is often the longest implementation phase.
 
 **Failover and availability.** A screening program with scheduled patients cannot tolerate downtime. The SageMaker endpoint needs multi-AZ deployment, the Step Functions workflow needs error handling with graceful degradation (queue images for later processing if the endpoint is unavailable), and the notification system needs delivery confirmation with escalation paths for failed alerts.
 
