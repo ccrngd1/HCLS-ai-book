@@ -8,9 +8,9 @@
 
 ### Why These Services
 
-**Amazon Bedrock for the LLM and the embeddings.** Same selection criteria as recipes 11.1 through 11.4. The benefits navigator specifically benefits from a model with strong tool-use, strong instruction-following for the citation-grounding discipline, and conversational warmth for billing-distress conversations. Claude Sonnet-class models or comparable frontier models for the orchestration; smaller models for intent classification. Bedrock provides HIPAA-eligible deployment under BAA.
+**Amazon Bedrock for the LLM and the embeddings.** Same selection criteria as recipes 11.1 through 11.4. The benefits navigator specifically benefits from a model with strong tool-use, strong instruction-following for the citation-grounding discipline, and conversational warmth for billing-distress conversations. Claude Sonnet-class models or comparable frontier models for the orchestration; smaller models for intent classification. Bedrock provides HIPAA-eligible deployment under a business associate agreement (BAA).
 
-**Amazon Bedrock Knowledge Bases for the plan-document corpus.** The plan documents (SBC, EOC, Schedule of Benefits, formulary index, member handbook) are the bot's grounded retrieval source. Knowledge Bases provides the managed RAG layer with vector indexing and filtered retrieval. The chunking is per-section with metadata (plan_id, plan_year, document_type, document_version, section_id, effective_date) to support plan-and-year-scoped retrieval.
+**Amazon Bedrock Knowledge Bases for the plan-document corpus.** The plan documents (SBC, EOC, Schedule of Benefits, formulary index, member handbook) are the bot's grounded retrieval source. Knowledge Bases provides the managed retrieval-augmented generation (RAG) layer with vector indexing and filtered retrieval. The chunking is per-section with metadata (plan_id, plan_year, document_type, document_version, section_id, effective_date) to support plan-and-year-scoped retrieval.
 
 **Amazon Bedrock Agents for tool orchestration.** Same selection rationale as the previous chapter 11 recipes. The bot's tools (plan_context_lookup, accumulator_lookup, subscriber_context_lookup, intent_classify, plan_document_retrieval, coverage_lookup, provider_network_lookup, claim_lookup, carc_rarc_translation, prior_auth_lookup, formulary_lookup, cost_estimate_compute, aeob_or_gfe_lookup, member_services_route) are defined as Agents action groups with OpenAPI schemas.
 
@@ -18,7 +18,7 @@
 
 **Amazon OpenSearch Service (or Bedrock-managed vector store) for the retrieval index.** The plan-document corpus is sized to multiple plans times multiple years times multiple document types and benefits from a search engine that supports both lexical (BM25) and dense-vector retrieval with metadata filters. OpenSearch Serverless is the typical default for managed vector workloads on AWS.
 
-**AWS HealthLake (optional) for FHIR-native claims and coverage data.** Where the payer or provider stores claims, eligibility, and coverage data in FHIR (ExplanationOfBenefit, Coverage, Claim, ClaimResponse, CoverageEligibilityRequest/Response resources), HealthLake provides a managed FHIR data store the tools query directly.
+**AWS HealthLake (optional) for Fast Healthcare Interoperability Resources (FHIR)-native claims and coverage data.** Where the payer or provider stores claims, eligibility, and coverage data in FHIR (ExplanationOfBenefit, Coverage, Claim, ClaimResponse, CoverageEligibilityRequest/Response resources), HealthLake provides a managed FHIR data store the tools query directly.
 
 **AWS Lambda for the chat handler and tool implementations.** Same pattern as the previous chapter 11 recipes. Tool Lambdas that integrate with eligibility, claims, accumulator, prior-auth, formulary, and provider-network systems run in VPC with controlled egress.
 
@@ -1241,11 +1241,11 @@ Bot:     You're welcome. The appeals team will reach
 - **Members who mix benefits and clinical questions.** "Does my plan cover this surgery, and do you think I should have it?" Mitigation: scope-violation screening replaces the clinical part with a redirect to the member's clinical team.
 - **Members in financial distress.** "I can't afford this bill, what do I do?" Mitigation: the financial-distress detection routes to financial-counseling resources, not just billing.
 - **Cross-language asset gaps.** Plan documents may be authoritative in English with translated versions for member service. Mitigation: validated translations with native-speaker review; per-language launch-gate equity monitoring.
-- **EOB versions that don't match the provider's bill.** The member's EOB and the provider's bill sometimes disagree in dollar amounts or in coverage categorization, often because of timing. Mitigation: explicit explanation of the timing gap; deferral to member services when reconciliation is needed.
+- **Explanation of benefits (EOB) versions that don't match the provider's bill.** The member's EOB and the provider's bill sometimes disagree in dollar amounts or in coverage categorization, often because of timing. Mitigation: explicit explanation of the timing gap; deferral to member services when reconciliation is needed.
 - **Stale provider-network data.** A provider who left the network last week may still appear in-network in the bot's snapshot. Mitigation: snapshot-freshness telemetry and a daily-refresh SLA, with as-of-date stamps in every response.
 - **Members asking about a future plan that hasn't been documented.** "What will my plan cover next year?" before the next year's documents are loaded. Mitigation: explicit refusal with a "documentation will be available on October 15" template.
 - **Plan-document gaps and ambiguities.** Real plan documents have gaps where the formal answer is "consult member services." Mitigation: the coverage-lookup tool returns "ambiguous, route to member services" rather than letting the LLM guess.
-- **Voice-channel ASR errors propagating into intent classification or service-code identification.** "Lipitor" misheard as "Lipator" propagates. Mitigation: explicit confirmation step plus voice-tuned ASR.
+- **Voice-channel automatic speech recognition (ASR) errors propagating into intent classification or service-code identification.** "Lipitor" misheard as "Lipator" propagates. Mitigation: explicit confirmation step plus voice-tuned ASR.
 - **Members with cognitive impairment or dementia.** Members who cannot reliably participate in a conversational session. Mitigation: representative-completion handling with appropriate authentication and explicit attribution.
 
 ---
@@ -1270,7 +1270,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Per-cohort monitoring with launch-gate discipline.** Resolution rate, handoff rate, citation-coverage rate, regulatory-disclosure-compliance rate, and member-satisfaction vary by line of business, plan type, language, channel, age cohort, and representative-completion status. Per-cohort dashboards reviewed by compliance and patient-experience. Promote per-cohort monitoring to an architectural primitive with explicit launch-gate discipline. Single-axis cohorts: per-language, per-channel, per-line-of-business, per-plan-type, per-age-cohort, per-representative-completion, per-primary-intent. Two-axis cohorts: per-language-by-channel, per-line-of-business-by-plan-type, per-plan-type-by-primary-intent. Three-axis cohort: per-language-by-channel-by-line-of-business. Per-cohort threshold metrics include resolution rate, handoff rate, citation-coverage rate, regulatory-disclosure-compliance rate, intent-classification accuracy, cost-estimate accuracy versus actual claim adjudication for resolved estimates, and member-satisfaction. The institution-wide average is informational only; each cohort must meet threshold before going live. Below-threshold cohorts are gated until root-cause analysis and remediation are complete.
 
-**Voice-channel deployment with accessibility considerations.** Members without smartphones, members with disabilities, members preferring voice over text. The voice channel uses the same bot logic with ASR/TTS layers and voice-specific design adjustments.
+**Voice-channel deployment with accessibility considerations.** Members without smartphones, members with disabilities, members preferring voice over text. The voice channel uses the same bot logic with ASR and text-to-speech (TTS) layers and voice-specific design adjustments.
 
 **Multi-language deployment with validated translations.** Plan documents in English are not the same as plan documents in Spanish, even when the Spanish document is professionally translated. Build multi-language deployment from day one as an architectural primitive, not a bolt-on. Per-language asset development includes validated plan-document translations (no ad-hoc machine translation; the institution uses validated translations with native-speaker review for plan-document chunks), validated regulatory-disclosure-phrasings translations, validated CARC/RARC translation library per supported language, per-language persona and tone calibration, and per-language asset versioning following the same plan-document-corpus-as-code discipline. Per-language launch-gate criteria follow the per-cohort monitoring framework: each language meets threshold independently before going live.
 
@@ -1302,7 +1302,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 ## Variations and Extensions
 
-**Provider-side front-desk benefits-verification bot.** The same architecture serves practice staff doing benefits verification, prior-auth checks, and patient-cost estimation before scheduled visits. The user is the front-desk staff (not the patient), the access controls reflect the practice's authorization to query the payer's data, and the integration extends to the practice's PM/EHR. Recipe 5.4 (insurance eligibility matching) covers the underlying data-linkage layer this variation builds on.
+**Provider-side front-desk benefits-verification bot.** The same architecture serves practice staff doing benefits verification, prior-auth checks, and patient-cost estimation before scheduled visits. The user is the front-desk staff (not the patient), the access controls reflect the practice's authorization to query the payer's data, and the integration extends to the practice's practice-management system and electronic health record (EHR). Recipe 5.4 (insurance eligibility matching) covers the underlying data-linkage layer this variation builds on.
 
 **Voice channel for IVR-style benefits navigation.** Members calling the payer's main number can be served by the same bot through Connect plus Lex, with ASR/TTS layered on the conversational core. Voice-specific design includes slower pacing, explicit member-ID confirmation, and tighter latency budgets.
 
@@ -1360,14 +1360,14 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "member experience," "benefits," "payer" for relevant content
 
 **External References (Standards and Frameworks):**
-- [HL7 FHIR Coverage Resource](https://www.hl7.org/fhir/coverage.html): the FHIR Coverage resource specification
+- [Health Level Seven (HL7) FHIR Coverage Resource](https://www.hl7.org/fhir/coverage.html): the FHIR Coverage resource specification
 - [HL7 FHIR ExplanationOfBenefit Resource](https://www.hl7.org/fhir/explanationofbenefit.html): the FHIR EOB resource specification
 - [HL7 FHIR Claim Resource](https://www.hl7.org/fhir/claim.html): the FHIR Claim resource specification
 - [HL7 Da Vinci Patient Cost Transparency](https://hl7.org/fhir/us/davinci-pct/): the Da Vinci PCT implementation guide for cost transparency
 - [CMS Interoperability and Patient Access Final Rule](https://www.cms.gov/regulations-and-guidance/guidance/interoperability/index): CMS rules requiring FHIR APIs for member access to claims, encounters, and clinical data
 - [No Surprises Act resources (CMS)](https://www.cms.gov/nosurprises): federal protections against surprise out-of-network bills
 - [Mental Health Parity and Addiction Equity Act (CMS)](https://www.cms.gov/marketplace/private-health-insurance/mental-health-parity-addiction-equity): parity requirements for behavioral-health benefits
-- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in conversation logs and benefits-decision records
+- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs protected health information (PHI) in conversation logs and benefits-decision records
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [WCAG 2.1 Accessibility Guidelines](https://www.w3.org/WAI/standards-guidelines/wcag/): accessibility standards relevant to chat-widget surfaces
 - [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/): security framework for LLM-backed applications
