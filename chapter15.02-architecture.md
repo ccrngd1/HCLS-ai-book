@@ -10,7 +10,7 @@
 
 **Amazon Personalize for the bandit model.** Personalize supports contextual bandit use cases natively through its "USER_PERSONALIZATION" recipe with exploration. It handles the exploration/exploitation tradeoff, model training, and real-time inference. You feed it interactions (message sends and engagement outcomes), and it learns per-user timing preferences. The key advantage: you don't need to implement LinUCB or Thompson Sampling yourself. Personalize handles the algorithm selection and hyperparameter tuning.
 
-**Amazon SQS for the message queue.** Messages awaiting timing decisions sit in SQS with visibility timeouts aligned to their delivery windows. SQS handles the durability, ordering, and retry semantics. Configure a dead letter queue (DLQ) on the main queue with a `maxReceiveCount` of 3. Messages that fail timing decision processing after 3 attempts land in the DLQ for manual investigation rather than cycling indefinitely. Set the visibility timeout to at least 60 seconds (enough time for the Lambda to fetch patient context, call Personalize, and confirm schedule creation before the message becomes visible again).
+**Amazon SQS for the message queue.** Messages awaiting timing decisions sit in SQS with visibility timeouts aligned to their delivery windows. SQS handles the durability, ordering, and retry semantics. Configure a dead-letter queue (DLQ) on the main queue with a `maxReceiveCount` of 3. Messages that fail timing decision processing after 3 attempts land in the DLQ for manual investigation rather than cycling indefinitely. Set the visibility timeout to at least 60 seconds (enough time for the Lambda to fetch patient context, call Personalize, and confirm schedule creation before the message becomes visible again).
 
 **Amazon DynamoDB for the patient context store.** Per-patient feature vectors need sub-millisecond reads at decision time. DynamoDB's key-value access pattern is ideal: look up patient ID, get their feature vector, pass it to the model. TTL on engagement history entries keeps the table from growing unbounded.
 
@@ -59,7 +59,7 @@ flowchart TD
 
 ### PHI Considerations for Behavioral Profiling
 
-Behavioral engagement profiles (when a patient opens messages, how often they interact, what times correlate with action) derived from health communications may constitute PHI under HIPAA. Even if the underlying data looks innocuous (timestamps and open/close events), the fact that it's linked to a patient and derived from health-related communications brings it within scope. Address this explicitly:
+Behavioral engagement profiles (when a patient opens messages, how often they interact, what times correlate with action) derived from health communications may constitute protected health information (PHI) under HIPAA. Even if the underlying data looks innocuous (timestamps and open/close events), the fact that it's linked to a patient and derived from health-related communications brings it within scope. Address this explicitly:
 
 **1. Scope DynamoDB read access.** The patient context table contains engagement behavioral profiles. Restrict `dynamodb:GetItem` and `dynamodb:Query` on this table to the timing engine Lambda execution role only. Use IAM resource conditions (`aws:SourceArn` or `aws:PrincipalOrgID`) to prevent other services or roles from reading patient engagement patterns. No analyst, dashboard, or reporting system should have direct read access to raw engagement profiles without a separate, audited path.
 
@@ -350,7 +350,7 @@ FUNCTION handle_engagement_timeout(message_id):
 
 **Cold start strategy.** The pseudocode shows a simple "use population defaults" fallback for new patients. In production, you'd want a more sophisticated cold start: cluster patients by demographics and use cluster-level timing preferences as priors. A new 65-year-old retiree should inherit the timing patterns of similar retirees, not the global average that's dominated by working-age adults.
 
-**A/B testing infrastructure.** Before deploying the RL model, you need a proper A/B test comparing it against your current static timing. This means holdout groups, statistical significance testing, and guardrail metrics (opt-out rate, complaint rate) that can trigger automatic rollback.
+**A/B testing infrastructure.** Before deploying the reinforcement learning (RL) model, you need a proper A/B test comparing it against your current static timing. This means holdout groups, statistical significance testing, and guardrail metrics (opt-out rate, complaint rate) that can trigger automatic rollback.
 
 **Model rollback and canary deployment.** New Personalize campaigns should receive a small traffic percentage (5-10%) initially, with automatic rollback if opt-out rate exceeds 2x baseline or engagement drops below 80% of the previous model's performance over a 48-hour window. A bad model can permanently damage patient communication channels through increased opt-outs before anyone notices.
 

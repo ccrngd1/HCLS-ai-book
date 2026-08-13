@@ -29,7 +29,7 @@ This is a textbook reinforcement learning problem. The agent observes context (p
 
 You might be thinking: "Can't I just build a classifier that predicts the best send time for each patient?" You could. But there's a subtle problem with the pure prediction approach.
 
-A classifier trained on historical data learns from the times you happened to send messages in the past. If you've always sent refill reminders at 9am, your model learns that 9am is when patients engage with refill reminders. It can't tell you whether 7pm would have been better because you never tried 7pm. This is the exploration problem, and it's exactly what RL is designed to solve.
+A classifier trained on historical data learns from the times you happened to send messages in the past. If you've always sent refill reminders at 9am, your model learns that 9am is when patients engage with refill reminders. It can't tell you whether 7pm would have been better because you never tried 7pm. This is the exploration problem, and it's exactly what reinforcement learning (RL) is designed to solve.
 
 RL balances exploitation (send at the time you currently believe is best) with exploration (occasionally try different times to discover if something better exists). Over time, it converges on the true optimal timing for each patient, not just the best time among the times you've historically tried.
 
@@ -148,7 +148,7 @@ Even though notification timing is low-stakes compared to clinical RL, there are
 
 **Opt-out respect.** If a patient has set "do not disturb" hours in their profile, those are absolute. The model doesn't get to override patient preferences, even if it thinks engagement would be higher.
 
-**Regulatory note:** Systems that optimize timing specifically to increase medication adherence may warrant review under FDA's Clinical Decision Support (CDS) guidance. The line between "informing" a patient and "driving" adherence behavior is genuinely ambiguous here. If your reward signal explicitly targets prescription refill completion, consult your regulatory team on CDS classification.
+**Regulatory note:** Systems that optimize timing specifically to increase medication adherence may warrant review under FDA's clinical decision support (CDS) guidance. The line between "informing" a patient and "driving" adherence behavior is genuinely ambiguous here. If your reward signal explicitly targets prescription refill completion, consult your regulatory team on CDS classification.
 
 ---
 
