@@ -163,6 +163,28 @@ def check_diff(recipe: str, terms: dict[str, str]) -> list[str]:
         if not body.strip():
             continue
 
+        # Excluding headings and link labels from prose stopped the checker DEMANDING an
+        # expansion there, but never stopped the agent adding one, and 5 leaked through on
+        # the next run. These three reject the act, not just the requirement.
+        if line[0] == "+":
+            if re.search(r"\([A-Z][A-Z0-9]{1,6}\)-\w", body):
+                problems.append(
+                    f"{current}: expansion inserted inside a compound token, which breaks it "
+                    f"(ICD-10, FHIR-based): {body.strip()[:80]}"
+                )
+                continue
+            if re.search(r"\[[^\]]*\([A-Z][A-Z0-9]{1,6}\)[^\]]*\]", body):
+                problems.append(
+                    f"{current}: expansion inserted inside a link or citation label, which "
+                    f"misquotes the source: {body.strip()[:80]}"
+                )
+                continue
+            if re.match(r"\s*#{1,6} ", body) and re.search(r"\([A-Z][A-Z0-9]{1,6}\)", body):
+                problems.append(
+                    f"{current}: expansion inserted into a heading: {body.strip()[:80]}"
+                )
+                continue
+
         # A table row must not be edited at all: tables are out of scope by policy.
         if body.lstrip().startswith("|"):
             problems.append(f"{current}: table row edited, which is out of scope: {body.strip()[:80]}")
