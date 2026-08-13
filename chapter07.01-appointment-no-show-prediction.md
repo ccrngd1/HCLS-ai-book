@@ -64,7 +64,7 @@ No-show prediction has several properties that make it unusually tractable:
 
 **Low-stakes intervention.** If your model says "high risk of no-show" and you send an extra reminder, the worst case is a mildly annoyed patient who was going to show up anyway. Compare that to a model that recommends a medication or a surgical intervention. The cost of a false positive here is a text message.
 
-**No regulatory burden.** This isn't a clinical decision support tool. It's an operational optimization. You don't need FDA clearance, you don't need clinical validation studies, and you don't need physician sign-off on the model's recommendations. (You do still need to handle PHI appropriately, but that's table stakes in healthcare.)
+**No regulatory burden.** This isn't a clinical decision support tool. It's an operational optimization. You don't need FDA clearance, you don't need clinical validation studies, and you don't need physician sign-off on the model's recommendations. (You do still need to handle protected health information (PHI) appropriately, but that's table stakes in healthcare.)
 
 ### The General Architecture Pattern
 
@@ -76,7 +76,7 @@ The pipeline has four logical stages:
 
 **Feature Store.** A pre-computed repository of patient and appointment features, updated on a schedule. Raw data from your scheduling system, EHR, and demographics tables gets transformed into model-ready features: no-show rate over the last N appointments, days since last visit, distance to clinic, appointment lead time, and so on. Computing these on the fly at prediction time is possible but slow and fragile. A feature store decouples feature engineering from model serving.
 
-**Model Training.** A batch process that trains (or retrains) the classification model on historical appointment data. Runs on a schedule (weekly or monthly) or when triggered by performance degradation. Outputs a serialized model artifact and a performance report (AUC, calibration curve, feature importance).
+**Model Training.** A batch process that trains (or retrains) the classification model on historical appointment data. Runs on a schedule (weekly or monthly) or when triggered by performance degradation. Outputs a serialized model artifact and a performance report: area under the curve (AUC), calibration curve, feature importance.
 
 **Scoring Service.** An inference endpoint that accepts an appointment's features and returns a no-show probability. This runs in near-real-time: when a new appointment is booked, or on a nightly batch for the next day's schedule. The output is a probability (0.0 to 1.0) and optionally the top contributing features (for explainability).
 
