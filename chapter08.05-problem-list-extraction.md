@@ -85,7 +85,7 @@ Negation of negation: "Her previous denial of chest pain is inconsistent with th
 
 In practice, you'll get 90-95% of negation right with a good model. The remaining 5-10% is where clinical NLP earns its reputation for difficulty.
 
-### Terminology Normalization: Systematized Nomenclature of Medicine (SNOMED) CT and International Classification of Diseases (ICD)-10
+### Terminology Normalization: SNOMED CT and ICD-10
 
 Once you've extracted a problem and determined it's active, you need to map it to a standard code. Two coding systems dominate:
 

@@ -16,7 +16,7 @@ This scenario is the norm in clinical research. The information you need to iden
 
 The cost of doing this manually is staggering. Chart review (a human reading through every potentially qualifying patient's records) runs about 15-30 minutes per patient. For a study requiring 500 subjects from a pool of 50,000 candidates, that's potentially months of research coordinator time just to identify who qualifies. And the result is still inconsistent: different reviewers apply criteria differently, inter-rater reliability is often below 0.8 kappa, and the process is completely non-reproducible.
 
-Phenotype extraction is the natural language processing (NLP)-powered answer to this problem. It's the automated identification of patients who meet a complex clinical definition (a "phenotype") by analyzing both structured data and unstructured text in the EHR. When it works, it takes a process that took months of chart review and compresses it to hours of compute time, with complete reproducibility and explicit documentation of how every patient was classified.
+Phenotype extraction is the NLP-powered answer to this problem. It's the automated identification of patients who meet a complex clinical definition (a "phenotype") by analyzing both structured data and unstructured text in the EHR. When it works, it takes a process that took months of chart review and compresses it to hours of compute time, with complete reproducibility and explicit documentation of how every patient was classified.
 
 When it doesn't work (and this is the honest part), it fails silently. A missed negation means a patient who was ruled out for a condition gets classified as having it. An ambiguous temporal reference means a patient with a resolved historical condition gets flagged as currently meeting criteria. The research built on a contaminated cohort proceeds to publication, and nobody discovers the problem until a replication attempt fails.
 
@@ -28,7 +28,7 @@ The stakes are real. The difficulty is real. And the need is enormous: observati
 
 ### What Is Phenotype Extraction?
 
-A clinical phenotype, in the research computing sense, is a computable definition of a patient characteristic. It's not just "does this patient have diabetes?" but a precise specification: "Type 2 diabetes, defined as two or more outpatient encounters with International Classification of Diseases (ICD)-10 codes E11.x, OR one inpatient encounter with E11.x, OR HbA1c >= 6.5% on two measurements at least 90 days apart, OR documented treatment with metformin for glucose management (not PCOS), EXCLUDING patients with cystic fibrosis-related diabetes or steroid-induced hyperglycemia."
+A clinical phenotype, in the research computing sense, is a computable definition of a patient characteristic. It's not just "does this patient have diabetes?" but a precise specification: "Type 2 diabetes, defined as two or more outpatient encounters with ICD-10 codes E11.x, OR one inpatient encounter with E11.x, OR HbA1c >= 6.5% on two measurements at least 90 days apart, OR documented treatment with metformin for glucose management (not PCOS), EXCLUDING patients with cystic fibrosis-related diabetes or steroid-induced hyperglycemia."
 
 That definition mixes structured data (codes, labs) with unstructured text requirements (confirming the metformin indication, excluding specific etiologies). The structured part is a database query. The unstructured part is an NLP problem.
 

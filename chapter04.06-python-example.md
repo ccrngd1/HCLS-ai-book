@@ -935,7 +935,7 @@ def _assess_source_completeness(patient_id: str, measure: dict,
 
     return "complete"
 
-# Demo state populated by the runner at the bottom of this file. The
+# Demo state populated by the runner.
 # production functions above replace these with real data feeds.
 _DEMO_QUALIFYING_EVENTS: dict = {}
 _DEMO_EXCLUSION_FLAGS: dict = {}

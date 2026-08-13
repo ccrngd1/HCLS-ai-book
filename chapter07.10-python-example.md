@@ -448,7 +448,7 @@ def predict_hazard_trajectory(features: dict, horizon_days: int = FORECAST_HORIZ
 #         EndpointName="intervention-timing-model-v1",
 #         ContentType="application/json",
 #         Body=json.dumps({"features": features}),
-#     )
+# )
 #     result = json.loads(response["Body"].read())
 #     return result["hazard_trajectory"]
 ```

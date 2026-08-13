@@ -1,4 +1,4 @@
-# Recipe 5.5 Architecture and Implementation: Cross-Facility Patient Matching in a health information exchange (HIE)
+# Recipe 5.5 Architecture and Implementation: Cross-Facility Patient Matching (HIE)
 
 *Companion to [Recipe 5.5: Cross-Facility Patient Matching (HIE)](chapter05.05-cross-facility-patient-matching). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 

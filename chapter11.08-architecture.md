@@ -18,7 +18,7 @@
 
 **Amazon OpenSearch Service (or Bedrock-managed vector store) for the retrieval indices.** The therapeutic-content corpus, the psychoeducation library, the safety-plan content, and the longitudinal conversation history all benefit from vector retrieval.
 
-**AWS HealthLake for Fast Healthcare Interoperability Resources (FHIR)-native chart-context data (where consent permits).** Where the institution stores the patient's problem list, medication list, allergies, encounter history, and CarePlan resources (potentially including safety plans) in FHIR, HealthLake provides a managed FHIR data store the bot queries. Mental-health data has specific consent considerations; the bot accesses chart context only with documented patient consent.
+**AWS HealthLake for FHIR-native chart-context data (where consent permits).** Where the institution stores the patient's problem list, medication list, allergies, encounter history, and CarePlan resources (potentially including safety plans) in FHIR, HealthLake provides a managed FHIR data store the bot queries. Mental-health data has specific consent considerations; the bot accesses chart context only with documented patient consent.
 
 **Amazon DynamoDB for state and longitudinal store.** Multiple tables supporting the bot's longitudinal pattern: `patient-longitudinal-store` (per-patient stable state including stated preferences, safety-plan reference, consent posture), `conversation-state` (per-conversation transient state), `conversation-metadata` (per-conversation turn-by-turn data), `tool-call-ledger` (audited tool invocations), `support-decision-record-journal` (durable record of support events with citations), `crisis-event-record` (crisis-screening events with structured payloads), `warm-handoff-queue` (handoffs pending licensed-clinician pickup), `symptom-tracking-store` (longitudinal mood and symptom data), `sensitive-disclosure-store` (separately-governed sensitive disclosures with restricted access), and `consent-record` (consent posture per patient with audit trail).
 
@@ -1730,7 +1730,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [American Psychiatric Association Practice Guidelines](https://www.psychiatry.org/psychiatrists/practice/clinical-practice-guidelines): mental-health management guidelines
 - [American Psychological Association Clinical Practice Guidelines](https://www.apa.org/practice/guidelines): psychotherapy and mental-health practice guidelines
 - [SAMHSA Treatment Improvement Protocols](https://store.samhsa.gov/): evidence-based protocols for substance-use and mental-health treatment
-- [Health Level Seven (HL7) FHIR CarePlan Resource](https://www.hl7.org/fhir/careplan.html): FHIR specification for the CarePlan resource (potentially including safety plans)
+- [HL7 FHIR CarePlan Resource](https://www.hl7.org/fhir/careplan.html): FHIR specification for the CarePlan resource (potentially including safety plans)
 - [HL7 FHIR Goal Resource](https://www.hl7.org/fhir/goal.html): FHIR specification for the Goal resource
 - [HL7 FHIR Observation Resource](https://www.hl7.org/fhir/observation.html): FHIR specification for the Observation resource (relevant for symptom-tracking data)
 - [HL7 FHIR Communication Resource](https://www.hl7.org/fhir/communication.html): FHIR resource potentially relevant for bot-conversation logging

@@ -399,7 +399,7 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <p><strong>State mapping:</strong> Determine which pathway node(s) the patient currently occupies. A patient can be at multiple nodes simultaneously (parallel branches). This requires matching the patient's documented actions and results against node completion criteria.</p>
 </li>
 <li>
-<p><strong>Condition evaluation:</strong> For each outgoing edge from active nodes, evaluate whether the transition conditions are met given current patient data. This means pulling real-time data from the EHR: latest labs, vitals, documented assessments, active orders.</p>
+<p><strong>Condition evaluation:</strong> For each outgoing edge from active nodes, evaluate whether the transition conditions are met given current patient data. This means pulling real-time data from the electronic health record (EHR): latest labs, vitals, documented assessments, active orders.</p>
 </li>
 <li>
 <p><strong>Traversal:</strong> Follow satisfied edges to identify recommended next actions. Handle parallel paths (multiple next steps available simultaneously) and exclusive branches (only one path should be taken).</p>
@@ -413,7 +413,7 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <p>This means edges can have temporal constraints: minimum elapsed time before a transition is valid, maximum elapsed time before a transition becomes overdue (triggering an alert), and absolute time windows (e.g., &quot;blood cultures before first antibiotic dose&quot; is a sequencing constraint, not a clock constraint).</p>
 <p>Temporal reasoning in graphs is harder than it sounds. You need to track when each node was entered, compute elapsed time relative to pathway entry or node entry, and handle clock resets (patient transferred to ICU resets certain timers). Most graph databases don't have native temporal operators, so you'll implement this in your traversal logic layer.</p>
 <h3 id="ontology-integration">Ontology Integration</h3>
-<p>Pathways don't exist in isolation. They reference clinical concepts: diagnoses (ICD-10), procedures (CPT), medications (RxNorm), lab tests (LOINC). Your pathway graph needs to connect to these standard ontologies so that conditions like &quot;if creatinine &gt; 2.0&quot; can be evaluated against actual LOINC-coded lab results from the EHR.</p>
+<p>Pathways don't exist in isolation. They reference clinical concepts: International Classification of Diseases (ICD) codes for diagnoses, Current Procedural Terminology (CPT) for procedures, RxNorm for medications, and Logical Observation Identifiers Names and Codes (LOINC) for lab tests. Your pathway graph needs to connect to these standard ontologies so that conditions like &quot;if creatinine &gt; 2.0&quot; can be evaluated against actual LOINC-coded lab results from the EHR.</p>
 <p>This is where knowledge graphs shine over simpler representations. The pathway graph can link to a drug ontology for allergy cross-referencing, a diagnosis hierarchy for pathway applicability rules, and a lab ontology for result interpretation. These connections enable reasoning that would be impossible with a flat pathway document: &quot;this patient is on the pneumonia pathway, but they also have CKD stage 4, which means the standard antibiotic dosing needs renal adjustment.&quot;</p>
 <h3 id="the-general-architecture-pattern">The General Architecture Pattern</h3>
 <pre class="code code-plain"><code>[Pathway Authoring] → [Graph Store] ← [Patient State Engine]

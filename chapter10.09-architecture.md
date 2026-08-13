@@ -20,7 +20,7 @@
 
 **AWS Lambda and AWS Step Functions for pipeline orchestration.** Per-stage Lambdas handle session setup, audio ingest, per-task feature extraction, per-instrument scoring, longitudinal comparison, SLP review handoff, documentation generation, and electronic health record (EHR)/SIS write-back. Step Functions coordinates the stages with durable state. Per-task scoring fans out across stimulus items and fans back in for per-instrument aggregation; Step Functions Map state handles this naturally.
 
-**AWS HealthLake for Fast Healthcare Interoperability Resources (FHIR)-based assessment storage.** Speech-therapy assessment results are Observation resources in FHIR terms (with per-instrument scores), DocumentReference resources for the assessment-report PDFs, and Goal resources for therapy goals. HealthLake stores the FHIR resources. For non-FHIR EHR integrations and school SIS integrations, the institutional integration layer translates the FHIR representation into the target system's format. 
+**AWS HealthLake for FHIR-based assessment storage.** Speech-therapy assessment results are Observation resources in FHIR terms (with per-instrument scores), DocumentReference resources for the assessment-report PDFs, and Goal resources for therapy goals. HealthLake stores the FHIR resources. For non-FHIR EHR integrations and school SIS integrations, the institutional integration layer translates the FHIR representation into the target system's format. 
 
 **Amazon DynamoDB for per-patient session state and longitudinal feature history.** The per-patient longitudinal store holds session-by-session feature vectors, per-goal progress trajectories, per-target-sound mastery curves, and per-instrument score histories. DynamoDB's partition-key-by-patient and sort-key-by-session-timestamp model supports the trajectory queries efficiently.
 
@@ -36,7 +36,7 @@
 
 **Amazon CloudWatch for operational metrics and alarms.** Per-stage latency, per-population scoring distributions, SLP-override rates per item type, indeterminate-result rates, audio-quality scores, post-deployment accuracy proxies. Alarms on per-population drift thresholds, on SLP-override-rate spikes, on indeterminate-result-rate spikes.
 
-**AWS CloudTrail for API-level audit.** All access to protected health information (PHI)-bearing and biometric-bearing resources logged. SageMaker invocations logged. KMS key uses logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
+**AWS CloudTrail for API-level audit.** All access to PHI-bearing and biometric-bearing resources logged. SageMaker invocations logged. KMS key uses logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
 
 **Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon QuickSight (optional) for analytics and surveillance.** Audit and surveillance data streams to S3 via Firehose. Glue catalogs the data. Athena provides SQL access for the operational and post-market surveillance analytics. QuickSight renders the SLP-facing caseload dashboards and the practice-leadership outcomes dashboards.
 
@@ -1311,7 +1311,7 @@ FUNCTION audit_and_surveillance(session_id):
 
 - **SLP workflow disruption.** A system that adds friction to the SLP's workflow gets used reluctantly or not at all. Mitigations: SLP-led workflow design, iterative deployment with SLP feedback, integration with the SLP's existing documentation system rather than as a parallel system, productivity measurement that demonstrates time savings rather than time additions.
 
-- **Reimbursement and outcome-tracking integration.** Speech therapy reimbursement is often tied to outcomes documentation that the SLP must produce regardless of the AI tool. Mitigations: outcomes-aligned documentation generation, Current Procedural Terminology (CPT)-code-specific documentation requirements built into the report templates, IEP-aligned formats for school deployments, value-based-contract outcome-measure support.
+- **Reimbursement and outcome-tracking integration.** Speech therapy reimbursement is often tied to outcomes documentation that the SLP must produce regardless of the AI tool. Mitigations: outcomes-aligned documentation generation, CPT-code-specific documentation requirements built into the report templates, IEP-aligned formats for school deployments, value-based-contract outcome-measure support.
 
 - **Pediatric data privacy and the long retention horizon.** A six-year-old being assessed today has data that may need to be retained until age 25 or longer depending on state pediatric-records law. The biometric voice samples are part of that long-horizon data. Mitigations: explicit pediatric-records-retention policies, audit-archive infrastructure that supports the long retention floor, explicit deletion-on-request workflow that respects pediatric protections including parent-on-behalf-of-minor and patient-once-of-age requests.
 
@@ -1633,11 +1633,11 @@ Each upstream service has a defined failover policy. The SLP must be able to con
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for clinical-decision-support reference architectures
 
 **External References (Standards, Frameworks, and Regulatory):**
-- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model for assessment-result EHR integration
+- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model for assessment-result EHR integration
 - [FHIR Observation Resource](https://www.hl7.org/fhir/observation.html): canonical FHIR resource for assessment-score write-back
 - [FHIR Goal Resource](https://www.hl7.org/fhir/goal.html): canonical FHIR resource for therapy-goal representation
 - [FHIR CarePlan Resource](https://www.hl7.org/fhir/careplan.html): canonical FHIR resource for therapy-plan representation
-- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): standard codes for clinical observations, including some speech-and-language assessment items
+- [LOINC](https://loinc.org/): standard codes for clinical observations, including some speech-and-language assessment items
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in speech-therapy workflows
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [FERPA](https://www2.ed.gov/policy/gen/guid/fpco/ferpa/index.html): governs educational records, applicable for school-based SLP work

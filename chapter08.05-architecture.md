@@ -75,7 +75,7 @@ flowchart LR
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): End-to-end pipeline extracting clinical entities from notes and mapping to Fast Healthcare Interoperability Resources (FHIR)
-> - [`amazon-comprehend-medical-ICD10-mapping`](https://github.com/aws-samples/amazon-comprehend-medical-ICD10-mapping): International Classification of Diseases (ICD)-10 inference from clinical text using Comprehend Medical
+> - [`amazon-comprehend-medical-ICD10-mapping`](https://github.com/aws-samples/amazon-comprehend-medical-ICD10-mapping): ICD-10 inference from clinical text using Comprehend Medical
 
 #### Walkthrough
 

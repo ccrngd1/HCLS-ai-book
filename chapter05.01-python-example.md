@@ -173,7 +173,7 @@ SUFFIX_CANONICAL = {
 # --- Fellegi-Sunter Probabilities ---
 #
 # m_probabilities[field][comparison_level] = P(observe this comparison
-#   level | the two records are about the same person).
+#   level | the two records are about different people).
 # u_probabilities[field][comparison_level] = P(observe this comparison
 #   level | the two records are about different people).
 #

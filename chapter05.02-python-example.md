@@ -115,7 +115,7 @@ assert EVENTS_BUS_NAME != "", "EVENTS_BUS_NAME must be set before deploying."
 assert CLOUDWATCH_NAMESPACE != "", "CLOUDWATCH_NAMESPACE must be set before deploying."
 
 # --- NPI Registry API ---
-# The public NPI Registry API is published by CMS at this base URL.
+# The public NPI Registry API supports `limit` up to 200 per query.
 # It is unauthenticated, free to use, and rate-limited. For batch
 # workloads, do not iterate API calls; use the monthly Downloadable
 # File instead. 

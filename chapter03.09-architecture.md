@@ -44,7 +44,7 @@
 
 **Amazon CloudWatch and AWS X-Ray.** Pipeline health, ingest latency (especially for the EHR audit log feed, where latency directly affects detection speed), and end-to-end traces. Latency budgets matter: the time from "user takes the action" to "case appears in the privacy-office queue" is part of the operational metric.
 
-**AWS CloudTrail.** Audit logging on every protected health information (PHI)-bearing store and every API call against the case management system. The monitoring system's own access logs feed back into the pipeline as a self-monitoring input.
+**AWS CloudTrail.** Audit logging on every PHI-bearing store and every API call against the case management system. The monitoring system's own access logs feed back into the pipeline as a self-monitoring input.
 
 **AWS KMS.** Customer-managed keys on every PHI-bearing store: Kinesis, DynamoDB, Neptune, Timestream, S3, OpenSearch, SageMaker volumes and Feature Store. Key rotation per organizational requirements.
 
@@ -1046,7 +1046,7 @@ The pseudocode shows the shape. A production access-monitoring program closes se
 **Regulatory and Compliance References:**
 - [HIPAA Security Rule (45 CFR Part 164, Subpart C)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C): the regulatory backbone for audit controls.
 - [HIPAA Privacy Rule (45 CFR Part 164, Subpart E)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E): minimum-necessary, accounting of disclosures, and other relevant provisions.
-- [optical character recognition (OCR) Resolution Agreements](https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/agreements/index.html): published settlements; several involve inadequate audit controls.
+- [OCR Resolution Agreements](https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/agreements/index.html): published settlements; several involve inadequate audit controls.
 - [HHS OCR HIPAA Audit Program](https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/audit/index.html): the OCR audit framework and protocol.
 - [HHS OCR Cybersecurity Newsletter](https://www.hhs.gov/hipaa/for-professionals/security/guidance/cybersecurity-newsletter-archive/index.html): recurring guidance on monitoring, audit controls, and emerging threats.
 - [NIST SP 800-66 Rev. 2: Implementing the HIPAA Security Rule](https://csrc.nist.gov/pubs/sp/800/66/r2/final): NIST guidance on HIPAA Security Rule implementation including audit controls.

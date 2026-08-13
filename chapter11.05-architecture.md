@@ -18,7 +18,7 @@
 
 **Amazon OpenSearch Service (or Bedrock-managed vector store) for the retrieval index.** The plan-document corpus is sized to multiple plans times multiple years times multiple document types and benefits from a search engine that supports both lexical (BM25) and dense-vector retrieval with metadata filters. OpenSearch Serverless is the typical default for managed vector workloads on AWS.
 
-**AWS HealthLake (optional) for Fast Healthcare Interoperability Resources (FHIR)-native claims and coverage data.** Where the payer or provider stores claims, eligibility, and coverage data in FHIR (ExplanationOfBenefit, Coverage, Claim, ClaimResponse, CoverageEligibilityRequest/Response resources), HealthLake provides a managed FHIR data store the tools query directly.
+**AWS HealthLake (optional) for FHIR-native claims and coverage data.** Where the payer or provider stores claims, eligibility, and coverage data in FHIR (ExplanationOfBenefit, Coverage, Claim, ClaimResponse, CoverageEligibilityRequest/Response resources), HealthLake provides a managed FHIR data store the tools query directly.
 
 **AWS Lambda for the chat handler and tool implementations.** Same pattern as the previous chapter 11 recipes. Tool Lambdas that integrate with eligibility, claims, accumulator, prior-auth, formulary, and provider-network systems run in VPC with controlled egress.
 
@@ -1360,7 +1360,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "member experience," "benefits," "payer" for relevant content
 
 **External References (Standards and Frameworks):**
-- [Health Level Seven (HL7) FHIR Coverage Resource](https://www.hl7.org/fhir/coverage.html): the FHIR Coverage resource specification
+- [HL7 FHIR Coverage Resource](https://www.hl7.org/fhir/coverage.html): the FHIR Coverage resource specification
 - [HL7 FHIR ExplanationOfBenefit Resource](https://www.hl7.org/fhir/explanationofbenefit.html): the FHIR EOB resource specification
 - [HL7 FHIR Claim Resource](https://www.hl7.org/fhir/claim.html): the FHIR Claim resource specification
 - [HL7 Da Vinci Patient Cost Transparency](https://hl7.org/fhir/us/davinci-pct/): the Da Vinci PCT implementation guide for cost transparency

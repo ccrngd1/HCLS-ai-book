@@ -868,7 +868,7 @@ Real-time matching at registration has a sub-second latency budget. The architec
 - **SQS-queued asynchronous-follow-up Lambda** for borderline pairs that did not resolve within the latency budget. The registration desk proceeds; the follow-up Lambda scores and routes asynchronously.
 - **OpenSearch failover:** when OpenSearch is unavailable, the candidate-generator falls back to ElastiCache alone with a logged metric `opensearch_fallback_invoked`. If both are unavailable, the record routes to a "queued for matching" DLQ that the next batch-matching cycle processes. A CloudWatch alarm fires on chronic fallback so degraded matching freshness does not go unnoticed.
 
-### Operational Architecture: Cross-System Reconciliation
+### Operational Architecture: Cross-Recipe Orchestration Contract
 
 Downstream systems emit reconciliation events back to the matcher:
 

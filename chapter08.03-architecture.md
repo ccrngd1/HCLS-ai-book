@@ -1,4 +1,4 @@
-# Recipe 8.3 Architecture and Implementation: International Classification of Diseases (ICD)-10 Code Suggestion
+# Recipe 8.3 Architecture and Implementation: ICD-10 Code Suggestion
 
 *Companion to [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
@@ -539,7 +539,7 @@ This architecture gets you working suggestions. It does not get you production-g
 
 **AWS Solutions and Blogs:**
 - [Map Clinical Notes to the OMOP Common Data Model and Healthcare Ontologies Using Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/map-clinical-notes-to-the-omop-common-data-model-and-healthcare-ontologies-using-amazon-comprehend-medical/): Architecture patterns for mapping clinical text to standardized ontologies, including ICD-10 inference
-- [Clinical Text Mining Using the Amazon Comprehend Medical Systematized Nomenclature of Medicine (SNOMED) CT API](https://aws.amazon.com/blogs/machine-learning/clinical-text-mining-using-the-amazon-comprehend-medical-new-snomed-ct-api): Deep dive on clinical entity extraction and medical ontology mapping at scale
+- [Clinical Text Mining Using the Amazon Comprehend Medical SNOMED CT API](https://aws.amazon.com/blogs/machine-learning/clinical-text-mining-using-the-amazon-comprehend-medical-new-snomed-ct-api): Deep dive on clinical entity extraction and medical ontology mapping at scale
 
 **External References:**
 - [CMS ICD-10-CM Official Guidelines](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official coding guidelines and annual code updates

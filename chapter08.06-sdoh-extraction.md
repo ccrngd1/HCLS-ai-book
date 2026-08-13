@@ -1,4 +1,4 @@
-# Recipe 8.6: Social determinants of health (SDOH) Extraction
+# Recipe 8.6: Social Determinants of Health (SDOH) Extraction
 
 **Effort:** 4 of 5
 
@@ -20,7 +20,7 @@ Let's talk about why this is harder than it sounds.
 
 ## The Technology: Extracting Social Context from Clinical Language
 
-### What makes SDOH different from medical natural language processing (NLP)
+### What Makes SDOH Different from Medical NLP
 
 Most clinical NLP focuses on extracting medical concepts: diagnoses, medications, procedures, lab values. These have well-defined terminologies like ICD-10, RxNorm, Current Procedural Terminology (CPT), and Logical Observation Identifiers Names and Codes (LOINC), relatively consistent phrasing, and decades of annotated training data. "The patient has type 2 diabetes" is easy to detect. The concept is explicit, the terminology is standardized, and the assertion is clear.
 

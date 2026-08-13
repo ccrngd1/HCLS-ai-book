@@ -1,4 +1,4 @@
-# Recipe 8.3: International Classification of Diseases (ICD)-10 Code Suggestion
+# Recipe 8.3: ICD-10 Code Suggestion
 
 **Effort:** 2 of 5 · **Maturity:** Commodity · **Oversight:** Every output
 

@@ -85,7 +85,7 @@ One subtle trap: drug knowledge bases change weekly. A dose range that was curre
 The dispense event by itself is a thin record. The anomaly signal lives in the context, and the context has to be joined in at detection time. At minimum, a dispensing anomaly system needs access to:
 
 - **Demographic data:** age (banded precisely for pediatric and geriatric windows), sex, weight (current, with a freshness flag, because a 30-day-old weight on an ICU patient is useless), height where relevant for BSA-based dosing.
-- **Problem list and active diagnoses:** International Classification of Diseases (ICD)-10 codes with onset dates and active/inactive status. Particularly important for contraindication checks and drug-disease interactions.
+- **Problem list and active diagnoses:** ICD-10 codes with onset dates and active/inactive status. Particularly important for contraindication checks and drug-disease interactions.
 - **Active medication list:** not just what's ordered in this encounter, but the complete current medication list, including home medications reconciled on admission, because most drug-drug interactions span the admission/home boundary.
 - **Recent lab values:** creatinine and eGFR (for renal dose adjustment), LFTs (hepatic), INR (for anticoagulants), electrolytes (for drugs that cause QT prolongation in the presence of hypokalemia), glucose (for insulin dosing logic).
 - **Allergy and adverse-reaction history:** structured if possible, free-text if necessary. The allergy-to-penicillin field in most EHRs is a mess of free text that requires natural language processing (NLP) to normalize, which is covered in Chapter 8 recipes.

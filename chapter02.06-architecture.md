@@ -12,7 +12,7 @@
 
 **Amazon Bedrock Guardrails for safety constraints.** Guardrails give you a policy layer for patient-identifier leakage, off-topic generation, and a contextual grounding check that compares generated content against a reference context. For clinician-facing summaries, the contextual grounding check is the feature that matters most: it scores how well the output stays faithful to the reference context you provide, and it can reject responses that score below a configured threshold.
 
-**Amazon HealthLake for Fast Healthcare Interoperability Resources (FHIR)-based retrieval.** For systems where clinical data is replicated to HealthLake, retrieval is a set of FHIR queries scoped to the patient and time window of interest. DocumentReference for notes, Observation for labs and vitals, Condition for problem lists, MedicationRequest and MedicationStatement for medications, AllergyIntolerance for allergies. The FHIR resource types map cleanly to the summary's must-include categories.
+**Amazon HealthLake for FHIR-based retrieval.** For systems where clinical data is replicated to HealthLake, retrieval is a set of FHIR queries scoped to the patient and time window of interest. DocumentReference for notes, Observation for labs and vitals, Condition for problem lists, MedicationRequest and MedicationStatement for medications, AllergyIntolerance for allergies. The FHIR resource types map cleanly to the summary's must-include categories.
 
 **Amazon Comprehend Medical for negation-aware entity extraction.** This is where Comprehend Medical earns its keep. The service's clinical natural language processing (NLP) handles negation ("no evidence of X"), certainty ("possible X"), and temporal relations ("history of X") with reasonable accuracy. For the critical-safety categories (medications, allergies, conditions), running Comprehend Medical alongside or before the LLM extraction provides a cross-check. When the LLM says "no allergies" and Comprehend Medical also says "no allergies," confidence is high. When they disagree, flag for review.
 
@@ -28,7 +28,7 @@
 
 **Amazon EventBridge for trigger patterns.** Summaries may be generated on demand (clinician clicks "summarize") or proactively (every admission gets an on-admission summary; every shift change triggers handoff summaries). EventBridge routes both patterns to the same pipeline. Because EventBridge delivery is at-least-once, proactive triggers require an idempotency guard. Before starting a Step Functions execution, compute a fingerprint from the trigger's natural key (encounter_id plus admission_event_timestamp for on-admission; service_id plus shift_change_timestamp for shift-change) and attempt a conditional DynamoDB PutItem with a 24-hour TTL. If the write succeeds, proceed. If it fails with ConditionalCheckFailedException, return the existing summary_id without starting a duplicate execution. On-demand requests use a different fingerprint key to allow re-requests after chart edits.
 
-**Amazon API Gateway + Cognito for clinician-facing APIs.** The electronic health record (EHR)-side integration calls into API Gateway to request summaries. Cognito (or SAML federation with the EHR's identity provider) handles clinician authentication so that access can be audited at the user level.
+**Amazon API Gateway + Cognito for clinician-facing APIs.** The EHR-side integration calls into API Gateway to request summaries. Cognito (or SAML federation with the EHR's identity provider) handles clinician authentication so that access can be audited at the user level.
 
 **AWS CloudTrail and Amazon CloudWatch for audit and monitoring.** Every Bedrock invocation logged, every S3 access logged, every summary request tied to a clinician identity. CloudWatch tracks latency distributions (summarization of long charts should not block at the terminal), error rates, and per-specialty usage.
 
@@ -816,7 +816,7 @@ The pipeline above produces summaries that are structurally sound and clinically
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): Search for "clinical summarization," "healthcare summarization," and related terms for current customer case studies
 
 **Industry and Research Resources:**
-- [Health Level Seven (HL7) FHIR DocumentReference Resource](https://www.hl7.org/fhir/documentreference.html): The FHIR model for clinical notes, which drives retrieval patterns
+- [HL7 FHIR DocumentReference Resource](https://www.hl7.org/fhir/documentreference.html): The FHIR model for clinical notes, which drives retrieval patterns
 - [I-PASS Handoff Framework](https://www.ipassinstitute.com/): The evidence-based handoff framework that informs handoff-summary structure
 - [Joint Commission National Patient Safety Goals](https://www.jointcommission.org/standards/national-patient-safety-goals/): Includes communication-related goals relevant to summarization use cases
 - [42 CFR Part 2 (Substance Use Treatment Records)](https://www.ecfr.gov/current/title-42/chapter-I/subchapter-A/part-2): Federal privacy rules for substance use treatment records; affects what can be included in summaries

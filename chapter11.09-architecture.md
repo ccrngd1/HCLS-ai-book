@@ -1205,7 +1205,7 @@ What can go wrong if you skip or shortcut this: the assistant produces coordinat
 
 ---
 
-**Step 7: Orchestrate transitions of care with Step Functions.** When a discharge event arrives (the institution's hospital sends an HL7 admission, discharge, and transfer (ADT)-A03 discharge message; or the receiving home-health agency confirms admission to home health; or the SNF confirms admission), the assistant initiates the appropriate transition-of-care workflow. The workflow is a Step Functions state machine, version-controlled, signed off by clinical leadership, with deterministic state transitions and explicit completion criteria. The LLM operates on top of the state machine as the conversational interface; the state machine drives the protocol.
+**Step 7: Orchestrate transitions of care with Step Functions.** When a discharge event arrives (the institution's hospital sends an HL7 ADT-A03 discharge message; or the receiving home-health agency confirms admission to home health; or the SNF confirms admission), the assistant initiates the appropriate transition-of-care workflow. The workflow is a Step Functions state machine, version-controlled, signed off by clinical leadership, with deterministic state transitions and explicit completion criteria. The LLM operates on top of the state machine as the conversational interface; the state machine drives the protocol.
 
 ```pseudocode
 ON discharge_event(patient_id, discharge_event):

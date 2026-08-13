@@ -20,7 +20,7 @@
 
 **Amazon Bedrock Guardrails for content filtering and topic restriction.** Guardrails provides built-in filters for clinical-advice and harmful-content categories. The note-generation output passes through Guardrails before being shown to the clinician for review, providing a defense-in-depth layer.
 
-**Amazon Comprehend Medical for medication, condition, and entity extraction.** When the visit transcript mentions medications and conditions, Comprehend Medical extracts the entities with RxNorm and International Classification of Diseases (ICD)-10 coding. The structured-field extraction layer uses Comprehend Medical's output to populate the suggested medication and problem-list updates that the clinician confirms before chart insertion.
+**Amazon Comprehend Medical for medication, condition, and entity extraction.** When the visit transcript mentions medications and conditions, Comprehend Medical extracts the entities with RxNorm and ICD-10 coding. The structured-field extraction layer uses Comprehend Medical's output to populate the suggested medication and problem-list updates that the clinician confirms before chart insertion.
 
 **Amazon Polly (optional) for patient-facing audio summaries.** When the institution generates an audio version of the patient-facing visit summary (for patients who prefer audio over text, or for accessibility), Polly's neural voices render the text to audio. Custom-pronunciation lexicons handle clinical and institutional terms. Polly is not used during the visit itself; it is a post-visit, patient-facing accessibility feature.
 
@@ -44,7 +44,7 @@
 
 **Amazon CloudWatch for operational metrics and alarms.** Per-stage latency, per-channel audio quality metrics, automatic speech recognition (ASR) confidence distributions, diarization error rate proxies, faithfulness scores, edit distance between generated draft and signed final, per-clinician adoption metrics. Alarms on per-cohort disparity thresholds, on aggregate accuracy regressions, on telehealth-platform integration failures, on faithfulness-check failure rate spikes.
 
-**AWS CloudTrail for API-level audit.** All access to protected health information (PHI)-bearing resources logged. Transcribe invocations, Bedrock invocations, Comprehend Medical invocations, Lambda invocations, KMS key uses, Secrets Manager retrievals all flow into CloudTrail.
+**AWS CloudTrail for API-level audit.** All access to PHI-bearing resources logged. Transcribe invocations, Bedrock invocations, Comprehend Medical invocations, Lambda invocations, KMS key uses, Secrets Manager retrievals all flow into CloudTrail.
 
 **Amazon EventBridge for cross-system events.** Visit lifecycle events (started, transcribed, note-generated, signed, audited) flow through EventBridge. Downstream consumers (operational dashboards, the analytics layer, the equity-monitoring pipeline) react to events without coupling to the orchestration Lambdas.
 
@@ -1241,7 +1241,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Clinician training and adoption support.** The technology delivers value only when clinicians use it well. Plan a clinician adoption program: initial training (30-60 minutes per clinician on the review interface, the structured-extraction confirmation, and the in-visit correction affordances), ongoing office hours and support during the first month, per-clinician feedback collection, and per-clinician adaptation of the system over time (custom vocabulary additions, template preferences, voiceprint enrollment). Adoption is not a feature flag; it is a workflow change-management program.
 
-**EHR integration depth and write-back validation.** The recipe describes a Fast Healthcare Interoperability Resources (FHIR)-based write-back. In practice, EHR integrations vary in depth: some support direct DocumentReference write, some require proprietary APIs, some require HL7v2 messages, some require RESTful institutional integration. The chart-update patterns (medication-list updates, problem-list updates, order entry) similarly vary. Plan the EHR integration as a multi-month workstream with the EHR vendor's interface-team engagement and explicit testing for the chart-update patterns the institution requires.
+**EHR integration depth and write-back validation.** The recipe describes a FHIR-based write-back. In practice, EHR integrations vary in depth: some support direct DocumentReference write, some require proprietary APIs, some require HL7v2 messages, some require RESTful institutional integration. The chart-update patterns (medication-list updates, problem-list updates, order entry) similarly vary. Plan the EHR integration as a multi-month workstream with the EHR vendor's interface-team engagement and explicit testing for the chart-update patterns the institution requires.
 
 **Faithfulness regression testing on prompt and model updates.** The note-generation LLM and the faithfulness-checker model are versioned components. Each model update or prompt update can change faithfulness behavior in subtle ways. Build a regression test suite: held-out set of representative transcripts with known good notes, automated faithfulness scoring on the regression set after every prompt or model change, manual review of the regression diffs before promoting changes to production. Promote changes through canary inference profiles with traffic shift, with rollback-on-regression triggers tied to the faithfulness regression metrics.
 
@@ -1342,13 +1342,13 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Transcribe healthcare," "Bedrock clinical," "telehealth AI" for relevant pattern posts
 
 **External References (Standards and Frameworks):**
-- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for EHR integration
+- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for EHR integration
 - [FHIR DocumentReference Resource](https://www.hl7.org/fhir/documentreference.html): canonical FHIR resource for clinical-note write-back
 - [FHIR Encounter Resource](https://www.hl7.org/fhir/encounter.html): canonical FHIR resource linking the visit to the documentation
 - [SMART on FHIR](https://docs.smarthealthit.org/): the launch-context and authorization specification
 - [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): standard medication terminology
 - [ICD-10-CM](https://www.cms.gov/medicare/coding-billing/icd-10-codes): standard diagnosis terminology
-- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): standard lab and observation terminology
+- [LOINC](https://loinc.org/): standard lab and observation terminology
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in voice interactions and clinical documentation
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [42 CFR Part 2](https://www.ecfr.gov/current/title-42/chapter-I/subchapter-A/part-2): governs substance-use disorder treatment records, with specific consent and disclosure requirements that apply to behavioral-health telehealth

@@ -1109,7 +1109,7 @@ def _assess_source_completeness(patient_id: str, program: dict) -> str:
         return "sparse_history"
     return "complete"
 
-# Demo state populated by the runner at the bottom of this file.
+# Demo state populated by the runner.
 _DEMO_FRAGMENTATION_FLAGS: dict = {}
 _DEMO_HISTORY_COUNT: dict = {}
 ```

@@ -6,7 +6,7 @@
 
 ## The Problem
 
-Here's a scenario that plays out every single day in healthcare data integration. A hospital system acquires a physician practice. The practice has been coding diagnoses in International Classification of Diseases (ICD)-10-CM. The hospital's analytics platform uses Systematized Nomenclature of Medicine (SNOMED) CT for clinical decision support (CDS). The quality reporting system needs Healthcare Effectiveness Data and Information Set (HEDIS) value sets that reference both. The pharmacy system speaks RxNorm. The lab system uses Logical Observation Identifiers Names and Codes (LOINC). And someone in the C-suite wants a unified patient dashboard that pulls from all of them.
+Here's a scenario that plays out every single day in healthcare data integration. A hospital system acquires a physician practice. The practice has been coding diagnoses in ICD-10-CM. The hospital's analytics platform uses SNOMED CT for clinical decision support (CDS). The quality reporting system needs Healthcare Effectiveness Data and Information Set (HEDIS) value sets that reference both. The pharmacy system speaks RxNorm. The lab system uses Logical Observation Identifiers Names and Codes (LOINC). And someone in the C-suite wants a unified patient dashboard that pulls from all of them.
 
 Every one of these systems is describing the same clinical reality (a patient has Type 2 diabetes, takes metformin, had an HbA1c drawn last month) but they're describing it in completely different languages. "Type 2 diabetes mellitus" in ICD-10 is E11. In SNOMED CT it's concept 44054006. In a clinical note it might say "DM2" or "adult-onset diabetes" or "NIDDM" (a term that's been deprecated for decades but still shows up in legacy data).
 

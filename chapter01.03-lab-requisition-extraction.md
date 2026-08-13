@@ -6,7 +6,7 @@
 
 ## The Problem
 
-A physician finishes a visit with a patient who has Type 2 diabetes. She orders a hemoglobin A1c, a comprehensive metabolic panel, and a lipid panel. She scribbles the diagnosis on the lab req as "T2DM, HTN" and faxes it to the lab. The lab fax machine spits out a thermal print. Someone scans it. Another person types it into the ordering system. A third person looks up the International Classification of Diseases (ICD)-10 codes for "T2DM" and "HTN" and keys them in. A fourth person double-checks the test panel codes for billing.
+A physician finishes a visit with a patient who has Type 2 diabetes. She orders a hemoglobin A1c, a comprehensive metabolic panel, and a lipid panel. She scribbles the diagnosis on the lab req as "T2DM, HTN" and faxes it to the lab. The lab fax machine spits out a thermal print. Someone scans it. Another person types it into the ordering system. A third person looks up the ICD-10 codes for "T2DM" and "HTN" and keys them in. A fourth person double-checks the test panel codes for billing.
 
 This is the pipeline for a routine lab order in 2026. Not in some underresourced rural practice. In a large integrated health system with dedicated billing staff.
 
@@ -48,7 +48,7 @@ Going from free text to ICD-10-CM code is called "ICD-10 inference" or "diagnosi
 
 Handwritten ICD-10 codes are a specific subproblem worth calling out. Physicians who have been doing this for years often write the code directly: "E11.9, I10." That's actually easier to handle than free text, but only if the optical character recognition (OCR) reads it correctly. Handwritten ICD-10 codes get confused for other things: "I10" can look like "110" when handwritten at speed. A capital I, a lowercase l, and the numeral 1 are visually very similar in most handwriting. After OCR, "I10" may arrive as "l10" or "110." The clinical NLP step needs to be downstream of a solid OCR pass, and the confidence scores from both steps need to travel together.
 
-### Current Procedural Terminology (CPT): The Procedure Vocabulary
+### CPT: The Procedure Vocabulary
 
 CPT stands for Current Procedural Terminology. It's the coding system for medical procedures and services, maintained by the American Medical Association. Every lab test has a CPT code. An HbA1c is 83036. A CBC with differential is 85025. A comprehensive metabolic panel is 80053.
 

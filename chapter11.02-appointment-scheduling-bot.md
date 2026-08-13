@@ -96,7 +96,7 @@ A naive product approach would be: take a generalist LLM, give it a chat surface
 
 **The model has no way to recover from partial failures.** Booking an appointment touches multiple systems: the scheduling system, the patient communication system, sometimes the electronic health record (EHR), sometimes the billing eligibility system. Some of those calls succeed and some fail. The LLM does not know how to compensate for a partial failure. The tool layer wraps the multi-system orchestration in well-defined operations that either succeed atomically, fail with a clean rollback, or surface the partial state for human reconciliation.
 
-**The model produces output that has compliance implications.** Every conversation a patient has with the scheduling bot is potentially a HIPAA-relevant interaction, and the appointment-booking action specifically is a clinical-administrative event. The conversation log, the audit trail of tool calls, the resulting appointment record, are all protected health information (PHI)-relevant data. The architecture has to produce the durable audit pipeline that the FAQ bot did not strictly need.
+**The model produces output that has compliance implications.** Every conversation a patient has with the scheduling bot is potentially a HIPAA-relevant interaction, and the appointment-booking action specifically is a clinical-administrative event. The conversation log, the audit trail of tool calls, the resulting appointment record, are all PHI-relevant data. The architecture has to produce the durable audit pipeline that the FAQ bot did not strictly need.
 
 ### What the Scheduling Bot Has To Do That the FAQ Bot Did Not
 

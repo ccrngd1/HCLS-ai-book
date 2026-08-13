@@ -1,4 +1,4 @@
-# Recipe 2.3 Architecture and Implementation: Clinical documentation improvement (CDI) Suggestions
+# Recipe 2.3 Architecture and Implementation: Clinical Documentation Improvement (CDI) Suggestions
 
 *Companion to [Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions](chapter02.03-clinical-documentation-improvement). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
@@ -10,7 +10,7 @@
 
 **Amazon Bedrock for LLM inference.** Bedrock gives you access to foundation models (Claude, Titan, and others) through a managed API with no infrastructure to maintain. For CDI, you need a model that understands clinical text, can reason about specificity, and can generate natural-language suggestions. Claude models on Bedrock handle this well. Bedrock is HIPAA-eligible and supports business associate agreement (BAA) coverage, which is non-negotiable when processing clinical notes containing protected health information (PHI).
 
-**Amazon Bedrock Knowledge Bases for retrieval-augmented generation (RAG).** Your coding guidelines, query templates, and payer-specific rules need to live in a searchable knowledge base. Bedrock Knowledge Bases handles the vector embedding, storage, and retrieval pipeline. You upload your International Classification of Diseases (ICD)-10-CM guidelines and organizational templates, and the service chunks, embeds, and indexes them. At query time, you retrieve relevant sections based on the diagnoses found in the note.
+**Amazon Bedrock Knowledge Bases for retrieval-augmented generation (RAG).** Your coding guidelines, query templates, and payer-specific rules need to live in a searchable knowledge base. Bedrock Knowledge Bases handles the vector embedding, storage, and retrieval pipeline. You upload your ICD-10-CM guidelines and organizational templates, and the service chunks, embeds, and indexes them. At query time, you retrieve relevant sections based on the diagnoses found in the note.
 
 **Amazon S3 for document storage.** Clinical notes arrive from your electronic health record (EHR) integration: Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR), admission, discharge, and transfer (ADT) feeds, or direct API. S3 stores the raw notes and the generated suggestions for audit purposes. Every suggestion the system generates needs to be traceable back to the source note and the guidelines that informed it.
 

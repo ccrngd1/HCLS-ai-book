@@ -64,6 +64,8 @@ def prose_of(text: str) -> str:
     text = re.sub(r"\]\([^)]*\)", blank, text)
     text = re.sub(r"^\s{4,}\S.*$", blank, text, flags=re.M)
     text = re.sub(r"^\s*\|.*$", blank, text, flags=re.M)      # table rows
+    text = re.sub(r"^#{1,6} .*$", blank, text, flags=re.M)     # headings
+    text = re.sub(r"\[[^\]]*\]", blank, text)                   # link and citation labels
     return text
 
 
@@ -91,7 +93,10 @@ def check_page(path: Path, terms: dict[str, str]) -> list[str]:
     problems: list[str] = []
 
     for abbr, form in terms.items():
-        hits = list(re.finditer(rf"\b{re.escape(abbr)}\b", prose))
+        # A hyphenated continuation makes it a different term: ICD-10, FHIR-based,
+        # PHI-bearing. Expanding the bare letters inside one breaks it, which is exactly
+        # what the first pass did 81 times.
+        hits = [m for m in re.finditer(rf"\b{re.escape(abbr)}\b(?!-\w)", prose)]
         if not hits:
             continue
         first = hits[0].start()

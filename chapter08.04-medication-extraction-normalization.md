@@ -28,7 +28,7 @@ The information is there, buried in clinical notes. Extracting it reliably, norm
 
 ## The Technology: Named Entity Recognition for Medications
 
-### What Is Medical named entity recognition (NER)?
+### What Is Medical NER?
 
 Named Entity Recognition (NER) is the natural language processing (NLP) task of identifying specific types of entities in unstructured text and classifying them into predefined categories. In general NLP, those categories might be "person," "organization," "location." In clinical NLP, the categories that matter are "medication," "dosage," "route," "frequency," "duration," "condition," and "reason."
 
@@ -108,7 +108,7 @@ At a conceptual level, the pipeline for medication extraction and normalization 
 
 ## Related Recipes
 
-- **Recipe 8.3 (International Classification of Diseases (ICD)-10 Code Suggestion):** Uses similar NER foundations but targets condition entities rather than medications
+- **Recipe 8.3 (ICD-10 Code Suggestion):** Uses similar NER foundations but targets condition entities rather than medications
 - **Recipe 8.5 (Problem List Extraction):** Extracts condition/diagnosis entities from the same clinical notes using the same NER infrastructure
 - **Recipe 8.8 (Clinical Assertion Classification):** Deep dive on the assertion status problem (present/absent/possible/historical) that this recipe handles at a basic level
 - **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** Consumes the RxCUI output from this recipe to power interaction checking

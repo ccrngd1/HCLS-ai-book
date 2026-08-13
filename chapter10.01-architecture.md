@@ -597,7 +597,7 @@ ON call_end(call_id, end_reason):
 
 ---
 
-### Dead-letter queue (DLQ) topology
+### DLQ Topology
 
 Every fulfillment Lambda has its own Dead-Letter Queue (not a pooled DLQ shared across functions). The architectural primitives:
 

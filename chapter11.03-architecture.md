@@ -18,7 +18,7 @@
 
 **Amazon Comprehend Medical for medication entity extraction.** Comprehend Medical's RxNorm-coded medication entity extraction supplements the LLM's medication-resolution. Where the LLM is uncertain about which medication the patient is referring to, Comprehend Medical's structured extraction can disambiguate or flag ambiguity.
 
-**AWS HealthLake (optional) for the Fast Healthcare Interoperability Resources (FHIR)-native chart context.** When the institution stores FHIR data in HealthLake, the bot's medication-list-lookup, lab-reconciliation, and chart-context tools can query HealthLake directly. When the FHIR data lives in the institution's electronic health record (EHR), the bot's tools query the EHR's FHIR API instead. The bot's tool surface abstracts the underlying source.
+**AWS HealthLake (optional) for the FHIR-native chart context.** When the institution stores FHIR data in HealthLake, the bot's medication-list-lookup, lab-reconciliation, and chart-context tools can query HealthLake directly. When the FHIR data lives in the institution's electronic health record (EHR), the bot's tools query the EHR's FHIR API instead. The bot's tool surface abstracts the underlying source.
 
 **Amazon API Gateway and AWS Lambda for the backend.** Same chat-handler pattern as recipe 11.2. The tool Lambdas that integrate with the EHR's FHIR API and the e-prescribing platform run in VPC with controlled egress.
 
@@ -1728,7 +1728,7 @@ PrivateLink egress hierarchy for external integrations: PrivateLink preferred wh
 - [AWS Big Data Blog](https://aws.amazon.com/blogs/big-data/): search "HealthLake," "FHIR," "medication" for data-side patterns relevant to the chart-context tools
 
 **External References (Standards and Frameworks):**
-- [Health Level Seven (HL7) FHIR Medication Module](https://www.hl7.org/fhir/medication-module.html): the FHIR specification for Medication, MedicationRequest, MedicationDispense, and related resources
+- [HL7 FHIR Medication Module](https://www.hl7.org/fhir/medication-module.html): the FHIR specification for Medication, MedicationRequest, MedicationDispense, and related resources
 - [HL7 FHIR MedicationRequest Resource](https://www.hl7.org/fhir/medicationrequest.html): the FHIR MedicationRequest resource specification
 - [CDS Hooks Specification](https://cds-hooks.org/): the standard for clinical-decision-support invocation
 - [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): the standardized nomenclature for clinical drugs

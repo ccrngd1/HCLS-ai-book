@@ -62,7 +62,7 @@ The core insight is that LLMs are good at the things that have been hard for rul
 - Generating structured FHIR resources from a mix of explicit and inferred clinical information
 
 **Where rule-based systems stay right:**
-- Exact medical code lookup (International Classification of Diseases (ICD)-10, RxNorm, CVX). LLMs can hallucinate codes. Code validation against authoritative reference data is not optional.
+- Exact medical code lookup (ICD-10, RxNorm, CVX). LLMs can hallucinate codes. Code validation against authoritative reference data is not optional.
 - Financial arithmetic. Numeric processing should be deterministic.
 - HIPAA authorization checks where the rule criteria are precisely defined
 
@@ -161,7 +161,7 @@ Vision model calls are significantly more expensive than text calls (images cons
 
 The goal of chart migration is not a pile of extracted text. It is structured clinical records that downstream systems can consume. FHIR R4 (Fast Healthcare Interoperability Resources, Release 4) is the target format: the current standard for healthcare data exchange, required by CMS Interoperability rules, supported by every major EHR, and the native format of Amazon HealthLake.
 
-The mapping problem is where rule-based approaches genuinely fail. Raw OCR text might say "hypertension, essential" in a 1998 progress note. A FHIR `Condition` resource requires: a patient reference, a verification status, a code (ICD-10-CM or Systematized Nomenclature of Medicine (SNOMED) CT), an onset or recorded date. Getting from the OCR string to the FHIR resource requires:
+The mapping problem is where rule-based approaches genuinely fail. Raw OCR text might say "hypertension, essential" in a 1998 progress note. A FHIR `Condition` resource requires: a patient reference, a verification status, a code (ICD-10-CM or SNOMED CT), an onset or recorded date. Getting from the OCR string to the FHIR resource requires:
 
 1. Understanding that "hypertension, essential" describes a chronic condition
 2. Mapping it to ICD-10-CM I10 (Essential hypertension)

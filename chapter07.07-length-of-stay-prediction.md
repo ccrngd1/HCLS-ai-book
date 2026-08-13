@@ -46,7 +46,7 @@ The features that drive LOS prediction fall into distinct categories, and unders
 - Demographics: age, sex (older patients stay longer, on average)
 - Admission source: ED vs. direct admit vs. transfer (ED admits tend to be sicker)
 - Admission type: emergent vs. elective (elective cases have tighter LOS distributions)
-- Primary diagnosis (International Classification of Diseases (ICD)-10) and DRG assignment
+- Primary diagnosis (ICD-10) and DRG assignment
 - Comorbidity burden: Charlson or Elixhauser index scores
 - Prior utilization: hospitalizations in the last 12 months, ED visits
 - Insurance type (a proxy for social complexity, unfortunately)

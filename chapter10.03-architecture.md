@@ -1,4 +1,4 @@
-# Recipe 10.3 Architecture and Implementation: Voice-to-Text for Electronic health record (EHR) Navigation
+# Recipe 10.3 Architecture and Implementation: Voice-to-Text for EHR Navigation
 
 *Companion to [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
@@ -22,7 +22,7 @@
 
 **Amazon DynamoDB for session state, command audit, and configuration.** A session-state table tracks the active command session per device (current patient context, last command, staleness timestamp). A command-audit table durably records every command issued, parsed, executed, with all confidences and outcomes. A configuration table holds the intent taxonomy, the read-write classification rules, the per-clinician preferences. All tables encrypted with customer-managed KMS.
 
-**Amazon S3 for audio recordings (when retained) and audit-log archive.** Audio recordings of commands are protected health information (PHI)-class and must be encrypted with customer-managed KMS. Many deployments retain audio briefly for QA and disagreement review, then discard it; the architecture supports both retain-briefly and discard-immediately patterns. Audit logs flow to S3 via Kinesis Data Firehose for long-term retention with Object Lock in compliance mode.
+**Amazon S3 for audio recordings (when retained) and audit-log archive.** Audio recordings of commands are PHI-class and must be encrypted with customer-managed KMS. Many deployments retain audio briefly for QA and disagreement review, then discard it; the architecture supports both retain-briefly and discard-immediately patterns. Audit logs flow to S3 via Kinesis Data Firehose for long-term retention with Object Lock in compliance mode.
 
 **AWS KMS for cryptographic-key custody.** Customer-managed KMS keys for the audio bucket, the audit bucket, the DynamoDB tables, the Secrets Manager secrets. Different keys per data class for blast-radius containment.
 
@@ -1060,7 +1060,7 @@ The clinician is the speaker in this recipe (unlike patient-facing recipes where
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Lex," "Transcribe," "voice assistant" for relevant case studies
 
 **External References (Standards and Frameworks):**
-- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
+- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
 - [SMART on FHIR](https://docs.smarthealthit.org/): the launch-context and authorization specification for clinically-aware EHR apps
 - [SMART App Launch Framework](https://hl7.org/fhir/smart-app-launch/): the formal specification for SMART app launch with clinician and patient context
 - [FHIR R4 Resource Reference](https://www.hl7.org/fhir/R4/resourcelist.html): the resource catalog used by most production EHR FHIR APIs in 2026 

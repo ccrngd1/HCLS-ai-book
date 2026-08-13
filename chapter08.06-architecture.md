@@ -1,4 +1,4 @@
-# Recipe 8.6 Architecture and Implementation: Social determinants of health (SDOH) Extraction
+# Recipe 8.6 Architecture and Implementation: Social Determinants of Health (SDOH) Extraction
 
 *Companion to [Recipe 8.6: Social Determinants of Health (SDOH) Extraction](chapter08.06-sdoh-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
@@ -481,8 +481,8 @@ The pseudocode above gets you extraction results. These gaps will bite you in pr
 
 **Industry Standards and References:**
 - [Gravity Project SDOH Clinical Care Standards](https://thegravityproject.net/): Defines SDOH domain value sets, code mappings, and FHIR implementation guides
-- [CMS International Classification of Diseases (ICD)-10-CM Z-Code Documentation](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official Z55-Z65 code definitions for social determinant documentation
-- [Health Level Seven (HL7) FHIR US Core SDOH Profiles](https://www.hl7.org/fhir/us/core/): FHIR resource profiles for representing SDOH observations and conditions
+- [CMS ICD-10-CM Z-Code Documentation](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official Z55-Z65 code definitions for social determinant documentation
+- [HL7 FHIR US Core SDOH Profiles](https://www.hl7.org/fhir/us/core/): FHIR resource profiles for representing SDOH observations and conditions
 
 ---
 

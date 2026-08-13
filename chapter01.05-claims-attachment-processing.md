@@ -162,7 +162,7 @@ This is the architectural breakthrough in this recipe versus the rule-based appr
 
 - **Recipe 1.1 (Insurance Card Scanning):** The key-value extraction foundation used in the EOB header field parsing.
 - **Recipe 1.2 (Patient Intake Form Digitization):** The async multi-page Textract pattern and table parsing logic reused in the EOB and billing statement extractors.
-- **Recipe 1.3 (Lab Requisition Form Extraction):** The Comprehend Medical `InferICD10CM` pattern this recipe uses for International Classification of Diseases (ICD)-10 code validation on clinical documents.
+- **Recipe 1.3 (Lab Requisition Form Extraction):** The Comprehend Medical `InferICD10CM` pattern this recipe uses for ICD-10 code validation on clinical documents.
 - **Recipe 1.4 (Prior Authorization Document Processing):** Introduced the Bedrock classification prompt pattern and model tiering concept this recipe extends. Read 1.4 before this one.
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Handles handwritten therapy notes and physician addenda that appear within claims attachment packages. Low-confidence segments from this recipe's pipeline route to the Recipe 1.6 review workflow.
 - **Recipe 1.8 (EOB Processing):** Covers EOB-specific extraction in depth. When your claims portfolio has high EOB volume or unusual payer formats, Recipe 1.8's specialized table normalization is more robust than the general-purpose EOB extractor here.

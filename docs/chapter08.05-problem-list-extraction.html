@@ -356,7 +356,7 @@
 <p><strong>Effort:</strong> 3 of 5</p>
 <hr />
 <h2 id="the-problem">The Problem</h2>
-<p>Every patient in your EHR has a problem list. In theory, it's the authoritative summary of active diagnoses and conditions: the single place a clinician can glance to understand what's going on with this patient. In practice, problem lists are one of the most poorly maintained data assets in healthcare.</p>
+<p>Every patient in your electronic health record (EHR) has a problem list. In theory, it's the authoritative summary of active diagnoses and conditions: the single place a clinician can glance to understand what's going on with this patient. In practice, problem lists are one of the most poorly maintained data assets in healthcare.</p>
 <p>Here's what actually happens. A patient with diabetes, hypertension, chronic kidney disease, depression, and a resolved pneumonia from last year shows up for an annual visit. The problem list in the EHR might say &quot;HTN&quot; (added by the PCP three years ago), &quot;Type 2 DM&quot; (added during a hospitalization), and nothing else. The CKD was diagnosed six months ago but the nephrologist documented it in a consult note and never updated the problem list. The depression is mentioned in every progress note but nobody added it formally. The pneumonia is still listed as active because nobody marked it resolved.</p>
 <p>This is not a rare scenario. Studies consistently show that EHR problem lists are incomplete, with sensitivity for known diagnoses ranging from 40-70% depending on the condition and setting. Chronic conditions are under-represented. Resolved conditions linger. New diagnoses get documented in notes but never propagated to the structured list.</p>
 <p>The downstream impact is real. Clinical decision support fires (or doesn't fire) based on the problem list. Quality measures get reported against it. Risk adjustment coding depends on it. Care coordination tools use it to identify patients who need outreach. When the problem list is wrong, all of those downstream systems produce wrong results, silently.</p>
@@ -364,8 +364,8 @@
 <hr />
 <h2 id="the-technology-clinical-concept-extraction-and-assertion-detection">The Technology: Clinical Concept Extraction and Assertion Detection</h2>
 <h3 id="what-is-problem-list-extraction">What Is Problem List Extraction?</h3>
-<p>Problem list extraction is a two-stage NLP task. First, you identify mentions of clinical problems (diagnoses, conditions, symptoms) in unstructured text. Second, you classify each mention by its assertion status: is this problem currently active, historically relevant but resolved, negated (&quot;no evidence of diabetes&quot;), related to family history, or hypothetical (&quot;if she develops CKD&quot;)?</p>
-<p>The first stage is a variant of Named Entity Recognition (NER) focused on clinical conditions. The second stage is assertion classification, sometimes called contextual analysis or negation/temporality detection. Both stages must work together: extracting &quot;diabetes&quot; from a note is useless without knowing whether the patient has diabetes, used to have diabetes, doesn't have diabetes, or has a family history of diabetes.</p>
+<p>Problem list extraction is a two-stage natural language processing (NLP) task. First, you identify mentions of clinical problems (diagnoses, conditions, symptoms) in unstructured text. Second, you classify each mention by its assertion status: is this problem currently active, historically relevant but resolved, negated (&quot;no evidence of diabetes&quot;), related to family history, or hypothetical (&quot;if she develops CKD&quot;)?</p>
+<p>The first stage is a variant of named entity recognition (NER) focused on clinical conditions. The second stage is assertion classification, sometimes called contextual analysis or negation/temporality detection. Both stages must work together: extracting &quot;diabetes&quot; from a note is useless without knowing whether the patient has diabetes, used to have diabetes, doesn't have diabetes, or has a family history of diabetes.</p>
 <h3 id="named-entity-recognition-for-clinical-problems">Named Entity Recognition for Clinical Problems</h3>
 <p>Clinical NER for problems targets a broad category. Unlike medication extraction (where you're looking for drug names with well-defined lexical patterns), problem mentions come in many forms:</p>
 <p><strong>Formal diagnoses</strong>: &quot;Type 2 diabetes mellitus,&quot; &quot;chronic obstructive pulmonary disease,&quot; &quot;major depressive disorder&quot;</p>
@@ -424,7 +424,7 @@
 <li><strong>Recipe 8.4 (Medication Extraction and Normalization):</strong> Uses the same Comprehend Medical extraction pattern but targets medications instead of conditions. Shares section detection and assertion classification concepts.</li>
 <li><strong>Recipe 8.8 (Clinical Assertion Classification):</strong> Dives deep into assertion detection as a standalone capability. Use that recipe's patterns to build a more sophisticated assertion engine if the built-in traits are insufficient.</li>
 <li><strong>Recipe 8.3 (ICD-10 Code Suggestion):</strong> Focuses on coding workflow integration. Combine with this recipe to generate ICD-10 suggestions from problem list extractions for HCC coding.</li>
-<li><strong>Recipe 13.3 (ICD/CPT Hierarchy Navigation):</strong> Provides the ontology navigation needed for the specificity upgrade logic in reconciliation.</li>
+<li><strong>Recipe 13.3 (ICD and Current Procedural Terminology (CPT) Hierarchy Navigation):</strong> Provides the ontology navigation needed for the specificity upgrade logic in reconciliation.</li>
 </ul>
 <hr />
 <h2 id="tags">Tags</h2>

@@ -13,7 +13,7 @@
 **Amazon Comprehend Medical for clinical natural language processing (NLP).** This is the new service in the stack. Comprehend Medical is AWS's managed clinical NLP service, trained on clinical text corpora. It provides two APIs relevant to this recipe:
 
 - `DetectEntitiesV2`: Extracts clinical entities from free text, including medications, diagnoses, procedures, anatomy, and provider names. Each entity gets a category, type, confidence score, and semantic traits (negated, historical, hypothetical, pertaining to a family member).
-- `InferICD10CM`: Takes free text containing diagnostic information and returns a ranked list of International Classification of Diseases (ICD)-10-CM codes with confidence scores for each. This is the specialized inference model for the coding problem.
+- `InferICD10CM`: Takes free text containing diagnostic information and returns a ranked list of ICD-10-CM codes with confidence scores for each. This is the specialized inference model for the coding problem.
 
 The reason to use a managed service here rather than an open-source clinical NLP library (spaCy with the `en_core_sci_sm` model, cTAKES, MetaMap) is operational: Comprehend Medical is an API call with no infrastructure to manage, scales automatically, is on the HIPAA eligible services list, and is actively maintained. The tradeoff is cost (you pay per character processed) and the opacity of the model (you can't fine-tune it on your own clinical data without going to custom model territory). For most healthcare document processing use cases, the managed API is the right default.
 

@@ -1,4 +1,4 @@
-# Recipe 2.3: Clinical documentation improvement (CDI) Suggestions
+# Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
 
 **Effort:** 2 of 5
 
@@ -8,7 +8,7 @@
 
 A hospitalist admits a patient with pneumonia. They write in the progress note: "Patient has pneumonia, started on antibiotics." Clinically, this is fine. The patient gets treated. But from a coding and reimbursement perspective, this note is a disaster.
 
-Was it community-acquired or hospital-acquired pneumonia? Bacterial, viral, or aspiration? Which organism, if known? Is it the principal diagnosis or a complication of something else? Each of these distinctions maps to a different International Classification of Diseases (ICD)-10 code, and each code maps to a different DRG, and each DRG maps to a different reimbursement amount. The difference between "pneumonia, unspecified" (J18.9) and "pneumonia due to Streptococcus pneumoniae" (J13) can mean thousands of dollars in reimbursement difference for the same clinical care.
+Was it community-acquired or hospital-acquired pneumonia? Bacterial, viral, or aspiration? Which organism, if known? Is it the principal diagnosis or a complication of something else? Each of these distinctions maps to a different ICD-10 code, and each code maps to a different DRG, and each DRG maps to a different reimbursement amount. The difference between "pneumonia, unspecified" (J18.9) and "pneumonia due to Streptococcus pneumoniae" (J13) can mean thousands of dollars in reimbursement difference for the same clinical care.
 
 This is not about upcoding. This is about accuracy. The documentation should reflect what the physician actually knows and did. When a physician writes "pneumonia" but their lab results show Streptococcus and their antibiotic choice confirms they're treating a bacterial infection, the documentation is incomplete, not wrong. The clinical picture is clear in the physician's head. It just didn't make it onto the page.
 

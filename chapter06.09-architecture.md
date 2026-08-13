@@ -426,7 +426,7 @@ FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_s
 
 This architecture demonstrates the full pipeline shape, but several gaps remain before you'd trust it with real patient populations:
 
-**NLP model training data.** The SDOH NER model requires annotated clinical text from your organization's notes. Annotation guidelines, inter-annotator agreement thresholds, and institutional review board (IRB)-approved access to training data are prerequisites that take months. Without site-specific fine-tuning, extraction recall for indirect SDOH language will sit around 40-50% instead of the 65-80% a tuned model achieves.
+**NLP model training data.** The SDOH NER model requires annotated clinical text from your organization's notes. Annotation guidelines, inter-annotator agreement thresholds, and IRB-approved access to training data are prerequisites that take months. Without site-specific fine-tuning, extraction recall for indirect SDOH language will sit around 40-50% instead of the 65-80% a tuned model achieves.
 
 **Missing input validation.** The pseudocode trusts its inputs. Production needs validation at every boundary: note text length limits, patient ID format checks, screening score range enforcement, and geocoding result plausibility checks. A single malformed input shouldn't crash the pipeline or produce a silently wrong phenotype.
 

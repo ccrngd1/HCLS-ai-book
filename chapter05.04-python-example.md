@@ -554,7 +554,7 @@ class MockClearinghouse:
 clearinghouse_sdk = MockClearinghouse()
 
 # --- In-memory cache stand-in for ElastiCache Redis ---
-# Keyed on (patient_id, payer_id, service_date). Holds the
+# Keyed on (patient_id, payer_id, service_date). The demo
 # parsed match outcome with TTL so cache-hits skip DynamoDB.
 # Production replaces this with ElastiCache; the dict here
 # survives only as long as the Python process.

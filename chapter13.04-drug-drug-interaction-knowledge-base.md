@@ -154,7 +154,7 @@ Not all interactions are created equal, and your graph needs to represent this. 
 ## Related Recipes
 
 - **[Recipe 13.1: Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)** covers the foundational graph model for drug data. The formulary graph provides the drug identity and classification nodes that this recipe's interaction graph builds upon.
-- **[Recipe 13.3: International Classification of Diseases (ICD)/Current Procedural Terminology (CPT) Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation)** demonstrates the pattern of loading medical ontologies into a graph database and querying hierarchical relationships. The same extract, transform, and load (ETL) and query patterns apply here.
+- **[Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation)** demonstrates the pattern of loading medical ontologies into a graph database and querying hierarchical relationships. The same extract, transform, and load (ETL) and query patterns apply here.
 - **[Recipe 8.4: Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization)** covers extracting medication mentions from clinical text and normalizing them to RxNorm. That's the upstream step that feeds medication lists into this recipe's interaction checker.
 - **[Recipe 7.6: Rising Risk Identification](chapter07.06-rising-risk-identification)** uses predictive models that could incorporate interaction burden as a risk factor. Patients on multiple interacting medications are at higher risk for adverse events.
 

@@ -1,4 +1,4 @@
-# Recipe 5.2: Provider National Provider Identifier (NPI) Matching
+# Recipe 5.2: Provider NPI Matching
 
 **Effort:** 1 of 5
 

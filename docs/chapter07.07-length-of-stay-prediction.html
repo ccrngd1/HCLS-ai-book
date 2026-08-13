@@ -356,10 +356,10 @@
 <p><strong>Effort:</strong> 4 of 5</p>
 <hr />
 <h2 id="the-problem">The Problem</h2>
-<p>A patient is admitted to the hospital at 2 AM with acute pancreatitis. The admitting physician writes &quot;anticipated LOS: 3-5 days&quot; in the chart. The bed management team allocates resources accordingly. The discharge planner starts working on day 3.</p>
+<p>A patient is admitted to the hospital at 2 AM with acute pancreatitis. The admitting physician writes &quot;anticipated length of stay (LOS): 3-5 days&quot; in the chart. The bed management team allocates resources accordingly. The discharge planner starts working on day 3.</p>
 <p>On day 4, the patient develops a complication. Now it's 8-10 days. But the discharge planner didn't find out until day 5. The bed that was supposed to free up on day 5 for a scheduled surgical admission? Still occupied. The surgical case gets bumped. The OR schedule cascades. Downstream, a patient waiting in the ED for an inpatient bed waits six extra hours.</p>
 <p>This is not an edge case. This is Tuesday.</p>
-<p>Hospital length of stay (LOS) prediction is one of those problems that sounds like it should be straightforward. You have decades of historical data. You know the diagnosis. You know the patient's age and comorbidities. Just train a model, right?</p>
+<p>Hospital LOS prediction is one of those problems that sounds like it should be straightforward. You have decades of historical data. You know the diagnosis. You know the patient's age and comorbidities. Just train a model, right?</p>
 <p>The reality is messier. LOS is driven by a tangled web of clinical factors (disease severity, complications, response to treatment), operational factors (discharge planning efficiency, specialist availability, imaging backlogs), and social factors (does the patient have a safe place to go? Is there a skilled nursing facility bed available? Does the family need to arrange home care?). A model that only sees clinical data will systematically underpredict for patients with social barriers to discharge. A model that doesn't update as the stay progresses becomes useless after day 2.</p>
 <p>The operational stakes are real. Hospitals run at 85-95% occupancy. Every bed-day costs $2,000-$4,000 in direct costs. Accurate LOS prediction enables proactive discharge planning (start the SNF referral on day 1, not day 5), better bed management (know which beds are freeing up tomorrow), staffing optimization (predict nursing ratios 48 hours out), and surgical scheduling (don't schedule an admission into a bed that won't be empty).</p>
 <p>The financial incentive is also direct: under DRG-based payment, the hospital gets paid a fixed amount regardless of how long the patient stays. Every day beyond the geometric mean LOS for that DRG is a day the hospital is losing money. Predicting which patients will exceed their expected LOS early enough to intervene is worth millions annually for a mid-size hospital.</p>
@@ -444,7 +444,7 @@
 </code></pre>
 <p>The architecture has two modes:</p>
 <p><strong>Batch mode (training and daily refresh):</strong> Extract historical encounters with known outcomes. Engineer features at multiple time points during each stay. Train models per service line. Evaluate on held-out data. Deploy the best model.</p>
-<p><strong>Real-time mode (operational predictions):</strong> For current inpatients, pull the latest clinical data from the EHR feed. Compute current features. Run inference. Store the prediction. Push to operational dashboards and alerting systems.</p>
+<p><strong>Real-time mode (operational predictions):</strong> For current inpatients, pull the latest clinical data from the electronic health record (EHR) feed. Compute current features. Run inference. Store the prediction. Push to operational dashboards and alerting systems.</p>
 <p>The feature store is the critical piece that bridges both modes. Training features and inference features must be computed identically, or you get training-serving skew (the model sees different feature distributions in production than it saw during training, and accuracy degrades silently).</p>
 <hr />
 <blockquote>

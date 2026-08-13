@@ -1,4 +1,4 @@
-# Recipe 10.3: Voice-to-Text for Electronic health record (EHR) Navigation
+# Recipe 10.3: Voice-to-Text for EHR Navigation
 
 **Effort:** 2 of 5
 
@@ -122,7 +122,7 @@ Once you have a structured intent-and-slots, you need to execute it against the 
 
 **Modern API-based integration (Fast Healthcare Interoperability Resources (FHIR), vendor-specific APIs).** Some EHRs expose RESTful APIs (FHIR for cross-vendor patient data, vendor-specific APIs for proprietary functionality, SMART on FHIR for clinician-context-aware app integration). Where these APIs are available, the integration is conventional: authenticate as the clinician (typically via SMART on FHIR's launch context), call the right API to fetch or filter data, render the result in your client. The bandwidth and accuracy of the integration is good; the latency is reasonable; the audit trail is clean. 
 
-**SMART on FHIR launch and embedded apps.** A SMART on FHIR app launches inside the EHR's user interface (typically as an iframe or a side panel) with a context handoff that includes the current patient and the current clinician. The voice-navigation app can render itself inside this launch context and execute its actions against the host EHR's APIs. This is the cleanest integration model for clinically-aware voice navigation in 2026. It works well for read-side commands (open chart sections, show results, retrieve notes) and for some write-side commands (place a clinical decision support (CDS)-Hooks-style suggestion that the clinician confirms). Coverage of write operations is uneven across EHR vendors. 
+**SMART on FHIR launch and embedded apps.** A SMART on FHIR app launches inside the EHR's user interface (typically as an iframe or a side panel) with a context handoff that includes the current patient and the current clinician. The voice-navigation app can render itself inside this launch context and execute its actions against the host EHR's APIs. This is the cleanest integration model for clinically-aware voice navigation in 2026. It works well for read-side commands (open chart sections, show results, retrieve notes) and for some write-side commands (place a CDS-Hooks-style suggestion that the clinician confirms). Coverage of write operations is uneven across EHR vendors. 
 
 **Vendor-specific integration platforms.** Some EHR vendors (notably Epic with its App Orchard / Showroom marketplace, Cerner/Oracle Health with its Code Console, and others) offer vendor-specific extension frameworks that go beyond FHIR. These provide deeper access to proprietary functionality (Epic's Hyperspace UI extensions, Cerner's PowerChart MPages) at the cost of platform-specific integration work. Voice-navigation products targeting a specific EHR ecosystem usually leverage these. 
 

@@ -63,7 +63,7 @@ A production care management portfolio typically includes three to seven of thes
 
 For each program, the eligibility logic answers: is this patient in the program's denominator (the eligible population), and does the patient meet inclusion and not-meet-exclusion criteria?
 
-Denominator is typically defined by clinical conditions (active HF diagnosis on the problem list within X months, International Classification of Diseases (ICD)-10 codes from a defined value set), recent events (discharge from inpatient stay within Y days), risk thresholds (predicted admission probability above a threshold), or contractual triggers (members under a specific contract who become high-cost-claimant flagged). Multiple programs can have overlapping denominators; the orchestrator handles that.
+Denominator is typically defined by clinical conditions (active HF diagnosis on the problem list within X months, ICD-10 codes from a defined value set), recent events (discharge from inpatient stay within Y days), risk thresholds (predicted admission probability above a threshold), or contractual triggers (members under a specific contract who become high-cost-claimant flagged). Multiple programs can have overlapping denominators; the orchestrator handles that.
 
 Exclusions vary: hospice or palliative care for some programs, active oncology treatment for some, current enrollment in another program for many, prior disenrollment for cause within the last 12 months, language preferences not supported by the program's staffing.
 

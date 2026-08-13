@@ -24,7 +24,7 @@
 
 **Amazon Bedrock Guardrails for safety filtering on patient-facing communications.** When the biomarker output is communicated to the patient directly (not as a diagnosis but as patient-facing context), Guardrails apply content filters and contextual-grounding checks against the underlying biomarker output, ensuring the patient communication does not over-claim what the biomarker supports.
 
-**AWS HealthLake for Fast Healthcare Interoperability Resources (FHIR)-based biomarker observation storage.** The biomarker score is an Observation resource in FHIR terms. HealthLake stores the FHIR Observations and supports the longitudinal-trajectory queries the workflow needs. For non-FHIR electronic health record (EHR) integrations, the institutional EHR-integration layer translates the FHIR Observation into the EHR-specific representation. 
+**AWS HealthLake for FHIR-based biomarker observation storage.** The biomarker score is an Observation resource in FHIR terms. HealthLake stores the FHIR Observations and supports the longitudinal-trajectory queries the workflow needs. For non-FHIR electronic health record (EHR) integrations, the institutional EHR-integration layer translates the FHIR Observation into the EHR-specific representation. 
 
 **Amazon DynamoDB for per-patient longitudinal-state storage.** The per-patient trajectory data (baseline scores, score history, calibration context, confound flags per sample) is well-shaped for DynamoDB. A per-patient table with the patient hash as partition key and the sample timestamp as sort key supports the trajectory queries efficiently. KMS at rest with customer-managed keys.
 
@@ -40,7 +40,7 @@
 
 **Amazon CloudWatch for operational metrics and alarms.** Per-stage latency, per-cohort score distributions, eligibility-check pass rates, indeterminate-result rates, audio-quality scores, post-deployment accuracy proxies. Alarms on per-cohort drift thresholds, on indeterminate-result-rate spikes, on aggregate accuracy regressions.
 
-**AWS CloudTrail for API-level audit.** All access to protected health information (PHI)-bearing and biometric-data-bearing resources logged. SageMaker invocations logged. KMS key uses logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
+**AWS CloudTrail for API-level audit.** All access to PHI-bearing and biometric-data-bearing resources logged. SageMaker invocations logged. KMS key uses logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
 
 **Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon QuickSight (optional) for analytics.** Audit and telemetry flow to S3 via Firehose. Glue catalogs the data. Athena provides SQL access for the operational and post-market surveillance analytics. QuickSight renders the dashboards.
 
@@ -1542,9 +1542,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for clinical-decision-support and post-market-surveillance reference architectures
 
 **External References (Standards, Frameworks, and Regulatory):**
-- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model for biomarker-result EHR integration
+- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model for biomarker-result EHR integration
 - [FHIR Observation Resource](https://www.hl7.org/fhir/observation.html): canonical FHIR resource for biomarker-result write-back
-- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): standard codes for laboratory and clinical observations, including some voice-and-speech-derived measures
+- [LOINC](https://loinc.org/): standard codes for laboratory and clinical observations, including some voice-and-speech-derived measures
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in voice biomarker workflows
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [Illinois Biometric Information Privacy Act (BIPA)](https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004): biometric-data law applicable to voice samples in Illinois

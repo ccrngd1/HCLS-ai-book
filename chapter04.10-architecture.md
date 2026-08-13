@@ -16,7 +16,7 @@
 
 **Amazon SageMaker Feature Store for patient features.** The same feature store from prior recipes is reused. The online store provides low-latency access at the decision point; the offline store powers trajectory construction and cohort analytics. Feature Store's point-in-time-correct retrieval is essential for trajectory construction; the state at decision point three must reflect what was known at decision point three, not what is known today.
 
-**AWS HealthLake for Fast Healthcare Interoperability Resources (FHIR)-native clinical data.** Treatment regimes benefit from FHIR-native storage for the same reasons Recipe 4.9 did: condition lists, medication lists, observation history, encounter history feed directly into trajectory construction. Recommendation outputs map to FHIR `Task` and `ServiceRequest` resources with regime-specific extensions, supporting interoperability across care settings. 
+**AWS HealthLake for FHIR-native clinical data.** Treatment regimes benefit from FHIR-native storage for the same reasons Recipe 4.9 did: condition lists, medication lists, observation history, encounter history feed directly into trajectory construction. Recommendation outputs map to FHIR `Task` and `ServiceRequest` resources with regime-specific extensions, supporting interoperability across care settings. 
 
 **Amazon Bedrock for the clinician-facing narrative, with strict validator enforcement.** Two distinct LLM use cases:
 
@@ -1208,10 +1208,10 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **External References (Clinical Content):**
 - [Obermeyer Z. et al. 2019, *Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations*](https://www.science.org/doi/10.1126/science.aax2342): the canonical cautionary tale for fairness failures in healthcare AI; required reading for anyone building dynamic treatment regimes
-- [Health Level Seven (HL7) FHIR `Task` Resource](https://www.hl7.org/fhir/task.html): the FHIR specification for action assignment and tracking
+- [HL7 FHIR `Task` Resource](https://www.hl7.org/fhir/task.html): the FHIR specification for action assignment and tracking
 - [HL7 FHIR `ServiceRequest` Resource](https://www.hl7.org/fhir/servicerequest.html): the FHIR specification for service requests including treatments and procedures
 - [USPSTF Recommendations](https://www.uspreventiveservicestaskforce.org/uspstf/): preventive-care recommendations relevant to action catalogs in preventive-care regimes
-- [Healthcare Effectiveness Data and Information Set (HEDIS) Measures](https://www.ncqa.org/hedis/): healthcare-quality measures relevant to reward function specifications
+- [HEDIS Measures](https://www.ncqa.org/hedis/): healthcare-quality measures relevant to reward function specifications
 
 ---
 

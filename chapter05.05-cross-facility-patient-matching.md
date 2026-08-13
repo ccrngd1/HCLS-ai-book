@@ -1,4 +1,4 @@
-# Recipe 5.5: Cross-Facility Patient Matching in a health information exchange (HIE)
+# Recipe 5.5: Cross-Facility Patient Matching (HIE)
 
 **Effort:** 3 of 5
 
@@ -108,7 +108,7 @@ A few practical updates worth knowing:
 
 **TEFCA went operational, slowly.** The Trusted Exchange Framework and Common Agreement is now in production, with multiple QHINs designated and inter-network exchange happening at increasing volume.  The patient-matching standards within TEFCA are still maturing; recipe 5.9 covers the national-scale dimension. For regional and HIE-scale matching, TEFCA's emergence is changing the operational reality (organizations that previously connected only through their regional HIE now have a national reach) but is not changing the underlying matching techniques. The same probabilistic-and-deterministic core works.
 
-**FHIR-native query is becoming the dominant pattern.** Newer HIE deployments and the TEFCA Qualified Health Information Network (QHIN)-to-QHIN exchange use FHIR Patient `$match` and FHIR R4 (or higher) data resources rather than the older HL7 v2 Continuity of Care Document and IHE XDS infrastructure.  The transition is still in progress (most operational HIEs have hybrid v2-and-FHIR connectivity), and FHIR is rapidly becoming the assumed substrate for new development.
+**FHIR-native query is becoming the dominant pattern.** Newer HIE deployments and the TEFCA QHIN-to-QHIN exchange use FHIR Patient `$match` and FHIR R4 (or higher) data resources rather than the older HL7 v2 Continuity of Care Document and IHE XDS infrastructure.  The transition is still in progress (most operational HIEs have hybrid v2-and-FHIR connectivity), and FHIR is rapidly becoming the assumed substrate for new development.
 
 **Patient-mediated identity, not just provider-mediated.** The CMS Patient Access API and the broader push for patient-controlled health data are introducing a new identity-resolution path: the patient authenticates to a payer or to an aggregator, authorizes a connection to a third-party app, and the app pulls records on the patient's behalf. The patient's cryptographic identity (typically through OAuth or OIDC against a known identity provider) becomes a strong identifier that supplements demographic matching.  This is most directly relevant for patient-facing apps but is starting to feed into provider-facing record location too.
 

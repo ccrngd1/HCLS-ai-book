@@ -357,7 +357,7 @@
 <hr />
 <h2 id="the-aws-implementation">The AWS Implementation</h2>
 <h3 id="why-these-services">Why These Services</h3>
-<p><strong>Amazon Comprehend Medical for clinical NER and entity extraction.</strong> Comprehend Medical provides out-of-the-box extraction of medical conditions, medications (with dose, frequency, route, duration), lab tests and values, procedures, and temporal expressions from clinical text. It handles negation detection and attribute linkage natively. For phenotyping, it provides the foundational entity extraction layer without requiring model training or clinical NLP infrastructure from scratch.</p>
+<p><strong>Amazon Comprehend Medical for clinical named entity recognition (NER) and entity extraction.</strong> Comprehend Medical provides out-of-the-box extraction of medical conditions, medications (with dose, frequency, route, duration), lab tests and values, procedures, and temporal expressions from clinical text. It handles negation detection and attribute linkage natively. For phenotyping, it provides the foundational entity extraction layer without requiring model training or clinical natural language processing (NLP) infrastructure from scratch.</p>
 <p><strong>Amazon S3 for clinical document storage.</strong> De-identified or appropriately consented clinical notes land in S3, organized by patient and encounter. S3 provides the data lake for the phenotyping pipeline, with encryption, access logging, and lifecycle policies for research data governance.</p>
 <p><strong>AWS Step Functions for pipeline orchestration.</strong> Phenotype extraction is a multi-step, per-patient pipeline with branching logic (different criteria may require different extraction approaches), error handling (a single note's processing failure shouldn't invalidate an entire patient), and checkpointing (you want to resume from where you left off, not start over). Step Functions provides visual workflow orchestration with built-in retry, error handling, and state management.</p>
 <p><strong>AWS Lambda for per-document processing.</strong> Each clinical note gets processed independently: extract entities, classify assertions, pull attributes. Lambda's pay-per-invocation model fits perfectly with the embarrassingly parallel nature of document-level NLP. Process 100,000 notes across 5,000 patients by fanning out to concurrent Lambda invocations.</p>
@@ -926,11 +926,11 @@ FUNCTION filter_entities(entities, target_categories, target_terms, required_ass
 </table>
 <p><strong>Where it struggles:</strong></p>
 <ul>
-<li>Rare phenotypes with prevalence below 1% (PPV drops due to base rate)</li>
+<li>Rare phenotypes with prevalence below 1% (positive predictive value (PPV) drops due to base rate)</li>
 <li>Criteria that require multi-sentence reasoning (&quot;adequate trial&quot; determination)</li>
 <li>Notes with heavy abbreviation and shorthand (varies by institution)</li>
 <li>Conflicting evidence across providers (one says &quot;depression,&quot; another says &quot;adjustment disorder&quot;)</li>
-<li>Historical note scans with OCR artifacts that degrade NLP accuracy</li>
+<li>Historical note scans with optical character recognition (OCR) artifacts that degrade NLP accuracy</li>
 <li>Phenotypes that require negation of a negation (&quot;patient no longer denies suicidal ideation&quot;)</li>
 </ul>
 <hr />
@@ -940,7 +940,7 @@ FUNCTION filter_entities(entities, target_categories, target_terms, required_ass
 <p><strong>No automated re-validation when NLP model versions change.</strong> When AWS updates Comprehend Medical (they don't always announce minor model updates), your previously validated phenotype might produce slightly different extractions. You need a regression test suite: a set of known-classification patients that you re-run after any service change to confirm outputs haven't drifted.</p>
 <p><strong>No clinician-in-the-loop adjudication workflow.</strong> The PROBABLE classification bucket inevitably grows. Without a structured workflow for a clinician to review edge cases, those patients sit in limbo. A production system routes low-confidence classifications to a review queue, captures the clinician's adjudication decision, and feeds those decisions back into the rule refinement process.</p>
 <p><strong>No cross-institution portability testing.</strong> A phenotype algorithm that achieves 93% PPV at your institution might drop to 75% at another site with different documentation conventions, abbreviation patterns, or clinical workflows. Before publishing a phenotype for multi-site use, you need validation data from at least 2-3 external sites confirming acceptable performance.</p>
-<p><strong>No pre-filter cost optimization.</strong> The walkthrough processes every note for every patient. At scale (50,000 candidates), this means millions of API calls and hundreds of thousands of dollars in NLP costs. Production systems first screen patients using cheap structured data queries (ICD codes, medication lists) to narrow the candidate pool by 80-90% before running expensive NLP. That pre-filter step isn't optional.</p>
+<p><strong>No pre-filter cost optimization.</strong> The walkthrough processes every note for every patient. At scale (50,000 candidates), this means millions of API calls and hundreds of thousands of dollars in NLP costs. Production systems first screen patients using cheap structured data queries (International Classification of Diseases (ICD) codes, medication lists) to narrow the candidate pool by 80-90% before running expensive NLP. That pre-filter step isn't optional.</p>
 <hr />
 <h2 id="variations-and-extensions">Variations and Extensions</h2>
 <p><strong>Multi-site federated phenotyping.</strong> Instead of centralizing data from multiple institutions, deploy the phenotype extraction pipeline at each site and aggregate only the classifications (not the underlying notes). This respects data governance boundaries while enabling multi-site research. AWS HealthLake or a shared phenotype definition in S3 can coordinate the algorithm version across sites while each site processes its own data.</p>
@@ -959,7 +959,7 @@ FUNCTION filter_entities(entities, target_categories, target_terms, required_ass
 </ul>
 <p><strong>AWS Sample Repos:</strong></p>
 <ul>
-<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: Demonstrates extracting medical entities and mapping them to FHIR resources</li>
+<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration"><code>amazon-comprehend-medical-fhir-integration</code></a>: Demonstrates extracting medical entities and mapping them to Fast Healthcare Interoperability Resources (FHIR) resources</li>
 <li><a href="https://github.com/aws-samples/amazon-comprehend-examples"><code>amazon-comprehend-examples</code></a>: General Comprehend examples including medical entity detection patterns</li>
 </ul>
 <p><strong>External Resources:</strong></p>

@@ -356,7 +356,7 @@
 <p><strong>Effort:</strong> 5 of 5</p>
 <hr />
 <h2 id="the-problem">The Problem</h2>
-<p>Here's a scenario that plays out every single day in healthcare data integration. A hospital system acquires a physician practice. The practice has been coding diagnoses in ICD-10-CM. The hospital's analytics platform uses SNOMED CT for clinical decision support. The quality reporting system needs HEDIS value sets that reference both. The pharmacy system speaks RxNorm. The lab system uses LOINC. And someone in the C-suite wants a unified patient dashboard that pulls from all of them.</p>
+<p>Here's a scenario that plays out every single day in healthcare data integration. A hospital system acquires a physician practice. The practice has been coding diagnoses in ICD-10-CM. The hospital's analytics platform uses SNOMED CT for clinical decision support (CDS). The quality reporting system needs Healthcare Effectiveness Data and Information Set (HEDIS) value sets that reference both. The pharmacy system speaks RxNorm. The lab system uses Logical Observation Identifiers Names and Codes (LOINC). And someone in the C-suite wants a unified patient dashboard that pulls from all of them.</p>
 <p>Every one of these systems is describing the same clinical reality (a patient has Type 2 diabetes, takes metformin, had an HbA1c drawn last month) but they're describing it in completely different languages. &quot;Type 2 diabetes mellitus&quot; in ICD-10 is E11. In SNOMED CT it's concept 44054006. In a clinical note it might say &quot;DM2&quot; or &quot;adult-onset diabetes&quot; or &quot;NIDDM&quot; (a term that's been deprecated for decades but still shows up in legacy data).</p>
 <p>This isn't a cosmetic problem. When your analytics can't recognize that ICD-10 E11.9, SNOMED 44054006, and the free-text mention &quot;type 2 DM&quot; all refer to the same clinical concept, you get wrong answers. Quality measures undercount. Risk adjustment misses conditions. Clinical decision support fires for the wrong patients. Research cohorts are incomplete.</p>
 <p>The scale is staggering. SNOMED CT contains over 350,000 active concepts. ICD-10-CM has roughly 72,000 codes. LOINC has over 90,000 observation identifiers. RxNorm has hundreds of thousands of drug concepts. The mappings between them are not one-to-one. They're many-to-many, version-dependent, context-sensitive, and constantly evolving. A new ICD-10 code gets added in October. SNOMED releases quarterly. RxNorm updates monthly.</p>
@@ -371,7 +371,7 @@
 <p><strong>ICD-10-CM/PCS</strong> (International Classification of Diseases, 10th Revision, Clinical Modification / Procedure Coding System). The billing and administrative standard in the US. Maintained by WHO (ICD-10) with US modifications by CMS/NCHS. Every diagnosis on a claim uses ICD-10-CM. Every inpatient procedure uses ICD-10-PCS. Updated annually in October.</p>
 <p><strong>LOINC</strong> (Logical Observation Identifiers Names and Codes). The standard for laboratory and clinical observations. When a lab result comes back, the observation type (what was measured) is identified by a LOINC code. Maintained by the Regenstrief Institute.</p>
 <p><strong>RxNorm</strong>. The standard for medications in the US. Provides normalized names for clinical drugs and links to drug vocabularies used in pharmacy and drug interaction systems. Maintained by the National Library of Medicine (NLM). Updated monthly.</p>
-<p><strong>CPT</strong> (Current Procedural Terminology). Procedure codes for outpatient billing. Maintained by the AMA. Proprietary (you pay for a license).</p>
+<p><strong>Current Procedural Terminology (CPT)</strong>. Procedure codes for outpatient billing. Maintained by the AMA. Proprietary (you pay for a license).</p>
 <p><strong>HCPCS</strong> (Healthcare Common Procedure Coding System). Extends CPT with codes for supplies, equipment, and non-physician services. Maintained by CMS.</p>
 <p>Each of these terminologies has its own structure, its own versioning scheme, its own release cadence, and its own licensing terms. The relationships between them are maintained by various organizations (NLM's UMLS being the most comprehensive), but those relationships are imperfect, incomplete, and require ongoing curation.</p>
 <h3 id="why-mapping-is-hard">Why Mapping Is Hard</h3>
@@ -403,7 +403,7 @@
                                             [Curation Interface]
 </code></pre>
 <p><strong>Terminology Sources.</strong> The raw vocabulary files: UMLS releases, SNOMED RF2 files, ICD-10 code tables, LOINC downloads, RxNorm RRF files. Each has its own format and release schedule.</p>
-<p><strong>Graph Ingestion.</strong> ETL pipelines that parse terminology files, extract concepts and relationships, and load them into the graph. This runs on each terminology release (monthly for RxNorm, quarterly for SNOMED, annually for ICD-10).</p>
+<p><strong>Graph Ingestion.</strong> Extract, transform, and load (ETL) pipelines that parse terminology files, extract concepts and relationships, and load them into the graph. This runs on each terminology release (monthly for RxNorm, quarterly for SNOMED, annually for ICD-10).</p>
 <p><strong>Knowledge Graph Store.</strong> A graph database holding all concepts as nodes and all relationships (intra-terminology hierarchies, cross-terminology mappings) as edges. Must support efficient traversal, pattern matching, and temporal queries.</p>
 <p><strong>Normalization API.</strong> The interface that consuming systems call. Given a concept (code + terminology + version), return the canonical representation and all known mappings. Must be fast (sub-100ms for point lookups) and support batch operations.</p>
 <p><strong>Curation Interface.</strong> A tool for terminologists to review, approve, and create custom mappings. The UMLS gets you 80% of the way. The last 20% requires human expertise specific to your organization's use cases.</p>
@@ -417,7 +417,7 @@
 <li><strong>Recipe 13.3 (ICD/CPT Hierarchy Navigation):</strong> Provides the hierarchy traversal foundation that value set expansion in this recipe builds upon</li>
 <li><strong>Recipe 13.4 (Drug-Drug Interaction Knowledge Base):</strong> Uses RxNorm normalization from this recipe to identify drugs regardless of how they're coded in source systems</li>
 <li><strong>Recipe 13.6 (Care Gap Reasoning Engine):</strong> Depends on normalized concepts to match patient conditions against guideline criteria</li>
-<li><strong>Recipe 8.4 (Medication Extraction and Normalization):</strong> NLP pipeline that feeds extracted concepts into this normalization service</li>
+<li><strong>Recipe 8.4 (Medication Extraction and Normalization):</strong> natural language processing (NLP) pipeline that feeds extracted concepts into this normalization service</li>
 <li><strong>Recipe 5.6 (Claims-to-Clinical Data Linkage):</strong> Uses cross-terminology mappings to join claims data (ICD-10) with clinical data (SNOMED)</li>
 </ul>
 <hr />

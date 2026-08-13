@@ -81,7 +81,7 @@ The design decision: which sources, with what freshness, at what cost, with what
 
 In literature search, the clinician's free-text question drives retrieval. In CDS, the patient context drives retrieval, and the clinician's question (if any) is a secondary filter. The patient context is structured: demographics, active problems, current medications, allergies, vital signs, recent labs, recent imaging, recent procedures, admission context, advance directives.
 
-Most of this comes from the EHR. The standard data model is FHIR (Fast Healthcare Interoperability Resources), which represents patients, conditions, medications, observations (including labs and vitals), procedures, and clinical documents as structured JSON resources with standardized terminology bindings (Systematized Nomenclature of Medicine (SNOMED) for conditions, RxNorm for medications, Logical Observation Identifiers Names and Codes (LOINC) for observations, International Classification of Diseases (ICD)-10 for billing codes). A CDS synthesis system typically consumes a FHIR bundle representing the patient's current state.
+Most of this comes from the EHR. The standard data model is FHIR (Fast Healthcare Interoperability Resources), which represents patients, conditions, medications, observations (including labs and vitals), procedures, and clinical documents as structured JSON resources with standardized terminology bindings (Systematized Nomenclature of Medicine (SNOMED) for conditions, RxNorm for medications, Logical Observation Identifiers Names and Codes (LOINC) for observations, ICD-10 for billing codes). A CDS synthesis system typically consumes a FHIR bundle representing the patient's current state.
 
 The retrieval pattern then becomes:
 

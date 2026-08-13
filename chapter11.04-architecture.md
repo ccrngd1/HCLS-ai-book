@@ -16,9 +16,9 @@
 
 **Amazon Bedrock Guardrails for scope and content filtering.** Same purpose as the previous chapter 11 recipes, with intake-specific configuration: clinical-advice filter aggressive, diagnostic-speculation filter aggressive, treatment-recommendation filter aggressive, severity-assessment filter aggressive. The intake bot's scope discipline is broader than the refill bot's because patients ask substantive clinical questions during intake conversations more often than they do during refill conversations.
 
-**Amazon Comprehend Medical for clinical-entity extraction.** Comprehend Medical's clinical-entity extraction supplements the LLM's HPI and ROS extraction. It provides RxNorm-coded medication entities, condition entities coded to International Classification of Diseases (ICD)-10, clinical entities coded to Systematized Nomenclature of Medicine (SNOMED), and protected health information (PHI) detection. Where the LLM is uncertain about a clinical mention, Comprehend Medical's structured extraction can disambiguate or flag for human review.
+**Amazon Comprehend Medical for clinical-entity extraction.** Comprehend Medical's clinical-entity extraction supplements the LLM's HPI and ROS extraction. It provides RxNorm-coded medication entities, condition entities coded to ICD-10, clinical entities coded to Systematized Nomenclature of Medicine (SNOMED), and protected health information (PHI) detection. Where the LLM is uncertain about a clinical mention, Comprehend Medical's structured extraction can disambiguate or flag for human review.
 
-**AWS HealthLake (optional) for the Fast Healthcare Interoperability Resources (FHIR)-native chart and packet integration.** When the institution stores FHIR data in HealthLake, the bot's encounter-context, chart-context, and packet-delivery tools can interact with HealthLake directly. The packet can be written as a FHIR QuestionnaireResponse linked to the upcoming Encounter. When the FHIR data lives in the institution's electronic health record (EHR), the bot's tools query and write through the EHR's FHIR API instead.
+**AWS HealthLake (optional) for the FHIR-native chart and packet integration.** When the institution stores FHIR data in HealthLake, the bot's encounter-context, chart-context, and packet-delivery tools can interact with HealthLake directly. The packet can be written as a FHIR QuestionnaireResponse linked to the upcoming Encounter. When the FHIR data lives in the institution's electronic health record (EHR), the bot's tools query and write through the EHR's FHIR API instead.
 
 **Amazon API Gateway and AWS Lambda for the backend.** Same chat-handler pattern as the previous chapter 11 recipes. The tool Lambdas that integrate with the EHR's FHIR API and the institution's screener registry run in VPC with controlled egress.
 
@@ -1837,7 +1837,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Big Data Blog](https://aws.amazon.com/blogs/big-data/): search "HealthLake," "FHIR," "QuestionnaireResponse" for data-side patterns relevant to packet delivery
 
 **External References (Standards and Frameworks):**
-- [Health Level Seven (HL7) FHIR Questionnaire Resource](https://www.hl7.org/fhir/questionnaire.html): the FHIR Questionnaire resource specification
+- [HL7 FHIR Questionnaire Resource](https://www.hl7.org/fhir/questionnaire.html): the FHIR Questionnaire resource specification
 - [HL7 FHIR QuestionnaireResponse Resource](https://www.hl7.org/fhir/questionnaireresponse.html): the FHIR QuestionnaireResponse resource specification
 - [HL7 FHIR Encounter Resource](https://www.hl7.org/fhir/encounter.html): the encounter context the intake packet attaches to
 - [Patient Health Questionnaire (PHQ-9)](https://www.apa.org/depression-guideline/patient-health-questionnaire.pdf): the PHQ-9 instrument and scoring (American Psychological Association reference)

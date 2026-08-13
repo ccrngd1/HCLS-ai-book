@@ -14,7 +14,7 @@ The AWS implementation borrows heavily from Recipes 12.1 and 12.2; the platform 
 
 **Amazon HealthLake or Kinesis Data Streams for ADT ingestion.** ED ADT messages can be ingested via Amazon HealthLake (which natively understands Health Level Seven (HL7) v2 and Fast Healthcare Interoperability Resources (FHIR)) for systems that want a longitudinal patient store, or via Kinesis Data Streams for systems that just want the hourly arrival counts and don't need full FHIR storage. For the lightest-weight forecasting pipeline, Kinesis is simpler. HealthLake is the right choice when other workloads (Recipes 12.5, 12.7) also need the patient timeline.
 
-**Amazon S3 for historical data and forecast outputs.** Hourly arrival counts (aggregated from the ADT stream), weather and surveillance data, model artifacts, and forecast outputs all land in S3, partitioned by date and ED. SSE-KMS encryption is mandatory for the arrival data, which is protected health information (PHI)-adjacent (linked to specific patient encounters even when aggregated to counts).
+**Amazon S3 for historical data and forecast outputs.** Hourly arrival counts (aggregated from the ADT stream), weather and surveillance data, model artifacts, and forecast outputs all land in S3, partitioned by date and ED. SSE-KMS encryption is mandatory for the arrival data, which is PHI-adjacent (linked to specific patient encounters even when aggregated to counts).
 
 **AWS Glue or Amazon EMR Serverless for hourly aggregation.** Stream-to-batch aggregation: take the raw ADT message stream and produce hourly count tables. Glue Streaming jobs handle this for moderate volumes. For very high-volume systems (large urban EDs with high throughput), EMR Serverless with Spark Streaming is more cost-effective.
 
