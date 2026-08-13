@@ -20,7 +20,7 @@
 
 **AWS Lambda and AWS Step Functions for pipeline orchestration.** Per-stage Lambdas handle session setup, audio ingest, per-task feature extraction, per-instrument scoring, longitudinal comparison, SLP review handoff, documentation generation, and electronic health record (EHR)/SIS write-back. Step Functions coordinates the stages with durable state. Per-task scoring fans out across stimulus items and fans back in for per-instrument aggregation; Step Functions Map state handles this naturally.
 
-**AWS HealthLake for FHIR-based assessment storage.** Speech-therapy assessment results are Observation resources in FHIR terms (with per-instrument scores), DocumentReference resources for the assessment-report PDFs, and Goal resources for therapy goals. HealthLake stores the FHIR resources. For non-FHIR EHR integrations and school SIS integrations, the institutional integration layer translates the FHIR representation into the target system's format. 
+**AWS HealthLake for FHIR-based assessment storage.** Speech-therapy assessment results are Fast Healthcare Interoperability Resources (FHIR) Observation resources (with per-instrument scores), DocumentReference resources for the assessment-report PDFs, and Goal resources for therapy goals. HealthLake stores the FHIR resources. For non-FHIR EHR integrations and school SIS integrations, the institutional integration layer translates the FHIR representation into the target system's format. 
 
 **Amazon DynamoDB for per-patient session state and longitudinal feature history.** The per-patient longitudinal store holds session-by-session feature vectors, per-goal progress trajectories, per-target-sound mastery curves, and per-instrument score histories. DynamoDB's partition-key-by-patient and sort-key-by-session-timestamp model supports the trajectory queries efficiently.
 
@@ -1633,12 +1633,12 @@ Each upstream service has a defined failover policy. The SLP must be able to con
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for clinical-decision-support reference architectures
 
 **External References (Standards, Frameworks, and Regulatory):**
-- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model for assessment-result EHR integration
+- The [FHIR Specification](https://www.hl7.org/fhir/) from Health Level Seven (HL7): the data model for assessment-result EHR integration
 - [FHIR Observation Resource](https://www.hl7.org/fhir/observation.html): canonical FHIR resource for assessment-score write-back
 - [FHIR Goal Resource](https://www.hl7.org/fhir/goal.html): canonical FHIR resource for therapy-goal representation
 - [FHIR CarePlan Resource](https://www.hl7.org/fhir/careplan.html): canonical FHIR resource for therapy-plan representation
-- [LOINC](https://loinc.org/): standard codes for clinical observations, including some speech-and-language assessment items
-- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in speech-therapy workflows
+- Logical Observation Identifiers Names and Codes (LOINC), the [standard code set](https://loinc.org/) for clinical observations, including some speech-and-language assessment items
+- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs protected health information (PHI) in speech-therapy workflows
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [FERPA](https://www2.ed.gov/policy/gen/guid/fpco/ferpa/index.html): governs educational records, applicable for school-based SLP work
 - [COPPA](https://www.ftc.gov/legal-library/browse/rules/childrens-online-privacy-protection-rule-coppa): governs online services directed at children under 13, applicable for direct-to-child interfaces
