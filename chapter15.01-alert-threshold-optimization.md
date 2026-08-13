@@ -6,7 +6,7 @@
 
 ## The Problem
 
-Here's a number that should make you uncomfortable: in a typical ICU, clinicians experience between 150 and 400 alerts per patient per day. Not per unit. Per patient. Multiply that across a 20-bed ICU and you're looking at thousands of alarms firing every shift. Monitors beeping. Pagers buzzing. Pop-ups in the EHR. And the vast majority of them are false positives or clinically irrelevant.
+Here's a number that should make you uncomfortable: in a typical ICU, clinicians experience between 150 and 400 alerts per patient per day. Not per unit. Per patient. Multiply that across a 20-bed ICU and you're looking at thousands of alarms firing every shift. Monitors beeping. Pagers buzzing. Pop-ups in the electronic health record (EHR). And the vast majority of them are false positives or clinically irrelevant.
 
 This is alert fatigue, and it's not just annoying. It's dangerous.
 
@@ -18,7 +18,7 @@ The traditional fix is to convene a committee, review alert data, and manually a
 
 What if the thresholds could learn? What if the system observed which alerts clinicians actually act on, which ones get dismissed within seconds, and which ones lead to genuine interventions, and then continuously adjusted itself to maximize the ratio of actionable alerts to noise?
 
-That's reinforcement learning applied to alert threshold optimization. And it's one of the most immediately practical RL applications in healthcare because the feedback signal is clear, the stakes of exploration are manageable (a slightly suboptimal threshold for a few hours is not a patient safety crisis), and the improvement potential is enormous.
+That's reinforcement learning (RL) applied to alert threshold optimization. And it's one of the most immediately practical RL applications in healthcare because the feedback signal is clear, the stakes of exploration are manageable (a slightly suboptimal threshold for a few hours is not a patient safety crisis), and the improvement potential is enormous.
 
 ---
 
@@ -26,7 +26,7 @@ That's reinforcement learning applied to alert threshold optimization. And it's 
 
 ### What Is Reinforcement Learning?
 
-Reinforcement learning (RL) is a branch of machine learning where an agent learns to make decisions by interacting with an environment and receiving feedback in the form of rewards. Unlike supervised learning (where you have labeled examples of correct answers), RL learns from consequences. The agent takes an action, observes what happens, and adjusts its strategy based on whether the outcome was good or bad.
+Reinforcement learning is a branch of machine learning where an agent learns to make decisions by interacting with an environment and receiving feedback in the form of rewards. Unlike supervised learning (where you have labeled examples of correct answers), RL learns from consequences. The agent takes an action, observes what happens, and adjusts its strategy based on whether the outcome was good or bad.
 
 The core loop is simple: observe the current state, choose an action, receive a reward, observe the new state, repeat. Over time, the agent learns a policy (a mapping from states to actions) that maximizes cumulative reward.
 

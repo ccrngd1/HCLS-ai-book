@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon SageMaker for model training and hosting.** SageMaker provides the infrastructure for training RL models (using the built-in RL toolkit or custom containers), hosting the trained policy for inference, and managing model versions. The RL toolkit supports standard frameworks (Ray RLlib, Stable Baselines) and handles the distributed training infrastructure. For this use case, training is periodic (daily or weekly batch retraining), and inference is lightweight (threshold decisions every few hours, not milliseconds).
+**Amazon SageMaker for model training and hosting.** SageMaker provides the infrastructure for training reinforcement learning (RL) models (using the built-in RL toolkit or custom containers), hosting the trained policy for inference, and managing model versions. The RL toolkit supports standard frameworks (Ray RLlib, Stable Baselines) and handles the distributed training infrastructure. For this use case, training is periodic (daily or weekly batch retraining), and inference is lightweight (threshold decisions every few hours, not milliseconds).
 
 **Amazon Kinesis Data Streams for alert event ingestion.** Clinical alerts are a streaming problem. Alerts fire continuously, clinician responses arrive asynchronously, and the system needs to process this stream in near-real-time to calculate rewards and update state. Kinesis handles the ingestion at scale with the durability guarantees you need for healthcare data.
 
@@ -20,7 +20,7 @@
 
 **Amazon CloudWatch for monitoring and rollback triggers.** The system monitors alert-to-action ratios, alert volumes, and missed-event rates. If any metric crosses a predefined threshold (ironic, yes), CloudWatch alarms trigger automatic rollback to the previous threshold configuration.
 
-**Amazon SQS for dead letter queuing and learning circuit breakers.** When the reward-calculator Lambda fails to process an alert event (malformed payload, EHR API timeout, transient dependency error), the failed event routes to an SQS dead letter queue (DLQ) rather than being silently dropped. Individual transient failures get reprocessed automatically via redrive policy (max 3 retries with exponential backoff). But the DLQ also serves a more important role: detecting systematic failures that should pause online learning entirely.
+**Amazon SQS for dead letter queuing and learning circuit breakers.** When the reward-calculator Lambda fails to process an alert event (malformed payload, electronic health record (EHR) API timeout, transient dependency error), the failed event routes to an SQS dead-letter queue (DLQ) rather than being silently dropped. Individual transient failures get reprocessed automatically via redrive policy (max 3 retries with exponential backoff). But the DLQ also serves a more important role: detecting systematic failures that should pause online learning entirely.
 
 Here's why this matters. If the EHR API that provides clinician response data goes down for hours, every reward calculation during that window will fail. Those events land in the DLQ. If you let the RL agent continue training on the successfully-processed subset, you introduce selection bias: the training data only contains alerts where the reward happened to be computable (perhaps alerts during low-traffic hours when the EHR was still responsive), and the agent learns a policy skewed toward those conditions.
 
@@ -336,13 +336,13 @@ FUNCTION apply_threshold_safely(alert_type, unit, current_threshold, action):
 
 The pseudocode and architecture above demonstrate the pattern. Deploying this in a hospital requires addressing several gaps:
 
-**EHR integration.** The alert event stream and clinician response tracking require deep integration with your EHR system. Most EHRs (Epic, Cerner/Oracle Health) have alert management modules, but extracting the granular response data (time-to-dismiss, subsequent orders) requires custom HL7/FHIR interfaces or database-level integration. This is often the hardest part of the project, not the RL.
+**EHR integration.** The alert event stream and clinician response tracking require deep integration with your EHR system. Most EHRs (Epic, Cerner/Oracle Health) have alert management modules, but extracting the granular response data (time-to-dismiss, subsequent orders) requires custom Health Level Seven (HL7) or Fast Healthcare Interoperability Resources (FHIR) interfaces or database-level integration. This is often the hardest part of the project, not the RL.
 
 **Clinical governance.** You need a clinical committee to define safety bounds, approve the reward function, review threshold changes periodically, and have authority to override or disable the system. The RL agent is a tool that assists clinical decision-making about alert configuration. It does not replace clinical judgment.
 
 **A/B testing infrastructure.** Before full deployment, you need to run the RL-optimized thresholds on a subset of units while keeping others on static thresholds. This requires randomization at the unit level, outcome tracking across both arms, and statistical analysis of the difference. Plan for a 3-6 month pilot.
 
-**Regulatory considerations.** Alert threshold optimization likely does not require FDA clearance (it's adjusting configuration of existing systems, not making clinical decisions). The FDA's 2022 guidance on Clinical Decision Support software provides a framework: if the system (1) is not intended to replace clinician judgment, (2) allows the clinician to independently review the basis for the recommendation, and (3) is intended for a healthcare professional, it may qualify for the CDS exemption under 21st Century Cures Act Section 3060. But check with your compliance team. If the system is framed as a "clinical decision support" tool, different rules may apply.
+**Regulatory considerations.** Alert threshold optimization likely does not require FDA clearance (it's adjusting configuration of existing systems, not making clinical decisions). The FDA's 2022 guidance on clinical decision support (CDS) software provides a framework: if the system (1) is not intended to replace clinician judgment, (2) allows the clinician to independently review the basis for the recommendation, and (3) is intended for a healthcare professional, it may qualify for the CDS exemption under 21st Century Cures Act Section 3060. But check with your compliance team. If the system is framed as a "clinical decision support" tool, different rules may apply.
 
 ---
 
