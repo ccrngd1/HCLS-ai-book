@@ -12,7 +12,7 @@
 
 ## The Problem
 
-A physician is prescribing warfarin to a 72-year-old patient with atrial fibrillation. The patient is already on amiodarone, metoprolol, lisinopril, and atorvastatin. The physician clicks "Sign" on the order, and the EHR fires an alert: "Warfarin + Amiodarone: Major interaction. Increased anticoagulant effect and risk of bleeding." Good. That's a real, clinically significant interaction that requires dose adjustment.
+A physician is prescribing warfarin to a 72-year-old patient with atrial fibrillation. The patient is already on amiodarone, metoprolol, lisinopril, and atorvastatin. The physician clicks "Sign" on the order, and the electronic health record (EHR) fires an alert: "Warfarin + Amiodarone: Major interaction. Increased anticoagulant effect and risk of bleeding." Good. That's a real, clinically significant interaction that requires dose adjustment.
 
 But here's the problem: the EHR also fires alerts for warfarin + atorvastatin (moderate, usually manageable with monitoring), warfarin + lisinopril (minor, rarely clinically significant), and a generic "multiple medications affecting hepatic metabolism" warning that means almost nothing actionable. Four alerts for one order. The physician clicks through all of them in about two seconds without reading any of them.
 
@@ -72,7 +72,7 @@ Building a drug interaction knowledge graph requires integrating multiple author
 
 **DrugBank**: A comprehensive database of drug properties including targets, enzymes, transporters, and carriers. This is where you get which enzymes metabolize which drugs, which transporters move which drugs across membranes, which receptors each drug binds to. DrugBank provides the "why" behind interactions. It has both a free academic version and a commercial version with additional curated content. 
 
-**FDA Structured Product Labeling (SPL)**: The official drug labels in machine-readable XML format. The "Drug Interactions" section of each label contains FDA-reviewed interaction information. The challenge is that this information is in semi-structured text, not clean relational data. NLP extraction is needed to convert label text into graph edges.
+**FDA Structured Product Labeling (SPL)**: The official drug labels in machine-readable XML format. The "Drug Interactions" section of each label contains FDA-reviewed interaction information. The challenge is that this information is in semi-structured text, not clean relational data. Natural language processing (NLP) extraction is needed to convert label text into graph edges.
 
 **Clinical literature**: PubMed contains thousands of published drug interaction studies. These range from in vitro enzyme inhibition assays to large observational cohort studies. Extracting structured interaction data from literature is an NLP problem, but it's the only way to capture interactions that haven't yet made it into curated databases.
 
@@ -154,7 +154,7 @@ Not all interactions are created equal, and your graph needs to represent this. 
 ## Related Recipes
 
 - **[Recipe 13.1: Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)** covers the foundational graph model for drug data. The formulary graph provides the drug identity and classification nodes that this recipe's interaction graph builds upon.
-- **[Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation)** demonstrates the pattern of loading medical ontologies into a graph database and querying hierarchical relationships. The same ETL and query patterns apply here.
+- **[Recipe 13.3: International Classification of Diseases (ICD)/Current Procedural Terminology (CPT) Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation)** demonstrates the pattern of loading medical ontologies into a graph database and querying hierarchical relationships. The same extract, transform, and load (ETL) and query patterns apply here.
 - **[Recipe 8.4: Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization)** covers extracting medication mentions from clinical text and normalizing them to RxNorm. That's the upstream step that feeds medication lists into this recipe's interaction checker.
 - **[Recipe 7.6: Rising Risk Identification](chapter07.06-rising-risk-identification)** uses predictive models that could incorporate interaction burden as a risk factor. Patients on multiple interacting medications are at higher risk for adverse events.
 
