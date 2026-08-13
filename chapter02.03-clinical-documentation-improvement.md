@@ -1,4 +1,4 @@
-# Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
+# Recipe 2.3: Clinical documentation improvement (CDI) Suggestions
 
 **Effort:** 2 of 5
 
@@ -8,7 +8,7 @@
 
 A hospitalist admits a patient with pneumonia. They write in the progress note: "Patient has pneumonia, started on antibiotics." Clinically, this is fine. The patient gets treated. But from a coding and reimbursement perspective, this note is a disaster.
 
-Was it community-acquired or hospital-acquired pneumonia? Bacterial, viral, or aspiration? Which organism, if known? Is it the principal diagnosis or a complication of something else? Each of these distinctions maps to a different ICD-10 code, and each code maps to a different DRG, and each DRG maps to a different reimbursement amount. The difference between "pneumonia, unspecified" (J18.9) and "pneumonia due to Streptococcus pneumoniae" (J13) can mean thousands of dollars in reimbursement difference for the same clinical care.
+Was it community-acquired or hospital-acquired pneumonia? Bacterial, viral, or aspiration? Which organism, if known? Is it the principal diagnosis or a complication of something else? Each of these distinctions maps to a different International Classification of Diseases (ICD)-10 code, and each code maps to a different DRG, and each DRG maps to a different reimbursement amount. The difference between "pneumonia, unspecified" (J18.9) and "pneumonia due to Streptococcus pneumoniae" (J13) can mean thousands of dollars in reimbursement difference for the same clinical care.
 
 This is not about upcoding. This is about accuracy. The documentation should reflect what the physician actually knows and did. When a physician writes "pneumonia" but their lab results show Streptococcus and their antibiotic choice confirms they're treating a bacterial infection, the documentation is incomplete, not wrong. The clinical picture is clear in the physician's head. It just didn't make it onto the page.
 
@@ -50,7 +50,7 @@ LLMs change this equation because they can read and reason about clinical text t
 
 **Hallucinated clinical findings.** The most dangerous failure. The model suggests a specificity improvement based on clinical information that isn't actually in the chart. "Your labs suggest E. coli" when no culture results exist yet. This is why CDI suggestions must always be framed as questions, never as assertions, and why physicians must always make the final documentation decision.
 
-**Coding rule staleness.** ICD-10-CM guidelines update annually. CMS publishes new codes, retires old ones, and changes specificity requirements every October. An LLM's training data has a cutoff. If you're relying on the model's inherent knowledge of coding rules rather than providing current guidelines via retrieval, your suggestions will drift out of date. This is a strong argument for RAG (Retrieval-Augmented Generation) architecture.
+**Coding rule staleness.** ICD-10-CM guidelines update annually. CMS publishes new codes, retires old ones, and changes specificity requirements every October. An LLM's training data has a cutoff. If you're relying on the model's inherent knowledge of coding rules rather than providing current guidelines via retrieval, your suggestions will drift out of date. This is a strong argument for retrieval-augmented generation (RAG) architecture.
 
 **Over-querying.** A model that flags every possible specificity gap will drown physicians in queries. Alert fatigue is already a massive problem in healthcare IT. If your CDI system generates 15 suggestions per note, physicians will ignore all of them. You need confidence thresholds and prioritization: flag the high-impact gaps, suppress the marginal ones.
 
@@ -86,7 +86,7 @@ The RAG pattern here is: extract diagnoses from the note, retrieve relevant codi
 
 **Prioritize and Filter.** Rank suggestions by clinical and financial impact. Suppress low-confidence suggestions. Limit the total number per note to avoid alert fatigue.
 
-**Present.** Surface suggestions in the CDI specialist's workflow (for traditional review) or directly in the physician's EHR (for concurrent, real-time CDI).
+**Present.** Surface suggestions in the CDI specialist's workflow (for traditional review) or directly in the physician's electronic health record (EHR) for concurrent, real-time CDI.
 
 ---
 
