@@ -49,7 +49,7 @@ Like no-show prediction (Recipe 7.1), propensity to pay is a binary classificati
 
 The critical requirement here is **calibration**. A predicted probability of 0.7 must actually mean that 70% of balances with that score get paid. Why? Because downstream decisions depend on the probability being meaningful, not just the ranking being correct. If you're deciding whether to offer a payment plan (which has administrative cost), you need to know the actual expected recovery, not just that this balance is "more likely to pay than that one."
 
-Logistic regression is a natural starting point because it produces well-calibrated probabilities by default. Gradient-boosted trees (XGBoost, LightGBM) typically have better discrimination (AUC) but worse calibration out of the box. You can fix this with post-hoc calibration (Platt scaling or isotonic regression), but it's an extra step that's easy to forget.
+Logistic regression is a natural starting point because it produces well-calibrated probabilities by default. Gradient-boosted trees (XGBoost, LightGBM) typically have higher area under the curve (AUC) but worse calibration out of the box. You can fix this with post-hoc calibration (Platt scaling or isotonic regression), but it's an extra step that's easy to forget.
 
 ### Features That Drive Payment Behavior
 
