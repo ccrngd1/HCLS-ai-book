@@ -10,7 +10,7 @@
 
 **Amazon S3 for data lake storage.** Feature matrices, raw source extracts, cluster assignments, and historical snapshots all live in S3. Parquet format for the feature matrices gives you columnar compression and fast reads. S3 versioning preserves historical cluster assignments for trend analysis.
 
-**AWS Glue for ETL and feature engineering.** Pulling data from billing systems, EHRs, and eligibility feeds, transforming it into a unified feature matrix, and handling the normalization logic. Glue's serverless Spark engine handles the joins across large datasets without capacity planning.
+**AWS Glue for extract, transform, and load (ETL) and feature engineering.** Pulling data from billing systems, EHRs, and eligibility feeds, transforming it into a unified feature matrix, and handling the normalization logic. Glue's serverless Spark engine handles the joins across large datasets without capacity planning.
 
 **Amazon Athena for profiling and ad-hoc analysis.** Once cluster assignments are written back to S3, finance analysts can query them directly with SQL. "Show me the average days-in-AR for each cluster" or "What's the payer mix breakdown for Cluster 4?" without needing a data engineering request.
 
@@ -69,7 +69,7 @@ flowchart TD
 
 ## Pseudocode Walkthrough
 
-**Step 1: Extract and join source data.** The first challenge is assembling a unified patient-level dataset from systems that were never designed to talk to each other. Billing knows about charges and payments. The EHR knows about visits and diagnoses. Eligibility knows about coverage. Each system has its own patient identifier, its own data model, and its own update cadence. This step pulls from each source, resolves to a single patient identity (using your MPI or whatever patient matching you have), and produces one row per patient with columns from all sources. Skip this step and you're clustering on incomplete information, which produces clusters that reflect data availability rather than actual financial risk.
+**Step 1: Extract and join source data.** The first challenge is assembling a unified patient-level dataset from systems that were never designed to talk to each other. Billing knows about charges and payments. The electronic health record (EHR) knows about visits and diagnoses. Eligibility knows about coverage. Each system has its own patient identifier, its own data model, and its own update cadence. This step pulls from each source, resolves to a single patient identity (using your master patient index (MPI) or whatever patient matching you have), and produces one row per patient with columns from all sources. Skip this step and you're clustering on incomplete information, which produces clusters that reflect data availability rather than actual financial risk.
 
 ```pseudocode
 FUNCTION extract_patient_financial_data(date_range):
@@ -381,11 +381,11 @@ FUNCTION detect_population_shift(current_distribution, previous_distribution, th
 
 **Payer contract change propagation.** When a major payer changes reimbursement terms (or your organization renegotiates rates), the historical payment patterns that drove clustering no longer predict future risk. Production pipelines need a mechanism to detect contract changes, flag affected clusters, and trigger re-clustering with updated rate assumptions rather than waiting for the next scheduled quarterly run.
 
-**PHI minimization in cluster outputs.** The pseudocode stores cluster assignments alongside patient identifiers. In production, cluster-level analytics (dashboards, reports, trend analysis) should use de-identified or aggregated data wherever possible. Only the operational layer (financial counseling workflows, patient outreach) should resolve back to PHI, and that resolution should be logged and access-controlled separately from the analytical outputs.
+**Protected health information (PHI) minimization in cluster outputs.** The pseudocode stores cluster assignments alongside patient identifiers. In production, cluster-level analytics (dashboards, reports, trend analysis) should use de-identified or aggregated data wherever possible. Only the operational layer (financial counseling workflows, patient outreach) should resolve back to PHI, and that resolution should be logged and access-controlled separately from the analytical outputs.
 
 **Graceful handling of small clusters.** K-Means can produce clusters with very few members, especially at higher k values or with skewed populations. A cluster of 12 patients is not statistically meaningful for financial planning and creates re-identification risk. Production needs minimum-size thresholds: clusters below the threshold get merged into the nearest neighbor or flagged for manual review rather than surfaced to downstream consumers.
 
-**Integration with revenue cycle systems.** The pseudocode produces cluster labels in S3. Real value comes from pushing those labels into your revenue cycle, scheduling, and patient access systems so that front-desk staff see financial risk context during registration. That integration layer (APIs, HL7/FHIR messaging, EHR embedding) is a significant engineering effort not addressed here.
+**Integration with revenue cycle systems.** The pseudocode produces cluster labels in S3. Real value comes from pushing those labels into your revenue cycle, scheduling, and patient access systems so that front-desk staff see financial risk context during registration. That integration layer (APIs, Health Level Seven (HL7)/Fast Healthcare Interoperability Resources (FHIR) messaging, EHR embedding) is a significant engineering effort not addressed here.
 
 ---
 
