@@ -10,9 +10,9 @@ Imagine you're a claims examiner. A 38-page PDF lands in your queue. It's a clai
 
 Page 1 is the last page of an operative report. Page 2 is the beginning of a pathology result, except it doesn't say "PATHOLOGY REPORT" at the top; it just starts with a gross description of the specimen. Pages 3 through 6 are a discharge summary, but pages 4 and 5 are printed sideways. Page 7 is a consent form that has nothing to do with the claim. Pages 8 through 12 are an Explanation of Benefits from the patient's secondary payer, printed from a payer web portal with their specific layout. Pages 13 and 14 are therapy notes from three different visits, all crammed into a continuous print job with no clear breaks. Page 15 is a billing statement, but it's from a different facility than the claim you're looking at.
 
-Nobody assembled this thoughtfully. The provider's billing staff went into their EHR, selected everything that seemed relevant to the claim, hit print, and sent the whole stack through a fax machine. The output is a single PDF that contains somewhere between four and eight distinct logical documents, in no particular order, with no table of contents, and no cover sheet telling you what's in there.
+Nobody assembled this thoughtfully. The provider's billing staff went into their electronic health record (EHR), selected everything that seemed relevant to the claim, hit print, and sent the whole stack through a fax machine. The output is a single PDF that contains somewhere between four and eight distinct logical documents, in no particular order, with no table of contents, and no cover sheet telling you what's in there.
 
-Now the claims examiner has to do the following. Find the operative report. Confirm the CPT code documented in the operative note matches line item 1 on the claim (total knee arthroplasty, 27447). Find the pathology result and confirm there's a specimen consistent with the procedure. Find the EOB and check what the secondary payer paid, to determine coordination of benefits. Look at the therapy notes and verify the dates of service match the claim lines. Cross-reference the billing statement's itemized charges against what the provider billed on the 837 transaction.
+Now the claims examiner has to do the following. Find the operative report. Confirm the Current Procedural Terminology (CPT) code documented in the operative note matches line item 1 on the claim (total knee arthroplasty, 27447). Find the pathology result and confirm there's a specimen consistent with the procedure. Find the explanation of benefits (EOB) and check what the secondary payer paid, to determine coordination of benefits. Look at the therapy notes and verify the dates of service match the claim lines. Cross-reference the billing statement's itemized charges against what the provider billed on an X12 837 claim submission.
 
 This takes 30 to 60 minutes. For a complex surgical claim. And payers process hundreds of thousands of claims attachments annually.
 
@@ -107,7 +107,7 @@ An LLM with clinical knowledge can do this. You show it the operative report tex
 
 The pipeline has four stages, building directly on Recipe 1.4's hybrid pattern.
 
-**Stage 1: Full-document extraction.** Async OCR and document analysis on the entire PDF produces text, form fields, tables, and layout structure for every page. Same as Recipe 1.4.
+**Stage 1: Full-document extraction.** Async optical character recognition (OCR) and document analysis on the entire PDF produces text, form fields, tables, and layout structure for every page. Same as Recipe 1.4.
 
 **Stage 2: LLM document boundary detection.** The page stream is analyzed for boundaries by feeding consecutive page pairs to a lightweight model. The model evaluates each pair and answers: same document or different? The output is a list of logical document segments.
 
@@ -162,11 +162,11 @@ This is the architectural breakthrough in this recipe versus the rule-based appr
 
 - **Recipe 1.1 (Insurance Card Scanning):** The key-value extraction foundation used in the EOB header field parsing.
 - **Recipe 1.2 (Patient Intake Form Digitization):** The async multi-page Textract pattern and table parsing logic reused in the EOB and billing statement extractors.
-- **Recipe 1.3 (Lab Requisition Form Extraction):** The Comprehend Medical `InferICD10CM` pattern this recipe uses for ICD-10 code validation on clinical documents.
+- **Recipe 1.3 (Lab Requisition Form Extraction):** The Comprehend Medical `InferICD10CM` pattern this recipe uses for International Classification of Diseases (ICD)-10 code validation on clinical documents.
 - **Recipe 1.4 (Prior Authorization Document Processing):** Introduced the Bedrock classification prompt pattern and model tiering concept this recipe extends. Read 1.4 before this one.
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Handles handwritten therapy notes and physician addenda that appear within claims attachment packages. Low-confidence segments from this recipe's pipeline route to the Recipe 1.6 review workflow.
 - **Recipe 1.8 (EOB Processing):** Covers EOB-specific extraction in depth. When your claims portfolio has high EOB volume or unusual payer formats, Recipe 1.8's specialized table normalization is more robust than the general-purpose EOB extractor here.
-- **Recipe 2.4 (Clinical Criteria Matching via NLP):** Consumes the aggregated ICD-10 codes and clinical entities from this recipe's output for criteria evaluation on complex surgical claims.
+- **Recipe 2.4 (Clinical Criteria Matching via natural language processing (NLP)):** Consumes the aggregated ICD-10 codes and clinical entities from this recipe's output for criteria evaluation on complex surgical claims.
 
 ---
 
