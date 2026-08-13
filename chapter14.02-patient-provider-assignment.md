@@ -69,7 +69,7 @@ In practice, this means one shared module for scoring logic and a thin dispatch 
 - Batch event (provider departure, scheduled rebalance): trigger Step Functions, run SageMaker Processing, produce full optimization.
 - Single-patient event (new patient registration, PCP request): invoke Lambda directly, compute scores in-memory, return the best provider in under a second.
 
-The incremental path caches provider capacity counts (updated on each assignment) so it doesn't need to query the EHR for every call. Cache invalidation happens when the batch optimizer runs or when a provider's status changes.
+The incremental path caches provider capacity counts (updated on each assignment) so it doesn't need to query the electronic health record (EHR) for every call. Cache invalidation happens when the batch optimizer runs or when a provider's status changes.
 
 ---
 
@@ -89,7 +89,7 @@ The incremental path caches provider capacity counts (updated on each assignment
 
 **Human Review.** Present proposed assignments to the panel management team with scores, rationale, and distribution summaries. They approve, reject, or override individual assignments. This step is non-negotiable in healthcare. Optimization suggests; humans decide.
 
-**EHR Write-back.** After approval, update the EHR's panel attribution. This is typically an HL7 FHIR CareTeam resource update or a proprietary API call. Handle failures gracefully. A failed write-back should not leave your assignment table and the EHR out of sync.
+**EHR Write-back.** After approval, update the EHR's panel attribution. This is typically a Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR) CareTeam resource update or a proprietary API call. Handle failures gracefully. A failed write-back should not leave your assignment table and the EHR out of sync.
 
 ---
 

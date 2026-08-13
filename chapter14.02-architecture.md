@@ -16,7 +16,7 @@
 
 **AWS Step Functions for batch pipeline orchestration.** The batch pipeline has multiple steps with dependencies: extract data, compute scores, run optimizer, validate, store, notify. Step Functions manages the workflow, handles retries, and provides visibility into pipeline state.
 
-**Amazon S3 for data staging.** Patient and provider data exports from the EHR land in S3. Optimization results and audit logs persist in S3 for compliance.
+**Amazon S3 for data staging.** Patient and provider data exports from the electronic health record (EHR) land in S3. Optimization results and audit logs persist in S3 for compliance.
 
 ### Architecture Diagram
 
@@ -294,7 +294,7 @@ Add a hard constraint that patients can only be assigned to providers who are in
 - [Amazon SageMaker Processing](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html) - Running batch compute jobs
 - [Amazon DynamoDB Best Practices](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/best-practices.html) - Table design and access patterns
 - [AWS Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html) - Workflow orchestration
-- [AWS Lambda in VPC](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html) - Network isolation for PHI workloads
+- [AWS Lambda in VPC](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html) - Network isolation for protected health information (PHI) workloads
 - [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html) - Customer-managed encryption keys
 
 ### Optimization Libraries
