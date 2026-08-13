@@ -224,7 +224,7 @@ flowchart LR
 > - The [Social Security Administration's Death Master File](https://www.ssa.gov/dataexchange/) program documentation describes the data-source content and the access framework.
 > - The [National Technical Information Service's Limited Access Death Master File](https://ladmf.ntis.gov/) program operates the access certification under the Bipartisan Budget Act of 2013's framework.
 > - The [CDC's National Center for Health Statistics Vital Statistics System](https://www.cdc.gov/nchs/nvss/index.htm) publishes the data-format standards and the inter-jurisdictional-coordination guidance for state-vital-records-feed implementations.
-> - The [National Association for Public Health Statistics and Information Systems](https://www.naphsis.org/) coordinates the state-vital-records offices' modernization work and publishes the FHIR-based death-reporting implementation guidance.
+> - The [National Association for Public Health Statistics and Information Systems](https://www.naphsis.org/) coordinates the state-vital-records offices' modernization work with Health Level Seven (HL7) and publishes the Fast Healthcare Interoperability Resources (FHIR) death-reporting implementation guidance.
 > - The [HL7 FHIR Vital Records Death Reporting Implementation Guide](https://hl7.org/fhir/us/vrdr/) specifies the FHIR-based death-reporting profile that the modernized state-vital-records feeds increasingly implement.
 > - The [HHS Office for Civil Rights HIPAA Privacy Rule guidance on deceased individuals](https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/health-information-of-deceased-individuals/index.html) describes the 50-year posthumous-protection period and the personal-representative framework. 
 
