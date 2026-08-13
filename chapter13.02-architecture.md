@@ -10,7 +10,7 @@
 
 **Amazon Neptune for the graph database.** Neptune is AWS's managed graph database service. It supports both the property graph model (with Gremlin and openCypher query languages) and RDF (with SPARQL). For a provider directory, the property graph model is the natural fit: providers, locations, and networks are nodes with properties; relationships are typed edges. Neptune handles the operational overhead (replication, backups, patching) and is on the HIPAA eligible services list. It scales read replicas horizontally for high-throughput search workloads.
 
-**AWS Glue for ETL and data reconciliation.** Provider data arrives from multiple sources in multiple formats. Glue handles the extraction, transformation, and loading into Neptune's bulk load format. Glue jobs can run on a schedule (daily roster refreshes) or be triggered by events (a provider updates their profile). The PySpark environment handles the reconciliation logic: deduplication, conflict resolution, and entity matching across sources.
+**AWS Glue for extract, transform, and load (ETL) and data reconciliation.** Provider data arrives from multiple sources in multiple formats. Glue handles the extraction, transformation, and loading into Neptune's bulk load format. Glue jobs can run on a schedule (daily roster refreshes) or be triggered by events (a provider updates their profile). The PySpark environment handles the reconciliation logic: deduplication, conflict resolution, and entity matching across sources.
 
 **Amazon S3 for staging and bulk load.** Neptune's bulk loader reads from S3. The ETL pipeline writes reconciled node and edge files to S3 in CSV format, then triggers Neptune's bulk load API. S3 also serves as the archive for historical snapshots of the directory (useful for auditing network adequacy over time).
 
@@ -525,7 +525,7 @@ FUNCTION health_endpoint(neptune_endpoint):
 - [`amazon-neptune-graph-notebook`](https://github.com/aws-samples/amazon-neptune-graph-notebook): Jupyter notebook integration for Neptune with visualization and query development
 
 **External Resources:**
-- [NPPES NPI Registry Data Download](https://download.cms.gov/nppes/NPI_Files.html): Free provider data from CMS for building and testing provider graphs
+- National Provider Identifier (NPI) registry: [NPPES NPI Registry Data Download](https://download.cms.gov/nppes/NPI_Files.html) provides free provider data from CMS for building and testing provider graphs
 - [NUCC Health Care Provider Taxonomy](https://nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40): The standard specialty taxonomy used in NPI registrations
 - [CMS Provider Directory Requirements](https://www.cms.gov/marketplace/resources/data/provider-directory-data): Regulatory requirements for directory accuracy and completeness
 

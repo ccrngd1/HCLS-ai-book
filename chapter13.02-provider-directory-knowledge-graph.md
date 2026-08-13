@@ -70,7 +70,7 @@ The specialty hierarchy deserves special attention. Medical specialties form a t
 This is where ontology comes in. An ontology defines the formal relationships between concepts in a domain. For provider directories, the relevant ontologies include:
 
 - **NUCC taxonomy**: The National Uniform Claim Committee maintains the standard taxonomy of healthcare provider types and specialties. It's hierarchical and widely used in claims processing.
-- **NPI taxonomy codes**: Each NPI registration includes taxonomy codes from the NUCC set.
+- **National Provider Identifier (NPI) taxonomy codes**: Each NPI registration includes taxonomy codes from the NUCC set.
 - **Custom organizational hierarchies**: Health systems often have their own groupings that don't map cleanly to NUCC.
 
 Encoding these taxonomies as part of your graph (specialty nodes connected by IS_SUBSPECIALTY_OF edges) enables hierarchical queries naturally. "Find all providers in any cardiology subspecialty" becomes "start at the Cardiology node, traverse all IS_SUBSPECIALTY_OF edges downward, collect all providers connected to any node in that subtree."
@@ -107,7 +107,7 @@ Each of these is a natural graph traversal. The query language (Gremlin, Cypher,
 
 **Source Systems.** Credentialing databases, payer roster files (often 834/835 EDI or CSV), NPI registry downloads, facility privilege lists, provider self-service portals. Each source provides a partial view of the truth.
 
-**Ingest and Reconcile.** An ETL pipeline that reads from each source, resolves conflicts (which address is current? which network status is authoritative?), and produces a unified set of nodes and edges. This pipeline runs on a schedule (daily for most sources, near-real-time for critical updates like network terminations).
+**Ingest and Reconcile.** An extract, transform, and load (ETL) pipeline that reads from each source, resolves conflicts (which address is current? which network status is authoritative?), and produces a unified set of nodes and edges. This pipeline runs on a schedule (daily for most sources, near-real-time for critical updates like network terminations).
 
 **Graph Database.** The persistent store for nodes, edges, and properties. Must support efficient traversal queries, property filtering, and ideally geospatial indexes. Should handle concurrent reads at high throughput for patient-facing search applications.
 
@@ -125,7 +125,7 @@ The key architectural decision is whether to use the graph as the primary store 
 
 - **Recipe 5.2 (Provider NPI Matching):** Covers the entity resolution techniques needed to match providers across source systems during the ingest phase
 - **Recipe 13.1 (Drug Formulary Navigation):** Uses similar graph modeling patterns for navigating hierarchical drug data
-- **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Uses taxonomy traversal patterns applicable to the specialty hierarchy
+- **Recipe 13.3 (ICD and Current Procedural Terminology (CPT) Hierarchy Navigation):** Uses taxonomy traversal patterns applicable to the specialty hierarchy
 - **Recipe 4.3 (Provider Directory Search Optimization):** Covers the search ranking and personalization layer that sits on top of this graph
 - **Recipe 14.3 (Network Adequacy Optimization):** Uses the provider graph as input for network adequacy compliance calculations
 
