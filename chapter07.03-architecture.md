@@ -100,7 +100,7 @@ flowchart TD
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including XGBoost for classification, batch transform, and model monitoring
-> - [`aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): Glue ETL patterns for feature engineering and data transformation
+> - [`aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): Glue extract, transform, and load (ETL) patterns for feature engineering and data transformation
 
 **Step 1: Feature assembly.** This is where the real work happens. You're pulling data from half a dozen source systems and computing features that capture each member's relationship with your organization over time. The key insight: churn prediction is mostly a feature engineering problem. The model itself is almost commodity. Get the features right and even a simple model performs well. Get them wrong and no amount of model complexity will save you. Each feature should answer a question: "Is this member's behavior changing in a way that suggests disengagement?"
 
