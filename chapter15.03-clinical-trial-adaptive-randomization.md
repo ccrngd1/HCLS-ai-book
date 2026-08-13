@@ -79,7 +79,7 @@ For clinical trials, Thompson Sampling dominates because it naturally provides r
 
 ### Offline vs. Online Learning
 
-This is one of the rare RL applications in healthcare where **online learning** is actually appropriate. Here's why:
+This is one of the rare reinforcement learning (RL) applications in healthcare where **online learning** is actually appropriate. Here's why:
 
 In most healthcare RL (sepsis treatment, ventilator weaning), you can't experiment on patients. You must learn from historical data (offline RL) and prove the policy is safe before deployment. But clinical trials are, by definition, experiments. Patients have consented to be randomized. The entire point is to learn from their outcomes. The RL agent IS the randomization algorithm, and it's operating within the ethical framework of the trial protocol.
 
