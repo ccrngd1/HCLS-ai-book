@@ -1,6 +1,6 @@
 # Recipe 10.3 Architecture and Implementation: Voice-to-Text for EHR Navigation
 
-*Companion to [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Architecture companion for electronic health record (EHR) navigation, paired with [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -1060,11 +1060,11 @@ The clinician is the speaker in this recipe (unlike patient-facing recipes where
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Lex," "Transcribe," "voice assistant" for relevant case studies
 
 **External References (Standards and Frameworks):**
-- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
+- Health Level Seven (HL7) publishes the [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for modern EHR integration
 - [SMART on FHIR](https://docs.smarthealthit.org/): the launch-context and authorization specification for clinically-aware EHR apps
 - [SMART App Launch Framework](https://hl7.org/fhir/smart-app-launch/): the formal specification for SMART app launch with clinician and patient context
 - [FHIR R4 Resource Reference](https://www.hl7.org/fhir/R4/resourcelist.html): the resource catalog used by most production EHR FHIR APIs in 2026 
-- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in voice command audio, transcripts, and audit logs
+- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs protected health information (PHI) in voice command audio, transcripts, and audit logs
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards for ePHI access channels
 - [21st Century Cures Act and ONC Information Blocking Rules](https://www.healthit.gov/curesrule/): regulatory context for EHR API access and third-party app integration 
 - [HL7 CDS Hooks](https://cds-hooks.hl7.org/): the standard for EHR-triggered clinical-decision-support hooks, relevant to the CDS extension above
