@@ -24,7 +24,7 @@
 
 **Amazon Bedrock Guardrails for safety filtering on patient-facing communications.** When the biomarker output is communicated to the patient directly (not as a diagnosis but as patient-facing context), Guardrails apply content filters and contextual-grounding checks against the underlying biomarker output, ensuring the patient communication does not over-claim what the biomarker supports.
 
-**AWS HealthLake for FHIR-based biomarker observation storage.** The biomarker score is an Observation resource in FHIR terms. HealthLake stores the FHIR Observations and supports the longitudinal-trajectory queries the workflow needs. For non-FHIR EHR integrations, the institutional EHR-integration layer translates the FHIR Observation into the EHR-specific representation. 
+**AWS HealthLake for Fast Healthcare Interoperability Resources (FHIR)-based biomarker observation storage.** The biomarker score is an Observation resource in FHIR terms. HealthLake stores the FHIR Observations and supports the longitudinal-trajectory queries the workflow needs. For non-FHIR electronic health record (EHR) integrations, the institutional EHR-integration layer translates the FHIR Observation into the EHR-specific representation. 
 
 **Amazon DynamoDB for per-patient longitudinal-state storage.** The per-patient trajectory data (baseline scores, score history, calibration context, confound flags per sample) is well-shaped for DynamoDB. A per-patient table with the patient hash as partition key and the sample timestamp as sort key supports the trajectory queries efficiently. KMS at rest with customer-managed keys.
 
@@ -40,7 +40,7 @@
 
 **Amazon CloudWatch for operational metrics and alarms.** Per-stage latency, per-cohort score distributions, eligibility-check pass rates, indeterminate-result rates, audio-quality scores, post-deployment accuracy proxies. Alarms on per-cohort drift thresholds, on indeterminate-result-rate spikes, on aggregate accuracy regressions.
 
-**AWS CloudTrail for API-level audit.** All access to PHI-bearing and biometric-data-bearing resources logged. SageMaker invocations logged. KMS key uses logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
+**AWS CloudTrail for API-level audit.** All access to protected health information (PHI)-bearing and biometric-data-bearing resources logged. SageMaker invocations logged. KMS key uses logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.
 
 **Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon QuickSight (optional) for analytics.** Audit and telemetry flow to S3 via Firehose. Glue catalogs the data. Athena provides SQL access for the operational and post-market surveillance analytics. QuickSight renders the dashboards.
 
@@ -1183,7 +1183,7 @@ Voice biomarker audio traverses different capture paths depending on the device 
 
 **Device-attestation for smartphone-app and kiosk patterns.** Where the platform supports it (iOS DeviceCheck, Android SafetyNet/Play Integrity, kiosk-specific attestation), device-attestation tokens are submitted with the audio. The pipeline validates attestation before accepting the sample. Failed attestation produces a capture-rejection with a prompt to use an alternative capture path.
 
-**Per-device-class BAA scope.** The BAA with AWS covers audio in transit and at rest within AWS. For device-class patterns that involve non-AWS intermediaries (e.g., a telehealth platform's audio path before it reaches the pipeline API), the BAA scope extends to the intermediary via a separate BAA or subprocessor agreement. The architecture documents which device-class patterns require which BAA coverage.
+**Per-device-class business associate agreement (BAA) scope.** The BAA with AWS covers audio in transit and at rest within AWS. For device-class patterns that involve non-AWS intermediaries (e.g., a telehealth platform's audio path before it reaches the pipeline API), the BAA scope extends to the intermediary via a separate BAA or subprocessor agreement. The architecture documents which device-class patterns require which BAA coverage.
 
 **Per-device-class certification.** Each supported device class has a certification record in the model-card configuration: the device class name, the validated microphone characteristics, the expected codec, the validated bandwidth, and the date of last certification review. Uncertified device classes produce a capture-rejection.
 
@@ -1215,7 +1215,7 @@ The recipe's prose elevates cross-cohort generalization as the single largest ga
 
 **Per-cohort minimum sample size.** A cohort's metrics are only reported (and only used for launch-gate decisions) when the cohort has accumulated at least the minimum sample size (configurable per indication; typical floor is 50-100 scored samples per cohort per quarter). Below-threshold cohorts are flagged as "insufficient data for cohort evaluation."
 
-**Per-cohort threshold metrics.** Each cohort is evaluated against: AUC, sensitivity, specificity, indeterminate-rate, cross-cohort generalization gap (delta between this cohort's AUC and the overall AUC), sustained-utilization rate (what fraction of eligible patients in this cohort actually complete the biomarker workflow), and score-distribution drift (KL divergence or similar between the current quarter's score distribution and the validation-time distribution).
+**Per-cohort threshold metrics.** Each cohort is evaluated against: area under the curve (AUC), sensitivity, specificity, indeterminate-rate, cross-cohort generalization gap (delta between this cohort's AUC and the overall AUC), sustained-utilization rate (what fraction of eligible patients in this cohort actually complete the biomarker workflow), and score-distribution drift (KL divergence or similar between the current quarter's score distribution and the validation-time distribution).
 
 **Launch gate.** Every cohort that has met minimum sample size must meet the institutional per-cohort performance threshold before the indication is deployed to that cohort. Cohorts that fail the gate are disabled for that indication: eligible patients in that cohort receive a "biomarker not available for your profile" result rather than a potentially-misleading score. The gate is evaluated quarterly and re-evaluated after model or calibration updates.
 
@@ -1241,7 +1241,7 @@ Voice biomarkers for depression severity, suicidality risk, and substance-use-re
 
 **Separate audit-archive prefix with mental-health-record disclosure-accounting metadata.** Mental-health biomarker audit records use a separate S3 prefix (`/mental-health-profile/...`) with tighter access controls and separate disclosure-accounting metadata that tracks mental-health-specific access patterns.
 
-**Cross-encounter analytics exclusion.** Mental-health biomarker data is excluded from cross-encounter aggregate analytics unless the analytics are specifically authorized for mental-health-quality-improvement purposes with appropriate IRB or privacy-officer review. This prevents incidental surfacing of mental-health biomarker patterns in institutional dashboards that are not designed for mental-health data.
+**Cross-encounter analytics exclusion.** Mental-health biomarker data is excluded from cross-encounter aggregate analytics unless the analytics are specifically authorized for mental-health-quality-improvement purposes with appropriate institutional review board (IRB) or privacy-officer review. This prevents incidental surfacing of mental-health biomarker patterns in institutional dashboards that are not designed for mental-health data.
 
 **42 CFR Part 2 flags.** When the biomarker indication is eligible for 42 CFR Part 2 protection (substance-use-related indications), the capture-session record is flagged at Step 1 and the flag propagates through all subsequent records. The 42 CFR Part 2 flag triggers: more restrictive disclosure rules (no re-disclosure without explicit patient authorization), separate disclosure-accounting log entries, and integration with the institution's Part 2 compliance infrastructure.
 
@@ -1267,7 +1267,7 @@ Every artifact that influences scoring (model weights, prompts, model cards, cal
 
 The architecture supports multi-language deployment from day one rather than treating non-English languages as a later add-on.
 
-**Per-language ASR configuration with custom vocabulary.** Each supported language has its own Transcribe Medical (or Transcribe) configuration with language-specific custom vocabularies for medical terminology. The custom vocabulary is maintained by clinical-informatics staff with native-speaker input for each language.
+**Per-language automatic speech recognition (ASR) configuration with custom vocabulary.** Each supported language has its own Transcribe Medical (or Transcribe) configuration with language-specific custom vocabularies for medical terminology. The custom vocabulary is maintained by clinical-informatics staff with native-speaker input for each language.
 
 **Per-language acoustic-feature calibration data.** Acoustic features (fundamental frequency range, formant positions, articulation-rate norms) differ by language. Each supported language has its own calibration dataset that establishes language-specific norms. Models that use acoustic features are either language-specific or include language as an explicit input feature with per-language calibration.
 
@@ -1507,7 +1507,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **De-identified-cohort sharing for federated validation.** Multiple institutions can share de-identified cohort data (or, with privacy-preserving techniques, federated training) to build larger validation cohorts than any single institution could assemble. The architectural extension involves the privacy-preserving computation layer and the inter-institutional governance. Recipe 5.8 (privacy-preserving record linkage) covers analogous patterns.
 
-**Linguistic-feature pipelines for cognitive assessment.** A cognitive-decline-focused deployment combines voice biomarkers with linguistic features extracted from the transcript: lexical diversity, idea density, semantic coherence, word-finding patterns. Recipe 8 (NLP) and recipe 2 (LLM) cover the linguistic-analysis primitives. The integration produces a richer cognitive-assessment signal than acoustic features alone.
+**Linguistic-feature pipelines for cognitive assessment.** A cognitive-decline-focused deployment combines voice biomarkers with linguistic features extracted from the transcript: lexical diversity, idea density, semantic coherence, word-finding patterns. Recipe 8 on natural language processing (NLP) and recipe 2 (LLM) cover the linguistic-analysis primitives. The integration produces a richer cognitive-assessment signal than acoustic features alone.
 
 **Patient-facing voice-biomarker self-tracking apps.** Some institutions offer patient-facing apps where the patient can capture voice samples themselves and see their own trajectory. This is a wellness-tool framing rather than a clinical-tool framing, with corresponding consent, regulatory, and clinical-action implications. The architectural extension is the patient-facing UI and the patient-friendly result presentation. The clinician is informed but not in the active loop for low-risk results.
 
@@ -1542,9 +1542,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for clinical-decision-support and post-market-surveillance reference architectures
 
 **External References (Standards, Frameworks, and Regulatory):**
-- [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model for biomarker-result EHR integration
+- [Health Level Seven (HL7) FHIR Specification](https://www.hl7.org/fhir/): the data model for biomarker-result EHR integration
 - [FHIR Observation Resource](https://www.hl7.org/fhir/observation.html): canonical FHIR resource for biomarker-result write-back
-- [LOINC](https://loinc.org/): standard codes for laboratory and clinical observations, including some voice-and-speech-derived measures
+- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): standard codes for laboratory and clinical observations, including some voice-and-speech-derived measures
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in voice biomarker workflows
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [Illinois Biometric Information Privacy Act (BIPA)](https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004): biometric-data law applicable to voice samples in Illinois
