@@ -12,7 +12,7 @@
 > Nothing here is a validated clinical tool. Any production use needs clinical
 > ownership and review by your own clinical, legal, and compliance teams.
 
-After the vision-model, dual-path, A2I architecture of Recipe 1.6, this recipe is deliberately focused. Prescription labels are highly structured, printed, single-page documents where the OCR-plus-NLP pipeline is the optimal choice. The goal here is to introduce medication ontology mapping (RxNorm, NDC) before the complexity returns for EOB processing in Recipe 1.8.
+After the vision-model, dual-path, A2I architecture of Recipe 1.6, this recipe is deliberately focused. Prescription labels are highly structured, printed, single-page documents where the pipeline combining optical character recognition (OCR) with natural language processing (NLP) is the optimal choice. The goal here is to introduce medication ontology mapping (RxNorm, NDC) before the complexity returns for explanation of benefits (EOB) processing in Recipe 1.8.
 
 ## The Problem
 
@@ -115,7 +115,7 @@ OCR turns an image into text. Medical NLP turns that text into structured clinic
 
 Once you have the raw text from a prescription label, you have things like "Lisinopril 10mg" and "Take 1 tablet by mouth once daily." Medical NLP systems are trained on clinical text to identify the named entities in those strings: the medication name, the dosage, the route of administration, the frequency. Beyond entity recognition, specialized systems can then link those entities to standard clinical ontologies: this detected medication entity maps to RxNorm concept 314076 ("lisinopril 10 MG Oral Tablet").
 
-This entity extraction and ontology linking is what makes the pipeline interoperable. A downstream FHIR MedicationStatement resource, a pharmacy benefit system, a clinical decision support tool: all of them speak RxNorm. Giving them a raw string like "Lisinopril 10mg" forces them to do their own normalization, inconsistently. Giving them a RxNorm concept ID means everyone is speaking the same language.
+This entity extraction and ontology linking is what makes the pipeline interoperable. A downstream Fast Healthcare Interoperability Resources (FHIR) MedicationStatement resource, a pharmacy benefit system, a clinical decision support tool: all of them speak RxNorm. Giving them a raw string like "Lisinopril 10mg" forces them to do their own normalization, inconsistently. Giving them a RxNorm concept ID means everyone is speaking the same language.
 
 ### The General Architecture Pattern
 
@@ -134,7 +134,7 @@ The pipeline for prescription label OCR looks like this:
 
 **Medical NLP:** Pass the extracted medication name and dosage through a clinical entity extraction model that identifies MEDICATION entities and links them to RxNorm concept IDs. This step bridges the raw OCR output to the clinical ontology layer.
 
-**Store:** Write the structured medication record to a queryable store with appropriate PHI controls. The record should carry both the raw extracted values and the normalized/linked values for auditability.
+**Store:** Write the structured medication record to a queryable store with appropriate protected health information (PHI) controls. The record should carry both the raw extracted values and the normalized/linked values for auditability.
 
 **Expose via API:** Downstream systems consume the structured medication record. In a member-facing app, this can be synchronous (return the structured record immediately). In bulk processing, async is fine.
 

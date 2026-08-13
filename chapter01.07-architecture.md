@@ -1,6 +1,6 @@
 # Recipe 1.7 Architecture and Implementation: Prescription Label OCR
 
-*Companion to [Recipe 1.7: Prescription Label OCR ](chapter01.07-prescription-label-ocr). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 1.7: Prescription Label optical character recognition (OCR)](chapter01.07-prescription-label-ocr). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
@@ -10,9 +10,9 @@
 
 **Amazon Textract for OCR and key-value extraction.** The same justification as Recipe 1.1 applies here: the `AnalyzeDocument` API with the `FORMS` feature type understands the 2D spatial structure of the label and returns matched key-value pairs rather than a flat string of characters. For a label that prints "SIG: Take 1 tab PO BID," FORMS mode will pair the key "SIG" with the value "Take 1 tab PO BID" as a matched unit. That spatial relationship detection is exactly what makes the downstream normalization tractable. Basic OCR gives you characters; FORMS gives you structure.
 
-**Amazon Comprehend Medical for medication entity extraction and RxNorm linking.** Comprehend Medical's `DetectEntitiesV2` API is trained specifically on clinical and pharmaceutical text. When you pass it a string like "Lisinopril 10mg oral tablet," it identifies the MEDICATION entity, pulls out its attributes (dosage: "10mg", route: "oral"), and returns the RxNorm concept IDs that correspond to the detected entity. This is the linkage between raw OCR text and the clinical ontology layer that interoperability requires. A general-purpose NLP model would not reliably handle medication entity extraction or RxNorm mapping; Comprehend Medical is the purpose-built tool for this.
+**Amazon Comprehend Medical for medication entity extraction and RxNorm linking.** Comprehend Medical's `DetectEntitiesV2` API is trained specifically on clinical and pharmaceutical text. When you pass it a string like "Lisinopril 10mg oral tablet," it identifies the MEDICATION entity, pulls out its attributes (dosage: "10mg", route: "oral"), and returns the RxNorm concept IDs that correspond to the detected entity. This is the linkage between raw OCR text and the clinical ontology layer that interoperability requires. A general-purpose natural language processing (NLP) model would not reliably handle medication entity extraction or RxNorm mapping; Comprehend Medical is the purpose-built tool for this.
 
-**Amazon S3 for image storage.** Prescription label images contain PHI: patient name, date of birth (sometimes), medication, prescriber, pharmacy. They need encrypted at-rest storage with an audit trail. S3 with SSE-KMS and CloudTrail logging is the standard answer. S3 event notifications provide a clean trigger to kick off extraction without polling.
+**Amazon S3 for image storage.** Prescription label images contain protected health information (PHI): patient name, date of birth (sometimes), medication, prescriber, pharmacy. They need encrypted at-rest storage with an audit trail. S3 with SSE-KMS and CloudTrail logging is the standard answer. S3 event notifications provide a clean trigger to kick off extraction without polling.
 
 **AWS Lambda for orchestration.** The extraction pipeline is a short-lived sequence of API calls: fetch the image from S3, call Textract, parse the response, normalize fields, decode SIG, call Comprehend Medical, assemble the structured record, write to DynamoDB. Lambda fits this workload exactly: stateless, event-driven, scales with request volume, and you pay only for execution time. For member-facing synchronous use (upload image, get structured record back immediately), put API Gateway in front.
 
@@ -424,7 +424,7 @@ The pseudocode and architecture above demonstrate the pattern. A real deployment
 
 **Formulary matching and cost transparency.** Take the extracted NDC and RxNorm concept and look them up against the member's plan formulary tier table. Return the copay, the tier, and (if applicable) a lower-cost therapeutically equivalent alternative. This is the use case that generates the most immediate member value: "here's what this medication will cost you, and here's a $4 alternative." Recipe 3.3 (Medication Reconciliation) builds this out as a full pipeline.
 
-**Multi-label medication list building.** Accept a batch of label photos in sequence, run each through the pipeline, deduplicate (same RxNorm concept from different fill dates is one medication, not two), and produce a reconciled medication list in FHIR MedicationStatement format. This is the care transition use case: a patient with six medications holds up each bottle in turn, and the app builds a complete reconciled medication list that can be sent to the receiving care team. Recipe 3.3 covers this integration.
+**Multi-label medication list building.** Accept a batch of label photos in sequence, run each through the pipeline, deduplicate (same RxNorm concept from different fill dates is one medication, not two), and produce a reconciled medication list in Fast Healthcare Interoperability Resources (FHIR) MedicationStatement format. This is the care transition use case: a patient with six medications holds up each bottle in turn, and the app builds a complete reconciled medication list that can be sent to the receiving care team. Recipe 3.3 covers this integration.
 
 ---
 
