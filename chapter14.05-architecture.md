@@ -502,7 +502,7 @@ The architecture above demonstrates the pattern. Deploying this to a real surgic
 
 **Approval workflow is the product.** The optimizer produces a proposed schedule. Getting that proposal approved, communicated, and enacted is harder than the optimization itself. Production requires a full governance workflow: multi-party approval from the surgical governance committee, structured comment and objection capture, conditional approvals ("approved if Cardiac keeps Monday AM in OR-3"), versioned proposals with diff views, and a defined escalation path when consensus fails. The access control model in the pseudocode is the foundation, but the UI and process design around it are a 6-month project.
 
-**EHR integration is bidirectional and fragile.** The scheduler needs to read case history from the EHR (for demand estimation) and write approved schedules back (so the booking system reflects the new block ownership). Most EHR systems expose scheduling data through HL7 ADT feeds or FHIR R4 Schedule/Slot resources, but write-back typically requires vendor-specific APIs (Epic OpTime, Oracle Health SurgiNet). Plan for a dedicated integration layer with retry logic, conflict detection (what if someone booked a case during the approval window?), and rollback capability. Budget 8-12 weeks for this integration alone.
+**Electronic health record (EHR) integration is bidirectional and fragile.** The scheduler needs to read case history from the EHR (for demand estimation) and write approved schedules back (so the booking system reflects the new block ownership). Most EHR systems expose scheduling data through Health Level Seven (HL7) admission, discharge, and transfer (ADT) feeds or Fast Healthcare Interoperability Resources (FHIR) R4 Schedule/Slot resources, but write-back typically requires vendor-specific APIs (Epic OpTime, Oracle Health SurgiNet). Plan for a dedicated integration layer with retry logic, conflict detection (what if someone booked a case during the approval window?), and rollback capability. Budget 8-12 weeks for this integration alone.
 
 **Surgeon-level decomposition.** This recipe optimizes at the service level (Orthopedics gets 5 blocks). Production systems must further decompose into surgeon-specific assignments within each service's allocation. That's a second-stage optimization problem with its own constraints: surgeon preferences, call schedules, vacation calendars, case complexity matching, and fellowship training requirements. Some services handle this internally; others expect the scheduling system to do it.
 
@@ -538,7 +538,7 @@ The architecture above demonstrates the pattern. Deploying this to a real surgic
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
 **Solver Documentation:**
-- [HiGHS Optimization Solver](https://highs.dev/) (open-source, high-performance MIP solver)
+- [HiGHS Optimization Solver](https://highs.dev/) (open-source, high-performance mixed-integer programming (MIP) solver)
 - [Google OR-Tools](https://developers.google.com/optimization) (open-source optimization suite with CP-SAT and MIP interfaces)
 - [PuLP: Python LP/MIP Modeler](https://coin-or.github.io/pulp/) (Python interface to multiple solvers including CBC and HiGHS)
 
