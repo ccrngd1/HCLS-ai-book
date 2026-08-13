@@ -1,5 +1,7 @@
 # Recipe 2.3 Architecture and Implementation: Clinical Documentation Improvement (CDI) Suggestions
 
+This is the AWS architecture companion for the recipe on clinical documentation improvement (CDI) suggestions.
+
 *Companion to [Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions](chapter02.03-clinical-documentation-improvement). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
