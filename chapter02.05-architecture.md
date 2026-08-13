@@ -12,7 +12,7 @@
 
 **Amazon Bedrock Guardrails for safety constraints.** Guardrails give you a policy layer that runs on top of model invocations. For patient-facing output, you configure several complementary features. Contextual grounding checks compare the model's output against a reference context you supply at invocation time, rejecting responses that fall below configurable grounding and relevance thresholds. This is the tool that catches the model drifting from the structured summary object. Denied topics use natural-language topic descriptions and blocklist phrases to block off-policy content (for example, preventing the model from offering diagnostic opinions or treatment recommendations beyond what the clinician documented). PII detection catches accidental cross-patient disclosure. Content filters screen for inappropriate tone or content. Guardrails aren't a substitute for the field-level validation step, but they're a useful complementary safety net that runs with minimal latency overhead.
 
-**Amazon HealthLake (optional) for FHIR-based encounter retrieval.** If your clinical data lives in HealthLake or is replicated there, pulling encounter data is a straight FHIR query. For encounters that just ended, HealthLake gives you the Encounter resource, the related MedicationRequest, ServiceRequest, and Appointment resources, and the DocumentReference for the signed note. If you're pulling directly from an EHR via SMART on FHIR, the pattern is similar but the source is different.
+**Amazon HealthLake (optional) for Fast Healthcare Interoperability Resources (FHIR)-based encounter retrieval.** If your clinical data lives in HealthLake or is replicated there, pulling encounter data is a straight FHIR query. For encounters that just ended, HealthLake gives you the Encounter resource, the related MedicationRequest, ServiceRequest, and Appointment resources, and the DocumentReference for the signed note. If you're pulling directly from an electronic health record (EHR) via SMART on FHIR, the pattern is similar but the source is different.
 
 **Amazon Comprehend Medical for entity extraction (optional).** For the structured extraction step, Comprehend Medical can pull out medications, dosages, conditions, and procedures from free-text notes with high accuracy. You can use it as a pre-processing step before the LLM, or use the LLM alone. The hybrid approach (Comprehend Medical for drug/dose extraction, LLM for the remaining unstructured content) often produces the most reliable results for medication-related content, which is the highest-risk category. Note that Comprehend Medical's size limit is enforced in bytes (20,000 bytes), not characters. For multilingual notes, use a byte-safe truncation pattern (encode to UTF-8, slice bytes, decode with errors="ignore") rather than a character-based slice, which can exceed the byte limit on multi-byte scripts.
 
@@ -28,7 +28,7 @@
 
 **Amazon DynamoDB for summary state tracking.** One item per generated summary, tracking status through the pipeline: generating, awaiting review, ready for delivery, delivered, delivery confirmed. Also useful for patient preferences (language, literacy target, delivery channel) if you're not pulling those from the EHR at generation time.
 
-**Amazon Pinpoint or Amazon SES for delivery.** For SMS notification, Pinpoint (or End User Messaging SMS) sends a short, non-clinical message directing the patient to the portal. SMS content should never include clinical details (medication names, doses, warning signs) because SMS lacks end-to-end encryption and qualifies as PHI transmission over an unencrypted channel. The default pattern is notification-plus-portal-link: "Your after-visit summary is ready. View it in the patient portal: [link]." For secure email with PDF attachments, SES. Both require HIPAA-appropriate configuration (BAA, encryption, access controls). Delivery through the patient portal is typically an EHR integration rather than a direct AWS service.
+**Amazon Pinpoint or Amazon SES for delivery.** For SMS notification, Pinpoint (or End User Messaging SMS) sends a short, non-clinical message directing the patient to the portal. SMS content should never include clinical details (medication names, doses, warning signs) because SMS lacks end-to-end encryption and qualifies as protected health information (PHI) transmission over an unencrypted channel. The default pattern is notification-plus-portal-link: "Your after-visit summary is ready. View it in the patient portal: [link]." For secure email with PDF attachments, SES. Both require HIPAA-appropriate configuration: a signed business associate agreement (BAA), encryption, and access controls. Delivery through the patient portal is typically an EHR integration rather than a direct AWS service.
 
 **AWS CloudTrail and Amazon CloudWatch for audit and monitoring.** Every Bedrock invocation, every S3 write, every delivery event is logged. Standard HIPAA audit posture. CloudWatch tracks operational metrics: summaries generated per hour, average time to delivery, regeneration rate, clinician override rate.
 
@@ -627,7 +627,7 @@ The architecture above gives you a working pipeline. Deploying it at a health sy
 - [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
 **AWS Sample Repos:**
-- [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock patterns including prompting, guardrails, and RAG
+- [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock patterns including prompting, guardrails, and retrieval-augmented generation (RAG)
 - [`aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): Healthcare-specific ML patterns including clinical text processing and FHIR integration
 - [`amazon-comprehend-medical-examples`](https://github.com/aws-samples/amazon-comprehend-medical-examples): Comprehend Medical usage patterns for clinical text extraction
 
@@ -641,7 +641,7 @@ The architecture above gives you a working pipeline. Deploying it at a health sy
 - [Plain Writing Act of 2010 (HHS Implementation)](https://www.hhs.gov/open/plain-writing/index.html): Federal guidance on plain-language health communications
 - [CDC Clear Communication Index](https://www.cdc.gov/healthcommunication/ResearchEvaluate.html): A validated scoring tool for health communication materials
 - [Joint Commission Health Literacy and Patient Safety](https://www.jointcommission.org/resources/for-consumers/speak-up-campaigns/): Hospital accreditation perspective on patient communication
-- [HL7 FHIR Encounter Resource](https://www.hl7.org/fhir/encounter.html): The data model that drives encounter-scoped retrieval
+- [Health Level Seven (HL7) FHIR Encounter Resource](https://www.hl7.org/fhir/encounter.html): The data model that drives encounter-scoped retrieval
 - [SMART on FHIR](https://docs.smarthealthit.org/): Framework for EHR-integrated applications, relevant for portal delivery integration
 
 ---

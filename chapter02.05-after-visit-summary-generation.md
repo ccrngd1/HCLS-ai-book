@@ -14,7 +14,7 @@
 
 ## The Problem
 
-A 68-year-old patient with new-onset atrial fibrillation walks out of the cardiology office with a folded piece of paper. On it: the boilerplate "After-Visit Summary" the EHR auto-generated. The top half is the patient's demographic banner and the practice's phone number. The bottom half is a list of their active medications (unchanged for the last 5 years, except the addition of one), a generic statement that says "Continue current medications as prescribed," and a single line that reads "Follow up as needed."
+A 68-year-old patient with new-onset atrial fibrillation walks out of the cardiology office with a folded piece of paper. On it: the boilerplate "After-Visit Summary" the electronic health record (EHR) auto-generated. The top half is the patient's demographic banner and the practice's phone number. The bottom half is a list of their active medications (unchanged for the last 5 years, except the addition of one), a generic statement that says "Continue current medications as prescribed," and a single line that reads "Follow up as needed."
 
 What actually happened in that visit: the cardiologist started anticoagulation. She explained that the patient has a 1-in-20 risk of stroke per year without it, that the medication requires careful attention to diet (greens interact), that they need a lab draw in three days to check clotting, that they should call 911 immediately if they notice unusual bleeding or a sudden headache, and that they need to return in two weeks. None of that is on the paper.
 
@@ -135,7 +135,7 @@ Let's walk through each stage conceptually.
 
 **Visit ends / note signed.** The trigger. The AVS generation shouldn't run while the clinician is still editing the note; it should fire when the note is finalized. Triggering on note signature guarantees that the source of truth is stable. For discharge summaries, the trigger is different: discharge order placed plus discharge summary completed.
 
-**Pull encounter data.** Retrieve everything relevant from the EHR for this specific visit: the signed note, the list of medication changes (added, discontinued, dose-adjusted), orders placed (labs, imaging, procedures), referrals created, follow-up appointments scheduled, and any patient education materials selected during the visit. In FHIR terms: Encounter, DocumentReference, MedicationStatement, MedicationRequest, ServiceRequest, Appointment, Condition. The scope is intentionally narrow; you don't need the patient's full chart, only what happened today.
+**Pull encounter data.** Retrieve everything relevant from the EHR for this specific visit: the signed note, the list of medication changes (added, discontinued, dose-adjusted), orders placed (labs, imaging, procedures), referrals created, follow-up appointments scheduled, and any patient education materials selected during the visit. In Fast Healthcare Interoperability Resources (FHIR) terms: Encounter, DocumentReference, MedicationStatement, MedicationRequest, ServiceRequest, Appointment, Condition. The scope is intentionally narrow; you don't need the patient's full chart, only what happened today.
 
 **Extract structured summary object.** Turn the encounter data into a fielded object that will drive generation. Discrete fields for each category:
 
@@ -164,7 +164,7 @@ This extraction is where the hardest work happens. Some of these fields come fro
 
 **Deliver to patient.** Push to the portal, send via secure email, print and hand to the patient, send via SMS. Track delivery confirmation where possible.
 
-**Log for audit.** Every summary generated, every version, every clinician edit, every delivery. HIPAA audit requirements apply (this is PHI). Patients sometimes call later and ask "what did my doctor tell me to do?" and the AVS is the answer; you need to be able to retrieve the exact document they received.
+**Log for audit.** Every summary generated, every version, every clinician edit, every delivery. HIPAA audit requirements apply, and this is protected health information (PHI). Patients sometimes call later and ask "what did my doctor tell me to do?" and the AVS is the answer; you need to be able to retrieve the exact document they received.
 
 One note on the pipeline: the structured extraction step is doing a lot of work. If the encounter is well-documented with structured orders and clear note text, extraction is straightforward. If the clinician dictated a messy free-text note with no structured orders, extraction becomes the bottleneck. This is a case where better upstream documentation hygiene pays off downstream for everyone, patient included.
 
