@@ -42,7 +42,7 @@ This class of error is not fixable by better prompting. It's a property of gener
 
 ### What RAG Actually Is, Under the Hood
 
-RAG stands for Retrieval-Augmented Generation. Everyone in AI says "RAG" now the way they used to say "cloud-native" five years ago. The term has gotten a bit diluted. At its core, the pattern is straightforward.
+The acronym stands for retrieval-augmented generation (RAG). Everyone in AI says "RAG" now the way they used to say "cloud-native" five years ago. The term has gotten a bit diluted. At its core, the pattern is straightforward.
 
 Step one: you have a corpus of source material (in this case, medical literature). You pre-process it into chunks and index the chunks in a way that makes them searchable by semantic meaning, not just keyword match. The common approach is to embed each chunk with a text-embedding model into a high-dimensional vector, and store those vectors in a vector database. The index supports queries of the form "give me the 50 chunks most semantically similar to this question."
 
@@ -220,7 +220,7 @@ Let's walk through each stage conceptually.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Sits on a continuum with 2.7. Decision support adds patient-specific reasoning and moves toward recommendations; literature search stays descriptive. The regulatory and liability posture differs; the retrieval and synthesis architecture overlap substantially.
 - **Recipe 2.10 (Multi-Modal Clinical Reasoning):** Extends decision support into multi-modal inputs. The literature RAG pipeline from this recipe can serve as the evidence layer for a multi-modal reasoning system.
 - **Recipe 13.9 (Literature-Derived Knowledge Graph):** Knowledge-graph representations of medical entities and relationships can augment RAG retrieval: graph-based retrieval finds papers connected by entity relationships, not just semantic similarity. Hybrid graph-plus-vector retrieval is a promising direction for medical RAG.
-- **Recipe 8.4 (Medication Extraction and Normalization):** Traditional NER pipelines produce the entity extraction that drives retrieval filters in this recipe. The two pipelines share infrastructure.
+- **Recipe 8.4 (Medication Extraction and Normalization):** Traditional named entity recognition (NER) pipelines produce the entity extraction that drives retrieval filters in this recipe. The two pipelines share infrastructure.
 
 ---
 
