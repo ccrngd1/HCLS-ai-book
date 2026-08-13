@@ -18,7 +18,7 @@
 
 **Amazon Aurora PostgreSQL with pgvector for structured-plus-unstructured retrieval (option C).** Aurora is a good fit when a significant portion of the corpus is tabular (drug interactions, dose tables, contraindication lists) and you want JOINs between structured records and vector-embedded prose. The pgvector extension supports vector similarity; combined with SQL's native relational capabilities, you get structured retrieval for drug databases and vector retrieval for guidelines in one store.
 
-**Amazon HealthLake for the FHIR-native patient context.** HealthLake ingests FHIR resources, stores them in a HIPAA-eligible data store, and exposes a FHIR API for queries. For CDS synthesis, HealthLake is a natural home for the patient context layer: pull the relevant resources (Patient, Condition, MedicationRequest, AllergyIntolerance, Observation, Procedure) via the FHIR API, and the structure is already in place for downstream normalization. If your electronic health record (EHR) exports FHIR natively (many do) or via a FHIR server (Epic App Orchard, Cerner CareAware Ignite), HealthLake can be the intermediary or you can query the source FHIR API directly.
+**Amazon HealthLake for the FHIR-native patient context.** HealthLake ingests Fast Healthcare Interoperability Resources (FHIR) resources, stores them in a HIPAA-eligible data store, and exposes a FHIR API for queries. For CDS synthesis, HealthLake is a natural home for the patient context layer: pull the relevant resources (Patient, Condition, MedicationRequest, AllergyIntolerance, Observation, Procedure) via the FHIR API, and the structure is already in place for downstream normalization. If your electronic health record (EHR) exports FHIR natively (many do) or via a FHIR server (Epic App Orchard, Cerner CareAware Ignite), HealthLake can be the intermediary or you can query the source FHIR API directly.
 
 **Amazon Comprehend Medical for entity extraction and ontology mapping.** Extract entities from the patient context and the clinician's query, then map them to RxNorm (drugs), ICD-10 for conditions, and Systematized Nomenclature of Medicine (SNOMED) for clinical concepts. These mappings drive structured retrieval against drug databases and filter guideline retrieval by clinical domain.
 
@@ -1277,7 +1277,7 @@ Shipping clinical decision support that synthesizes recommendations is a multi-y
 - [SMART on FHIR](https://smarthealthit.org/): Standard for EHR-launched applications
 - [CDS Hooks](https://cds-hooks.org/): HL7 standard for EHR-triggered CDS invocations
 - [SNOMED CT](https://www.snomed.org/snomed-ct): Standardized clinical terminology
-- [LOINC](https://loinc.org/): Standardized lab and observation terminology
+- Logical Observation Identifiers Names and Codes (LOINC), [loinc.org](https://loinc.org/): standardized lab and observation terminology
 - [ICD-10](https://www.who.int/standards/classifications/classification-of-diseases): International classification of diseases
 
 **Research and Benchmarks:**
