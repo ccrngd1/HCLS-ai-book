@@ -6,11 +6,11 @@
 
 ## Why These Services
 
-**Amazon SageMaker for RL training.** SageMaker provides managed infrastructure for training RL models, including support for custom environments and algorithms. For offline RL specifically, you'll use SageMaker's training jobs with custom containers running your CQL or BCQ implementation. The managed infrastructure handles GPU provisioning, distributed training, and experiment tracking without you managing EC2 instances directly.
+**Amazon SageMaker for reinforcement learning (RL) training.** SageMaker provides managed infrastructure for training RL models, including support for custom environments and algorithms. For offline RL specifically, you'll use SageMaker's training jobs with custom containers running your CQL or BCQ implementation. The managed infrastructure handles GPU provisioning, distributed training, and experiment tracking without you managing EC2 instances directly.
 
 **Amazon S3 for data lake.** Historical treatment trajectories, extracted features, trained model artifacts, and evaluation results all live in S3. The data volumes are moderate (thousands of patients, not millions of images), but the governance requirements are strict: versioning, encryption, access logging.
 
-**AWS Glue for ETL.** Extracting treatment trajectories from raw EHR data requires complex joins across lab results, medication administration records, imaging reports, and toxicity documentation. Glue handles the batch ETL that constructs clean trajectory datasets from messy clinical data. Configure Glue jobs with a VPC connection to run within your VPC (Glue's default network runs outside your VPC boundary, which is unacceptable for PHI). Glue needs a NAT gateway or VPC endpoints for S3 access when running in VPC mode.
+**AWS Glue for extract, transform, and load (ETL).** Extracting treatment trajectories from raw electronic health record (EHR) data requires complex joins across lab results, medication administration records, imaging reports, and toxicity documentation. Glue handles the batch ETL that constructs clean trajectory datasets from messy clinical data. Configure Glue jobs with a VPC connection to run within your VPC (Glue's default network runs outside your VPC boundary, which is unacceptable for protected health information (PHI)). Glue needs a NAT gateway or VPC endpoints for S3 access when running in VPC mode.
 
 **Amazon DynamoDB for state tracking.** In a deployed decision support system, the current patient state and recommendation history need low-latency access. DynamoDB stores the per-patient state vectors and the audit trail of recommendations made.
 
@@ -70,7 +70,7 @@ flowchart TD
 
 ## Pseudocode Walkthrough
 
-**Step 1: Extract treatment trajectories from EHR data.** The foundation of offline RL is historical data. You need complete treatment courses: every lab value, every dose administered, every imaging result, every toxicity event, assembled into a temporal sequence per patient. This is the hardest engineering step, not because the algorithms are complex, but because clinical data is messy. Labs arrive at irregular intervals. Imaging happens every 2-3 cycles, not every cycle. Toxicity is documented in free text that needs NLP extraction (see Chapter 8). Doses are sometimes modified mid-infusion. You need to align all of this into per-cycle state snapshots that the RL algorithm can consume. Skip this step or do it poorly, and your model learns from garbage.
+**Step 1: Extract treatment trajectories from EHR data.** The foundation of offline RL is historical data. You need complete treatment courses: every lab value, every dose administered, every imaging result, every toxicity event, assembled into a temporal sequence per patient. This is the hardest engineering step, not because the algorithms are complex, but because clinical data is messy. Labs arrive at irregular intervals. Imaging happens every 2-3 cycles, not every cycle. Toxicity is documented in free text that needs natural language processing (NLP) extraction (see Chapter 8). Doses are sometimes modified mid-infusion. You need to align all of this into per-cycle state snapshots that the RL algorithm can consume. Skip this step or do it poorly, and your model learns from garbage.
 
 ```pseudocode
 FUNCTION extract_trajectories(patient_ids, regimen):
@@ -469,7 +469,7 @@ This recipe describes a research architecture. Deploying RL-based chemotherapy d
 
 **Prospective validation.** Retrospective evaluation (off-policy evaluation) is necessary but not sufficient. Before clinical deployment, you need a prospective study: patients randomized to receive RL-guided recommendations vs. standard care, with outcomes compared. This is a clinical trial, with all the time, cost, and regulatory overhead that implies.
 
-**Institutional review.** Any system that influences treatment decisions needs IRB approval for the research phase and clinical governance approval for deployment. The governance structure for AI-assisted oncology dosing doesn't exist at most institutions yet.
+**Institutional review.** Any system that influences treatment decisions needs institutional review board (IRB) approval for the research phase and clinical governance approval for deployment. The governance structure for AI-assisted oncology dosing doesn't exist at most institutions yet.
 
 **Liability.** If the system recommends a dose that harms a patient, who is responsible? The oncologist who accepted the recommendation? The institution that deployed the system? The team that trained the model? These questions don't have clear legal answers yet.
 
