@@ -30,7 +30,7 @@ Two years ago, this was science fiction. Today, it is barely feasible for narrow
 
 ### What "Multi-Modal" Actually Means Here
 
-The word "multi-modal" is used loosely in the AI literature. In this recipe, it means a specific thing: the system integrates clinical information that lives in structurally different representations. Structured lab values and vitals are numeric time series. Clinical notes are prose. Imaging reports are prose produced from pixels. Imaging studies themselves are pixel data (DICOM). ECGs are a different flavor of time series (high-frequency multi-lead waveforms). Pathology slides are also pixels but at gigapixel scale. Genomic data is a large structured record. Device data from continuous glucose monitors or wearables is streaming time series.
+The word "multi-modal" is used loosely in the AI literature. In this recipe, it means a specific thing: the system integrates clinical information that lives in structurally different representations. Structured lab values and vitals are numeric time series. Clinical notes are prose. Imaging reports are prose produced from pixels. Imaging studies themselves are pixel data in the Digital Imaging and Communications in Medicine (DICOM) format. ECGs are a different flavor of time series (high-frequency multi-lead waveforms). Pathology slides are also pixels but at gigapixel scale. Genomic data is a large structured record. Device data from continuous glucose monitors or wearables is streaming time series.
 
 A single patient can have representations from several of these at once. The reasoning task is not "concatenate all of these into a single prompt." That doesn't work for two reasons. First, most modalities cannot be usefully serialized into tokens at their full fidelity. A chest CT has thousands of slices; putting them all in an LLM context is neither feasible nor productive. Second, each modality has its own domain of interpretation. A cardiologist reads an echocardiogram; a pathologist reads a biopsy; an internist synthesizes the interpretations into a plan. The reasoning system should mirror this: specialized interpretation of each modality, followed by a reasoning step that operates on the interpretations.
 
@@ -50,7 +50,7 @@ Research labs have released impressive multi-modal foundation models that take i
 - **Calibration and confidence.** End-to-end multi-modal models tend to be overconfident, especially on out-of-distribution inputs. A patient whose presentation doesn't match the training distribution will get a confident wrong answer rather than an uncertainty flag. This is exactly the failure mode that matters in clinical decision-making.
 - **Provenance opacity.** "Why did the model say this?" is a hard question to answer for an end-to-end model. The clinician gets an output but cannot easily trace which image finding, which note passage, which lab value drove the conclusion. This is the single biggest problem for regulatory posture and clinician trust.
 - **Specialty and institutional fit.** Guideline interpretations vary by specialty. Institutional protocols vary across hospitals. A generic model doesn't know your antibiogram, your formulary, your protocols. The reasoning has to happen with those in scope.
-- **Regulatory status.** A model that produces a diagnostic impression from image and text is likely a medical device. A pipeline that composes already-cleared modality interpretations with an LLM reasoning layer has a more defensible path to the FDA CDS exemption, as long as the structure and transparency of the pipeline supports "independent review" by the clinician.
+- **Regulatory status.** A model that produces a diagnostic impression from image and text is likely a medical device. A pipeline that composes already-cleared modality interpretations with an LLM reasoning layer has a more defensible path to the FDA clinical decision support (CDS) exemption, as long as the structure and transparency of the pipeline supports "independent review" by the clinician.
 
 So the state-of-the-art research models exist and are impressive, but the production architecture that works is the compositional one: existing cleared imaging AI (or cleared vendor interpretations) producing structured outputs, existing lab and vitals data, existing note text, fed to a reasoning layer with enforced grounding and visible provenance.
 
@@ -72,13 +72,13 @@ For the reasoning pipeline here, the practical inputs from imaging are: (a) the 
 
 **Clinical notes.** Prose. The note-processing pipeline from Recipes 2.6 and 2.9 applies: extract entities, map to ontologies, pull out key clinical facts, preserve the raw text for grounded citation.
 
-**Structured clinical data.** Problem lists, medication lists, allergies, procedures, and genomic data where available. Most of this comes from the EHR via FHIR. Genomic data often lives in a separate system with its own data model (VCF files, annotated variants, interpreted reports).
+**Structured clinical data.** Problem lists, medication lists, allergies, procedures, and genomic data where available. Most of this comes from the electronic health record (EHR) via Fast Healthcare Interoperability Resources (FHIR). Genomic data often lives in a separate system with its own data model (VCF files, annotated variants, interpreted reports).
 
 Each encoder produces something the reasoning layer can consume. The reasoning layer does not reinterpret the imaging pixels or the ECG waveform; it consumes the interpretations.
 
 ### The Reasoning Layer
 
-The reasoning layer is an LLM, but with more scaffolding than the reasoning layer of a simpler RAG system. The job of the reasoning layer is to take the interpretations and structured data, consider them as a whole, and produce a coherent clinical synthesis.
+The reasoning layer is an LLM, but with more scaffolding than the reasoning layer of a simpler retrieval-augmented generation (RAG) system. The job of the reasoning layer is to take the interpretations and structured data, consider them as a whole, and produce a coherent clinical synthesis.
 
 Several properties matter:
 
@@ -184,7 +184,7 @@ The overall flow looks like this:
 
 **Modality-specific ingestion.** For each modality, acquire the interpretation. For imaging, this means the radiology report (or a cleared AI output, or both). For ECG, the machine interpretation plus any cleared foundation-model output. For pathology, the reported findings. For labs, the time series with reference ranges. For vitals, summary statistics plus flagged events. For notes, the text with basic structure. For structured EHR, the problem list, medication list, allergy list. This is typically a parallel step; each modality's ingestion runs independently.
 
-**Normalize and annotate.** Each modality's output gets timestamped, source-identified, and coded where applicable. Imaging reports get mapped to RadLex or SNOMED where useful. ECG findings get mapped to standard terminology. Labs use LOINC. Medications use RxNorm. The result is a unified patient state record with modality provenance intact.
+**Normalize and annotate.** Each modality's output gets timestamped, source-identified, and coded where applicable. Imaging reports get mapped to RadLex or Systematized Nomenclature of Medicine (SNOMED) where useful. ECG findings get mapped to standard terminology. Labs use Logical Observation Identifiers Names and Codes (LOINC). Medications use RxNorm. The result is a unified patient state record with modality provenance intact.
 
 **Modality inventory and scope gate.** Before reasoning runs, the system enumerates what is present and what is absent. The scope gate checks that the reasoning scenario is appropriate given the available modalities (you can't do a comprehensive cardiology reasoning without any cardiac imaging; either defer or scope down). The gate also suppresses reasoning when a recent reasoning run covered the same scenario without material changes.
 

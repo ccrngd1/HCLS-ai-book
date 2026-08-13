@@ -8,17 +8,17 @@
 
 ### Why These Services
 
-**Amazon Bedrock for the reasoning layer.** A capable generation model (Claude Sonnet or equivalent) handles the multi-hypothesis reasoning and synthesis. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, modality inventory summarization, and retrieval planning. Bedrock is the right fit because the workload needs grounded generation with structured output and because it is HIPAA-eligible under AWS BAA.
+**Amazon Bedrock for the reasoning layer.** A capable generation model (Claude Sonnet or equivalent) handles the multi-hypothesis reasoning and synthesis. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, modality inventory summarization, and retrieval planning. Bedrock is the right fit because the workload needs grounded generation with structured output and because it is HIPAA-eligible under an AWS business associate agreement (BAA).
 
 **Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.
 
-**Amazon HealthLake for the FHIR-native patient context.** HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.
+**Amazon HealthLake for the Fast Healthcare Interoperability Resources (FHIR)-native patient context.** HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.
 
-**Amazon HealthImaging for DICOM management.** HealthImaging is a HIPAA-eligible, purpose-built store for medical imaging. For a pipeline that needs to reference prior imaging, retrieve current imaging metadata, and link from the reasoning output back to the source study, HealthImaging is the right imaging-native layer. The reasoning pipeline itself typically does not perform direct pixel interpretation; it uses HealthImaging metadata and the radiology report for text-based reasoning, and deep-links back to the study in the PACS viewer for clinician review.
+**Amazon HealthImaging for Digital Imaging and Communications in Medicine (DICOM) management.** HealthImaging is a HIPAA-eligible, purpose-built store for medical imaging. For a pipeline that needs to reference prior imaging, retrieve current imaging metadata, and link from the reasoning output back to the source study, HealthImaging is the right imaging-native layer. The reasoning pipeline itself typically does not perform direct pixel interpretation; it uses HealthImaging metadata and the radiology report for text-based reasoning, and deep-links back to the study in the PACS viewer for clinician review.
 
 **Amazon Transcribe Medical or Amazon HealthScribe when audio-derived content is in scope.** For pipelines that include the conversational-context modality (the clinician's current encounter), Transcribe Medical or HealthScribe produces the transcript. This is less common in a point-of-care reasoning pipeline but applies in ambient-documentation-plus-reasoning architectures.
 
-**Amazon Comprehend Medical for entity extraction and ontology mapping.** Notes, radiology reports, pathology reports, ECG reports all benefit from entity extraction with mapping to RxNorm, ICD-10, SNOMED, and RadLex where applicable. The resulting structured records are easier to reason over and easier to cite.
+**Amazon Comprehend Medical for entity extraction and ontology mapping.** Notes, radiology reports, pathology reports, ECG reports all benefit from entity extraction with mapping to RxNorm, International Classification of Diseases (ICD)-10, Systematized Nomenclature of Medicine (SNOMED), and RadLex where applicable. The resulting structured records are easier to reason over and easier to cite.
 
 **Amazon SageMaker for specialized modality models when needed.** Cleared or institutional-custom models for imaging AI (if not using a cleared vendor's hosted service), ECG foundation models (if institutionally deployed rather than vendor-hosted), and pathology foundation models run on SageMaker Endpoints. These are optional; many deployments use vendor-hosted modality AI.
 
@@ -36,7 +36,7 @@
 
 **Amazon EventBridge for clinical triggers and scheduled retraining.** New ED presentation, new admission, new imaging study finalized, new lab result crossing a clinical threshold, clinician-requested reasoning: all can route through EventBridge.
 
-**Amazon API Gateway with Amazon Cognito for the clinician-facing API.** SMART on FHIR where the EHR supports it. CDS Hooks for specific workflow points. Standard REST for direct calls.
+**Amazon API Gateway with Amazon Cognito for the clinician-facing API.** SMART on FHIR where the electronic health record (EHR) supports it. Clinical decision support (CDS) Hooks for specific workflow points. Standard REST for direct calls.
 
 **AWS Secrets Manager for external API credentials.** Drug databases, FHIR endpoints, cleared imaging AI vendor APIs, ECG foundation model APIs, formulary services.
 
@@ -1368,7 +1368,7 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 
 **Specialty and institutional adaptation.** A pipeline that works for hospital medicine may need meaningful adjustment to work for emergency medicine, primary care, or subspecialty clinics. Each adaptation is its own validation. Plan incremental rollout rather than big-bang deployment.
 
-**Security and access control.** Reasoning outputs contain PHI, including inferred PHI (a combination of lab values and imaging findings may reveal more than any single item). Authorization must ensure that the reasoning output is delivered only to authorized clinicians with a legitimate care relationship. Integrate with the EHR authorization model; do not maintain a parallel system.
+**Security and access control.** Reasoning outputs contain protected health information (PHI), including inferred PHI (a combination of lab values and imaging findings may reveal more than any single item). Authorization must ensure that the reasoning output is delivered only to authorized clinicians with a legitimate care relationship. Integrate with the EHR authorization model; do not maintain a parallel system.
 
 **PHI minimization in prompts.** Bedrock is HIPAA-eligible and appropriate for PHI under BAA, but minimum-necessary applies inside the BAA boundary as well. The reasoning layer does not need MRN, date of birth, name, address, phone, or payer identifiers to produce a differential; it needs age band, sex where clinically relevant, active problems, current medications, derived values (eGFR, weight), lab trends, and the clinical content of the notes. Strip identifiers before serializing patient state into the reasoning prompt, and re-associate the rendered output to the patient via the run record rather than round-tripping identifiers through the model.
 
@@ -1422,7 +1422,7 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 - [`amazon-healthlake-samples`](https://github.com/aws-samples/amazon-healthlake-samples): HealthLake FHIR integration examples
 - [`amazon-healthimaging-samples`](https://github.com/aws-samples/amazon-healthimaging-samples): HealthImaging DICOM workflow samples
 - [`amazon-opensearch-service-samples`](https://github.com/aws-samples/amazon-opensearch-service-samples): Hybrid search and retrieval patterns
-- [`generative-ai-cdk-constructs`](https://github.com/awslabs/generative-ai-cdk-constructs): CDK constructs for RAG and generative AI infrastructure
+- [`generative-ai-cdk-constructs`](https://github.com/awslabs/generative-ai-cdk-constructs): CDK constructs for retrieval-augmented generation (RAG) and generative AI infrastructure
 
 **AWS Solutions and Blogs:**
 - [Generative AI on AWS for Healthcare](https://aws.amazon.com/health/generative-ai/): Overview of healthcare LLM applications on AWS
@@ -1447,11 +1447,11 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 - [FDA Structured Product Labels (DailyMed)](https://dailymed.nlm.nih.gov/dailymed/): FDA-approved drug labeling
 - [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): Standardized drug terminology
 - [SNOMED CT](https://www.snomed.org/snomed-ct): Standardized clinical terminology
-- [LOINC](https://loinc.org/): Standardized lab and observation terminology
+- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): Standardized lab and observation terminology
 - [RadLex](https://www.rsna.org/practice-tools/data-tools-and-standards/radlex-radiology-lexicon): Radiology lexicon
 
 **Interoperability Standards:**
-- [HL7 FHIR](https://www.hl7.org/fhir/): Clinical data model for patient context integration
+- [Health Level Seven (HL7) FHIR](https://www.hl7.org/fhir/): Clinical data model for patient context integration
 - [SMART on FHIR](https://smarthealthit.org/): Standard for EHR-launched applications
 - [CDS Hooks](https://cds-hooks.org/): HL7 standard for EHR-triggered CDS invocations
 - [DICOM](https://www.dicomstandard.org/): Medical imaging standard
