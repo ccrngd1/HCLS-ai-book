@@ -10,7 +10,7 @@
 
 **Amazon S3 for video storage.** Surgical video files are large (50-100 GB per procedure at full resolution) and write-once. S3 provides durable, encrypted storage with lifecycle policies to manage cost. Use S3 Intelligent-Tiering or transition to S3 Glacier for videos older than 90 days that aren't actively being analyzed. S3's multipart upload handles the large file sizes gracefully.
 
-**AWS Elemental MediaConvert for video preprocessing.** Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances. MediaConvert accesses S3 via AWS-internal endpoints over TLS; data does not traverse the public internet. For organizations requiring all PHI processing within a VPC boundary, an alternative is running FFmpeg on a VPC-hosted EC2 instance or ECS task, at the cost of managing the compute infrastructure yourself.
+**AWS Elemental MediaConvert for video preprocessing.** Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances. MediaConvert accesses S3 via AWS-internal endpoints over TLS; data does not traverse the public internet. For organizations requiring all protected health information (PHI) processing within a VPC boundary, an alternative is running FFmpeg on a VPC-hosted EC2 instance or ECS task, at the cost of managing the compute infrastructure yourself.
 
 **PHI de-identification during preprocessing.** Surgical video is dense with PHI that has nothing to do with the surgical analysis itself. Your preprocessing step must address four vectors before frames reach the ML pipeline:
 
@@ -20,7 +20,7 @@
 
 3. **OR monitor overlay detection.** Many OR setups display patient demographics, vitals, or EMR data on monitors visible to the laparoscopic camera. Run OCR-based text detection on a frame sample during preprocessing. If text regions are detected, either crop them out (if they're in a consistent screen region) or blur them (if they're overlaid on the surgical field). Flag procedures where overlay content is detected for manual verification.
 
-4. **Video file metadata sanitization.** Recording systems embed patient identifiers, MRN numbers, and procedure scheduling data in video file headers (DICOM metadata, MP4 user data atoms, MXF descriptive metadata). Strip all non-essential metadata during ingestion, preserving only technical fields needed for transcoding (codec, resolution, frame rate, duration).
+4. **Video file metadata sanitization.** Recording systems embed patient identifiers, MRN numbers, and procedure scheduling data in video file headers (Digital Imaging and Communications in Medicine (DICOM) metadata, MP4 user data atoms, MXF descriptive metadata). Strip all non-essential metadata during ingestion, preserving only technical fields needed for transcoding (codec, resolution, frame rate, duration).
 
 **Amazon SageMaker for model training and batch inference.** Surgical video models require GPU compute for both training and inference. SageMaker provides managed training jobs with spot instance support (critical for the multi-day training runs these models require) and batch transform for processing video backlogs. For the feature extraction backbone, SageMaker's built-in support for PyTorch and distributed training across multiple GPUs is essential.
 
@@ -563,7 +563,7 @@ This architecture shows the complete shape of a surgical video analysis pipeline
 
 **No trained models ship with this recipe.** The feature extraction backbone and temporal model require hundreds of annotated surgical videos and weeks of GPU training time. The Cholec80 research dataset is a starting point for cholecystectomy, but your institution needs local fine-tuning for its specific cameras, lighting conditions, and patient population. Budget 2-4 months just for initial model training and validation.
 
-**De-identification is described but not implemented.** The preprocessing section outlines the four PHI vectors in surgical video (audio, pre-incision footage, monitor overlays, file metadata), but detecting and redacting these requires additional ML models (face detection, OCR for overlay text) that add complexity and potential failure modes. Each must be validated before you process real patient video.
+**De-identification is described but not implemented.** The preprocessing section outlines the four PHI vectors in surgical video (audio, pre-incision footage, monitor overlays, file metadata), but detecting and redacting these requires additional ML models (face detection, optical character recognition (OCR) for overlay text) that add complexity and potential failure modes. Each must be validated before you process real patient video.
 
 **Surgeon identity access controls need institutional buy-in.** The pseudonymization scheme and role-based access model described above require policy decisions, legal review, and governance committee approval that can't be solved with code alone. These often take longer than the engineering work.
 
@@ -571,7 +571,7 @@ This architecture shows the complete shape of a surgical video analysis pipeline
 
 **Single procedure type.** The pseudocode targets laparoscopic cholecystectomy. Each additional procedure type requires its own phase definitions, event taxonomy, training data, and validation. The infrastructure generalizes, but the model layer does not.
 
-**No integration with clinical systems.** The pipeline stores results in DynamoDB and OpenSearch, but connecting those to the institution's quality dashboards, credentialing systems, or EMR requires interface work and likely HL7/FHIR integration that is outside the scope of this recipe.
+**No integration with clinical systems.** The pipeline stores results in DynamoDB and OpenSearch, but connecting those to the institution's quality dashboards, credentialing systems, or EMR requires interface work and likely Health Level Seven (HL7)/Fast Healthcare Interoperability Resources (FHIR) integration that is outside the scope of this recipe.
 
 ---
 
