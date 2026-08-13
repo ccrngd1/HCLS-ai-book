@@ -280,6 +280,7 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     about_author = _frontmatter_file("about-the-author.md", **subs)
     preface = _frontmatter_file("preface.md", **subs)
     how_to = _frontmatter_file("how-to-use-this-book.md", **subs)
+    before_phi = _frontmatter_file("before-you-send-phi.md", **subs)
     how_to = how_to + _qr_block(url)
     import os as _os, json as _json
     _pm = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "build", "toc-pagemap.json")
@@ -304,6 +305,7 @@ def front_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
         ("frontmatter toc", toc),
         ("frontmatter", preface),
         ("frontmatter", how_to),
+        ("frontmatter", before_phi),
     ]
 
 
