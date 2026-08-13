@@ -22,7 +22,7 @@ AI assistance in pathology is not about replacing pathologists. It's about makin
 
 ### Whole Slide Imaging: The Foundation
 
-Before AI can analyze a slide, the slide must be digital. Whole slide imaging (WSI) scanners capture glass slides at 20x or 40x magnification, producing images that are typically 50,000 to 150,000 pixels per side. The file formats are specialized: SVS (Aperio), NDPI (Hamamatsu), MRXS (3DHISTECH), and the vendor-neutral DICOM Whole Slide Imaging standard. These are pyramidal images, stored at multiple resolution levels (like map tiles), because no system can work with the full-resolution image as a single entity.
+Before AI can analyze a slide, the slide must be digital. Whole slide imaging (WSI) scanners capture glass slides at 20x or 40x magnification, producing images that are typically 50,000 to 150,000 pixels per side. The file formats are specialized: SVS (Aperio), NDPI (Hamamatsu), MRXS (3DHISTECH), and the vendor-neutral Digital Imaging and Communications in Medicine (DICOM) Whole Slide Imaging standard. These are pyramidal images, stored at multiple resolution levels (like map tiles), because no system can work with the full-resolution image as a single entity.
 
 A single slide at 40x magnification might be 2-5 GB uncompressed. A typical cancer case involves 5-20 slides. A busy pathology lab processes hundreds of cases per day. The storage and bandwidth requirements are substantial before you even start thinking about AI.
 
