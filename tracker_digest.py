@@ -90,6 +90,11 @@ def build_digest(rows: list[dict]) -> str:
         "",
         "## Open items",
         "",
+        "<!-- Editing a status? Edit the row in the numbered sections BELOW, not here. "
+        "This table is regenerated, and every row appears twice in this file with "
+        "different column orders, so a search for the row id finds this copy first and "
+        "any edit to it is silently discarded on the next run. -->",
+        "",
         f"Generated index of the {len(live)} rows that are not DONE or WONTFIX, worst first. "
         "Full detail, including why each one matters, stays in the numbered sections below, "
         "where the closed rows on the same theme are still visible for context.",

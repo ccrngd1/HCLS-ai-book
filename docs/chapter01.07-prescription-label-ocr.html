@@ -364,7 +364,7 @@ drug knowledge base owned by your pharmacy team.
 Nothing here is a validated clinical tool. Any production use needs clinical
 ownership and review by your own clinical, legal, and compliance teams.</p>
 </blockquote>
-<p>After the vision-model, dual-path, A2I architecture of Recipe 1.6, this recipe is deliberately focused. Prescription labels are highly structured, printed, single-page documents where the OCR-plus-NLP pipeline is the optimal choice. The goal here is to introduce medication ontology mapping (RxNorm, NDC) before the complexity returns for EOB processing in Recipe 1.8.</p>
+<p>After the vision-model, dual-path, A2I architecture of Recipe 1.6, this recipe is deliberately focused. Prescription labels are highly structured, printed, single-page documents where the pipeline combining optical character recognition (OCR) with natural language processing (NLP) is the optimal choice. The goal here is to introduce medication ontology mapping (RxNorm, NDC) before the complexity returns for explanation of benefits (EOB) processing in Recipe 1.8.</p>
 <h2 id="the-problem">The Problem</h2>
 <p>Someone just got out of the hospital. They're home, they're managing a new medication, and their care coordinator needs to know exactly what they're taking. The member opens their health plan's app and sees a prompt: &quot;Upload a photo of your prescription label.&quot; They point their phone at the pill bottle, take a picture, and tap submit.</p>
 <p>Now it's your problem.</p>
@@ -499,7 +499,7 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <h3 id="medical-nlp-for-entity-and-concept-extraction">Medical NLP for Entity and Concept Extraction</h3>
 <p>OCR turns an image into text. Medical NLP turns that text into structured clinical knowledge. The two are different problems, and you need both.</p>
 <p>Once you have the raw text from a prescription label, you have things like &quot;Lisinopril 10mg&quot; and &quot;Take 1 tablet by mouth once daily.&quot; Medical NLP systems are trained on clinical text to identify the named entities in those strings: the medication name, the dosage, the route of administration, the frequency. Beyond entity recognition, specialized systems can then link those entities to standard clinical ontologies: this detected medication entity maps to RxNorm concept 314076 (&quot;lisinopril 10 MG Oral Tablet&quot;).</p>
-<p>This entity extraction and ontology linking is what makes the pipeline interoperable. A downstream FHIR MedicationStatement resource, a pharmacy benefit system, a clinical decision support tool: all of them speak RxNorm. Giving them a raw string like &quot;Lisinopril 10mg&quot; forces them to do their own normalization, inconsistently. Giving them a RxNorm concept ID means everyone is speaking the same language.</p>
+<p>This entity extraction and ontology linking is what makes the pipeline interoperable. A downstream Fast Healthcare Interoperability Resources (FHIR) MedicationStatement resource, a pharmacy benefit system, a clinical decision support tool: all of them speak RxNorm. Giving them a raw string like &quot;Lisinopril 10mg&quot; forces them to do their own normalization, inconsistently. Giving them a RxNorm concept ID means everyone is speaking the same language.</p>
 <h3 id="the-general-architecture-pattern">The General Architecture Pattern</h3>
 <p>The pipeline for prescription label OCR looks like this:</p>
 <pre class="code code-plain"><code>[Capture] → [OCR / KVP Extraction] → [Field Normalization + SIG Parsing]
@@ -509,7 +509,7 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <p><strong>OCR / KVP Extraction:</strong> Pass the image to a document intelligence service that returns key-value pairs, not just raw text. For single-page structured labels, synchronous processing is appropriate. Results come back in under 3 seconds.</p>
 <p><strong>Field Normalization and SIG Parsing:</strong> Map the extracted labels to canonical field names across pharmacy chains. Decode SIG abbreviations from the directions field into human-readable text.</p>
 <p><strong>Medical NLP:</strong> Pass the extracted medication name and dosage through a clinical entity extraction model that identifies MEDICATION entities and links them to RxNorm concept IDs. This step bridges the raw OCR output to the clinical ontology layer.</p>
-<p><strong>Store:</strong> Write the structured medication record to a queryable store with appropriate PHI controls. The record should carry both the raw extracted values and the normalized/linked values for auditability.</p>
+<p><strong>Store:</strong> Write the structured medication record to a queryable store with appropriate protected health information (PHI) controls. The record should carry both the raw extracted values and the normalized/linked values for auditability.</p>
 <p><strong>Expose via API:</strong> Downstream systems consume the structured medication record. In a member-facing app, this can be synchronous (return the structured record immediately). In bulk processing, async is fine.</p>
 <hr />
 <blockquote>

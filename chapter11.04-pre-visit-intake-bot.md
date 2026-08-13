@@ -4,6 +4,14 @@
 
 ---
 
+> **This recipe is illustrative, not clinical guidance.** Triage and disposition are clinical
+> decisions. The escalation rules, red-flag lists, and sample dialogue here exist to make
+> the architecture concrete. They are not a validated triage protocol and must not be
+> deployed as one. A patient-facing system needs validation against the protocol your
+> organization actually uses.
+> Nothing here is a validated clinical tool. Any production use needs clinical
+> ownership and review by your own clinical, legal, and compliance teams.
+
 ## The Problem
 
 Marisol is 34. She has been having chest tightness off and on for about three weeks. Not crushing, not radiating, not the dramatic Hollywood version. More like the weight of a hand pressing on her sternum that comes on when she's walking up the stairs to her apartment, lingers a few minutes, and goes away. She has been telling herself it's anxiety, because she has had anxiety since she was twenty-one, and anxiety can feel like this. She has also, in the back of her mind, been thinking about her father, who had a heart attack at fifty-one. Marisol made an appointment with her primary care doctor for next Wednesday. The earliest she could get.
