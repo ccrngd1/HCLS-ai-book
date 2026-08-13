@@ -10,9 +10,9 @@
 
 **Amazon Kinesis Data Streams for the encounter and lab event backbone.** Clinical encounter feeds, lab feeds, and auxiliary-source feeds flow into Kinesis streams as they're produced. Kinesis handles the volume (a state-level surveillance system might process millions of encounter events per day across all participating facilities), provides ordered delivery for time-series analysis, supports replay for backfill and retraining, and integrates cleanly with the downstream Lambda and analytics components.
 
-**AWS Lambda for ingest, normalization, and syndrome classification.** Each source type (HL7 v2 ADT feeds, HL7 v2 lab feeds, FHIR encounter feeds, NWSS wastewater feeds, eCR feeds, NHSN feeds) has its own Lambda that pulls or receives the source-specific format and writes canonical events. Downstream Lambdas perform geocoding, demographic stratification, and syndrome classification. Lambda's auto-scaling fits the bursty pattern of clinical encounter data well.
+**AWS Lambda for ingest, normalization, and syndrome classification.** Each source type (Health Level Seven (HL7) v2 admission, discharge, and transfer (ADT) feeds, HL7 v2 lab feeds, Fast Healthcare Interoperability Resources (FHIR) encounter feeds, NWSS wastewater feeds, eCR feeds, NHSN feeds) has its own Lambda that pulls or receives the source-specific format and writes canonical events. Downstream Lambdas perform geocoding, demographic stratification, and syndrome classification. Lambda's auto-scaling fits the bursty pattern of clinical encounter data well.
 
-**Amazon Comprehend Medical for chief-complaint and triage-note NLP.** Free-text chief complaints carry signal that ICD codes miss in real time. Comprehend Medical extracts conditions, anatomy, medications, and signs/symptoms. Combined with rules-based syndromic classification, it provides higher-fidelity syndrome assignment than structured data alone.
+**Amazon Comprehend Medical for chief-complaint and triage-note natural language processing (NLP).** Free-text chief complaints carry signal that ICD codes miss in real time. Comprehend Medical extracts conditions, anatomy, medications, and signs/symptoms. Combined with rules-based syndromic classification, it provides higher-fidelity syndrome assignment than structured data alone.
 
 **Amazon SageMaker for syndrome classifier training and hosting.** Custom syndrome classifiers (especially for organization-specific syndrome categories or sentinel-event triggers) train as SageMaker Training Jobs and deploy to SageMaker endpoints. SageMaker Feature Store provides online and offline feature consistency.
 
@@ -34,7 +34,7 @@
 
 **Amazon Bedrock for cluster narrative generation.** The cluster builder hands the structured evidence to a Bedrock-hosted LLM that produces the investigator-facing narrative ("A spatiotemporal cluster of 14 fever-respiratory ED visits in census tracts 36055-001100 through 36055-001400 over the past 7 days. Pediatric (under 12) cases account for 11 of 14. Geographic centroid is within 0.4 miles of three elementary schools. No lab-confirmed pathogen in the cluster yet; respiratory panels pending on 4 cases. Compared to the historical baseline for these tracts and this week, the observed count exceeds the 99th percentile."). Decision support, not decision-making. 
 
-**Amazon SageMaker Model Monitor.** Continuously monitors data drift, prediction drift, and (with labels) model quality. Critical for catching baseline drift caused by EHR upgrades, behavioral shifts, demographic changes, or COVID-era reset effects.
+**Amazon SageMaker Model Monitor.** Continuously monitors data drift, prediction drift, and (with labels) model quality. Critical for catching baseline drift caused by electronic health record (EHR) upgrades, behavioral shifts, demographic changes, or COVID-era reset effects.
 
 **Amazon EventBridge for routing.** Detector outputs publish to EventBridge with cluster context and case-class metadata. Subscribers include the cluster builder, the eCR/NEDSS connector, the audit logger, and the metrics collector.
 
@@ -1044,7 +1044,7 @@ The pseudocode shows the shape. A production surveillance program closes several
 
 **NLP on chief complaints needs continuous validation.** The accuracy of syndromic classification depends on the chief-complaint text and the NLP model's handling of it. EHR upgrades, chief-complaint template changes, triage-process changes, and provider documentation patterns all shift the input distribution. Validate NLP performance quarterly against a held-out labeled set and retrain when drift is detected.
 
-**Case-detail PHI store separation is critical.** Surveillance analytic data should be aggregated to cells; the case-detail data with patient identifiers should live in a separate store with its own access controls. Investigators access case detail under specific authority; the analytic pipeline operates on de-identified or pseudonymized data. The architectural separation is a privacy-by-design requirement that's easy to skip and hard to retrofit.
+**Case-detail protected health information (PHI) store separation is critical.** Surveillance analytic data should be aggregated to cells; the case-detail data with patient identifiers should live in a separate store with its own access controls. Investigators access case detail under specific authority; the analytic pipeline operates on de-identified or pseudonymized data. The architectural separation is a privacy-by-design requirement that's easy to skip and hard to retrofit.
 
 **Cross-jurisdictional coordination must be tested before it's needed.** When an outbreak crosses jurisdictional lines, the detection system, the case-management workflow, and the public messaging all have to span jurisdictions. Tabletop the cross-jurisdictional protocols quarterly; the first time you exercise them shouldn't be the first time you need them.
 
@@ -1168,12 +1168,12 @@ The pseudocode shows the shape. A production surveillance program closes several
 **Regulatory and Compliance References:**
 - [HIPAA Privacy Rule, Public Health Exception (45 CFR 164.512(b))](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E/section-164.512#p-164.512(b)): the regulatory basis for public-health-authority access to PHI.
 - [State Public Health Statutes](https://www.cdc.gov/phlp/publications/topic/index.html): jurisdiction-specific authorities; varies by state.
-- [HHS Office for Civil Rights (OCR) Public Health Guidance](https://www.hhs.gov/hipaa/for-professionals/special-topics/public-health/index.html): OCR guidance on the public health exception.
+- [HHS Office for Civil Rights (unrelated to optical character recognition (OCR)) Public Health Guidance](https://www.hhs.gov/hipaa/for-professionals/special-topics/public-health/index.html): OCR guidance on the public health exception.
 
 **Industry Frameworks and Standards:**
 - [HL7 v2 ADT and ORU](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185): the dominant clinical-encounter and lab-result data formats.
 - [HL7 FHIR](https://www.hl7.org/fhir/): the modern interoperability standard underpinning eCR and emerging surveillance integrations.
-- [LOINC](https://loinc.org/): laboratory test and observation codes.
+- [Logical Observation Identifiers Names and Codes (LOINC)](https://loinc.org/): laboratory test and observation codes.
 - [SNOMED CT](https://www.snomed.org/): clinical terminology.
 - [ICD-10-CM](https://www.cdc.gov/nchs/icd/icd10cm.htm): diagnosis coding.
 - [CDC NNDSS Message Mapping Guides (MMGs)](https://www.cdc.gov/nndss/data-and-resources/surveillance-message-mapping-guides.html): CDC standards for surveillance message structure and case-notification formatting. 
