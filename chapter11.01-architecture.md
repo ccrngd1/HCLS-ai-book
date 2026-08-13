@@ -1037,7 +1037,7 @@ Per-channel identity-correlation key: the audit record carries the channel type 
 
 **WAF tuning and abuse mitigation.** WAF tuning is a continuous-workstream architectural discipline, not a one-time configuration. Per-rule-family policy: rate limits per IP and per session (with separate thresholds for authenticated vs. unauthenticated channels); bot detection with an explicit allow-list for legitimate accessibility tools (screen readers, browser extensions for users with disabilities) per WCAG and Section 508 compliance; geo-restrictions per institutional policy; common attack patterns (SQL injection, XSS, request smuggling). Per-rule-family review cadence: monthly tuning based on traffic patterns and false-positive reports. Per-rule-family false-positive monitoring: legitimate users blocked (track via support tickets and per-cohort analysis). Per-rule-family false-negative monitoring: abusive traffic that bypasses rules (track via downstream abuse signals). Integration with per-cohort monitoring: a per-region or per-IP-cluster cohort experiencing elevated false-positive WAF blocks is an equity concern that surfaces in the per-cohort dashboards, triggering investigation of whether WAF rules disproportionately affect specific patient populations.
 
-**Conversation-Log-as-PHI-by-Association Governance Operations.** The conversation log is PHI by association even when no clinical content is exchanged. This governance program covers:
+**Conversation-Log-as-PHI-by-Association Governance Operations.** The conversation log is protected health information (PHI) by association even when no clinical content is exchanged. This governance program covers:
 
 *Session-token discipline.* Per-channel session tokens with TTL (web chat: 30 minutes of inactivity; in-app: session lifetime; SMS: per-thread with carrier session semantics), session-isolation policy (each session is cryptographically independent; no cross-session state leakage), cross-channel session-bridging rules (sessions do not bridge across channels without explicit patient action), and shared-device session isolation (unauthenticated web sessions expire aggressively; the patient has an explicit "clear conversation" affordance visible in the chat UI).
 
@@ -1049,7 +1049,7 @@ Per-channel identity-correlation key: the audit record carries the channel type 
 
 Canonical ownership: privacy officer plus patient-experience team.
 
-**Vendor-evaluation rigor for build-vs-buy decisions.** Most institutions deploying an FAQ chatbot today should be considering the buy path against the build path before committing. Commercial healthcare conversational AI vendors offer bundled FAQ-and-more products with EHR integration, contact-center integration, and ongoing operational support. The buy path is faster, comes with maintenance, and is often the right call for institutions whose scope is standard. The build path makes sense for institutions with unusual scope or research interest. Either way, a rigorous vendor evaluation (per-cohort accuracy benchmarking, scope-containment evaluation, knowledge-base integration depth, escalation-quality evaluation, reference checks with comparable institutions) is required before commitment.
+**Vendor-evaluation rigor for build-vs-buy decisions.** Most institutions deploying an FAQ chatbot today should be considering the buy path against the build path before committing. Commercial healthcare conversational AI vendors offer bundled FAQ-and-more products with electronic health record (EHR) integration, contact-center integration, and ongoing operational support. The buy path is faster, comes with maintenance, and is often the right call for institutions whose scope is standard. The build path makes sense for institutions with unusual scope or research interest. Either way, a rigorous vendor evaluation (per-cohort accuracy benchmarking, scope-containment evaluation, knowledge-base integration depth, escalation-quality evaluation, reference checks with comparable institutions) is required before commitment.
 
 ---
 
@@ -1057,7 +1057,7 @@ Canonical ownership: privacy officer plus patient-experience team.
 
 **Multilingual deployment.** The architecture supports multilingual operation. The per-language work (knowledge-base content, persona, scope rules, crisis vocabulary, native-speaker review) is real but smaller than it used to be with modern LLMs. Common second-priority languages in U.S. healthcare markets: Spanish (often launched alongside English), then Mandarin, Vietnamese, Tagalog, Russian, Arabic, Haitian Creole depending on the institution's patient population. Per-language monitoring and per-language equity gates are required.
 
-**Voice integration.** The same conversational architecture can be served through a voice channel by adding ASR (recipe 10.5 patterns), text-to-speech (Polly), and telephony plumbing (Connect). The conversation logic is largely the same; the channel differs. Some institutions deploy the FAQ bot's voice variant as a "chat assistant on the phone" before building out the more complex patient-facing voice assistant from recipe 10.5.
+**Voice integration.** The same conversational architecture can be served through a voice channel by adding automatic speech recognition (ASR) using recipe 10.5 patterns, text-to-speech (Polly), and telephony plumbing (Connect). The conversation logic is largely the same; the channel differs. Some institutions deploy the FAQ bot's voice variant as a "chat assistant on the phone" before building out the more complex patient-facing voice assistant from recipe 10.5.
 
 **SMS and messenger integration.** Beyond the web chat widget, the FAQ bot can serve SMS, WhatsApp, Facebook Messenger, and similar channels. Each channel has its own message-formatting constraints (no rich citations on SMS, character limits per message, opt-in compliance for SMS). The conversation core is shared; the channel adapter handles the format and delivery specifics. SMS specifically has TCPA and 10DLC compliance considerations.
 
@@ -1100,7 +1100,7 @@ Canonical ownership: privacy officer plus patient-experience team.
 - [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
 **AWS Sample Repos:**
-- [`aws-samples/amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock invocation patterns including RAG, Knowledge Bases, and Guardrails
+- [`aws-samples/amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock invocation patterns including retrieval-augmented generation (RAG), Knowledge Bases, and Guardrails
 - [`aws-samples/amazon-bedrock-rag-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): hands-on workshop for Bedrock RAG patterns 
 - [`aws-samples/aws-genai-llm-chatbot`](https://github.com/aws-samples/aws-genai-llm-chatbot): reference architecture for a multi-model chatbot on AWS
 - [`aws-samples/amazon-lex-bot-samples`](https://github.com/aws-samples/aws-lex-web-ui): Lex V2 web UI and bot examples
