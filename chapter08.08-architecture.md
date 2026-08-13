@@ -14,13 +14,13 @@
 
 **Amazon S3 for note storage and training data.** Clinical notes land in S3 (encrypted, access-logged) before processing. Annotated training datasets for the assertion model also live in S3. The lifecycle: raw notes arrive, entities are extracted, assertion labels are applied, and annotated outputs are written back.
 
-**Amazon SQS for ingestion resilience.** An SQS queue sits between the EHR event source and the processing Lambda. Without it, a transient Comprehend Medical timeout or SageMaker cold-start failure silently drops the note. At a 2% transient failure rate and 200 notes/hour, that's roughly 2,900 notes/month lost with no retry. The queue gives you automatic retries (configure maxReceiveCount = 3 with exponential backoff) and a dead-letter queue (DLQ) for notes that fail repeatedly. Set a CloudWatch alarm on DLQ depth > 0 so you know immediately when notes are stuck.
+**Amazon SQS for ingestion resilience.** An SQS queue sits between the electronic health record (EHR) event source and the processing Lambda. Without it, a transient Comprehend Medical timeout or SageMaker cold-start failure silently drops the note. At a 2% transient failure rate and 200 notes/hour, that's roughly 2,900 notes/month lost with no retry. The queue gives you automatic retries (configure maxReceiveCount = 3 with exponential backoff) and a dead-letter queue (DLQ) for notes that fail repeatedly. Set a CloudWatch alarm on DLQ depth > 0 so you know immediately when notes are stuck.
 
 **AWS Lambda for pipeline orchestration.** For real-time assertion classification (triggered by messages arriving in SQS), Lambda coordinates the pipeline: fetch the note, call Comprehend Medical for entity extraction, invoke the SageMaker endpoint for assertion classification, write results to the output store.
 
 **Amazon DynamoDB for annotated entity storage.** Assertion-classified entities need to be queryable by patient, by entity type, by assertion status, and by date. DynamoDB's flexible schema handles the varying number of entities per note, and its point-lookup speed supports real-time clinical decision support queries.
 
-Store the main entity records in the primary table, keyed by patient_id and note_id_entity_idx. The `context_snippet` field (which contains raw clinical text, i.e., PHI) lives in a separate restricted-access audit table with tighter IAM policies and its own encryption key. This separation means downstream query consumers never accidentally access raw clinical context; only the human review workflow and audit processes get access to the audit table. Both tables use a `ttl_epoch` attribute aligned with your institution's records retention policy (typically 7-10 years for adult records, longer for minors). DynamoDB TTL automatically expires records after the retention period without requiring a scheduled cleanup job.
+Store the main entity records in the primary table, keyed by patient_id and note_id_entity_idx. The `context_snippet` field (which contains raw clinical text, i.e., protected health information (PHI)) lives in a separate restricted-access audit table with tighter IAM policies and its own encryption key. This separation means downstream query consumers never accidentally access raw clinical context; only the human review workflow and audit processes get access to the audit table. Both tables use a `ttl_epoch` attribute aligned with your institution's records retention policy (typically 7-10 years for adult records, longer for minors). DynamoDB TTL automatically expires records after the retention period without requiring a scheduled cleanup job.
 
 ### Architecture Diagram
 
@@ -80,7 +80,7 @@ flowchart TD
 > **Reference implementations:** The following AWS sample repos demonstrate patterns relevant to this recipe:
 >
 > - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates Comprehend Medical entity extraction and integration with clinical data standards
-> - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): General SageMaker examples including NLP model training and deployment patterns
+> - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): General SageMaker examples including natural language processing (NLP) model training and deployment patterns
 
 #### Walkthrough
 
@@ -463,7 +463,7 @@ Input text: "Patient is a 62-year-old male with history of MI (2019). Currently 
 
 **Error propagation from entity extraction.** If the entity extraction step misidentifies entity boundaries (splits "chest pain" into "chest" and "pain," or merges "no chest pain, no shortness of breath" into a single entity), assertion classification inherits those errors. Joint extraction-assertion models mitigate this but are harder to build and debug.
 
-**Real-time vs. batch trade-off.** The SageMaker endpoint adds latency and cost. For batch research workloads, SageMaker batch transform is cheaper. For real-time CDS, you need the endpoint running 24/7 (which means paying for it 24/7, even at 3 AM when volume is low). Auto-scaling helps but introduces cold-start latency of 5-15 seconds after scale-up.
+**Real-time vs. batch trade-off.** The SageMaker endpoint adds latency and cost. For batch research workloads, SageMaker batch transform is cheaper. For real-time clinical decision support (CDS), you need the endpoint running 24/7 (which means paying for it 24/7, even at 3 AM when volume is low). Auto-scaling helps but introduces cold-start latency of 5-15 seconds after scale-up.
 
 ---
 
@@ -471,7 +471,7 @@ Input text: "Patient is a 62-year-old male with history of MI (2019). Currently 
 
 **Active problem list maintenance.** Pipe assertion-classified entities directly into EHR problem list management. Entities classified as "present" become candidate additions. Entities classified as "historical" or "absent" (for things currently on the problem list) become candidate removals. Always surface these as suggestions for clinician review, never auto-modify the problem list.
 
-**Quality measure calculation.** Many quality measures (HEDIS, CMS stars) require determining whether a patient has a specific condition. Assertion classification turns this from a manual chart review task into an automated one. Filter to entities with assertion = "present" and confidence >= 0.90 for measure-eligible conditions. Route lower-confidence cases to manual abstraction.
+**Quality measure calculation.** Many quality measures (Healthcare Effectiveness Data and Information Set (HEDIS), CMS stars) require determining whether a patient has a specific condition. Assertion classification turns this from a manual chart review task into an automated one. Filter to entities with assertion = "present" and confidence >= 0.90 for measure-eligible conditions. Route lower-confidence cases to manual abstraction.
 
 **Multi-language assertion.** Clinical documentation in the US is primarily English, but patient-generated text (portal messages, intake forms) and documentation at multilingual institutions may include Spanish or other languages. Assertion cues vary by language ("niega" = "denies" in Spanish). A multilingual assertion model or language-specific rule sets extend coverage to these populations.
 
@@ -489,7 +489,7 @@ Input text: "Patient is a 62-year-old male with history of MI (2019). Currently 
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
 **AWS Sample Repos:**
-- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Comprehend Medical output integrated with FHIR clinical data standards
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Comprehend Medical output integrated with Fast Healthcare Interoperability Resources (FHIR) clinical data standards
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker training and deployment patterns for NLP models
 
 **AWS Solutions and Blogs:**

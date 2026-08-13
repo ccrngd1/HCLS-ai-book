@@ -18,7 +18,7 @@ This is not an edge case. This is the default state of clinical text. Clinicians
 
 The downstream impact is real and measurable. A research team building a diabetes cohort pulls every patient with "diabetes" mentioned in their notes, and half their cohort is contaminated with patients whose notes say "no evidence of diabetes" or "family history of Type 2 DM." A clinical decision support system fires an alert for a drug interaction based on a medication the patient was never actually prescribed (it was mentioned as a hypothetical). A quality measure calculates incorrectly because it counted negated diagnoses as present conditions.
 
-Assertion classification is the layer that turns raw entity extraction from a liability into a reliable signal. Without it, clinical NLP is not just incomplete. It's actively misleading.
+Assertion classification is the layer that turns raw entity extraction from a liability into a reliable signal. Without it, clinical natural language processing (NLP) is not just incomplete. It's actively misleading.
 
 ---
 
@@ -52,7 +52,7 @@ Not quite. Here's why this problem is genuinely difficult:
 
 **The same entity can have multiple assertions in one note.** "Patient has history of DVT (2019). Currently no symptoms of DVT. Family history significant for recurrent DVT." One entity, three mentions, three different assertion statuses: historical, absent, family. Your system needs to classify each mention independently based on its local context.
 
-**Section context matters enormously.** The sentence "Type 2 diabetes" means something different in a "Past Medical History" section versus an "Assessment and Plan" section versus a "Family History" section. Some systems use section headers as features. This helps but is fragile because section naming is inconsistent across institutions, templates, and EHR systems.
+**Section context matters enormously.** The sentence "Type 2 diabetes" means something different in a "Past Medical History" section versus an "Assessment and Plan" section versus a "Family History" section. Some systems use section headers as features. This helps but is fragile because section naming is inconsistent across institutions, templates, and electronic health record (EHR) systems.
 
 **Hedging language is subtle.** Clinicians express uncertainty in dozens of ways: "likely," "probable," "concerning for," "suspicious for," "consistent with," "cannot exclude," "differential includes." Some of these push toward "possible," others toward "present with low confidence." The line between "the clinician is uncertain" and "the clinician is fairly confident but being appropriately cautious in their documentation" is genuinely fuzzy.
 
