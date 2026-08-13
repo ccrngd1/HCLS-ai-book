@@ -28,7 +28,7 @@ A literature-derived knowledge graph is one where the source of truth is publish
 
 The extraction pipeline has several stages, each with its own failure modes:
 
-**Named Entity Recognition (NER).** First, you identify the biomedical entities in the text. "CYP2D6*4" is a gene variant. "Codeine" is a drug. "Reduced metabolism" is a pharmacokinetic effect. Biomedical NER is harder than general NER because the vocabulary is enormous, entities overlap (is "cold" a disease or a temperature?), and new entity names appear constantly as drugs are developed and genes are characterized. Models trained on biomedical corpora (BioBERT, PubMedBERT, SciBERT) perform significantly better than general-purpose NER models here.
+**Named entity recognition (NER).** First, you identify the biomedical entities in the text. "CYP2D6*4" is a gene variant. "Codeine" is a drug. "Reduced metabolism" is a pharmacokinetic effect. Biomedical NER is harder than general NER because the vocabulary is enormous, entities overlap (is "cold" a disease or a temperature?), and new entity names appear constantly as drugs are developed and genes are characterized. Models trained on biomedical corpora (BioBERT, PubMedBERT, SciBERT) perform significantly better than general-purpose NER models here.
 
 **Relation Extraction (RE).** Once you've identified the entities, you need to determine how they relate to each other within a sentence or passage. Does the text say drug A treats disease B, or does it say drug A was studied in the context of disease B but showed no effect? The distinction matters enormously. Relation extraction models classify the relationship type between entity pairs. This is where most of the errors creep in, because natural language is ambiguous, hedged, and context-dependent. "May be associated with" is not the same as "causes," but a naive model might treat them identically.
 
@@ -64,7 +64,7 @@ Let me be direct about the failure modes:
 
 **Document Ingestion.** Fetch new articles on a schedule. Parse XML/JSON formats. Extract title, abstract, full text (if available), metadata (authors, journal, date, MeSH terms, study type). Store raw documents for reprocessing.
 
-**NLP Pipeline.** Sentence segmentation, tokenization, biomedical NER, relation extraction, negation detection, entity normalization. This can be a single large model (end-to-end) or a pipeline of specialized models (modular). The modular approach is easier to debug and improve incrementally.
+**Natural language processing (NLP) Pipeline.** Sentence segmentation, tokenization, biomedical NER, relation extraction, negation detection, entity normalization. This can be a single large model (end-to-end) or a pipeline of specialized models (modular). The modular approach is easier to debug and improve incrementally.
 
 **Triple Extraction.** Convert NLP output into structured (subject, predicate, object) triples with metadata: source document, sentence, confidence score, extraction timestamp.
 
@@ -84,7 +84,7 @@ Let me be direct about the failure modes:
 
 ## Related Recipes
 
-- **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** Uses curated sources rather than literature extraction; the literature-derived graph can feed new candidate interactions into the curated DDI system
+- **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** Uses curated sources rather than literature extraction; the literature-derived graph can feed new candidate interactions into the curated drug-drug interaction (DDI) system
 - **Recipe 13.7 (Disease-Gene-Drug Relationship Graph):** Focuses on a specific relationship type that this recipe extracts as part of a broader graph
 - **Recipe 13.8 (Medical Concept Normalization and Mapping):** The normalization infrastructure built in 13.8 is directly reusable as the entity normalization layer in this recipe
 - **Recipe 8.10 (Phenotype Extraction for Research):** Uses similar NLP techniques for entity extraction from clinical text rather than published literature

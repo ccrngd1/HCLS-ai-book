@@ -8,13 +8,13 @@
 
 ### Why These Services
 
-**Amazon Comprehend Medical for biomedical NER.** Comprehend Medical is purpose-built for extracting medical entities from clinical text. It identifies medications, conditions, procedures, anatomy, and test/treatment/procedure entities with their associated attributes (dosage, frequency, negation). It handles the biomedical vocabulary problem out of the box, recognizing drug names, gene symbols, and disease terms without custom training. For literature extraction, it provides a strong baseline NER layer.
+**Amazon Comprehend Medical for biomedical named entity recognition (NER).** Comprehend Medical is purpose-built for extracting medical entities from clinical text. It identifies medications, conditions, procedures, anatomy, and test/treatment/procedure entities with their associated attributes (dosage, frequency, negation). It handles the biomedical vocabulary problem out of the box, recognizing drug names, gene symbols, and disease terms without custom training. For literature extraction, it provides a strong baseline NER layer.
 
-**Amazon SageMaker for custom relation extraction models.** Comprehend Medical handles entity extraction well, but relation extraction from scientific literature requires custom models. SageMaker provides the infrastructure to train, deploy, and serve transformer-based models (BioBERT, PubMedBERT) fine-tuned on biomedical relation extraction datasets. You'll train on annotated corpora like BioRED, ChemProt, or DDI and deploy as real-time or batch inference endpoints.
+**Amazon SageMaker for custom relation extraction models.** Comprehend Medical handles entity extraction well, but relation extraction from scientific literature requires custom models. SageMaker provides the infrastructure to train, deploy, and serve transformer-based models (BioBERT, PubMedBERT) fine-tuned on biomedical relation extraction datasets. You'll train on annotated corpora like BioRED, ChemProt, or the drug-drug interaction (DDI) corpus and deploy as real-time or batch inference endpoints.
 
 **Amazon Neptune for knowledge graph storage.** Neptune is AWS's managed graph database supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query languages. For a biomedical knowledge graph with millions of nodes and edges, Neptune provides the traversal performance, ACID transactions, and managed infrastructure you need. The property graph model is particularly well-suited here because edges need rich metadata (evidence scores, provenance, timestamps).
 
-**Amazon S3 for document lake.** Raw articles, parsed text, intermediate NLP outputs, and extraction results all live in S3. This gives you reprocessing capability: when you improve your NER or RE models, you can re-run the pipeline against the full document corpus without re-fetching from source.
+**Amazon S3 for document lake.** Raw articles, parsed text, intermediate natural language processing (NLP) outputs, and extraction results all live in S3. This gives you reprocessing capability: when you improve your NER or RE models, you can re-run the pipeline against the full document corpus without re-fetching from source.
 
 **AWS Lambda and Step Functions for pipeline orchestration.** The extraction pipeline is a multi-step workflow: fetch article, parse, run NER, run RE, normalize, grade, store. Step Functions coordinates these steps with error handling, retries, and parallel processing. Lambda handles the stateless compute for each step.
 
@@ -534,7 +534,7 @@ FUNCTION insert_into_graph(scored_triples):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter13.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-**Step 8: Dead letter queue and failure handling.** When any step in the extraction pipeline fails after Step Functions' built-in retries (typically 3 attempts with exponential backoff), the execution must not silently disappear. A failed execution sends the article ID, the failed step name, and the error details to an SQS dead letter queue. A CloudWatch alarm fires when DLQ depth exceeds a threshold (e.g., 10 messages in 5 minutes), paging the on-call engineer. A separate reprocessor Lambda can be triggered manually or on a schedule to replay failed articles once the underlying issue is resolved. Without this, articles that fail due to transient issues (Comprehend Medical throttling, Neptune connection timeouts) are permanently lost from the graph.
+**Step 8: Dead letter queue and failure handling.** When any step in the extraction pipeline fails after Step Functions' built-in retries (typically 3 attempts with exponential backoff), the execution must not silently disappear. A failed execution sends the article ID, the failed step name, and the error details to an SQS dead-letter queue (DLQ). A CloudWatch alarm fires when DLQ depth exceeds a threshold (e.g., 10 messages in 5 minutes), paging the on-call engineer. A separate reprocessor Lambda can be triggered manually or on a schedule to replay failed articles once the underlying issue is resolved. Without this, articles that fail due to transient issues (Comprehend Medical throttling, Neptune connection timeouts) are permanently lost from the graph.
 
 ```pseudocode
 // Step Functions state machine definition includes a Catch block on each step:
@@ -722,7 +722,7 @@ The architecture above demonstrates the pattern. Running this against PubMed at 
 
 **AWS Sample Repos:**
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): Neptune graph database examples including data loading, querying, and visualization patterns
-- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP extraction with Comprehend Medical integrated into FHIR workflows (archived, but patterns remain instructive)
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP extraction with Comprehend Medical integrated into Fast Healthcare Interoperability Resources (FHIR) workflows (archived, but patterns remain instructive)
 
 **AWS Solutions and Blogs:**
 - [Building a Biological Knowledge Graph at Pendulum Using Amazon Neptune](https://aws.amazon.com/blogs/database/building-a-biological-knowledge-graph-at-pendulum-using-amazon-neptune/): Architecture for biomedical knowledge graphs on Neptune
