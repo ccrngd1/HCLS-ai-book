@@ -112,7 +112,7 @@ Each source uses different identifiers. PharmGKB uses its own accession numbers.
 
 **Query Engine:** Traverses the graph given a patient's variants and medications to identify actionable pharmacogenomic findings. Filters by evidence level, population frequency, and clinical context.
 
-**CDS Integration:** Delivers findings to clinical decision support systems, EHR alerts, or pharmacist review queues.
+**Clinical decision support (CDS) integration:** Delivers findings to CDS systems, electronic health record (EHR) alerts, or pharmacist review queues.
 
 ---
 

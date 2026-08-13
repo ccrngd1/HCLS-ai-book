@@ -10,7 +10,7 @@
 
 **Amazon Neptune for the knowledge graph store.** Neptune speaks two graph languages: property graph (openCypher or Gremlin) and RDF (SPARQL). For pharmacogenomics, property graph wins. Your queries read like the clinical question you're actually asking: "start at this variant, traverse to the gene, find drugs metabolized by that gene, filter by evidence level." openCypher makes that traversal pattern natural. Neptune handles the multi-hop traversals efficiently, runs within your VPC, supports encryption at rest, and is HIPAA eligible. The managed nature means you're not tuning JanusGraph or managing Cassandra backends.
 
-**AWS Glue for ETL and source integration.** The source databases (PharmGKB, ClinVar, DrugBank) publish data in various formats: TSV files, XML dumps, REST APIs. Glue jobs handle the extraction, transformation, and entity resolution needed to produce clean graph-loadable data. Glue's serverless Spark environment handles the large ClinVar dataset (millions of variant records) without provisioning infrastructure.
+**AWS Glue for extract, transform, and load (ETL) and source integration.** The source databases (PharmGKB, ClinVar, DrugBank) publish data in various formats: TSV files, XML dumps, REST APIs. Glue jobs handle the extraction, transformation, and entity resolution needed to produce clean graph-loadable data. Glue's serverless Spark environment handles the large ClinVar dataset (millions of variant records) without provisioning infrastructure.
 
 **Amazon S3 for source data staging and graph snapshots.** Raw source downloads, intermediate transformation outputs, and Neptune bulk load files all stage through S3. S3 versioning provides an audit trail of which source versions produced which graph version. Neptune's bulk loader reads directly from S3, making the load path clean.
 
@@ -347,7 +347,7 @@ Given a patient's genetic test results and current medications, traverse the gra
 
 This is the clinical payoff. Everything above was infrastructure. This step answers the question: "For this specific patient, which of their medications might be affected by their genetics, and what should we do about it?"
 
-**Error handling on the query path:** Distinguish between a successful query that returns no findings (HTTP 200, empty results array) and a query that failed to execute (HTTP 503, Neptune timeout, or connection error). When the query fails, the CDS system should display a "pharmacogenomic check unavailable" notification to the clinician rather than silently omitting results. Log failed queries to an SQS dead-letter queue for retry. Set a CloudWatch alarm on the query failure rate: if it exceeds 1% of queries over a 5-minute window, page the on-call team.
+**Error handling on the query path:** Distinguish between a successful query that returns no findings (HTTP 200, empty results array) and a query that failed to execute (HTTP 503, Neptune timeout, or connection error). When the query fails, the clinical decision support (CDS) system should display a "pharmacogenomic check unavailable" notification to the clinician rather than silently omitting results. Log failed queries to an SQS dead-letter queue for retry. Set a CloudWatch alarm on the query failure rate: if it exceeds 1% of queries over a 5-minute window, page the on-call team.
 
 ```pseudocode
 FUNCTION query_patient_pharmacogenomics(patient_variants, current_medications, evidence_threshold="2A"):
