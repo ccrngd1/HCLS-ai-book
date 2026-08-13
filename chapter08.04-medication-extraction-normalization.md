@@ -14,7 +14,7 @@
 
 ## The Problem
 
-A hospitalist is admitting a patient at 2 AM. The patient's medication list in the EHR says "lisinopril 10mg daily." The patient says they take "that blood pressure pill, the small white one, and also something for my cholesterol." The nursing home transfer summary mentions "Zestril 20mg PO QD" and "atorvastatin calcium 40mg QHS." The discharge summary from three months ago at a different facility lists "HCTZ/lisinopril 12.5/20" and "Lipitor 40."
+A hospitalist is admitting a patient at 2 AM. The patient's medication list in the electronic health record (EHR) says "lisinopril 10mg daily." The patient says they take "that blood pressure pill, the small white one, and also something for my cholesterol." The nursing home transfer summary mentions "Zestril 20mg PO QD" and "atorvastatin calcium 40mg QHS." The discharge summary from three months ago at a different facility lists "HCTZ/lisinopril 12.5/20" and "Lipitor 40."
 
 Same patient. Same medications. Five different representations. And right now, at 2 AM, the hospitalist needs an accurate, reconciled medication list to avoid prescribing something that interacts with what the patient is already taking.
 
@@ -28,9 +28,9 @@ The information is there, buried in clinical notes. Extracting it reliably, norm
 
 ## The Technology: Named Entity Recognition for Medications
 
-### What Is Medical NER?
+### What Is Medical named entity recognition (NER)?
 
-Named Entity Recognition (NER) is the NLP task of identifying specific types of entities in unstructured text and classifying them into predefined categories. In general NLP, those categories might be "person," "organization," "location." In clinical NLP, the categories that matter are "medication," "dosage," "route," "frequency," "duration," "condition," and "reason."
+Named Entity Recognition (NER) is the natural language processing (NLP) task of identifying specific types of entities in unstructured text and classifying them into predefined categories. In general NLP, those categories might be "person," "organization," "location." In clinical NLP, the categories that matter are "medication," "dosage," "route," "frequency," "duration," "condition," and "reason."
 
 Medical NER is a specialized variant trained on clinical text rather than news articles or web pages. This distinction matters enormously because clinical language is nothing like general English. Physicians write in a compressed, abbreviated style full of domain jargon: "ASA 325 PO QD for afib" is a perfectly normal sentence in a clinical note. A general-purpose NER system would struggle with every token in that phrase.
 
@@ -108,7 +108,7 @@ At a conceptual level, the pipeline for medication extraction and normalization 
 
 ## Related Recipes
 
-- **Recipe 8.3 (ICD-10 Code Suggestion):** Uses similar NER foundations but targets condition entities rather than medications
+- **Recipe 8.3 (International Classification of Diseases (ICD)-10 Code Suggestion):** Uses similar NER foundations but targets condition entities rather than medications
 - **Recipe 8.5 (Problem List Extraction):** Extracts condition/diagnosis entities from the same clinical notes using the same NER infrastructure
 - **Recipe 8.8 (Clinical Assertion Classification):** Deep dive on the assertion status problem (present/absent/possible/historical) that this recipe handles at a basic level
 - **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** Consumes the RxCUI output from this recipe to power interaction checking
