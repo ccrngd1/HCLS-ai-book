@@ -115,6 +115,17 @@ def check_page(path: Path, terms: dict[str, str]) -> list[str]:
             problems.append(f"{path.name}:{line}: {abbr} used bare before its expansion")
             continue
 
+        # An expansion dropped in front of an existing parenthetical produces
+        # "retrieval-augmented generation (RAG) (Recipe 2.7)", which is poor typography
+        # the first-use check cannot see, since the required form is technically present.
+        # The sentence needs recasting instead.
+        for m in re.finditer(rf"\({re.escape(abbr)}\)\s*\(", prose):
+            ln = prose[: m.start()].count("\n") + 1
+            problems.append(
+                f"{path.name}:{ln}: {abbr} expansion sits next to another parenthetical; "
+                "recast the sentence rather than stacking brackets"
+            )
+
         if len(expanded_at) > 1 and not abbr.isdigit():
             problems.append(
                 f"{path.name}: {abbr} expanded {len(expanded_at)} times; only the first use should be"
