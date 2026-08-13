@@ -64,7 +64,7 @@ This requires:
 
 1. **State mapping:** Determine which pathway node(s) the patient currently occupies. A patient can be at multiple nodes simultaneously (parallel branches). This requires matching the patient's documented actions and results against node completion criteria.
 
-2. **Condition evaluation:** For each outgoing edge from active nodes, evaluate whether the transition conditions are met given current patient data. This means pulling real-time data from the EHR: latest labs, vitals, documented assessments, active orders.
+2. **Condition evaluation:** For each outgoing edge from active nodes, evaluate whether the transition conditions are met given current patient data. This means pulling real-time data from the electronic health record (EHR): latest labs, vitals, documented assessments, active orders.
 
 3. **Traversal:** Follow satisfied edges to identify recommended next actions. Handle parallel paths (multiple next steps available simultaneously) and exclusive branches (only one path should be taken).
 
@@ -80,7 +80,7 @@ Temporal reasoning in graphs is harder than it sounds. You need to track when ea
 
 ### Ontology Integration
 
-Pathways don't exist in isolation. They reference clinical concepts: diagnoses (ICD-10), procedures (CPT), medications (RxNorm), lab tests (LOINC). Your pathway graph needs to connect to these standard ontologies so that conditions like "if creatinine > 2.0" can be evaluated against actual LOINC-coded lab results from the EHR.
+Pathways don't exist in isolation. They reference clinical concepts: International Classification of Diseases (ICD) codes for diagnoses, Current Procedural Terminology (CPT) for procedures, RxNorm for medications, and Logical Observation Identifiers Names and Codes (LOINC) for lab tests. Your pathway graph needs to connect to these standard ontologies so that conditions like "if creatinine > 2.0" can be evaluated against actual LOINC-coded lab results from the EHR.
 
 This is where knowledge graphs shine over simpler representations. The pathway graph can link to a drug ontology for allergy cross-referencing, a diagnosis hierarchy for pathway applicability rules, and a lab ontology for result interpretation. These connections enable reasoning that would be impossible with a flat pathway document: "this patient is on the pneumonia pathway, but they also have CKD stage 4, which means the standard antibiotic dosing needs renal adjustment."
 
