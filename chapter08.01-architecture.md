@@ -73,9 +73,9 @@ flowchart LR
 > **Reference implementations:** The following AWS resources demonstrate patterns used in this recipe:
 >
 > - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): Comprehend custom classification training and real-time inference examples
-> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare-specific: integrating Comprehend Medical entity extraction with FHIR data models
+> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare-specific: integrating Comprehend Medical entity extraction with Fast Healthcare Interoperability Resources (FHIR) data models
 
-**Step 1: Preprocess the chief complaint text.** Raw chief complaint text arrives from the EHR or registration system in whatever form the clerk or kiosk produced it. Before classification, we need to normalize it: lowercase everything, expand known abbreviations, strip extraneous characters. This step is critical because "CP" and "chest pain" are the same clinical concept but look completely different to a classifier. Without preprocessing, you're effectively asking the model to learn every abbreviation variant independently, which wastes training capacity and hurts accuracy on rare abbreviations. The abbreviation map is a living configuration that grows as you encounter new shorthand.
+**Step 1: Preprocess the chief complaint text.** Raw chief complaint text arrives from the electronic health record (EHR) or registration system in whatever form the clerk or kiosk produced it. Before classification, we need to normalize it: lowercase everything, expand known abbreviations, strip extraneous characters. This step is critical because "CP" and "chest pain" are the same clinical concept but look completely different to a classifier. Without preprocessing, you're effectively asking the model to learn every abbreviation variant independently, which wastes training capacity and hurts accuracy on rare abbreviations. The abbreviation map is a living configuration that grows as you encounter new shorthand.
 
 ```json
 {
@@ -309,7 +309,7 @@ This architecture demonstrates the classification pipeline end-to-end, but sever
 
 **Input validation.** The pseudocode trusts that input text is reasonable. Production validates: non-empty, under Comprehend's 5,000-byte limit, contains at least one alphabetic character, and does not contain injection patterns. Reject or truncate malformed inputs before they reach the classifier.
 
-**Structured logging with PHI controls.** Chief complaint text is PHI. Never log it in plaintext to CloudWatch. Log a complaint_id reference and store actual text only in encrypted DynamoDB where access is IAM-controlled and CloudTrail-audited. Use a JSON log formatter for CloudWatch Logs Insights queries.
+**Structured logging with protected health information (PHI) controls.** Chief complaint text is PHI. Never log it in plaintext to CloudWatch. Log a complaint_id reference and store actual text only in encrypted DynamoDB where access is IAM-controlled and CloudTrail-audited. Use a JSON log formatter for CloudWatch Logs Insights queries.
 
 **Retry logic with idempotency.** If the Lambda times out after writing to DynamoDB but before sending to SQS, the complaint gets stored but never queued for review. Use the complaint_id as an SQS deduplication ID (FIFO queue) or implement a reconciliation process that scans for stored records with gate_action="REVIEW" that lack a corresponding SQS receipt.
 
@@ -356,7 +356,7 @@ This closes the loop: misclassifications get corrected by humans, corrections be
 
 **AWS Solutions and Blogs:**
 - [Deriving Conversational Insights from Invoices with Amazon Textract, Amazon Comprehend, and Amazon Lex](https://aws.amazon.com/blogs/machine-learning/deriving-conversational-insights-from-invoices-with-amazon-textract-amazon-comprehend-and-amazon-lex/): Demonstrates Comprehend custom classification in a document processing pipeline
-- [Building a Medical Language Processing Pipeline with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-pipeline-using-amazon-comprehend-medical/): End-to-end architecture for clinical NLP using Comprehend Medical
+- [Building a Medical Language Processing Pipeline with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-pipeline-using-amazon-comprehend-medical/): End-to-end architecture for clinical natural language processing (NLP) using Comprehend Medical
 
 ---
 
