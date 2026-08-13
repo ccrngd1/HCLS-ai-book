@@ -6,7 +6,7 @@
 
 ## Why These Services
 
-**Amazon SageMaker for model training and hosting.** RL model training requires GPU instances for batch processing of historical episodes, hyperparameter tuning across reward formulations, and model versioning. SageMaker provides managed training jobs with spot instance support (RL training is fault-tolerant and restartable), model registry for versioning policies, and real-time endpoints for inference. The SageMaker RL toolkit supports custom environments, which you'll need for the glucose simulator integration.
+**Amazon SageMaker for model training and hosting.** Reinforcement learning (RL) model training requires GPU instances for batch processing of historical episodes, hyperparameter tuning across reward formulations, and model versioning. SageMaker provides managed training jobs with spot instance support (RL training is fault-tolerant and restartable), model registry for versioning policies, and real-time endpoints for inference. The SageMaker RL toolkit supports custom environments, which you'll need for the glucose simulator integration.
 
 **Amazon S3 for episode storage.** Historical patient episodes (state-action-reward sequences) are large, immutable datasets that get reprocessed as you iterate on state representations and reward functions. S3 is the natural landing zone: durable, versioned, and directly accessible from SageMaker training jobs.
 
@@ -93,7 +93,7 @@ Each role uses condition keys (`aws:RequestedRegion`, resource tags) to prevent 
 
 ## Pseudocode Walkthrough
 
-**Step 1: Episode construction from EHR data.** The first challenge is transforming raw EHR data into RL episodes. An episode is one ICU stay, discretized into decision intervals (typically 1-4 hours). At each timestep, you need the state (what the clinician observed), the action (what they did), and the reward (how things turned out). This step is where most of the engineering effort lives. EHR data is messy: glucose measurements come from different sources (point-of-care meters, arterial blood gas analyzers, continuous glucose monitors) with different accuracies and different timestamps. Insulin orders don't always align with administration times, and nutrition changes happen asynchronously. You need to bin everything into consistent time windows and handle missing data gracefully. Skip this step or do it poorly, and your RL agent learns from garbage.
+**Step 1: Episode construction from electronic health record (EHR) data.** The first challenge is transforming raw EHR data into RL episodes. An episode is one ICU stay, discretized into decision intervals (typically 1-4 hours). At each timestep, you need the state (what the clinician observed), the action (what they did), and the reward (how things turned out). This step is where most of the engineering effort lives. EHR data is messy: glucose measurements come from different sources (point-of-care meters, arterial blood gas analyzers, continuous glucose monitors) with different accuracies and different timestamps. Insulin orders don't always align with administration times, and nutrition changes happen asynchronously. You need to bin everything into consistent time windows and handle missing data gracefully. Skip this step or do it poorly, and your RL agent learns from garbage.
 
 ```pseudocode
 FUNCTION build_episode(patient_icu_stay):
@@ -476,7 +476,7 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
 
 **Model drift.** Clinical practice changes over time (new protocols, new medications, different patient populations). A policy trained on 2020-2023 data may not be optimal for 2026 patients. You need ongoing monitoring and periodic retraining.
 
-**De-identification for retraining requires careful handling.** Episode logs feeding back into the training pipeline contain temporal glucose patterns that carry re-identification risk even after pseudonymization (a rare glucose trajectory can fingerprint a patient). Production retraining pipelines need: (1) formal pseudonymization with key management separate from the training infrastructure, (2) IRB coverage for the retraining protocol (not just the initial study), (3) minimum cohort sizes per episode bin to prevent rare-pattern leakage, and (4) clear PHI status determination for derived features (your compliance team needs to weigh in on whether glucose variability metrics constitute PHI under HIPAA's Safe Harbor standard).
+**De-identification for retraining requires careful handling.** Episode logs feeding back into the training pipeline contain temporal glucose patterns that carry re-identification risk even after pseudonymization (a rare glucose trajectory can fingerprint a patient). Production retraining pipelines need: (1) formal pseudonymization with key management separate from the training infrastructure, (2) institutional review board (IRB) coverage for the retraining protocol (not just the initial study), (3) minimum cohort sizes per episode bin to prevent rare-pattern leakage, and (4) clear protected health information (PHI) status determination for derived features (your compliance team needs to weigh in on whether glucose variability metrics constitute PHI under HIPAA's Safe Harbor standard).
 
 ## Model Deployment: Canary Rollout and Rollback
 
