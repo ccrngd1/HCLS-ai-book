@@ -1,4 +1,4 @@
-# Recipe 5.2: Provider NPI Matching
+# Recipe 5.2: Provider National Provider Identifier (NPI) Matching
 
 **Effort:** 1 of 5
 
@@ -98,7 +98,7 @@ A few practical updates worth knowing:
 - **Provider directory accuracy regulations have tightened.** The No Surprises Act and CMS sub-regulatory guidance impose specific verification cadences, member-facing remediation pathways, and penalties for chronic inaccuracy. Multiple state-level rules layer on top. The matching system is now subject to specific compliance requirements, not just operational ones. 
 - **Provider Data Service vendors have proliferated.** Companies like LexisNexis Provider Data Solutions, Symplr, Kyruus, Verisys, BetterDoctor (now Quest Analytics), and others sell provider data services that wrap the NPPES with additional verification (license-board scraping, sanction-list cross-referencing, periodic outreach to the provider for confirmation).  They are reasonable build-vs-buy candidates for organizations that do not want to operate the matching pipeline. The architecture in this recipe applies whether you build or integrate; if you integrate, the matching service replaces the registry-direct path but the review queue, audit trail, and operations workflow remain.
 - **NPPES is increasingly being supplemented by other sources.** State medical board websites for license verification. The OIG List of Excluded Individuals/Entities (LEIE) for sanction status. The Death Master File (where access is permitted) for deceased-provider detection. The matching pipeline is becoming a multi-source verification pipeline, not a single-source-lookup pipeline.
-- **Endpoints / FHIR Practitioner resources are increasingly shared.** Some health information exchanges and trust-framework participants now publish FHIR Practitioner resources that include the NPI alongside the structured demographic and credentialing data.  Where these exist, they are an additional substrate for matching.
+- **Endpoints / Fast Healthcare Interoperability Resources (FHIR) Practitioner resources are increasingly shared.** Some health information exchanges and trust-framework participants now publish FHIR Practitioner resources that include the NPI alongside the structured demographic and credentialing data.  Where these exist, they are an additional substrate for matching.
 
 ---
 
@@ -285,7 +285,7 @@ Each metric supports per-axis-per-metric override (e.g., the rural-geography axi
 - **Recipe 5.1 (Internal Duplicate Patient Detection):** Sibling Simple-tier recipe; the string-similarity, probabilistic-linkage, blocking, review-queue, and audit infrastructure are shared. The provider-matching pipeline is essentially recipe 5.1's framework reapplied to a different data source with additional drift-detection and re-verification logic.
 - **Recipe 5.3 (Address Standardization and Household Linkage):** The USPS-standardization layer used for provider practice addresses is the same layer used for patient addresses and household linkage. Build it once, use it across recipes.
 - **Recipe 5.4 (Insurance Eligibility Matching):** Provider-NPI verification is part of insurance eligibility (the eligibility response often references the in-network provider's NPI); the verification pipelines are complementary.
-- **Recipe 5.5 (Cross-Facility Patient Matching for HIE):** Provider-NPI assignments are part of the HIE participant data; the matching infrastructure carries forward.
+- **Recipe 5.5 (Cross-Facility Patient Matching for health information exchange (HIE)):** Provider-NPI assignments are part of the HIE participant data; the matching infrastructure carries forward.
 - **Recipe 5.6 (Claims-to-Clinical Data Linkage):** Claims carry billing NPI, rendering NPI, attending NPI, and other provider identifiers; linking those to internal provider records uses the matcher built here.
 - **Recipe 4.3 (Provider Directory Search Optimization):** A clean provider-NPI assignment table with current addresses and taxonomies is the foundation for provider-directory search optimization.
 - **Recipe 7.x (Predictive Risk Modeling):** Provider-attributed quality measures and risk-adjusted outcomes depend on accurate provider-attribution, which depends on accurate NPI matching.
