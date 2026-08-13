@@ -6,7 +6,7 @@
 
 ## The Problem
 
-Here's a scenario that plays out every single day in healthcare data integration. A hospital system acquires a physician practice. The practice has been coding diagnoses in ICD-10-CM. The hospital's analytics platform uses SNOMED CT for clinical decision support. The quality reporting system needs HEDIS value sets that reference both. The pharmacy system speaks RxNorm. The lab system uses LOINC. And someone in the C-suite wants a unified patient dashboard that pulls from all of them.
+Here's a scenario that plays out every single day in healthcare data integration. A hospital system acquires a physician practice. The practice has been coding diagnoses in International Classification of Diseases (ICD)-10-CM. The hospital's analytics platform uses Systematized Nomenclature of Medicine (SNOMED) CT for clinical decision support (CDS). The quality reporting system needs Healthcare Effectiveness Data and Information Set (HEDIS) value sets that reference both. The pharmacy system speaks RxNorm. The lab system uses Logical Observation Identifiers Names and Codes (LOINC). And someone in the C-suite wants a unified patient dashboard that pulls from all of them.
 
 Every one of these systems is describing the same clinical reality (a patient has Type 2 diabetes, takes metformin, had an HbA1c drawn last month) but they're describing it in completely different languages. "Type 2 diabetes mellitus" in ICD-10 is E11. In SNOMED CT it's concept 44054006. In a clinical note it might say "DM2" or "adult-onset diabetes" or "NIDDM" (a term that's been deprecated for decades but still shows up in legacy data).
 
@@ -36,7 +36,7 @@ The major players:
 
 **RxNorm**. The standard for medications in the US. Provides normalized names for clinical drugs and links to drug vocabularies used in pharmacy and drug interaction systems. Maintained by the National Library of Medicine (NLM). Updated monthly.
 
-**CPT** (Current Procedural Terminology). Procedure codes for outpatient billing. Maintained by the AMA. Proprietary (you pay for a license).
+**Current Procedural Terminology (CPT)**. Procedure codes for outpatient billing. Maintained by the AMA. Proprietary (you pay for a license).
 
 **HCPCS** (Healthcare Common Procedure Coding System). Extends CPT with codes for supplies, equipment, and non-physician services. Maintained by CMS.
 
@@ -98,7 +98,7 @@ At a conceptual level, a concept normalization system has these components:
 
 **Terminology Sources.** The raw vocabulary files: UMLS releases, SNOMED RF2 files, ICD-10 code tables, LOINC downloads, RxNorm RRF files. Each has its own format and release schedule.
 
-**Graph Ingestion.** ETL pipelines that parse terminology files, extract concepts and relationships, and load them into the graph. This runs on each terminology release (monthly for RxNorm, quarterly for SNOMED, annually for ICD-10).
+**Graph Ingestion.** Extract, transform, and load (ETL) pipelines that parse terminology files, extract concepts and relationships, and load them into the graph. This runs on each terminology release (monthly for RxNorm, quarterly for SNOMED, annually for ICD-10).
 
 **Knowledge Graph Store.** A graph database holding all concepts as nodes and all relationships (intra-terminology hierarchies, cross-terminology mappings) as edges. Must support efficient traversal, pattern matching, and temporal queries.
 
@@ -117,7 +117,7 @@ At a conceptual level, a concept normalization system has these components:
 - **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Provides the hierarchy traversal foundation that value set expansion in this recipe builds upon
 - **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** Uses RxNorm normalization from this recipe to identify drugs regardless of how they're coded in source systems
 - **Recipe 13.6 (Care Gap Reasoning Engine):** Depends on normalized concepts to match patient conditions against guideline criteria
-- **Recipe 8.4 (Medication Extraction and Normalization):** NLP pipeline that feeds extracted concepts into this normalization service
+- **Recipe 8.4 (Medication Extraction and Normalization):** natural language processing (NLP) pipeline that feeds extracted concepts into this normalization service
 - **Recipe 5.6 (Claims-to-Clinical Data Linkage):** Uses cross-terminology mappings to join claims data (ICD-10) with clinical data (SNOMED)
 
 ---
