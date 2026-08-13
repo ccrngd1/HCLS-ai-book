@@ -1342,6 +1342,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Transcribe healthcare," "Bedrock clinical," "telehealth AI" for relevant pattern posts
 
 **External References (Standards and Frameworks):**
+
+The standards below cover Health Level Seven (HL7) and its Fast Healthcare Interoperability Resources (FHIR) specifications, terminology sets like Logical Observation Identifiers Names and Codes (LOINC), and the privacy regimes that govern protected health information (PHI).
+
 - [HL7 FHIR Specification](https://www.hl7.org/fhir/): the data model and API substrate for EHR integration
 - [FHIR DocumentReference Resource](https://www.hl7.org/fhir/documentreference.html): canonical FHIR resource for clinical-note write-back
 - [FHIR Encounter Resource](https://www.hl7.org/fhir/encounter.html): canonical FHIR resource linking the visit to the documentation
