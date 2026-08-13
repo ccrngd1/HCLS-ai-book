@@ -6,13 +6,13 @@
 
 ## The Problem
 
-A patient is admitted to the hospital at 2 AM with acute pancreatitis. The admitting physician writes "anticipated LOS: 3-5 days" in the chart. The bed management team allocates resources accordingly. The discharge planner starts working on day 3.
+A patient is admitted to the hospital at 2 AM with acute pancreatitis. The admitting physician writes "anticipated length of stay (LOS): 3-5 days" in the chart. The bed management team allocates resources accordingly. The discharge planner starts working on day 3.
 
 On day 4, the patient develops a complication. Now it's 8-10 days. But the discharge planner didn't find out until day 5. The bed that was supposed to free up on day 5 for a scheduled surgical admission? Still occupied. The surgical case gets bumped. The OR schedule cascades. Downstream, a patient waiting in the ED for an inpatient bed waits six extra hours.
 
 This is not an edge case. This is Tuesday.
 
-Hospital length of stay (LOS) prediction is one of those problems that sounds like it should be straightforward. You have decades of historical data. You know the diagnosis. You know the patient's age and comorbidities. Just train a model, right?
+Hospital LOS prediction is one of those problems that sounds like it should be straightforward. You have decades of historical data. You know the diagnosis. You know the patient's age and comorbidities. Just train a model, right?
 
 The reality is messier. LOS is driven by a tangled web of clinical factors (disease severity, complications, response to treatment), operational factors (discharge planning efficiency, specialist availability, imaging backlogs), and social factors (does the patient have a safe place to go? Is there a skilled nursing facility bed available? Does the family need to arrange home care?). A model that only sees clinical data will systematically underpredict for patients with social barriers to discharge. A model that doesn't update as the stay progresses becomes useless after day 2.
 
@@ -46,7 +46,7 @@ The features that drive LOS prediction fall into distinct categories, and unders
 - Demographics: age, sex (older patients stay longer, on average)
 - Admission source: ED vs. direct admit vs. transfer (ED admits tend to be sicker)
 - Admission type: emergent vs. elective (elective cases have tighter LOS distributions)
-- Primary diagnosis (ICD-10) and DRG assignment
+- Primary diagnosis (International Classification of Diseases (ICD)-10) and DRG assignment
 - Comorbidity burden: Charlson or Elixhauser index scores
 - Prior utilization: hospitalizations in the last 12 months, ED visits
 - Insurance type (a proxy for social complexity, unfortunately)
@@ -126,7 +126,7 @@ The architecture has two modes:
 
 **Batch mode (training and daily refresh):** Extract historical encounters with known outcomes. Engineer features at multiple time points during each stay. Train models per service line. Evaluate on held-out data. Deploy the best model.
 
-**Real-time mode (operational predictions):** For current inpatients, pull the latest clinical data from the EHR feed. Compute current features. Run inference. Store the prediction. Push to operational dashboards and alerting systems.
+**Real-time mode (operational predictions):** For current inpatients, pull the latest clinical data from the electronic health record (EHR) feed. Compute current features. Run inference. Store the prediction. Push to operational dashboards and alerting systems.
 
 The feature store is the critical piece that bridges both modes. Training features and inference features must be computed identically, or you get training-serving skew (the model sees different feature distributions in production than it saw during training, and accuracy degrades silently).
 
