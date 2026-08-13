@@ -82,7 +82,7 @@ The architectural shift is from "show all the questions and capture all the answ
 
 ### What an Adaptive Intake Bot Actually Does
 
-An intake bot is a tool-using LLM with a system prompt that tells it what assistant it is, the patient's authenticated context, the visit context (visit type, scheduled provider, scheduled date, reason-for-visit if known), the patient's chart context (active problems, current medications, known allergies, prior visit history), and access to a set of tools. The LLM conducts the conversation. The tools handle the deterministic actions: looking up chart context, validating extracted data, persisting partial state, computing screening-tool scores, surfacing acuity flags, writing the final pre-visit packet to the EHR.
+An intake bot is a tool-using LLM with a system prompt that tells it what assistant it is, the patient's authenticated context, the visit context (visit type, scheduled provider, scheduled date, reason-for-visit if known), the patient's chart context (active problems, current medications, known allergies, prior visit history), and access to a set of tools. The LLM conducts the conversation. The tools handle the deterministic actions: looking up chart context, validating extracted data, persisting partial state, computing screening-tool scores, surfacing acuity flags, writing the final pre-visit packet to the electronic health record (EHR).
 
 The conversation has a structure, even though the patient does not see it. The structure decomposes roughly as follows.
 
@@ -128,7 +128,7 @@ A naive product approach would be: take a generalist LLM, give it a chat surface
 
 **The model has no audit trail of what was captured versus what was inferred.** The practice's clinical team needs to know: what did the patient actually say, what did the bot extract, what did the bot infer. The structured-data ledger captures the patient's actual utterances, the bot's structured extractions, the screener scores, the chart-context that was loaded. Without this, the pre-visit packet is unreviewable for clinical safety and unverifiable for compliance.
 
-**The model has compliance implications for clinical-data conversations.** The intake conversation is dense PHI: chief complaint, HPI, medications, allergies, family history, social history, screener responses, the patient's own emotional state. The conversation log is a clinical record. The medication and allergy reconciliation deltas may become part of the formal medical record. The screener scores are clinical-record events. The architecture must produce the durable audit pipeline plus a layer of clinical-event documentation similar to what the refill bot needed but with broader and richer content.
+**The model has compliance implications for clinical-data conversations.** The intake conversation is dense protected health information (PHI): chief complaint, HPI, medications, allergies, family history, social history, screener responses, the patient's own emotional state. The conversation log is a clinical record. The medication and allergy reconciliation deltas may become part of the formal medical record. The screener scores are clinical-record events. The architecture must produce the durable audit pipeline plus a layer of clinical-event documentation similar to what the refill bot needed but with broader and richer content.
 
 ### What the Intake Bot Has To Do That the Refill Bot Did Not
 
@@ -178,7 +178,7 @@ A few notes on what makes pre-visit intake specifically harder than other patien
 
 A few practical updates worth knowing.
 
-**FHIR Questionnaire and QuestionnaireResponse provide structured representations.** The FHIR Questionnaire resource represents a structured intake form, and the QuestionnaireResponse resource represents the patient's answers.  Most major EHRs expose these endpoints, and the institutional intake protocol can often be represented as a FHIR Questionnaire under the hood, with the bot conducting the conversation and producing a QuestionnaireResponse as the structured output. This integration path provides interoperability and supports portable intake protocols.
+**Fast Healthcare Interoperability Resources (FHIR) Questionnaire and QuestionnaireResponse provide structured representations.** The FHIR Questionnaire resource represents a structured intake form, and the QuestionnaireResponse resource represents the patient's answers.  Most major EHRs expose these endpoints, and the institutional intake protocol can often be represented as a FHIR Questionnaire under the hood, with the bot conducting the conversation and producing a QuestionnaireResponse as the structured output. This integration path provides interoperability and supports portable intake protocols.
 
 **Validated screening instruments are increasingly digital-native.** PHQ-9, GAD-7, PROMIS short forms, AUDIT-C, and many others have been validated for digital and conversational administration.  The bot can administer these conversationally, score them per the validated rules, and produce the score as a clinical-record event.
 
@@ -585,7 +585,7 @@ A healthcare pre-visit intake bot decomposes into ten logical stages: channel en
 
 A few cross-cutting design points specific to the intake bot.
 
-**The intake protocol is a versioned governance artifact, organized per visit type.** Like the refill protocol, the intake protocols are clinical-leadership artifacts encoded as code. There is no single intake protocol; there is a library of per-visit-type protocols, each owned by the relevant clinical service line. Each protocol has versioning, sandbox testing against held-out conversations, staged rollout, audit-record stamping, and a clinical-informatics-team owner. The medical staff committee approves new protocols and major-version changes. When a screener bundle changes (the institution adopts a new SDOH screener for primary-care visits, for example), the relevant protocols are updated as a coordinated release.
+**The intake protocol is a versioned governance artifact, organized per visit type.** Like the refill protocol, the intake protocols are clinical-leadership artifacts encoded as code. There is no single intake protocol; there is a library of per-visit-type protocols, each owned by the relevant clinical service line. Each protocol has versioning, sandbox testing against held-out conversations, staged rollout, audit-record stamping, and a clinical-informatics-team owner. The medical staff committee approves new protocols and major-version changes. When a screener bundle changes (the institution adopts a new social determinants of health (SDOH) screener for primary-care visits, for example), the relevant protocols are updated as a coordinated release.
 
 **The screener tool library is governed separately.** Validated screening instruments (PHQ-9, GAD-7, AUDIT-C, PROMIS, fall-risk, SDOH bundles) each have their own tool with validated wordings, response options, and scoring rules. The library is owned jointly by clinical informatics, behavioral health (for the mental-health screeners), and the relevant clinical service lines (for condition-specific PROs). Each screener has its own version, and the bot's audit record stamps the screener version that was administered. Modifying a screener's wordings is a governance event that requires re-validation review, not a software change.
 
@@ -616,7 +616,7 @@ A few cross-cutting design points specific to the intake bot.
 - **Recipe 11.6 (Symptom Checker / Triage Bot):** Same chapter. The intake bot's acuity-flag pipeline is conceptually adjacent to the triage bot's clinical-decision logic but is intentionally bounded to flagging-for-clinical-review rather than direct-to-patient triage decisions.
 - **Recipe 11.7 (Chronic Disease Management Coach):** Same chapter. The intake bot's outputs feed the chronic-disease coach's longitudinal context; the coach's outputs may surface in the intake bot's prior-intake context.
 - **Recipe 11.8 (Mental Health Support Bot):** Same chapter. The intake bot's mental-health screener results and crisis-flag events route into the mental-health support workflow; behavioral-health visit intake protocols draw on shared mental-health screening and crisis-handling patterns.
-- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for intake builds on the voice assistant's ASR/TTS patterns.
+- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. The voice channel for intake builds on the voice assistant's automatic speech recognition (ASR) and text-to-speech (TTS) patterns.
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** Chapter 4. The intake-invitation delivery pattern (when to send the link, through which channel) draws on recipe 4.1 patterns.
 - **Recipe 4.2 (Patient Education Content Matching):** Chapter 4. The intake bot can surface visit-type-relevant education content for the patient based on the captured chief complaint.
 - **Recipe 4.5 (Medication Adherence Intervention Targeting):** Chapter 4. The intake bot's medication-reconciliation deltas may surface adherence concerns that feed adherence-intervention workflows.
@@ -624,7 +624,7 @@ A few cross-cutting design points specific to the intake bot.
 - **Recipe 5.6 (Claims-to-Clinical Data Linkage):** Chapter 5. The intake bot's chart-context lookup depends on the institution's data-linkage pipeline for cross-system data completeness.
 - **Recipe 2.5 (After-Visit Summary Generation):** Chapter 2. The intake-bot pre-visit packet and the after-visit summary are the bookends of the visit-data lifecycle; they share clinical-content and patient-engagement design patterns.
 - **Recipe 2.6 (Clinical Note Summarization):** Chapter 2. The intake-bot's HPI extraction and the clinical-note-summarization patterns are conceptually adjacent (both extract structured clinical content from prose).
-- **Recipe 8.x (Validated screener administration as discrete clinical-NLP task):** Chapter 8. 
+- **Recipe 8.x (Validated screener administration as discrete clinical natural language processing (NLP) task):** Chapter 8. 
 
 ---
 
