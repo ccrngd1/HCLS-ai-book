@@ -14,7 +14,7 @@ The AWS implementation centers on a streaming-and-batch surveillance ingestion p
 
 **Amazon S3 for the harmonized surveillance data lake.** Every surveillance feed lands in S3 partitioned by source, geography, and time. Historical data, harmonized data, model inputs, and forecast outputs all live in S3. The [Apache Parquet](https://parquet.apache.org/) format is the standard for the harmonized analytic layer. Versioning is non-negotiable: surveillance data revises retrospectively as more reports come in, and every model run has to be reproducible against the data state at the time of the run.
 
-**AWS Glue for harmonization and nowcasting ETL.** Glue jobs run the harmonization pipeline: geography normalization (HHS regions, state, county, ZIP, sentinel-site joins), time-grid alignment (epi-week is the standard for respiratory virus surveillance), unit conversion (lab counts per population, wastewater concentration normalization), and the nowcast-input dataset construction. The nowcasting itself can run in Glue (for simpler regression-based nowcasts) or in SageMaker (for the more sophisticated state-space models).
+**AWS Glue for harmonization and nowcasting extract, transform, and load (ETL).** Glue jobs run the harmonization pipeline: geography normalization (HHS regions, state, county, ZIP, sentinel-site joins), time-grid alignment (epi-week is the standard for respiratory virus surveillance), unit conversion (lab counts per population, wastewater concentration normalization), and the nowcast-input dataset construction. The nowcasting itself can run in Glue (for simpler regression-based nowcasts) or in SageMaker (for the more sophisticated state-space models).
 
 **Amazon SageMaker for forecasting model training and inference.** Compartmental models, statistical models, and scenario models all run as SageMaker workloads, often using different containers because the dependencies vary widely. Bayesian compartmental models use [PyMC](https://www.pymc.io/) or [Stan](https://mc-stan.org/) containers. Statistical and ML models use scikit-learn, [XGBoost](https://xgboost.readthedocs.io/), or PyTorch containers. The flexibility on bring-your-own-container is what makes the multi-family ensemble tractable.
 
@@ -32,7 +32,7 @@ The AWS implementation centers on a streaming-and-batch surveillance ingestion p
 
 **Amazon CloudWatch and AWS X-Ray for monitoring.** Pipeline health, model convergence diagnostics, ingestion latency and completeness, calibration metrics on backtested forecasts, and drift in surveillance signals all get logged. Calibration drift is the operational metric that matters most: a forecasting system whose 90% intervals stop containing 90% of out-of-sample observations has a calibration problem that must trigger remediation.
 
-**AWS KMS for encryption.** Surveillance data ranges from aggregate counts (low sensitivity) to individual case-line-list data (PHI). Customer-managed CMKs per data class are the standard. The case-line-list flows must run on HIPAA-eligible services with full BAA coverage.
+**AWS KMS for encryption.** Surveillance data ranges from aggregate counts (low sensitivity) to individual case-line-list data, which is protected health information (PHI). Customer-managed CMKs per data class are the standard. The case-line-list flows must run on HIPAA-eligible services with full business associate agreement (BAA) coverage.
 
 ### Architecture Diagram
 
