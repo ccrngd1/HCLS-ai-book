@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 29 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 28 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -26,7 +26,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
 | R-1 | Significant | OPEN | Spell out technology and healthcare abbreviations and jargon on first use (... | Radwin: accessibility, register, s |
 | R-12 | Significant | OPEN | Add train/retention/residency lines to the 22 recipes that send PHI to a th... | Author-owned work |
-| V-1.6 | Significant | OPEN | Ch14: MIP conflates coverage with the variable index; 42x2x14=1,176 binarie... | Factual and coding errors |
 | V-1.7a | Significant | OPEN | Ch2: AFib vignette uses warfarin as default; 2023 ACC/AHA/ACCP/HRS prefers... | Factual and coding errors |
 | V-2.1 | Significant | OPEN | Ch7 contradicts itself: argues calibration over discrimination, then assign... | Model soundness |
 | V-2.2 | Significant | OPEN | Ch7 claims-lag train/serve skew not mentioned | Model soundness |
@@ -53,7 +52,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**29 open** (Significant 22 · Minor 7) · 68 closed · 97 total
+**28 open** (Significant 21 · Minor 7) · 69 closed · 97 total
 
 <!-- DIGEST:END -->
 
@@ -91,7 +90,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-1.3b | Ch14: "minimum 11 hours between shifts (union rule)" is the EU Working Time Directive figure | Significant | DONE | Rest between shifts is now attributed to the bargaining agreement or facility policy, The 11-hour figure and its European Working Time Directive origin were in the trimmed note and are no longer stated; the bullet no longer asserts a number at all, which resolves the defect. |
 | V-1.4 | Ch13: "these two drugs both inhibit CYP2C9" is backwards; needs one inhibitor + one substrate | Critical | DONE | Rewritten as fluconazole inhibiting CYP2C9 with warfarin as substrate, matching the book's own graph at lines 42-44 rather than inventing a new drug pair. Added an explicit note that the mechanism needs one inhibitor and one substrate, and that two inhibitors of the same enzyme do not interact by it. |
 | V-1.5 | Ch9: business case predates CPT 92229 (autonomous retinal analysis, ~$45.75 non-facility, HEDIS-eligible) | Significant | DONE | Business case rewritten around CPT 92229. Two corrections to the reviewer: the code is carrier-priced rather than paid off a national fee schedule, so his ~$45.75 is one carrier's number and is deliberately not quoted; and per payer guidance, billing 92229 alone does **not** close the HEDIS eye-exam measure, because it records that imaging happened, not what it found. Both caveats are now in the text. |
-| V-1.6 | Ch14: MIP conflates coverage with the variable index; 42x2x14=1,176 binaries + coverage constraint, not 42x18x14=10,584 | Significant | OPEN | An earlier pass "fixed" the arithmetic and left the formulation wrong. |
+| V-1.6 | Ch14: MIP conflates coverage with the variable index; 42x2x14=1,176 binaries + coverage constraint, not 42x18x14=10,584 | Significant | DONE | Fixed as a formulation recast, not another number swap, which is what the earlier pass got wrong. The decision variable is now nurse x shift-type x day; author chose three 8-hour shift types (day, evening, night), giving 42 x 3 x 14 = 1,764 binaries. The 18 was department coverage demand conflated into the variable count; it is now stated as a coverage constraint, which also sets up the 'Constraints: Hard vs. Soft' section that immediately follows. The 2^N solver argument is unaffected. Corrects the reviewer too: his proposed 1,176 assumed two shift types with no basis; the recipe intends three. Single-file fix: the wrong figure appeared only in the main recipe, not the companion or Python example. Print-bound (14.4 is a flagship), verified in the PDF: 1,764 present, 10,584 gone, 270 pages still even, 0 warnings. |
 | V-1.7a | Ch2: AFib vignette uses warfarin as default; 2023 ACC/AHA/ACCP/HRS prefers a DOAC | Significant | OPEN | |
 | V-1.7b | Ch1: "OCR goes back to the 1970s" — Tauschek 1929, GISMO 1951 | Minor | DONE | Corrected with verified dates: Tauschek patented a mechanical reading machine in 1929 and Shepard's GISMO, the first commercial OCR device, was recognising characters in the early 1950s. The original claim that early systems were 1970s-80s is now framed as what enterprises installed, which is what the passage was really about. |
 | V-1.7c | Ch3: edit distance 0.846 should be 0.857 (14 chars, not 13); "Garcia"/"Gracia" is two substitutions or one transposition, not an insertion | Minor | DONE | Verified the arithmetic: `C-2026-0487291` is 14 characters, not 13, so the similarity is 1-(2/14)=0.857 and the 0.846 came from the wrong length. Corrected. |

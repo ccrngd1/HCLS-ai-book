@@ -375,7 +375,7 @@
 <p><strong>AWS Secrets Manager for vendor API credentials.</strong> When the architecture integrates third-party ASR, MT, or TTS vendors for languages or pairs not well-covered by AWS native services, the vendor API credentials live in Secrets Manager with rotation per the institutional cadence.</p>
 <p><strong>Amazon EventBridge for cross-system event flow.</strong> Encounter-started, encounter-ended, escalation-triggered, and audio-discarded events flow through EventBridge. Downstream consumers (the per-language-pair quality monitoring pipeline, the language-access compliance dashboard, the human-interpreter staffing analytics) react to events without coupling to the orchestration Lambdas.</p>
 <p><strong>Amazon CloudWatch for operational metrics and alarms.</strong> Per-pair end-to-end latency, per-pair confidence distributions, per-pair escalation rates, per-population disparity metrics. Alarms on per-pair quality drift, on escalation-rate spikes, on latency-budget overruns, on per-population disparity widening.</p>
-<p><strong>AWS CloudTrail for API-level audit.</strong> All access to PHI-bearing and biometric-bearing resources is logged. ASR, MT, and TTS invocations are logged with metadata only (not full content, to avoid persisting biometric and PHI in CloudTrail). Lambda invocations and KMS key uses are logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.</p>
+<p><strong>AWS CloudTrail for API-level audit.</strong> All access to PHI-bearing and biometric-bearing resources is logged. ASR, MT, and TTS invocations are logged with metadata only (not full content, to avoid persisting biometric and protected health information (PHI) in CloudTrail). Lambda invocations and KMS key uses are logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.</p>
 <p><strong>Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon QuickSight (optional) for quality analytics and surveillance.</strong> Per-utterance audit data streams to S3 via Firehose. Glue catalogs the data. Athena provides SQL access for the per-pair quality analysis and the per-population disparity analysis. QuickSight renders the language-access compliance dashboards and the per-pair quality dashboards.</p>
 <h3 id="architecture-diagram">Architecture Diagram</h3>
 <pre class="mermaid">flowchart LR
@@ -1633,6 +1633,7 @@ FUNCTION handle_barge_in(encounter_id,
 <li><a href="https://gdpr-info.eu/art-9-gdpr/">GDPR Article 9</a>: EU regulation on processing of biometric and health data</li>
 </ul>
 <p><strong>Standards and Frameworks:</strong></p>
+<p>The two most relevant standards to reference here are the Fast Healthcare Interoperability Resources (FHIR) specification from Health Level Seven (HL7), which models patient-language and communication-preference resources, and the ISO and ASTM standards that codify medical-interpreting practice.</p>
 <ul>
 <li><a href="https://www.hl7.org/fhir/">HL7 FHIR Specification</a>: healthcare data interoperability framework, including patient-language and communication-preference resources</li>
 <li><a href="https://www.hl7.org/fhir/patient.html">FHIR Patient Communication Preferences</a>: canonical FHIR resource for capturing patient language preferences</li>

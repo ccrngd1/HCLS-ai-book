@@ -25,7 +25,9 @@ The math is genuinely hard. But the solvers are genuinely good now. Let's talk a
 
 At its core, nurse scheduling is a combinatorial optimization problem. You have a set of decision variables (which nurse works which shift on which day), a set of constraints (rules that must be satisfied), and one or more objective functions (things you want to maximize or minimize).
 
-The decision variables are binary: nurse N either works shift S on day D, or she doesn't. That's a 1 or a 0. For 42 nurses across 18 shifts per day over 14 days, you have 42 x 18 x 14 = 10,584 binary decision variables. Each combination of assignments is a potential schedule. The number of possible schedules is 2^10,584, which is a number so large it has no physical meaning. You cannot enumerate them. You need a solver.
+The decision variables are binary: nurse N either works shift-type S on day D, or she doesn't. That's a 1 or a 0. With 42 nurses, three shift types a day (day, evening, night), and a 14-day schedule, you have 42 x 3 x 14 = 1,764 binary decision variables. Each combination of assignments is a potential schedule, and the number of possible schedules is 2^1,764, a number so large it has no physical meaning. You cannot enumerate them. You need a solver.
+
+Notice what is not a decision variable. Counting every unit and skill mix, a department might need 18 shifts covered across a day, but that number is demand, not choice. It is how many slots must be staffed, and it enters the model as a coverage constraint, each required slot needing enough qualified nurses assigned, rather than as a dimension of any one nurse's schedule. Multiplying a coverage requirement into the variable count is one of the most common ways a scheduling formulation goes wrong before the solver ever runs.
 
 ### Constraints: Hard vs. Soft
 
