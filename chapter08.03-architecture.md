@@ -1,4 +1,4 @@
-# Recipe 8.3 Architecture and Implementation: ICD-10 Code Suggestion
+# Recipe 8.3 Architecture and Implementation: International Classification of Diseases (ICD)-10 Code Suggestion
 
 *Companion to [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
@@ -14,7 +14,7 @@
 
 **Amazon SageMaker** (optional) enters the picture when you want to augment the managed API with a custom model. If your organization has specialty-specific coding patterns that Comprehend Medical handles poorly (dermatology sub-codes, ophthalmology laterality, behavioral health nuances), you can train a supplementary model on your own coded data and ensemble its predictions with Comprehend Medical's output.
 
-**AWS Lambda** for processing orchestration. Notes come in from the EHR (via HL7 FHIR, a file drop, or an API integration), get processed through Comprehend Medical, and the resulting suggestions are returned to the coding workflow.
+**AWS Lambda** for processing orchestration. Notes come in from the electronic health record (EHR) via Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR), a file drop, or an API integration, get processed through Comprehend Medical, and the resulting suggestions are returned to the coding workflow.
 
 **Amazon DynamoDB** stores the suggestion results, coder decisions (accepted, modified, rejected), and feedback data that drives model improvement over time.
 
@@ -519,7 +519,7 @@ This architecture gets you working suggestions. It does not get you production-g
 
 **Coding quality audit automation.** Use the suggestion system in reverse: after a coder assigns codes, re-run the model on the same note and compare the coder's selections to the model's suggestions. Discrepancies (especially where the model suggests a more specific code with high confidence) flag potential undercoding for clinical documentation improvement (CDI) review. This is a non-threatening way to surface coding quality issues: "the model noticed documentation that might support a more specific code" rather than "you coded this wrong."
 
-**Specialty-specific model augmentation.** Comprehend Medical is a general-purpose clinical NLP model. For high-volume specialties with unique coding patterns (ophthalmology laterality codes, dermatology morphology codes, behavioral health V-codes), train a supplementary model on your specialty-specific coded data using SageMaker. Ensemble the specialty model's predictions with Comprehend Medical's output, preferring the specialty model when it's confident and the specialty is identified. This addresses the long-tail accuracy problem without replacing the general model.
+**Specialty-specific model augmentation.** Comprehend Medical is a general-purpose clinical natural language processing (NLP) model. For high-volume specialties with unique coding patterns (ophthalmology laterality codes, dermatology morphology codes, behavioral health V-codes), train a supplementary model on your specialty-specific coded data using SageMaker. Ensemble the specialty model's predictions with Comprehend Medical's output, preferring the specialty model when it's confident and the specialty is identified. This addresses the long-tail accuracy problem without replacing the general model.
 
 ---
 
@@ -539,7 +539,7 @@ This architecture gets you working suggestions. It does not get you production-g
 
 **AWS Solutions and Blogs:**
 - [Map Clinical Notes to the OMOP Common Data Model and Healthcare Ontologies Using Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/map-clinical-notes-to-the-omop-common-data-model-and-healthcare-ontologies-using-amazon-comprehend-medical/): Architecture patterns for mapping clinical text to standardized ontologies, including ICD-10 inference
-- [Clinical Text Mining Using the Amazon Comprehend Medical SNOMED CT API](https://aws.amazon.com/blogs/machine-learning/clinical-text-mining-using-the-amazon-comprehend-medical-new-snomed-ct-api): Deep dive on clinical entity extraction and medical ontology mapping at scale
+- [Clinical Text Mining Using the Amazon Comprehend Medical Systematized Nomenclature of Medicine (SNOMED) CT API](https://aws.amazon.com/blogs/machine-learning/clinical-text-mining-using-the-amazon-comprehend-medical-new-snomed-ct-api): Deep dive on clinical entity extraction and medical ontology mapping at scale
 
 **External References:**
 - [CMS ICD-10-CM Official Guidelines](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official coding guidelines and annual code updates

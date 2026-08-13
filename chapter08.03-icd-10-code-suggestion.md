@@ -1,4 +1,4 @@
-# Recipe 8.3: ICD-10 Code Suggestion
+# Recipe 8.3: International Classification of Diseases (ICD)-10 Code Suggestion
 
 **Effort:** 2 of 5 · **Maturity:** Commodity · **Oversight:** Every output
 
@@ -61,7 +61,7 @@ The hardest part of ICD-10 suggestion from clinical text isn't identifying that 
 
 A model that ignores assertion context will over-suggest codes for conditions the patient doesn't have. This is worse than suggesting nothing, because a coder who trusts the suggestions will spend time verifying and rejecting false positives, which is slower than just reading the note themselves.
 
-Clinical assertion detection is a well-studied NLP problem. The key insight is that negation in clinical text follows predictable patterns. ConText (a rule-based algorithm), NegEx (its predecessor), and more recent neural approaches all exploit the fact that clinical negation uses a limited set of trigger phrases: "no," "denies," "negative for," "without," "ruled out," "unlikely." These triggers have scope (they negate the next few clinical concepts, not the entire note) and direction (they typically apply forward in the sentence, not backward).
+Clinical assertion detection is a well-studied natural language processing (NLP) problem. The key insight is that negation in clinical text follows predictable patterns. ConText (a rule-based algorithm), NegEx (its predecessor), and more recent neural approaches all exploit the fact that clinical negation uses a limited set of trigger phrases: "no," "denies," "negative for," "without," "ruled out," "unlikely." These triggers have scope (they negate the next few clinical concepts, not the entire note) and direction (they typically apply forward in the sentence, not backward).
 
 A robust ICD-10 suggestion system runs assertion detection as a preprocessing step. Every extracted clinical concept gets tagged with its assertion status (present, absent, possible, family history, historical) before any code mapping happens. Only concepts with "present" assertions proceed to code suggestion.
 
@@ -139,7 +139,7 @@ The feedback loop is where the real value emerges. When you track which suggesti
 - **Recipe 8.1 (Chief Complaint Classification):** Short-text classification fundamentals. If you're new to clinical NLP, start there.
 - **Recipe 8.4 (Medication Extraction and Normalization):** Complementary extraction that often runs alongside ICD-10 suggestion. Medications contextualize diagnoses.
 - **Recipe 8.8 (Clinical Assertion Classification):** The assertion detection problem in depth. Understanding negation and context is critical for accurate code suggestion.
-- **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Knowledge graph approach to navigating the ICD-10 code tree. Useful for building the hierarchical selection UI variation.
+- **Recipe 13.3 (ICD and Current Procedural Terminology (CPT) Hierarchy Navigation):** Knowledge graph approach to navigating the ICD-10 code tree. Useful for building the hierarchical selection UI variation.
 
 ---
 
