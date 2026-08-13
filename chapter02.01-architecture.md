@@ -6,9 +6,9 @@
 
 ## Why These Services
 
-**Amazon Bedrock for LLM access.** Bedrock provides managed access to foundation models (Claude, Llama, Titan, and others) without managing infrastructure. For healthcare, the key advantages are: models run within your AWS account boundary, data is not used for model training, and Bedrock is on the HIPAA eligible services list with a signed BAA. You get API access to multiple model families and can switch between them without changing your application code.
+**Amazon Bedrock for LLM access.** Bedrock provides managed access to foundation models (Claude, Llama, Titan, and others) without managing infrastructure. For healthcare, the key advantages are: models run within your AWS account boundary, data is not used for model training, and Bedrock is on the HIPAA eligible services list with a signed business associate agreement (BAA). You get API access to multiple model families and can switch between them without changing your application code.
 
-Every prompt sent to Bedrock in this pipeline contains PHI (patient names, medications, clinical data). Bedrock processes this data under your BAA and does not retain it after inference. However, if you enable model invocation logging (recommended for audit), the logged prompts and responses are PHI. The S3 bucket receiving those logs must be encrypted with KMS, access-controlled, and subject to your PHI retention policy. Do not enable prompt caching for PHI-containing prompts unless the caching layer is also covered by your BAA.
+Every prompt sent to Bedrock in this pipeline carries protected health information (PHI) such as patient names, medications, and clinical data. Bedrock processes this data under your BAA and does not retain it after inference. However, if you enable model invocation logging (recommended for audit), the logged prompts and responses are PHI. The S3 bucket receiving those logs must be encrypted with KMS, access-controlled, and subject to your PHI retention policy. Do not enable prompt caching for PHI-containing prompts unless the caching layer is also covered by your BAA.
 
 **Amazon Bedrock Guardrails for safety filtering.** Rather than building custom safety checks from scratch, Bedrock Guardrails lets you define content policies, denied topics, and word filters that are applied automatically to model inputs and outputs. You can configure guardrails to block responses that contain clinical recommendations, medication suggestions, or other content that should only come from a provider. This is the safety check layer.
 
@@ -18,7 +18,7 @@ Every prompt sent to Bedrock in this pipeline contains PHI (patient names, medic
 
 **Amazon S3 for prompt template storage.** System prompts, few-shot examples, and provider-specific tone configurations are stored as versioned objects in S3. This lets you update prompts without redeploying code, A/B test different prompt versions, and maintain an audit trail of prompt changes.
 
-**Amazon EventBridge for message routing.** When a new patient message arrives (from your EHR integration or patient portal), EventBridge routes it to the processing pipeline. This decouples the message source from the processing logic and lets you add additional consumers (analytics, routing rules) without modifying the core pipeline.
+**Amazon EventBridge for message routing.** When a new patient message arrives (from your electronic health record (EHR) integration or patient portal), EventBridge routes it to the processing pipeline. This decouples the message source from the processing logic and lets you add additional consumers (analytics, routing rules) without modifying the core pipeline.
 
 ## Architecture Diagram
 
@@ -105,7 +105,7 @@ FUNCTION classify_message(message_text):
 
 **Step 2: Gather relevant patient context.** Based on the classified intent, pull the specific patient data that the model needs to generate a grounded response. This is targeted retrieval, not a chart dump. Including irrelevant context wastes tokens, increases cost, and can confuse the model into referencing information that isn't relevant to the patient's question. The context assembly is what separates a useful draft from a generic one. Skip this step and the model generates plausible-sounding responses that aren't grounded in the patient's actual situation.
 
-A note on latency: EHR API response times vary enormously. A well-optimized FHIR server might respond in 200ms, but some endpoints under load take 1-3 seconds per call. If your FHIR server is slow, parallelize the queries or maintain a pre-fetched patient context cache (refreshed on clinical events) to keep end-to-end latency under 5 seconds. Any cache you add is a PHI store: encrypt at rest with KMS, enforce TLS in transit, deploy in the VPC, and set a TTL consistent with your PHI retention and staleness policies.
+A note on latency: EHR API response times vary enormously. A well-optimized Fast Healthcare Interoperability Resources (FHIR) server might respond in 200ms, but some endpoints under load take 1-3 seconds per call. If your FHIR server is slow, parallelize the queries or maintain a pre-fetched patient context cache (refreshed on clinical events) to keep end-to-end latency under 5 seconds. Any cache you add is a PHI store: encrypt at rest with KMS, enforce TLS in transit, deploy in the VPC, and set a TTL consistent with your PHI retention and staleness policies.
 
 ```text
 FUNCTION gather_context(patient_id, intent):
@@ -325,7 +325,7 @@ The architecture above demonstrates the pattern end to end. Deploying it to a he
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **AWS Sample Repos:**
-- [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): General Bedrock examples including guardrails configuration and RAG patterns
+- [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): General Bedrock examples including guardrails configuration and retrieval-augmented generation (RAG) patterns
 - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Hands-on workshop covering text generation, summarization, and agent patterns with Bedrock
 
 **AWS Solutions and Blogs:**

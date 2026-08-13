@@ -104,7 +104,7 @@ The critical design principle: the LLM never communicates directly with the pati
 
 ### Error Handling
 
-When any step fails (EHR unavailable, LLM service throttled, guardrail blocks the draft), the message routes to the provider's manual queue with a note indicating why auto-drafting failed. Use a dead-letter queue to capture messages that fail after retries. Monitor the DLQ depth as an operational alert: a growing DLQ means the pipeline is silently dropping messages that patients are waiting on.
+When any step fails (electronic health record (EHR) unavailable, LLM service throttled, guardrail blocks the draft), the message routes to the provider's manual queue with a note indicating why auto-drafting failed. Use a dead-letter queue (DLQ) to capture messages that fail after retries. Monitor the DLQ depth as an operational alert: a growing DLQ means the pipeline is silently dropping messages that patients are waiting on.
 
 The operationally harder case is not when the EHR is down but when it is slow. Wrap EHR calls in a short per-call timeout (e.g., 2 seconds) and a circuit breaker. EHR slowness is often correlated with peak clinical hours (morning rounds, shift change), which is exactly when the pipeline should be keeping up. Without a circuit breaker, every invocation blocks on the slow EHR and overall throughput collapses. When the circuit is open, route messages to the manual queue immediately rather than waiting for timeouts. This preserves compute concurrency for messages that can still be drafted (for example, general-intent messages that need no EHR context).
 
