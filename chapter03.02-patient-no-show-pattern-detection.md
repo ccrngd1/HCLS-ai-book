@@ -94,7 +94,7 @@ For a simple recipe, you don't need anything fancy. Three options, in order of e
 
 **Logistic regression.** Strongly recommended as your first model. Fast to train, fast to serve, natively outputs a probability, and the coefficients are directly interpretable ("a 30-day lead time adds this much to the log-odds of no-show"). Interpretability matters here because the operations team will ask why someone was flagged, and a logistic regression can give them a real answer.
 
-**Gradient-boosted trees (XGBoost, LightGBM, CatBoost).** The usual upgrade. Handles non-linearities and feature interactions that logistic regression misses. Typically lifts AUC by 0.03 to 0.05 over a well-tuned logistic regression. SHAP values give you explainability that is good enough for most operational contexts, though less clean than linear coefficients.
+**Gradient-boosted trees (XGBoost, LightGBM, CatBoost).** The usual upgrade. Handles non-linearities and feature interactions that logistic regression misses. Typically lifts area under the curve (AUC) by 0.03 to 0.05 over a well-tuned logistic regression. SHAP values give you explainability that is good enough for most operational contexts, though less clean than linear coefficients.
 
 **Isolation Forest or autoencoder for the anomaly signal.** Complementary to the predictor, not a replacement. Trained on per-patient feature vectors to learn what a "typical" appointment for a given patient looks like. An appointment that scores as an outlier in that embedding is a flag to investigate even if the risk score isn't the highest on the list. You see this pattern in mature deployments; it's not essential for a first version.
 
