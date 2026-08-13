@@ -94,7 +94,7 @@ The pipeline for disease severity stratification has five logical stages:
 [Feature Assembly] → [Preprocessing] → [Clustering] → [Validation & Labeling] → [Operationalization]
 ```
 
-**Feature Assembly:** Pull clinical data from multiple source systems (EHR, claims, labs, pharmacy) and construct the feature vector for each patient in the cohort. This is typically the most time-consuming step because healthcare data is fragmented across systems with different schemas, identifiers, and update frequencies.
+**Feature Assembly:** Pull clinical data from multiple source systems (electronic health record (EHR), claims, labs, pharmacy) and construct the feature vector for each patient in the cohort. This is typically the most time-consuming step because healthcare data is fragmented across systems with different schemas, identifiers, and update frequencies.
 
 **Preprocessing:** Normalize features to common scales. Handle missing values (a patient without a recent HbA1c is not the same as a patient with a normal HbA1c). Apply any clinical weighting. Remove patients who don't meet cohort inclusion criteria (e.g., must have at least 12 months of continuous enrollment).
 
