@@ -1168,12 +1168,12 @@ The pseudocode shows the shape. A production surveillance program closes several
 **Regulatory and Compliance References:**
 - [HIPAA Privacy Rule, Public Health Exception (45 CFR 164.512(b))](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E/section-164.512#p-164.512(b)): the regulatory basis for public-health-authority access to PHI.
 - [State Public Health Statutes](https://www.cdc.gov/phlp/publications/topic/index.html): jurisdiction-specific authorities; varies by state.
-- [HHS Office for Civil Rights (unrelated to OCR) Public Health Guidance](https://www.hhs.gov/hipaa/for-professionals/special-topics/public-health/index.html): OCR guidance on the public health exception.
+- [HHS Office for Civil Rights Public Health Guidance](https://www.hhs.gov/hipaa/for-professionals/special-topics/public-health/index.html): distinct from optical character recognition (OCR); this HHS OCR guidance covers the public health exception.
 
 **Industry Frameworks and Standards:**
 - [HL7 v2 ADT and ORU](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185): the dominant clinical-encounter and lab-result data formats.
 - [HL7 FHIR](https://www.hl7.org/fhir/): the modern interoperability standard underpinning eCR and emerging surveillance integrations.
-- [LOINC](https://loinc.org/): laboratory test and observation codes.
+- Logical Observation Identifiers Names and Codes (LOINC): [LOINC](https://loinc.org/), laboratory test and observation codes.
 - [SNOMED CT](https://www.snomed.org/): clinical terminology.
 - [ICD-10-CM](https://www.cdc.gov/nchs/icd/icd10cm.htm): diagnosis coding.
 - [CDC NNDSS Message Mapping Guides (MMGs)](https://www.cdc.gov/nndss/data-and-resources/surveillance-message-mapping-guides.html): CDC standards for surveillance message structure and case-notification formatting. 
