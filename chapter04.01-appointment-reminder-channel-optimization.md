@@ -38,7 +38,7 @@ At its heart, channel optimization is a recommendation problem with a small, fix
 
 For each patient, you want to pick the tuple most likely to drive a confirmed, kept appointment. This is a classic resource allocation problem with an important wrinkle: the only way you learn whether a tuple works for a specific patient is to actually use it and see what happens. There is no other data source. There's no Netflix-style catalog of "people like you loved voice calls at 10am." You have to generate the data yourself by making recommendations, observing outcomes, and updating your beliefs.
 
-That property (learning by doing, where each decision generates the signal that improves future decisions) is the defining feature of what machine learning people call the **contextual bandit** problem. It's a simplified cousin of full reinforcement learning. Full RL has sequences of decisions with delayed rewards; contextual bandits just have one decision per episode, with an immediate reward. "Send a reminder, see what happens." One decision, one reward. That's a contextual bandit.
+That property (learning by doing, where each decision generates the signal that improves future decisions) is the defining feature of what machine learning people call the **contextual bandit** problem. It's a simplified cousin of full reinforcement learning (RL). Full RL has sequences of decisions with delayed rewards; contextual bandits just have one decision per episode, with an immediate reward. "Send a reminder, see what happens." One decision, one reward. That's a contextual bandit.
 
 ### Three Approaches, Ordered by Sophistication
 
@@ -89,7 +89,7 @@ The reward signal you feed the model is derived from these events. A reasonable 
 
 This recipe is a simple, well-scoped entry point into healthcare personalization. The infrastructure you build here (patient preference store, engagement event pipeline, reward computation, bandit or propensity model serving) is the same infrastructure that future personalization recipes reuse. Recipe 4.2 (Patient Education Content Matching) consumes the preference and engagement data. Recipe 4.5 (Medication Adherence Intervention Targeting) extends the bandit pattern to a more complex action space. Recipe 4.6 (Care Gap Prioritization) reuses the same engagement baselines. Treat this recipe as a capability investment, not just a point solution.
 
-One more framing note: channel optimization sits near the boundary between "operational tooling" and "clinical care." The reminder itself is operational (nobody's treatment decision is being altered by a channel choice), but the information inside a reminder is clinical PHI ("You have a cardiology follow-up on Friday" reveals both a diagnosis area and a care plan). That means the whole pipeline, SMS provider, email provider, everything, needs to be under a BAA. More on that in the [architecture companion](chapter04.01-architecture).
+One more framing note: channel optimization sits near the boundary between "operational tooling" and "clinical care." The reminder itself is operational (nobody's treatment decision is being altered by a channel choice), but the information inside a reminder is clinical protected health information (PHI): "You have a cardiology follow-up on Friday" reveals both a diagnosis area and a care plan. That means the whole pipeline, SMS provider, email provider, everything, needs to be under a business associate agreement (BAA). More on that in the [architecture companion](chapter04.01-architecture).
 
 ---
 
