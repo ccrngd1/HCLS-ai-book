@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Location Service for geocoding.** Location Service provides a managed geocoding API that converts addresses to coordinates without requiring you to run your own geocoding infrastructure. It supports high-throughput geocoding (important when you're processing 200,000 addresses), returns confidence scores, and operates within the AWS compliance boundary. Before sending patient addresses to Location Service, verify that it appears on the current [AWS HIPAA Eligible Services list](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). The eligible services list is updated periodically; check at implementation time. If Location Service is not listed when you implement, geocode using a self-hosted solution (e.g., Pelias or Nominatim on EC2 within your VPC) or use a geocoding provider with whom you have a BAA.
+**Amazon Location Service for geocoding.** Location Service provides a managed geocoding API that converts addresses to coordinates without requiring you to run your own geocoding infrastructure. It supports high-throughput geocoding (important when you're processing 200,000 addresses), returns confidence scores, and operates within the AWS compliance boundary. Before sending patient addresses to Location Service, verify that it appears on the current [AWS HIPAA Eligible Services list](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). The eligible services list is updated periodically; check at implementation time. If Location Service is not listed when you implement, geocode using a self-hosted solution (e.g., Pelias or Nominatim on EC2 within your VPC) or use a geocoding provider with whom you have a business associate agreement (BAA).
 
 **Amazon S3 for data storage.** Patient address extracts, geocoded coordinates, and cluster results all need durable, encrypted storage. S3 with SSE-KMS provides the encryption at rest, and S3's integration with every other AWS service makes it the natural data lake layer.
 
@@ -71,7 +71,7 @@ flowchart TD
 
 ### Pseudocode Walkthrough
 
-**Step 1: Extract and prepare address data.** The pipeline starts by pulling patient addresses from your source system (EHR extract, enrollment file, claims data warehouse). The key decision here is what to include beyond the address itself. At minimum, you need a patient identifier and the full address. For enrichment later, include demographics (age, payer type) and utilization data (visit count, last visit date). This step also handles basic data quality: removing records with no address, standardizing state abbreviations, and flagging PO Boxes for special handling. Skip this step or skip the quality checks, and your geocoding step will waste API calls on addresses that can never resolve to meaningful coordinates.
+**Step 1: Extract and prepare address data.** The pipeline starts by pulling patient addresses from your source system (electronic health record (EHR) extract, enrollment file, claims data warehouse). The key decision here is what to include beyond the address itself. At minimum, you need a patient identifier and the full address. For enrichment later, include demographics (age, payer type) and utilization data (visit count, last visit date). This step also handles basic data quality: removing records with no address, standardizing state abbreviations, and flagging PO Boxes for special handling. Skip this step or skip the quality checks, and your geocoding step will waste API calls on addresses that can never resolve to meaningful coordinates.
 
 ```pseudocode
 FUNCTION extract_patient_addresses(source_connection):
@@ -295,7 +295,7 @@ FUNCTION store_results(clustered_records, cluster_metadata):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter06.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-**S3 lifecycle policy for cluster snapshots.** Each pipeline run writes a date-prefixed snapshot to S3 containing patient coordinates and cluster assignments. This is PHI. Every retained snapshot increases your exposure surface if the bucket is ever compromised. Configure an S3 Lifecycle rule on the `cluster-results/` prefix to retain the current snapshot and one previous snapshot (for rollback), then expire older snapshots after 6-12 months. If your compliance framework requires longer retention for audit purposes, move older snapshots to S3 Glacier with a separate, more restrictive access policy. The goal is minimizing the number of "live" copies of your entire patient population's home locations.
+**S3 lifecycle policy for cluster snapshots.** Each pipeline run writes a date-prefixed snapshot to S3 containing patient coordinates and cluster assignments. This is protected health information (PHI). Every retained snapshot increases your exposure surface if the bucket is ever compromised. Configure an S3 Lifecycle rule on the `cluster-results/` prefix to retain the current snapshot and one previous snapshot (for rollback), then expire older snapshots after 6-12 months. If your compliance framework requires longer retention for audit purposes, move older snapshots to S3 Glacier with a separate, more restrictive access policy. The goal is minimizing the number of "live" copies of your entire patient population's home locations.
 
 ### Expected Results
 
@@ -365,7 +365,7 @@ This pipeline produces correct, useful cluster output. But "produces correct out
 
 **Temporal clustering.** Add a time dimension: cluster patients not just by where they live, but by when they visit. A cluster of 2,000 patients who all visit on weekday mornings has different staffing implications than one where visits are evenly distributed. Combine geographic clusters with visit-time patterns to inform both location and hours-of-operation decisions.
 
-**Competitor overlay.** Geocode competitor facility locations and compute which of your patient clusters are closer to a competitor than to your nearest facility. This identifies "at-risk" clusters where patients might switch if a competitor opens or expands. Requires publicly available competitor address data (NPI registry, state licensing databases).
+**Competitor overlay.** Geocode competitor facility locations and compute which of your patient clusters are closer to a competitor than to your nearest facility. This identifies "at-risk" clusters where patients might switch if a competitor opens or expands. Requires publicly available competitor address data (National Provider Identifier (NPI) registry, state licensing databases).
 
 ---
 

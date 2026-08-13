@@ -6,7 +6,7 @@
 
 ## The Problem
 
-A regional health system with 14 clinics is trying to decide where to open clinic number 15. They have 200,000 patients in their EHR. They know where those patients live (addresses on file). They know which clinic each patient currently visits. But they don't know where the gaps are. They don't know which ZIP codes have patients driving 45 minutes past a closer competitor because there's nothing in between. They don't know which neighborhoods are growing, which are aging, and which are losing population to the suburbs.
+A regional health system with 14 clinics is trying to decide where to open clinic number 15. They have 200,000 patients in their electronic health record (EHR). They know where those patients live (addresses on file). They know which clinic each patient currently visits. But they don't know where the gaps are. They don't know which ZIP codes have patients driving 45 minutes past a closer competitor because there's nothing in between. They don't know which neighborhoods are growing, which are aging, and which are losing population to the suburbs.
 
 This isn't a hypothetical. Every health system with more than a handful of locations faces this question constantly: where are our patients, where should we be, and where are we losing people to distance?
 
@@ -68,7 +68,7 @@ Generic geographic clustering (where should we put a Starbucks?) differs from he
 
 **Equity considerations.** If your clusters reveal that underserved populations are systematically farther from care, that's not just a business insight. It's a health equity finding with regulatory, reputational, and moral implications. Geographic clustering in healthcare is never purely operational.
 
-**PHI sensitivity.** Patient addresses are PHI. The coordinates derived from them are PHI. The clusters themselves, if small enough to be re-identified, are PHI. You can't just dump 200,000 lat/long pairs into a public mapping tool. The entire pipeline needs to operate within your HIPAA boundary.
+**Protected health information (PHI) sensitivity.** Patient addresses are PHI. The coordinates derived from them are PHI. The clusters themselves, if small enough to be re-identified, are PHI. You can't just dump 200,000 lat/long pairs into a public mapping tool. The entire pipeline needs to operate within your HIPAA boundary.
 
 **Temporal dynamics.** Patient populations shift. New housing developments, highway construction, employer relocations, seasonal residents. A clustering analysis from January may not reflect reality in July. Build for refresh, not one-shot analysis.
 
