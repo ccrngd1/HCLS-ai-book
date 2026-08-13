@@ -102,7 +102,7 @@ The pipeline for disease severity stratification has five logical stages:
 
 **Validation and Labeling:** Validate cluster assignments against outcomes. Label clusters with clinically meaningful names (not "Cluster 0, 1, 2" but "Well-controlled with low complication burden," "Moderate complexity with active complications," "High severity with functional decline"). This step requires clinical review and iteration.
 
-**Operationalization:** Push tier assignments to downstream systems (care management platforms, EHR registries, population health dashboards). Set up refresh cadence (monthly or quarterly re-stratification). Build monitoring for tier migration (patients moving between tiers over time).
+**Operationalization:** Push tier assignments to downstream systems (care management platforms, electronic health record (EHR) registries, population health dashboards). Set up refresh cadence (monthly or quarterly re-stratification). Build monitoring for tier migration (patients moving between tiers over time).
 
 ---
 
