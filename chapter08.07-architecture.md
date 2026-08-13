@@ -8,11 +8,11 @@
 
 ### Why These Services
 
-**Amazon Comprehend Medical for entity extraction.** Comprehend Medical is AWS's healthcare-specific NLP service. It extracts medications (with dosage, frequency, route), medical conditions, and temporal expressions from clinical text. For the entity extraction stage of adverse event detection, it handles the heavy lifting of identifying drugs and clinical findings with their attributes. It also provides negation and assertion detection (whether a condition is negated, hypothetical, or conditional), which maps directly to our assertion filtering stage.
+**Amazon Comprehend Medical for entity extraction.** Comprehend Medical is AWS's healthcare-specific natural language processing (NLP) service. It extracts medications (with dosage, frequency, route), medical conditions, and temporal expressions from clinical text. For the entity extraction stage of adverse event detection, it handles the heavy lifting of identifying drugs and clinical findings with their attributes. It also provides negation and assertion detection (whether a condition is negated, hypothetical, or conditional), which maps directly to our assertion filtering stage.
 
 **AWS Lambda for orchestration.** Each note flows through a multi-stage pipeline: extract entities, classify assertions, detect relations, score severity. Lambda handles this orchestration with step-by-step processing. For batch workloads (processing a day's worth of notes), Lambda integrates with SQS for reliable, scalable note-by-note processing.
 
-**Amazon SQS for reliable note queuing.** Clinical notes arrive continuously as they're signed in the EHR. SQS provides a durable queue that decouples note ingestion from processing, handles retries on transient failures, and lets you scale processing independently of arrival rate. Configure a dead letter queue (`notes-processing-dlq`) with `maxReceiveCount=3` so that poison messages (malformed notes, persistent failures) move to the DLQ after three attempts instead of cycling indefinitely. Set a CloudWatch alarm on DLQ depth > 0. The DLQ must have the same SSE-KMS encryption as the primary queue since messages reference PHI.
+**Amazon SQS for reliable note queuing.** Clinical notes arrive continuously as they're signed in the electronic health record (EHR). SQS provides a durable queue that decouples note ingestion from processing, handles retries on transient failures, and lets you scale processing independently of arrival rate. Configure a dead-letter queue (DLQ) named `notes-processing-dlq` with `maxReceiveCount=3` so that poison messages (malformed notes, persistent failures) move to the DLQ after three attempts instead of cycling indefinitely. Set a CloudWatch alarm on DLQ depth > 0. The DLQ must have the same SSE-KMS encryption as the primary queue since messages reference protected health information (PHI).
 
 **Amazon DynamoDB for adverse event storage.** Detected adverse events need fast lookup by patient, by medication, and by time window. DynamoDB's flexible key structure supports these access patterns, and its TTL feature can manage retention policies for different severity levels.
 
@@ -74,7 +74,7 @@ flowchart TD
 
 ### Pseudocode Walkthrough
 
-**Step 1: Receive and archive the clinical note.** When a clinician signs a note in the EHR, it arrives in the processing queue via an integration feed (HL7 ADT message, FHIR subscription, or direct EHR integration). The first thing we do is archive the raw note in durable storage. This serves two purposes: audit compliance (every piece of PHI we process must be traceable) and reprocessing capability (when models improve, we can run historical notes through the updated pipeline). Skip this step and you lose the ability to explain or reproduce any detection the system makes.
+**Step 1: Receive and archive the clinical note.** When a clinician signs a note in the EHR, it arrives in the processing queue via an integration feed (Health Level Seven (HL7) admission, discharge, and transfer (ADT) message, Fast Healthcare Interoperability Resources (FHIR) subscription, or direct EHR integration). The first thing we do is archive the raw note in durable storage. This serves two purposes: audit compliance (every piece of PHI we process must be traceable) and reprocessing capability (when models improve, we can run historical notes through the updated pipeline). Skip this step and you lose the ability to explain or reproduce any detection the system makes.
 
 ```pseudocode
 FUNCTION receive_note(queue_message):

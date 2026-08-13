@@ -13,7 +13,7 @@
 
 ## The Problem
 
-A patient receives a new blood pressure medication. Two weeks later, they mention to their cardiologist that they've been dizzy every morning since starting it. The cardiologist documents "patient reports orthostatic dizziness, likely related to new amlodipine" in the progress note. That note lives in the EHR. Nobody extracts it. Nobody routes it to pharmacovigilance. Nobody connects it to the three other patients in the same health system who reported the same symptom on the same medication at the same dose.
+A patient receives a new blood pressure medication. Two weeks later, they mention to their cardiologist that they've been dizzy every morning since starting it. The cardiologist documents "patient reports orthostatic dizziness, likely related to new amlodipine" in the progress note. That note lives in the electronic health record (EHR). Nobody extracts it. Nobody routes it to pharmacovigilance. Nobody connects it to the three other patients in the same health system who reported the same symptom on the same medication at the same dose.
 
 Six months later, a patient safety officer pulls charts for a quality review and finds 47 mentions of the same adverse reaction buried across progress notes, nursing assessments, and discharge summaries. The signal was there the entire time. It was documented. It just wasn't surfaced.
 
@@ -45,11 +45,11 @@ It isn't. Here's why.
 
 **Severity matters.** A mild headache that resolves on its own is different from a life-threatening anaphylactic reaction. Safety surveillance systems need to prioritize, and priority depends on severity. Extracting severity from clinical text is itself a complex problem: "mild," "moderate," "severe," "life-threatening," "resolved without intervention," "required hospitalization" are all severity signals, but they appear in varied forms across different documentation styles.
 
-**Under-documentation is the norm.** Clinicians don't always document adverse events explicitly, especially mild ones. A patient mentions dry mouth as a side effect; the physician notes it mentally, adjusts nothing, and doesn't document it. These undocumented events are invisible to any NLP system. Your system will always undercount. The question is: by how much, and for which severity levels?
+**Under-documentation is the norm.** Clinicians don't always document adverse events explicitly, especially mild ones. A patient mentions dry mouth as a side effect; the physician notes it mentally, adjusts nothing, and doesn't document it. These undocumented events are invisible to any natural language processing (NLP) system. Your system will always undercount. The question is: by how much, and for which severity levels?
 
 ### The NLP Architecture for Adverse Event Detection
 
-The pipeline is more complex than standard clinical NER because it requires reasoning about relationships between entities, not just extracting entities in isolation.
+The pipeline is more complex than standard clinical named entity recognition (NER) because it requires reasoning about relationships between entities, not just extracting entities in isolation.
 
 **Stage 1: Entity extraction.** Identify three classes of entities in the text:
 - **Interventions:** Medications, procedures, devices, vaccines (anything that could cause an adverse event)
@@ -127,7 +127,7 @@ At a conceptual level:
 The pipeline is sequential in the sense that each stage depends on the previous one, but within a stage, processing of individual notes is parallelizable. You're typically running this as a batch job over all notes generated in a time window (daily or hourly), with the aggregation step looking across the full result set.
 
 Data flow considerations:
-- **Input:** Clinical notes in HL7 FHIR DocumentReference format, CDA documents, or raw text from EHR integration
+- **Input:** Clinical notes in Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR) DocumentReference format, CDA documents, or raw text from EHR integration
 - **Intermediate:** Structured annotations (entity spans, assertion labels, relation triples)
 - **Output:** Adverse event records with severity, causality confidence, and coded terms suitable for reporting to safety databases or feeding into pharmacovigilance dashboards
 
