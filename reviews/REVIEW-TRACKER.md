@@ -23,11 +23,11 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Sev | Status | Item | Area |
 |----|-----|--------|------|------|
-| V-7.1 | Critical | OPEN | No vendor data-handling posture (BAA, no-train/no-retain, data residency) f... | Enterprise readiness |
 | V-7.2 | Critical | OPEN | Secondary use / training on historical PHI lacks minimum-necessary, de-iden... | Enterprise readiness |
 | V-7.7 | Critical | OPEN | Tool-using LLMs have no enforced authorization boundary; frame as OWASP "ex... | Enterprise readiness |
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
 | R-1 | Significant | OPEN | Spell out technology and healthcare abbreviations and jargon on first use (... | Radwin: accessibility, register, s |
+| R-12 | Significant | OPEN | Add train/retention/residency lines to the 22 recipes that send PHI to a th... | Author-owned work |
 | R-8 | Significant | OPEN | `SUMMARY.md` is an internal project-status document but is published to the... | Radwin: accessibility, register, s |
 | V-1.6 | Significant | OPEN | Ch14: MIP conflates coverage with the variable index; 42x2x14=1,176 binarie... | Factual and coding errors |
 | V-1.7a | Significant | OPEN | Ch2: AFib vignette uses warfarin as default; 2023 ACC/AHA/ACCP/HRS prefers... | Factual and coding errors |
@@ -56,7 +56,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**32 open** (Critical 3 · Significant 22 · Minor 7) · 64 closed · 96 total
+**32 open** (Critical 2 · Significant 23 · Minor 7) · 65 closed · 97 total
 
 <!-- DIGEST:END -->
 
@@ -175,7 +175,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-7.1 | No vendor data-handling posture (BAA, no-train/no-retain, data residency) for cloud LLM and speech services | Critical | OPEN | Table stakes for this audience. |
+| V-7.1 | No vendor data-handling posture (BAA, no-train/no-retain, data residency) for cloud LLM and speech services | Critical | DONE | Both editions now carry a vendor and PHI governance section, `Before You Send Protected Health Information Anywhere`, placed after How to Use This Book and before the first recipe in print (pages 10 to 12) and linked directly under Introduction in the site navigation. It names five vendor questions (is this specific service covered, does the vendor train on inputs and is opting out contractual or a console setting, retention and by whom, which region processes and does anything leave it, and whether the log itself is now a PHI record) plus four secondary-use questions, and answers none of them. It states the author is not qualified to say how to comply and routes the reader to their privacy officer, security team and legal or compliance function. Vendor-neutral, as print requires. Source of truth is print/frontmatter/before-you-send-phi.md; sync_phi_page.py generates the digital copy and --check catches drift. Finding was mis-framed: BAA was never missing from the digital edition, which had 194 table rows and 321 prose mentions. The gap was print, because build.py excludes -architecture.md by design and all that content lived in the companions, so 266 pages of print mentioned BAA once and no-train and data residency not at all. Remaining per-recipe work split out as R-12 rather than left hiding inside a closed Critical. |
 | V-7.2 | Secondary use / training on historical PHI lacks minimum-necessary, de-identification, IRB/DUA governance | Critical | OPEN | RL trajectories especially re-identifiable. |
 | V-7.3 | Ch5: a wrong automatic MPI merge is a reportable breach (60-day clock), not just data quality | Critical | DONE | Fixed in the Reversibility section, which already said the compliance implications were large without saying what they were. Now names the exposure: a wrong merge is an impermissible disclosure, presumed reportable under the HIPAA Breach Notification Rule absent a documented risk assessment, with the clock running from discovery rather than from completing the unmerge. Framed to change the engineering requirement, since 'we can unmerge it' is weaker than 'which records were exposed, to whom, and for how long'. Held to the author's standing constraint: it routes the determination to the privacy officer and counsel and does not tell the reader what the rule requires of them. |
 | V-7.4 | No model change-control or rollback (version pinning in the audit record, champion-challenger) | Significant | OPEN | |
@@ -234,6 +234,7 @@ Items the author raised, tracked here so the central list stays the single place
 
 | ID | Item | Sev | Status | Notes |
 |----|------|-----|--------|-------|
+| R-12 | Add train/retention/residency lines to the 22 recipes that send PHI to a third-party model | Significant | OPEN | Measured: 30 of 152 main recipes send PHI to a hosted model or speech service, and 22 of those say nothing about training, retention or residency in either the recipe or its architecture companion. Four are in the print sampler and three of those are in the gap, including 11.6, a patient-facing triage bot that sends symptom narratives to a model. V-7.1 covers the general posture in both editions, so this is the per-recipe specificity rather than the posture itself, which is why it is Significant and not Critical. Good pattern to copy already exists in 2.8: 'many vendors offer a no-training option under their healthcare BAA; verify it'. Repetitive and well specified, so a good ralph candidate once R-1 finishes; must reuse the R-1 diff gate so it cannot rewrite technical content. |
 | A-1 | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Significant | OPEN | **Why it was withheld:** the Honest Take is the author's own voice and judgement, written in the first person. Publishing an opinion about a recipe the author has not personally reviewed asserts a position he has not actually taken. The recipes themselves are fine to publish; the opinion is what needs review first. So the gate is per-recipe author review, not a date. **Mechanism:** `honest_takes.py --restore 7.3` returns one recipe's section byte-for-byte from `honest-takes-stash/` and removes it from the stash, so `--status` reports real progress. `--restore` with no arguments returns all 137. Round trip verified exact against git HEAD. **Progress:** 0 of 137 restored. **Loose end when they return:** roughly a dozen companion pages contain in-body references such as "as noted in the recipe's honest take", which read oddly while the sections are absent and correct themselves when they come back; about 100 more are a stock footer and need nothing. **Do not** hand-edit files in the stash: restore the section, then edit the recipe. |
 | A-2 | About the Author orphan: decide at physical proof | Minor | DEFERRED | The page runs to 336 words and spans pages 3 and 4, with only 37 words landing on page 4. Author decision 2026-08-12: leave as is and judge it on the physical proof, since orphans read differently on paper than on screen. Three options when the proof arrives: split the acknowledgements onto their own Acknowledgements page, which is conventional and keeps every word; cut roughly 40 words to fit one page; or accept it. **Do not silently 'fix' this in a later tidying pass.** Note the growth had a useful side effect: the interior went from 263 to 264 pages, so it is now even and needs no trailing blank to end on a verso. |
 

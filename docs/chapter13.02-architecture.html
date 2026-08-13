@@ -14,6 +14,7 @@
       <nav class="sidebar">
 <h3 class="nav-section">Table of Contents</h3>
 <a class="nav-link" href="README.html">Introduction</a>
+<a class="nav-link" href="before-you-send-phi.html">Before You Send PHI</a>
 <h3 class="nav-section">Ch 1: Document Intelligence</h3>
 <a class="nav-link" href="chapter01-preface.html">Preface</a>
 <a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
@@ -358,7 +359,7 @@
 <h2 id="the-aws-implementation">The AWS Implementation</h2>
 <h3 id="why-these-services">Why These Services</h3>
 <p><strong>Amazon Neptune for the graph database.</strong> Neptune is AWS's managed graph database service. It supports both the property graph model (with Gremlin and openCypher query languages) and RDF (with SPARQL). For a provider directory, the property graph model is the natural fit: providers, locations, and networks are nodes with properties; relationships are typed edges. Neptune handles the operational overhead (replication, backups, patching) and is on the HIPAA eligible services list. It scales read replicas horizontally for high-throughput search workloads.</p>
-<p><strong>AWS Glue for ETL and data reconciliation.</strong> Provider data arrives from multiple sources in multiple formats. Glue handles the extraction, transformation, and loading into Neptune's bulk load format. Glue jobs can run on a schedule (daily roster refreshes) or be triggered by events (a provider updates their profile). The PySpark environment handles the reconciliation logic: deduplication, conflict resolution, and entity matching across sources.</p>
+<p><strong>AWS Glue for extract, transform, and load (ETL) and data reconciliation.</strong> Provider data arrives from multiple sources in multiple formats. Glue handles the extraction, transformation, and loading into Neptune's bulk load format. Glue jobs can run on a schedule (daily roster refreshes) or be triggered by events (a provider updates their profile). The PySpark environment handles the reconciliation logic: deduplication, conflict resolution, and entity matching across sources.</p>
 <p><strong>Amazon S3 for staging and bulk load.</strong> Neptune's bulk loader reads from S3. The ETL pipeline writes reconciled node and edge files to S3 in CSV format, then triggers Neptune's bulk load API. S3 also serves as the archive for historical snapshots of the directory (useful for auditing network adequacy over time).</p>
 <p><strong>AWS Lambda for the query API.</strong> A lightweight service layer that receives search requests, constructs Gremlin or openCypher queries, executes them against Neptune, and returns formatted results. Lambda's concurrency model handles bursty search traffic (Monday mornings when patients are looking for new providers) without provisioning for peak. Point the query Lambda at Neptune's reader endpoint for read-replica scaling; point the update Lambda at the writer endpoint.</p>
 <p><strong>Amazon API Gateway for the REST interface.</strong> Exposes the query API to consuming applications with authentication, rate limiting, and request validation. Supports both synchronous queries (patient portal search) and asynchronous patterns (batch referral matching).</p>
@@ -922,7 +923,7 @@ FUNCTION health_endpoint(neptune_endpoint):
 </ul>
 <p><strong>External Resources:</strong></p>
 <ul>
-<li><a href="https://download.cms.gov/nppes/NPI_Files.html">NPPES NPI Registry Data Download</a>: Free provider data from CMS for building and testing provider graphs</li>
+<li>National Provider Identifier (NPI) registry: <a href="https://download.cms.gov/nppes/NPI_Files.html">NPPES NPI Registry Data Download</a> provides free provider data from CMS for building and testing provider graphs</li>
 <li><a href="https://nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40">NUCC Health Care Provider Taxonomy</a>: The standard specialty taxonomy used in NPI registrations</li>
 <li><a href="https://www.cms.gov/marketplace/resources/data/provider-directory-data">CMS Provider Directory Requirements</a>: Regulatory requirements for directory accuracy and completeness</li>
 </ul>

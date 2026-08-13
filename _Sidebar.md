@@ -2,6 +2,8 @@
 
 **[Introduction](README)**
 
+**[Before You Send PHI](before-you-send-phi)**
+
 ---
 
 #### Ch 1: Document Intelligence

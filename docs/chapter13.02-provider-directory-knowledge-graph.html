@@ -14,6 +14,7 @@
       <nav class="sidebar">
 <h3 class="nav-section">Table of Contents</h3>
 <a class="nav-link" href="README.html">Introduction</a>
+<a class="nav-link" href="before-you-send-phi.html">Before You Send PHI</a>
 <h3 class="nav-section">Ch 1: Document Intelligence</h3>
 <a class="nav-link" href="chapter01-preface.html">Preface</a>
 <a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
@@ -401,7 +402,7 @@
 <p>This is where ontology comes in. An ontology defines the formal relationships between concepts in a domain. For provider directories, the relevant ontologies include:</p>
 <ul>
 <li><strong>NUCC taxonomy</strong>: The National Uniform Claim Committee maintains the standard taxonomy of healthcare provider types and specialties. It's hierarchical and widely used in claims processing.</li>
-<li><strong>NPI taxonomy codes</strong>: Each NPI registration includes taxonomy codes from the NUCC set.</li>
+<li><strong>National Provider Identifier (NPI) taxonomy codes</strong>: Each NPI registration includes taxonomy codes from the NUCC set.</li>
 <li><strong>Custom organizational hierarchies</strong>: Health systems often have their own groupings that don't map cleanly to NUCC.</li>
 </ul>
 <p>Encoding these taxonomies as part of your graph (specialty nodes connected by IS_SUBSPECIALTY_OF edges) enables hierarchical queries naturally. &quot;Find all providers in any cardiology subspecialty&quot; becomes &quot;start at the Cardiology node, traverse all IS_SUBSPECIALTY_OF edges downward, collect all providers connected to any node in that subtree.&quot;</p>
@@ -425,7 +426,7 @@
 <pre class="code code-plain"><code>[Source Systems] → [Ingest &amp; Reconcile] → [Graph Database] → [Query API] → [Applications]
 </code></pre>
 <p><strong>Source Systems.</strong> Credentialing databases, payer roster files (often 834/835 EDI or CSV), NPI registry downloads, facility privilege lists, provider self-service portals. Each source provides a partial view of the truth.</p>
-<p><strong>Ingest and Reconcile.</strong> An ETL pipeline that reads from each source, resolves conflicts (which address is current? which network status is authoritative?), and produces a unified set of nodes and edges. This pipeline runs on a schedule (daily for most sources, near-real-time for critical updates like network terminations).</p>
+<p><strong>Ingest and Reconcile.</strong> An extract, transform, and load (ETL) pipeline that reads from each source, resolves conflicts (which address is current? which network status is authoritative?), and produces a unified set of nodes and edges. This pipeline runs on a schedule (daily for most sources, near-real-time for critical updates like network terminations).</p>
 <p><strong>Graph Database.</strong> The persistent store for nodes, edges, and properties. Must support efficient traversal queries, property filtering, and ideally geospatial indexes. Should handle concurrent reads at high throughput for patient-facing search applications.</p>
 <p><strong>Query API.</strong> A service layer that translates application-level questions (&quot;find me a cardiologist near ZIP 40202 accepting BlueCross PPO&quot;) into graph traversal queries. This layer handles query construction, result ranking, pagination, and caching.</p>
 <p><strong>Applications.</strong> Patient-facing search portals, member services tools, referral management systems, care coordination platforms. Each consumes the query API with different access patterns and latency requirements.</p>
@@ -438,7 +439,7 @@
 <ul>
 <li><strong>Recipe 5.2 (Provider NPI Matching):</strong> Covers the entity resolution techniques needed to match providers across source systems during the ingest phase</li>
 <li><strong>Recipe 13.1 (Drug Formulary Navigation):</strong> Uses similar graph modeling patterns for navigating hierarchical drug data</li>
-<li><strong>Recipe 13.3 (ICD/CPT Hierarchy Navigation):</strong> Uses taxonomy traversal patterns applicable to the specialty hierarchy</li>
+<li><strong>Recipe 13.3 (ICD and Current Procedural Terminology (CPT) Hierarchy Navigation):</strong> Uses taxonomy traversal patterns applicable to the specialty hierarchy</li>
 <li><strong>Recipe 4.3 (Provider Directory Search Optimization):</strong> Covers the search ranking and personalization layer that sits on top of this graph</li>
 <li><strong>Recipe 14.3 (Network Adequacy Optimization):</strong> Uses the provider graph as input for network adequacy compliance calculations</li>
 </ul>
