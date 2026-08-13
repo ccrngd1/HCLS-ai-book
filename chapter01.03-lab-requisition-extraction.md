@@ -6,7 +6,7 @@
 
 ## The Problem
 
-A physician finishes a visit with a patient who has Type 2 diabetes. She orders a hemoglobin A1c, a comprehensive metabolic panel, and a lipid panel. She scribbles the diagnosis on the lab req as "T2DM, HTN" and faxes it to the lab. The lab fax machine spits out a thermal print. Someone scans it. Another person types it into the ordering system. A third person looks up the ICD-10 codes for "T2DM" and "HTN" and keys them in. A fourth person double-checks the test panel codes for billing.
+A physician finishes a visit with a patient who has Type 2 diabetes. She orders a hemoglobin A1c, a comprehensive metabolic panel, and a lipid panel. She scribbles the diagnosis on the lab req as "T2DM, HTN" and faxes it to the lab. The lab fax machine spits out a thermal print. Someone scans it. Another person types it into the ordering system. A third person looks up the International Classification of Diseases (ICD)-10 codes for "T2DM" and "HTN" and keys them in. A fourth person double-checks the test panel codes for billing.
 
 This is the pipeline for a routine lab order in 2026. Not in some underresourced rural practice. In a large integrated health system with dedicated billing staff.
 
@@ -14,7 +14,7 @@ The waste is not just the labor. It's the error chain. "T2DM" gets coded as E11.
 
 Lab requisition forms are a masterclass in how healthcare handles critical clinical information: on paper, abbreviated, handwritten in margins, and faxed at 96 dpi. The information is all there. Getting a computer to turn "T2DM, lipid panel Q3M per Dr. Chen" into machine-actionable structured data, with validated diagnosis codes that justify the ordered tests, is a different problem category from reading an insurance card.
 
-This is where pure document extraction hits its ceiling, and clinical NLP enters the picture.
+This is where pure document extraction hits its ceiling, and clinical natural language processing (NLP) enters the picture.
 
 ---
 
@@ -30,7 +30,7 @@ Knowing what a string of words means in a clinical context is a different kind o
 
 ### Clinical NLP: Understanding Medical Text
 
-Natural language processing (NLP) is the branch of machine learning that deals with text. The core tasks relevant to clinical documents are named entity recognition (extracting specific types of information from free text), entity normalization (linking extracted text to standard identifiers in a coding system), and relation extraction (identifying how entities relate to each other).
+NLP is the branch of machine learning that deals with text. The core tasks relevant to clinical documents are named entity recognition (NER), which extracts specific types of information from free text; entity normalization, which links extracted text to standard identifiers in a coding system; and relation extraction, which identifies how entities relate to each other.
 
 Clinical NLP adds a specialized dimension to all three. Medical text is not like newspaper text or legal text or customer reviews. It uses abbreviations that would stump any general-purpose model: "s/p CABG c/b afib, on warfarin per cards" reads, to a trained clinical model, as "status post coronary artery bypass graft complicated by atrial fibrillation, on warfarin per cardiology." To a general NLP model, it reads as gibberish. The training data matters enormously.
 
@@ -46,9 +46,9 @@ The hierarchy is meaningful. E11 is the parent code for Type 2 diabetes mellitus
 
 Going from free text to ICD-10-CM code is called "ICD-10 inference" or "diagnosis coding." Doing it manually requires a trained medical coder. Doing it automatically requires a model trained on clinical text that has learned the mapping from clinical language to the code hierarchy. The models are good at common diagnoses (diabetes, hypertension, heart failure, asthma) because the training data is dense with those. They are much less reliable on rare or highly specific diagnoses because the training examples are sparse.
 
-Handwritten ICD-10 codes are a specific subproblem worth calling out. Physicians who have been doing this for years often write the code directly: "E11.9, I10." That's actually easier to handle than free text, but only if the OCR reads it correctly. Handwritten ICD-10 codes get confused for other things: "I10" can look like "110" when handwritten at speed. A capital I, a lowercase l, and the numeral 1 are visually very similar in most handwriting. After OCR, "I10" may arrive as "l10" or "110." The clinical NLP step needs to be downstream of a solid OCR pass, and the confidence scores from both steps need to travel together.
+Handwritten ICD-10 codes are a specific subproblem worth calling out. Physicians who have been doing this for years often write the code directly: "E11.9, I10." That's actually easier to handle than free text, but only if the optical character recognition (OCR) reads it correctly. Handwritten ICD-10 codes get confused for other things: "I10" can look like "110" when handwritten at speed. A capital I, a lowercase l, and the numeral 1 are visually very similar in most handwriting. After OCR, "I10" may arrive as "l10" or "110." The clinical NLP step needs to be downstream of a solid OCR pass, and the confidence scores from both steps need to travel together.
 
-### CPT Codes: The Procedure Vocabulary
+### Current Procedural Terminology (CPT): The Procedure Vocabulary
 
 CPT stands for Current Procedural Terminology. It's the coding system for medical procedures and services, maintained by the American Medical Association. Every lab test has a CPT code. An HbA1c is 83036. A CBC with differential is 85025. A comprehensive metabolic panel is 80053.
 
