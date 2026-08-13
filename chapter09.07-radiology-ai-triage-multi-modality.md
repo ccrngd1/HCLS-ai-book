@@ -47,7 +47,7 @@ Each of these is a separate model (or a multi-task model trained on that specifi
 
 ### DICOM and the Imaging Ecosystem
 
-Medical images live in DICOM format (Digital Imaging and Communications in Medicine). DICOM is not just an image format; it's a communication protocol, a metadata standard, and a workflow specification all in one. Every study that comes off a scanner is a collection of DICOM objects containing pixel data plus rich metadata: patient demographics, study description, modality, body part, acquisition parameters, referring physician, accession number.
+Medical images live in the Digital Imaging and Communications in Medicine (DICOM) format. DICOM is not just an image format; it's a communication protocol, a metadata standard, and a workflow specification all in one. Every study that comes off a scanner is a collection of DICOM objects containing pixel data plus rich metadata: patient demographics, study description, modality, body part, acquisition parameters, referring physician, accession number.
 
 The triage system needs to:
 1. Receive DICOM studies as they're produced by scanners
@@ -55,7 +55,7 @@ The triage system needs to:
 3. Run inference
 4. Communicate results back to the radiologist's worklist
 
-That last step is the integration challenge. Radiologists work in PACS (Picture Archiving and Communication System) and read from a worklist managed by the RIS (Radiology Information System). The triage system needs to modify worklist priority without disrupting the radiologist's existing workflow. This typically happens via HL7 messages or DICOM worklist modifications, depending on the PACS vendor.
+That last step is the integration challenge. Radiologists work in PACS (Picture Archiving and Communication System) and read from a worklist managed by the RIS (Radiology Information System). The triage system needs to modify worklist priority without disrupting the radiologist's existing workflow. This typically happens via Health Level Seven (HL7) messages or DICOM worklist modifications, depending on the PACS vendor.
 
 ### What Makes This Hard (Beyond the Models)
 
