@@ -96,7 +96,7 @@ The choice of solver depends on your problem size and how quickly you need answe
 
 **Constraint Programming (CP).** CP solvers (like Google OR-Tools CP-SAT, IBM CP Optimizer) excel at scheduling problems with complex constraints. They're particularly good when the constraints are heterogeneous (mixing time windows, resource capacities, precedence relations) and when feasibility is as important as optimality. For a 30-50 chair center scheduling 40-80 patients per day, CP can find good solutions in seconds to minutes. This is often the best starting point for infusion scheduling.
 
-**Mixed-Integer Programming (MIP).** MIP solvers (Gurobi, CPLEX, HiGHS) work well when the objective function and constraints can be expressed as linear or piecewise-linear functions. The nursing workload leveling objective is naturally linear. MIP gives you optimality guarantees (or provable bounds on how far from optimal you are). For the batch overnight scheduling problem, MIP is excellent. Solve times for a typical day's schedule: 10 seconds to 5 minutes.
+**Mixed-integer programming (MIP).** MIP solvers (Gurobi, CPLEX, HiGHS) work well when the objective function and constraints can be expressed as linear or piecewise-linear functions. The nursing workload leveling objective is naturally linear. MIP gives you optimality guarantees (or provable bounds on how far from optimal you are). For the batch overnight scheduling problem, MIP is excellent. Solve times for a typical day's schedule: 10 seconds to 5 minutes.
 
 **Heuristic/Metaheuristic approaches.** For very large centers or when you need real-time rescheduling (a patient just cancelled, who takes their slot?), constructive heuristics followed by local search can produce good schedules in milliseconds. You sacrifice optimality guarantees but gain speed. Common approaches: priority-based dispatching rules (schedule highest-acuity patients first, then fill gaps), followed by swap-based improvement (try moving patients between slots and keep improvements).
 
@@ -168,7 +168,7 @@ The vendor-agnostic architecture for a chemotherapy scheduling optimization syst
 
 ### Step 1: Ingest Treatment Orders
 
-Every scheduling cycle starts with knowing who needs treatment. Treatment orders flow from the oncology EHR, each specifying the patient, regimen, cycle number, and timing constraints.
+Every scheduling cycle starts with knowing who needs treatment. Treatment orders flow from the oncology electronic health record (EHR), each specifying the patient, regimen, cycle number, and timing constraints.
 
 If you skip this step, you're scheduling from stale data. Patients who've been added, cancelled, or had their regimen changed won't be reflected in the schedule.
 

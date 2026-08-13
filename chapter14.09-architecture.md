@@ -18,9 +18,9 @@
 
 **Amazon EventBridge for event routing.** Schedule changes, patient arrivals, pharmacy completions, and disruption notifications all flow as events. EventBridge routes these to the appropriate handlers (Lambda functions) based on event type, enabling loose coupling between the scheduling engine and its consumers.
 
-**Amazon S3 for optimization artifacts.** Solver logs, schedule history, model training data, and audit trails all land in S3. This supports both compliance (you need to explain why a patient was scheduled when they were) and continuous improvement (analyzing historical schedules to tune the optimizer). Solver logs contain PHI (patient IDs, regimens, scheduling decisions), so store them in a dedicated bucket with S3 Object Lock for compliance retention (minimum 6 years per HIPAA), lifecycle policies transitioning to Glacier after 90 days, and bucket policies restricting access to the scheduling service role and authorized administrators.
+**Amazon S3 for optimization artifacts.** Solver logs, schedule history, model training data, and audit trails all land in S3. This supports both compliance (you need to explain why a patient was scheduled when they were) and continuous improvement (analyzing historical schedules to tune the optimizer). Solver logs contain protected health information (PHI) such as patient IDs, regimens, and scheduling decisions, so store them in a dedicated bucket with S3 Object Lock for compliance retention (minimum 6 years per HIPAA), lifecycle policies transitioning to Glacier after 90 days, and bucket policies restricting access to the scheduling service role and authorized administrators.
 
-**AWS HealthLake or Amazon RDS for clinical data.** Treatment protocols, drug stability profiles, and patient treatment histories live in a clinical data store. HealthLake if you're working with FHIR resources; RDS (PostgreSQL) if you need relational queries across protocol definitions and scheduling rules.
+**AWS HealthLake or Amazon RDS for clinical data.** Treatment protocols, drug stability profiles, and patient treatment histories live in a clinical data store. HealthLake if you're working with Fast Healthcare Interoperability Resources (FHIR); RDS (PostgreSQL) if you need relational queries across protocol definitions and scheduling rules.
 
 Note on API access patterns: the staff dashboard and pharmacy system are internal consumers (hospital network only), while the patient portal is internet-facing. Consider separate API Gateway stages: a private API with IAM authentication for internal consumers, and a public API with WAF, rate limiting, and Cognito/OIDC authentication for the patient portal.
 
@@ -162,7 +162,7 @@ Some patients receive multiple treatments across different departments (radiatio
 ### Optimization Libraries and Solvers
 
 - [Google OR-Tools](https://developers.google.com/optimization) - Open-source CP-SAT solver, excellent for scheduling problems
-- [HiGHS](https://highs.dev/) - Open-source MIP solver, good for linear formulations
+- [HiGHS](https://highs.dev/) - Open-source mixed-integer programming (MIP) solver, good for linear formulations
 - OR-Tools can be packaged as a Lambda layer (~50MB) or deployed in a container image for Lambda or ECS. The CP-SAT solver is the recommended entry point for scheduling problems at infusion center scale.
 
 ### Healthcare Scheduling Research
