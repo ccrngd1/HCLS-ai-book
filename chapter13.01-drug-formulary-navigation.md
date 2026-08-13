@@ -133,7 +133,7 @@ At a conceptual level, the pipeline has four stages:
 
 **Stage 3: Query API.** Expose the graph through a purpose-built API that translates prescriber questions into graph traversals. The API shouldn't expose raw graph query syntax to consumers. Instead, it offers domain-specific endpoints: "find alternatives for drug X under plan Y," "check restrictions for drug X at strength Z under plan Y," "navigate therapeutic class hierarchy from class C." The API handles the traversal logic, applies temporal filters (only return currently effective data), and formats results for the consuming application.
 
-**Stage 4: Prescriber Interface.** The end consumer is typically an EHR integration, a pharmacy system, or a prescriber-facing tool. It calls the API at the point of prescribing, receives structured alternatives and restriction information, and presents it in the clinical workflow. The interface needs to be fast (sub-second response) and contextual (filtered to the patient's specific plan).
+**Stage 4: Prescriber Interface.** The end consumer is typically an electronic health record (EHR) integration, a pharmacy system, or a prescriber-facing tool. It calls the API at the point of prescribing, receives structured alternatives and restriction information, and presents it in the clinical workflow. The interface needs to be fast (sub-second response) and contextual (filtered to the patient's specific plan).
 
 The key architectural decision is where intelligence lives. The graph itself is "dumb" storage of relationships. The query API encodes the business logic: what counts as a valid alternative, how to rank alternatives (by tier, then by formulary preference, then by clinical equivalence), when to surface restrictions vs. suppress them. Keep this logic in the API layer, not embedded in the graph structure, so you can evolve it without reloading data.
 
@@ -144,7 +144,7 @@ The key architectural decision is where intelligence lives. The graph itself is 
 ## Related Recipes
 
 - **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** Uses a similar graph structure but models interaction relationships between drugs rather than formulary relationships. The two graphs can share a common drug node layer.
-- **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Demonstrates the same hierarchical traversal pattern applied to diagnosis and procedure codes rather than drug classifications.
+- **Recipe 13.3 (Current Procedural Terminology (CPT) and ICD Hierarchy Navigation):** Demonstrates the same hierarchical traversal pattern applied to diagnosis and procedure codes rather than drug classifications.
 - **Recipe 13.6 (Care Gap Reasoning Engine):** Consumes formulary data as part of medication adherence gap detection. If a patient isn't filling a prescribed medication, the care gap engine checks whether a formulary barrier (high tier, PA requirement) might be the cause.
 - **Recipe 11.5 (Insurance Benefits Navigator):** A conversational interface that could use this recipe's API as its backend for answering patient questions about drug coverage.
 
