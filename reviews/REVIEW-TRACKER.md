@@ -17,13 +17,14 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 20 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 23 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Sev | Status | Item | Area |
 |----|-----|--------|------|------|
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
+| AN-6 | Significant | OPEN | Print-scoped acronym sweep: confirm every acronym is expanded on its first... | Anna: business-reader review |
 | V-2.8 | Significant | OPEN | Ch12: "discharge order written" is near-label leakage; add point-in-time wa... | Model soundness |
 | V-3.8 | Significant | OPEN | Tagged-PDF quality low; no figure/table/TOC tagging | Production and accessibility |
 | V-4.4 | Significant | OPEN | Ch11 Honest Take references five bots absent from this volume; other dangli... | Chapter 11 patient safety and stan |
@@ -37,6 +38,8 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-8.1 | Significant | OPEN | Fairness as a summed penalty can concentrate bad shifts on a few nurses; us... | Chapter 14 optimization |
 | V-8.2 | Significant | OPEN | No infeasibility handling despite a scenario that makes it likely; add IIS... | Chapter 14 optimization |
 | A-2 | Minor | DEFERRED | About the Author orphan: decide at physical proof | Author-owned work |
+| AN-5 | Minor | OPEN | Roll the `User:` persona line out to all digital recipes (full ~152-recipe... | Anna: business-reader review |
+| AN-7 | Minor | DEFERRED | Quantify each recipe (clinician note-time, revenue-cycle/fraud spend, waste... | Anna: business-reader review |
 | R-9 | Minor | OPEN | `categories/` is tracked in git but is not published and is superseded | Radwin: accessibility, register, s |
 | V-1.7h | Minor | OPEN | Ch12: LOS math — bed count is algebraically irrelevant; 8% implies LOS 3.75d | Factual and coding errors |
 | V-11.3 | Minor | OPEN | Body chapter titles use recipe names, Appendix A uses capability areas | Positioning, front/back matter, st |
@@ -44,7 +47,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**20 open** (Significant 13 · Minor 7) · 92 closed · 112 total
+**23 open** (Significant 14 · Minor 9) · 97 closed · 120 total
 
 <!-- DIGEST:END -->
 
@@ -57,6 +60,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | R | (radwin) | — | Digital edition (site) | 2026-08-11 | Short-form feedback, 110 words, 5 findings. Focused on reader accessibility and site structure rather than technical content. |
 | C | Crystal (external reviewer) | External reviewer | Chapter 1, recipe 1.1 (insurance card scanning) | 2026-08-14 | Structural feedback on 1.1: digital cards, multiple-card/COB handling, depth of security/privacy, and an ROI framework. Discussed with the author before logging; dispositions below. |
 | G | Raghav (external reviewer) | External reviewer | print sampler `book.pdf` + annotated `book_tech_reviewed.pdf` | 2026-08-14 | Formal technical review, 84 findings across 15 chapters + 5 book-level (16 Critical, 19 Major, 29 Minor, 6 suggestions, 14 positives). Triaged with author before logging. Spot-check of the high-severity findings showed most are premised on content already present, or on the print sampler excluding the digital `-architecture`/`-python-example` companions where the depth lives. Bucketed in section 15 rather than logged one row each. |
+| AN | Anna (external reviewer) | External reviewer | print `book.pdf` (business-reader lens) | 2026-08-14 | Non-technical/business reader; noted parts were beyond her technical depth, which is the 'technical leaders / product managers' slice of the audience. Concrete findings (C-CDA, AVS, readability formulas) verified and fixed; larger editorial ideas dispositioned in section 16. Loved the Honest Take sections. Prefix `AN-` (A- was taken by author items). |
 
 ---
 
@@ -254,6 +258,21 @@ Items the author raised, tracked here so the central list stays the single place
 | G-90 | BUCKET: findings verified already present in the corpus (no action) | Minor | WONTFIX | Spot-checked and confirmed already covered, so the premises do not match our text: 2-03 (grounding is core to 2.5, 12+ mentions; not "no hallucination mitigation"); 2-04 (ROUGE/BLEU appear 0 times, so not "reported as primary metrics"); 3-02 (three categories of legitimate duplicates + modifier comparison already in 3.1); 5-03 (human review, unmerge 21x, twins, households all in 5.1); 7-02 (planned-readmission exclusion present); 7-03 (calibration covered 19x, our V-2.1 fix, not "AUC only"); 8-03 (annual Oct-1 update handling present); 11-01 (911/red-flag/suicidal-ideation safety net, our V-10.7 hardening); 13-01 (full Contraindicated/Major/Moderate/Minor tiering + alert-fatigue framing in 13.4); 14-01 (minimum ratios as hard constraints, our V-1.6 recast); 15-01/15-02/15-03 (retrospective-vs-prospective caveat, FDA, off-policy evaluation present, 18x on off-policy); 1-08 (glare/damaged/partial-capture failure modes already in the 1.1 Honest Take). BL-02 (governance appendix) delivered as the Before-You-Send-PHI front-matter page under V-7.1. Positives (1-01,2-01,2-02,4-01,5-01,5-02,6-01,7-01,8-01,9-01,10-01,12-01) need no action. |
 | G-91 | BUCKET: compliance how-to and citation asks declined by standing policy | Minor | WONTFIX | Declined on the book's standing posture, not on merit. Compliance/method prescription (we name what exists and route to the reader's own teams, we do not instruct): 1-03 (per-field ROC-derived thresholds), 1-06 (AES-256/TLS-1.2/KMS-rotation specifics), BL-01 (mandate a fairness metric in every chapter), 6-02 (prescribe logistic-regression equity method). Citation/lit-review asks (the book is architecture-first and explicitly not a maintained clinical reference): BL-03 (per-claim citations), 1-04 (Tesseract accuracy citation). Where these name a real consideration we already gesture at it; we are not adopting the prescriptive form. |
 | G-92 | BUCKET: remaining 46 findings, full triage complete | Minor | WONTFIX | Now fully verified against the corpus (was deferred). Outcome: 4 genuine items promoted to open rows: G-04 (6-05 external validation), G-05 (7-05 competing risk), G-06 (6-03 K-Means mixed-type assumption), G-08 (1-02 population-diverse card testing). A 5th (G-07, 1-07 Textract AnalyzeID) was promoted then reclassified WONTFIX on verification: AnalyzeID handles US driver's licenses and passports only, not insurance cards, so the recommendation was a reviewer error. 6-04 (SDOH as model features) reviewed and declined by author: contested design choice, citation-adjacent, and the equity audit already exists. 7-04 (index event bias) skipped: the reviewer notes it is less relevant for readmission. Everything else confirmed already present. CORRECTION to the earlier deferral note: the four items it guessed were plausibly genuine (4-02 guideline conformance, 9-02 FDA PCCP, 10-02 multi-party consent, 12-02 pandemic distributional shift) are all in fact already covered; the guess was wrong, which is why the full per-item check was done. |
+
+## 16. Anna: business-reader review
+
+Anna read the print `book.pdf` as a business/non-technical reader and flagged that parts were beyond her technical depth, which is exactly the 'technical leaders evaluating AI' and 'product managers scoping AI features' slice of the stated audience. She loved the Honest Take sections. Her three concrete findings were verified against the print build and fixed; her larger editorial suggestions are dispositioned below (adopted, narrowed, or declined) with reasoning.
+
+| ID | Item | Sev | Status | Note |
+|----|------|-----|--------|------|
+| AN-1 | No end-user/persona named per recipe ("who is the end user: IT, clinician, claims reviewer?") | Minor | DONE | Added a `User:` line on its own line under Effort/Maturity/Oversight across all 15 flagship (print) recipes, from a fixed vocabulary (Patient, Clinician, Care team / operations, Healthcare IT, Revenue-cycle / claims, Researcher / analyst). Distinct from Oversight (who supervises the output). 44dc7ffc |
+| AN-2 | C-CDA used unexpanded in 4.9, spelled out nowhere in print (Anna p50) | Minor | DONE | Verified genuine (single unexpanded use; no full expansion anywhere in print). Expanded on first use to Consolidated Clinical Document Architecture (C-CDA). 44dc7ffc |
+| AN-3 | AVS acronym never linked to its full term in 2.5 (Anna p28) | Minor | DONE | Term appeared and acronym appeared, but never in linked form. Set first prose mention to after-visit summary (AVS) so it is defined before first bare use. 44dc7ffc |
+| AN-4 | Readability formulas named but unexplained in 2.5 (Anna p19) | Minor | DONE | Added a plain gloss: Flesch-Kincaid/SMOG/Dale-Chall estimate the US school grade level a reader needs to follow a passage. 44dc7ffc |
+| AN-5 | Roll the `User:` persona line out to all digital recipes (full ~152-recipe corpus) | Minor | OPEN | Backlog per author request 2026-08-14. Same fixed vocabulary and separate-paragraph format as the flagship rollout (44dc7ffc); apply to the non-flagship recipes and rebuild the site. Digital-only, no print impact. |
+| AN-6 | Print-scoped acronym sweep: confirm every acronym is expanded on its first PRINT occurrence | Significant | OPEN | Meta-finding. R-1's checker only governs terms in abbreviations.json, and the print edition is the flagship subset, so an acronym first-expanded in a digital-only recipe can appear cold in print. C-CDA (AN-2) proved the class exists. Enumerate acronym tokens in print/build/book.md and verify first-print-use expansion; fix gaps. Bounded and verifiable. |
+| AN-7 | Quantify each recipe (clinician note-time, revenue-cycle/fraud spend, waste reduced) | Minor | DEFERRED | Narrowed, not adopted wholesale. Some Problem sections already carry stakes (Anna praised pp16-17). A market stat in every recipe brings a citation-and-staleness burden and tilts the book from architecture-first toward market analysis. Disposition: strengthen a Problem section with a sourced sentence only where stakes are thin; not a blanket per-recipe mandate. |
+| AN-8 | Current-state to future-state summary chart per recipe for a business persona | Minor | WONTFIX | Declined for this edition. New artifact type the book does not use, real design lift, most off the architecture-first identity. Candidate for a future companion/marketing asset rather than the book interior. |
 
 ## Retracted by the reviewer
 
