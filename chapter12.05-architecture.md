@@ -298,6 +298,8 @@ FUNCTION forecast_outflows(state_records, horizon_hours, n_samples = 1000):
 
 **Step 4: Compose census trajectories with Monte Carlo.** Take the current state, the inflow samples, and the outflow samples, and walk forward sample by sample to produce per-sample census trajectories. Aggregate across samples to get the expected occupancy and prediction intervals per (unit, hour). The composition step is also where bed-management overflow rules get applied: if a unit's projected occupancy exceeds capacity in a sample, the overflow logic redistributes admissions to designated overflow units.
 
+> This walkthrough draws the flows independently to keep the pseudocode readable. That makes the intervals narrower than they should be, for the reason the main recipe gives under "Flows are not independent either." A production version models the flows moving together (for example, by resampling whole historical days) and then checks the intervals against real outcomes.
+
 ```text
 FUNCTION compose_census(state_records, inflow_samples, outflow_samples, horizon_hours, unit_capacities, overflow_rules):
     n_samples = inflow_samples.shape[0]
