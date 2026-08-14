@@ -2,6 +2,8 @@
 
 **Effort:** 5 of 5 · **Maturity:** Emerging · **Oversight:** Every output
 
+**User:** Clinician
+
 ---
 
 > **This recipe is illustrative, not clinical guidance.** The alerts, interaction severities, and
@@ -45,7 +47,7 @@ An *action* is a specific, time-bounded step that advances a goal: "take the diu
 
 An *owner* is the person or role accountable for an action: the patient, the PCP, a specialist, the care manager, the pharmacist, the home-health agency, the family caregiver. Owners have communication preferences, escalation paths, and capacity constraints the plan must respect.
 
-These three primitives are the structured representation the rest of the system manipulates, and the direction matters: the narrative the patient and clinicians read is *rendered from* the structure, not the other way around. Structured-then-narrative is what makes the plan auditable, queryable, updatable, and amenable to fairness analysis, and it is what keeps the LLM from becoming the system of record for clinical decisions. This is well-trodden ground: Fast Healthcare Interoperability Resources (FHIR)'s `Goal`, `CarePlan`, `ServiceRequest`, and `Task` resources implement essentially this graph, and C-CDA and CMS care-plan templates map to the same structure. What differs across implementations is the richness of the graph and how dynamically it is maintained.
+These three primitives are the structured representation the rest of the system manipulates, and the direction matters: the narrative the patient and clinicians read is *rendered from* the structure, not the other way around. Structured-then-narrative is what makes the plan auditable, queryable, updatable, and amenable to fairness analysis, and it is what keeps the LLM from becoming the system of record for clinical decisions. This is well-trodden ground: Fast Healthcare Interoperability Resources (FHIR)'s `Goal`, `CarePlan`, `ServiceRequest`, and `Task` resources implement essentially this graph, and Consolidated Clinical Document Architecture (C-CDA) and CMS care-plan templates map to the same structure. What differs across implementations is the richness of the graph and how dynamically it is maintained.
 
 ### The Multi-Condition Reconciliation Problem
 

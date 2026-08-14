@@ -2,6 +2,8 @@
 
 **Effort:** 3 of 5 · **Maturity:** Commodity · **Oversight:** Every output
 
+**User:** Clinician
+
 ---
 
 > **This recipe is illustrative, not clinical guidance.** The drug names, interaction

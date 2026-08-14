@@ -2,6 +2,8 @@
 
 **Effort:** 4 of 5 · **Maturity:** Emerging · **Oversight:** Autonomous
 
+**User:** Patient
+
 ---
 
 > **This recipe is illustrative, not clinical guidance.** Symptom assessment and triage

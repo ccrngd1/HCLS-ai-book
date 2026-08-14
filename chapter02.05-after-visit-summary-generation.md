@@ -2,6 +2,8 @@
 
 **Effort:** 3 of 5 · **Maturity:** Proven · **Oversight:** Every output
 
+**User:** Patient
+
 ---
 
 > **This recipe is illustrative, not clinical guidance.** Triage and disposition are clinical
@@ -18,7 +20,7 @@ A 68-year-old patient with moderate mitral stenosis and new-onset atrial fibrill
 
 What actually happened in that visit: the cardiologist started anticoagulation. She explained that the patient has a 1-in-20 risk of stroke per year without it, that the medication requires careful attention to diet (greens interact), that they need a lab draw in three days to check clotting, that they should call 911 immediately if they notice unusual bleeding or a sudden headache, and that they need to return in two weeks. None of that is on the paper.
 
-Research on health literacy is consistent and depressing. A widely cited review by Kessels (2003) reported that patients forget roughly 40 to 80 percent of what their provider tells them within minutes of leaving the visit, and that about half of what they do remember is recalled incorrectly. Those figures trace back two decades and the precise numbers vary by study, but the direction has held up in the research since. Reading level compounds the problem. The average after-visit summary is written at a 10th-to-12th-grade level, well above the level at which most patients can comfortably read and act on health information. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
+Research on health literacy is consistent and depressing. A widely cited review by Kessels (2003) reported that patients forget roughly 40 to 80 percent of what their provider tells them within minutes of leaving the visit, and that about half of what they do remember is recalled incorrectly. Those figures trace back two decades and the precise numbers vary by study, but the direction has held up in the research since. Reading level compounds the problem. The average after-visit summary (AVS) is written at a 10th-to-12th-grade level, well above the level at which most patients can comfortably read and act on health information. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
 
 For the patient with atrial fibrillation, the consequences of that gap are concrete. They don't go for the INR draw because the paper didn't mention it. They continue their usual salad-heavy diet because nobody wrote down the dietary interaction. They show up to the follow-up appointment confused about why they're on a new medication, or they no-show because "follow up as needed" felt optional. Six weeks later they're in the ER with a bleed that could have been caught earlier, or a clot that could have been prevented. Their chart documents everything the physician did correctly. The communication layer is where it fell apart.
 
@@ -55,7 +57,7 @@ What that means in practice:
 - **Chunked structure.** Bullets, sections, and whitespace so the eye can find its place.
 - **No numbers that don't need to be there.** "About 1 in 20 people" beats "5.2% of patients."
 
-Modern LLMs can hit these targets reliably when instructed to, and the reading level can be verified automatically using standard readability formulas (Flesch-Kincaid Grade Level, SMOG, Dale-Chall). A generated summary that scores above 8th grade can be flagged for regeneration or routed for human editing.
+Modern LLMs can hit these targets reliably when instructed to, and the reading level can be verified automatically using standard readability formulas (Flesch-Kincaid Grade Level, SMOG, Dale-Chall), which estimate the US school grade level a reader needs to follow a passage. A generated summary that scores above 8th grade can be flagged for regeneration or routed for human editing.
 
 ### Personalization That Actually Matters
 

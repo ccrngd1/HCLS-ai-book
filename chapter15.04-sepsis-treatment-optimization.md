@@ -2,6 +2,8 @@
 
 **Effort:** 3 of 5 · **Maturity:** Research · **Oversight:** Every output
 
+**User:** Clinician
+
 ---
 
 > **This recipe is illustrative, not clinical guidance.** Sepsis treatment decisions,
