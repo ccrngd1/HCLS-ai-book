@@ -53,7 +53,7 @@ Handwritten ICD-10 codes are a specific subproblem worth calling out. Physicians
 
 ### CPT: The Procedure Vocabulary
 
-CPT stands for Current Procedural Terminology. It's the coding system for medical procedures and services, maintained by the American Medical Association. Every lab test has a CPT code. An HbA1c is 83036. A CBC with differential is 85025. A comprehensive metabolic panel is 80053.
+Current Procedural Terminology (CPT) is the coding system for medical procedures and services, maintained by the American Medical Association. Every lab test has a CPT code. An HbA1c is 83036. A CBC with differential is 85025. A comprehensive metabolic panel is 80053.
 
 On a lab requisition, the ordered tests are usually identified by name or abbreviation, not by code. The lab's ordering system maps the name to the CPT code for billing. That mapping is the CPT lookup table problem, and it's messier than it sounds. "CBC w/ diff," "Complete Blood Count with Differential," "CBC w/differential," and "CBCD" all mean 85025. The alias space is large. The test catalog for a major reference lab like Quest or LabCorp has thousands of entries. The lookup table for the most common 50 tests covers the vast majority of volume, but the long tail is real.
 
