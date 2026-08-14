@@ -996,7 +996,7 @@ FUNCTION verify_slots_returned(call_id, dob, partial_phone):
 </blockquote>
 <hr />
 <h3 id="dlq-topology">DLQ Topology</h3>
-<p>Every fulfillment Lambda has its own Dead-Letter Queue (not a pooled DLQ shared across functions). The architectural primitives:</p>
+<p>Every fulfillment Lambda has its own Dead-Letter Queue (not a pooled dead-letter queue (DLQ) shared across functions). The architectural primitives:</p>
 <ul>
 <li><strong>Per-Lambda DLQ.</strong> Each Lambda (caller-verifier, refill-fulfillment, appointment-fulfillment, urgency-escalator) has its own SQS DLQ. Per-Lambda isolation means a DLQ alarm instantly identifies which function is failing.</li>
 <li><strong>Maximum-receive-count tuned per Lambda.</strong> The urgency-escalator gets a low maxReceiveCount (2) because a retried escalation is a clinical-safety concern. The refill-fulfillment Lambda gets a slightly higher maxReceiveCount (3) because back-office API transient failures are more common.</li>
