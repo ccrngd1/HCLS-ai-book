@@ -71,7 +71,7 @@ For real-time dispatch (decisions needed in seconds), you have a few solver cate
 
 **Greedy with lookahead.** Evaluate the top N candidate units, score each assignment against multiple criteria (response time, coverage impact, unit fatigue), pick the best. Still fast (tens of milliseconds), much better than pure proximity. This is the sweet spot for most real-time dispatch decisions.
 
-**Mixed-Integer Programming (MIP).** Formulate the full problem mathematically and solve with a commercial solver (CPLEX, Gurobi) or open-source solver (SCIP, HiGHS, OR-Tools). Gives provably optimal or near-optimal solutions. The catch: solve times range from seconds to minutes depending on problem size. Works well for the redeployment/repositioning problem (which is less time-critical) but may be too slow for immediate dispatch of a Priority 1 call.
+**mixed-integer programming (MIP).** Formulate the full problem mathematically and solve with a commercial solver (CPLEX, Gurobi) or open-source solver (SCIP, HiGHS, OR-Tools). Gives provably optimal or near-optimal solutions. The catch: solve times range from seconds to minutes depending on problem size. Works well for the redeployment/repositioning problem (which is less time-critical) but may be too slow for immediate dispatch of a Priority 1 call.
 
 **Metaheuristics.** Genetic algorithms, simulated annealing, tabu search. Good for large instances where MIP is too slow but you want better-than-greedy solutions. Solve times are tunable (you decide how long to search). Common for shift-level fleet positioning plans.
 
