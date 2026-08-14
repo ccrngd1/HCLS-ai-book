@@ -14,7 +14,7 @@ Now let's get specific. Here's how I'd build this on AWS, and why each service i
 
 **Amazon S3 for historical data and forecast outputs.** Historical appointment data lands in S3 as the canonical training input, and forecast results land back in S3 as the canonical output. S3 with SSE-KMS encryption is the standard durable storage layer for ML pipelines. The S3 event notification system also gives you a clean trigger: new training data arrives, the retraining workflow fires automatically.
 
-**AWS Glue (or AWS Step Functions) for orchestration.** Forecast pipelines are not single-shot Lambda jobs. They run on a schedule, involve multiple steps (data extraction, feature engineering, model training, batch inference, output delivery), and need to handle failures gracefully. AWS Step Functions is the right tool for orchestrating this kind of multi-step workflow with explicit retry logic and visibility into each step. AWS Glue handles the data transformation pieces if your historical data needs ETL before training.
+**AWS Glue (or AWS Step Functions) for orchestration.** Forecast pipelines are not single-shot Lambda jobs. They run on a schedule, involve multiple steps (data extraction, feature engineering, model training, batch inference, output delivery), and need to handle failures gracefully. AWS Step Functions is the right tool for orchestrating this kind of multi-step workflow with explicit retry logic and visibility into each step. AWS Glue handles the data transformation pieces if your historical data needs extract, transform, and load (ETL) before training.
 
 **Amazon DynamoDB for serving forecasts to operational systems.** Forecasts need to be queryable by downstream consumers (the staffing tool, the capacity dashboard) at low latency. DynamoDB's key-value access pattern fits perfectly: query by clinic-and-date, get back the forecast and prediction interval. It's fully managed, scales transparently, and is on AWS's HIPAA eligible services list.
 
@@ -75,7 +75,7 @@ flowchart LR
 
 #### Walkthrough
 
-**Step 1: Pull and shape the historical data.** The appointment history lives in the practice management system or EHR. The training pipeline starts by pulling the last several years of daily counts into a clean tabular format: date, count, and any known categorical attributes (clinic, provider, appointment type). The shape that forecasting libraries expect is one row per time step per series, with explicit holiday and calendar features. This step is usually 60% of the work in a forecasting project, and it's the part that determines whether the model has anything useful to learn from. Skip it or do it sloppily, and your model will faithfully predict garbage in production.
+**Step 1: Pull and shape the historical data.** The appointment history lives in the practice management system or electronic health record (EHR). The training pipeline starts by pulling the last several years of daily counts into a clean tabular format: date, count, and any known categorical attributes (clinic, provider, appointment type). The shape that forecasting libraries expect is one row per time step per series, with explicit holiday and calendar features. This step is usually 60% of the work in a forecasting project, and it's the part that determines whether the model has anything useful to learn from. Skip it or do it sloppily, and your model will faithfully predict garbage in production.
 
 ```text
 FUNCTION prepare_training_data(raw_history, holiday_calendar):
