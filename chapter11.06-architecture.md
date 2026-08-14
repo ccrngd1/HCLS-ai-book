@@ -18,7 +18,7 @@
 
 **Amazon OpenSearch Service (or Bedrock-managed vector store) for the retrieval index.** The clinical-protocol corpus is the institution's protocol library plus any reference materials cited within it. OpenSearch Serverless is the typical default for managed vector workloads on AWS.
 
-**AWS HealthLake (optional) for FHIR-native chart-context data.** Where the institution stores patient demographics, problem list, medication list, allergies, and encounter history in FHIR resources, HealthLake provides a managed FHIR data store the chart-context tool queries directly.
+**AWS HealthLake (optional) for FHIR-native chart-context data.** Where the institution stores patient demographics, problem list, medication list, allergies, and encounter history in Fast Healthcare Interoperability Resources (FHIR) resources, HealthLake provides a managed FHIR data store the chart-context tool queries directly.
 
 **AWS Lambda for the chat handler, tool implementations, and clinical-decision-rule computation.** Same pattern as the previous chapter 11 recipes. The clinical-decision-rule Lambdas implement HEART, Wells, Centor, Ottawa, and other rules as deterministic functions.
 
@@ -1625,7 +1625,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [FDA Clinical Decision Support Software Final Guidance (2022)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software): the FDA's framework for distinguishing regulated and non-regulated CDS software
 - [FDA Software as a Medical Device (SaMD)](https://www.fda.gov/medical-devices/digital-health-center-excellence/software-medical-device-samd): the FDA's overall framework for digital-health-product regulation
 - [FDA Digital Health Center of Excellence](https://www.fda.gov/medical-devices/digital-health-center-excellence): central resource for digital-health regulatory updates
-- [HL7 FHIR Patient Resource](https://www.hl7.org/fhir/patient.html): the FHIR Patient resource specification
+- Health Level Seven (HL7) [FHIR Patient Resource](https://www.hl7.org/fhir/patient.html): the FHIR Patient resource specification
 - [HL7 FHIR Condition Resource](https://www.hl7.org/fhir/condition.html): the FHIR Condition resource specification (for problem list)
 - [HL7 FHIR MedicationStatement Resource](https://www.hl7.org/fhir/medicationstatement.html): the FHIR resource for current-medication retrieval
 - [HL7 FHIR AllergyIntolerance Resource](https://www.hl7.org/fhir/allergyintolerance.html): the FHIR resource for allergy retrieval
