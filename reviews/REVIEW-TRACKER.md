@@ -17,13 +17,14 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 22 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 26 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Sev | Status | Item | Area |
 |----|-----|--------|------|------|
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
+| G-01 | Significant | OPEN | Reward hacking / reward misspecification absent from the RL sepsis chapter... | Raghav: 15-recipe technical review |
 | V-2.5 | Significant | OPEN | Ch12: Monte Carlo intervals falsely narrow (flows sampled independently) | Model soundness |
 | V-2.6 | Significant | OPEN | Ch12: no forecasting evaluation methodology (rolling-origin, pinball, per-h... | Model soundness |
 | V-2.8 | Significant | OPEN | Ch12: "discharge order written" is near-label leakage; add point-in-time wa... | Model soundness |
@@ -39,6 +40,9 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-8.1 | Significant | OPEN | Fairness as a summed penalty can concentrate bad shifts on a few nurses; us... | Chapter 14 optimization |
 | V-8.2 | Significant | OPEN | No infeasibility handling despite a scenario that makes it likely; add IIS... | Chapter 14 optimization |
 | A-2 | Minor | DEFERRED | About the Author orphan: decide at physical proof | Author-owned work |
+| G-02 | Minor | OPEN | No patient opt-out / clinician-written alternative for the AI-generated aft... | Raghav: 15-recipe technical review |
+| G-03 | Minor | OPEN | False Claims Act exposure not named in ICD-10 coding chapter 8.3 (Raghav 8-02) | Raghav: 15-recipe technical review |
+| G-92 | Minor | DEFERRED | BUCKET: remaining findings not individually triaged (revisit as time permits) | Raghav: 15-recipe technical review |
 | R-9 | Minor | OPEN | `categories/` is tracked in git but is not published and is superseded | Radwin: accessibility, register, s |
 | V-1.7h | Minor | OPEN | Ch12: LOS math — bed count is algebraically irrelevant; 8% implies LOS 3.75d | Factual and coding errors |
 | V-11.3 | Minor | OPEN | Body chapter titles use recipe names, Appendix A uses capability areas | Positioning, front/back matter, st |
@@ -46,7 +50,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**22 open** (Significant 15 · Minor 7) · 79 closed · 101 total
+**26 open** (Significant 16 · Minor 10) · 81 closed · 107 total
 
 <!-- DIGEST:END -->
 
@@ -58,6 +62,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A | Nick Lawson (author) | Author | own work items, not review findings | ongoing | Prefix `A-` distinguishes author-raised tasks from reviewer findings. |
 | R | (radwin) | — | Digital edition (site) | 2026-08-11 | Short-form feedback, 110 words, 5 findings. Focused on reader accessibility and site structure rather than technical content. |
 | C | Crystal (external reviewer) | External reviewer | Chapter 1, recipe 1.1 (insurance card scanning) | 2026-08-14 | Structural feedback on 1.1: digital cards, multiple-card/COB handling, depth of security/privacy, and an ROI framework. Discussed with the author before logging; dispositions below. |
+| G | Raghav (external reviewer) | External reviewer | print sampler `book.pdf` + annotated `book_tech_reviewed.pdf` | 2026-08-14 | Formal technical review, 84 findings across 15 chapters + 5 book-level (16 Critical, 19 Major, 29 Minor, 6 suggestions, 14 positives). Triaged with author before logging. Spot-check of the high-severity findings showed most are premised on content already present, or on the print sampler excluding the digital `-architecture`/`-python-example` companions where the depth lives. Bucketed in section 15 rather than logged one row each. |
 
 ---
 
@@ -239,6 +244,17 @@ Items the author raised, tracked here so the central list stays the single place
 | C-2 | 1.1 does not cover multiple cards per member or primary/secondary coordination of benefits (COB) | Minor | WONTFIX | Out of scope by author decision. The recipe is deliberately just "use OCR instead of typing card fields in." Which card is primary, COB resolution, tying cards to a member, and applying them to claims are downstream data-model and business-rules concerns, not OCR, and belong to entity resolution / eligibility recipes. Adding them would blur what the chapter is about. |
 | C-3 | Security/privacy section too light; reviewer wants a subsection on retention, consent, de-identification, audit trails, and compliance | Significant | WONTFIX | Declined by author decision, and it cuts against the book's standing posture. 1.1 already carries the PHI callout to the shared "Before You Send PHI" page (V-7.1/7.2), which names the vendor, retention, consent, and secondary-use questions and routes them to the reader's own privacy, security, and legal or compliance teams. The book deliberately names what exists and does not instruct on how to comply: writing a per-recipe compliance how-to invites incompleteness, and a healthcare audience will (rightly) lose trust the moment it is wrong or partial. We call out that this is a PHI recipe and to be careful; we do not try to cover the regulatory surface. |
 | C-4 | No ROI framework to size the opportunity; reviewer linked an AWS QuickSight "AI Business Value Calculator" | Minor | WONTFIX | Two parts. The linked calculator is an internal Amazon QuickSight/BI tool: inaccessible to readers, internal and likely confidential, and it will not appear anywhere in the book or be retained as a source link. The ROI-sizing idea itself does not belong in the print recipe; if it is ever pursued it would live in the architecture companion (digital-only), vendor-neutral and formula-not-figures, and even then cost models go stale fast and tip toward consulting. Parked, not planned. |
+
+## 15. Raghav: 15-recipe technical review (84 findings)
+
+| ID | Item | Sev | Status | Note |
+|----|------|-----|--------|------|
+| G-01 | Reward hacking / reward misspecification absent from the RL sepsis chapter 15.4 (Raghav 15-04) | Significant | OPEN | Verified genuine gap: "reward hack" appears 0 times anywhere in 15.4 (main, companion, python). For a reinforcement-learning treatment chapter this is a real omission: an agent optimizing 90-day mortality can learn degenerate policies (e.g. recommending ICU discharge so deaths fall off the measurement window). Print-bound flagship recipe, so DRAFT a short addition before applying: name the failure mode, and route reward-function design to clinical/ethics review. Do not prescribe a method. Raghav rated it Minor; raised to Significant because it is a safety-relevant gap in the one chapter about learned treatment policies. |
+| G-02 | No patient opt-out / clinician-written alternative for the AI-generated after-visit summary, 2.5 (Raghav 2-05) | Minor | OPEN | Partial gap. 2.5 covers patient preferences (language, channel, reading level) and the companion covers SMS/PHI delivery consent, but nothing addresses a patient preferring a human-written summary or opting out of AI generation. Worth NAMING as a workflow consideration (offer a clinician-written path); not a consent-mechanics how-to. Print-bound flagship, draft before applying. |
+| G-03 | False Claims Act exposure not named in ICD-10 coding chapter 8.3 (Raghav 8-02) | Minor | OPEN | Partial gap. 8.3 covers upcoding bias and the suggest-vs-autocode legal distinction, but does not name False Claims Act exposure when a suggester systematically drifts toward higher-paying codes. Name the exposure (consistent with our name-what-exists posture); decline Raghav's prescriptive anti-upcoding guardrail methodology. Print-bound flagship, draft before applying. |
+| G-90 | BUCKET: findings verified already present in the corpus (no action) | Minor | WONTFIX | Spot-checked and confirmed already covered, so the premises do not match our text: 2-03 (grounding is core to 2.5, 12+ mentions; not "no hallucination mitigation"); 2-04 (ROUGE/BLEU appear 0 times, so not "reported as primary metrics"); 3-02 (three categories of legitimate duplicates + modifier comparison already in 3.1); 5-03 (human review, unmerge 21x, twins, households all in 5.1); 7-02 (planned-readmission exclusion present); 7-03 (calibration covered 19x, our V-2.1 fix, not "AUC only"); 8-03 (annual Oct-1 update handling present); 11-01 (911/red-flag/suicidal-ideation safety net, our V-10.7 hardening); 13-01 (full Contraindicated/Major/Moderate/Minor tiering + alert-fatigue framing in 13.4); 14-01 (minimum ratios as hard constraints, our V-1.6 recast); 15-01/15-02/15-03 (retrospective-vs-prospective caveat, FDA, off-policy evaluation present, 18x on off-policy); 1-08 (glare/damaged/partial-capture failure modes already in the 1.1 Honest Take). BL-02 (governance appendix) delivered as the Before-You-Send-PHI front-matter page under V-7.1. Positives (1-01,2-01,2-02,4-01,5-01,5-02,6-01,7-01,8-01,9-01,10-01,12-01) need no action. |
+| G-91 | BUCKET: compliance how-to and citation asks declined by standing policy | Minor | WONTFIX | Declined on the book's standing posture, not on merit. Compliance/method prescription (we name what exists and route to the reader's own teams, we do not instruct): 1-03 (per-field ROC-derived thresholds), 1-06 (AES-256/TLS-1.2/KMS-rotation specifics), BL-01 (mandate a fairness metric in every chapter), 6-02 (prescribe logistic-regression equity method). Citation/lit-review asks (the book is architecture-first and explicitly not a maintained clinical reference): BL-03 (per-claim citations), 1-04 (Tesseract accuracy citation). Where these name a real consideration we already gesture at it; we are not adopting the prescriptive form. |
+| G-92 | BUCKET: remaining findings not individually triaged (revisit as time permits) | Minor | DEFERRED | Not individually verified against the corpus in this pass; the high-severity spot-checks were overwhelmingly already-covered, so full triage is low priority. Parked: 1-02,1-05,1-07,2-06,2-07,2-08,2-09,3-03,3-04,3-05,4-02,4-03,4-04,4-05,4-06,4-07,5-04,5-05,5-06,5-07,5-08,6-03,6-04,6-05,6-06,7-04,7-05,8-04,8-05,9-02,9-03,9-04,9-05,10-02,10-03,10-04,11-02,11-03,12-02,12-03,12-04,12-05,13-02,13-03,14-02,14-03. A few look plausibly genuine and worth a look first: 4-02 (guideline-conformance checking), 10-02 (multi-party consent in ambient capture), 12-02 (pandemic distributional shift), 9-02 (FDA predetermined change control plan). Others are method/citation prescriptions likely to fold into G-91 on inspection. |
 
 ## Retracted by the reviewer
 
