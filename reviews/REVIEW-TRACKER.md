@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 27 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 26 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -26,7 +26,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
 | R-1 | Significant | OPEN | Spell out technology and healthcare abbreviations and jargon on first use (... | Radwin: accessibility, register, s |
 | R-12 | Significant | OPEN | Add train/retention/residency lines to the 22 recipes that send PHI to a th... | Author-owned work |
-| V-2.1 | Significant | OPEN | Ch7 contradicts itself: argues calibration over discrimination, then assign... | Model soundness |
 | V-2.2 | Significant | OPEN | Ch7 claims-lag train/serve skew not mentioned | Model soundness |
 | V-2.4 | Significant | OPEN | Ch6: z-scoring does not decorrelate; K-means/GMM clusters are unordered so... | Model soundness |
 | V-2.5 | Significant | OPEN | Ch12: Monte Carlo intervals falsely narrow (flows sampled independently) | Model soundness |
@@ -51,7 +50,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**27 open** (Significant 20 · Minor 7) · 70 closed · 97 total
+**26 open** (Significant 19 · Minor 7) · 71 closed · 97 total
 
 <!-- DIGEST:END -->
 
@@ -104,7 +103,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-2.1 | Ch7 contradicts itself: argues calibration over discrimination, then assigns by percentile tiers (rank-only) | Significant | OPEN | |
+| V-2.1 | Ch7 contradicts itself: argues calibration over discrimination, then assigns by percentile tiers (rank-only) | Significant | DONE | Confirmed and fixed in 7.5 (print flagship). The 'Calibration: The Most Underrated Requirement' section argues the probability values matter more than the ranking, then the Risk Stratification step allocated by 'top 15% = high, next 25% = medium', which is percentile rank and discards the calibrated probabilities, contradicting the section four paragraphs above. It also disagreed with its own architecture companion, whose stratify_and_route uses probability thresholds. Reframed the step to define tiers by calibrated probability (illustrative 30%/15% cuts), and turned the tension into a teaching point: capacity tempts teams toward rank-based selection (take the top 50), but that throws away the calibrated numbers and re-tiers everyone each week on relative position, so set probability thresholds to a manageable volume instead. Reviewer was right here. Print 270pp, even, 0 warnings. Process note: this file briefly overlapped an in-flight R-1 task, but 7.5 had no remaining abbreviation violations so that task no-ops; no textual conflict. |
 | V-2.2 | Ch7 claims-lag train/serve skew not mentioned | Significant | OPEN | |
 | V-2.3 | Ch7 readmission C-statistic 0.684 was death-or-readmission, not readmission alone | Minor | WONTFIX | Not reproducible. The C-statistic 0.684 the finding refers to does not appear anywhere in the corpus; Ch7 cites ranges (0.60-0.75 for published models, 0.60-0.68 for LACE and HOSPITAL, 0.68-0.75 for gradient-boosted trees, and 0.70 as an illustrative target). The only 0.684 in the book is a percentage in a cost table in `chapter01.10-architecture`. Likely written against an older build, as with the aspirin dose and the Epic figures. Reopen if the reviewer can point at the sentence. |
 | V-2.4 | Ch6: z-scoring does not decorrelate; K-means/GMM clusters are unordered so they need no monotonic severity | Significant | OPEN | |
