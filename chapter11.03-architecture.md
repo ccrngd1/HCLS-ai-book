@@ -1594,7 +1594,7 @@ Per-cohort minimum sample sizes for statistical reliability with alternate sampl
 - S3 outage: graceful read-failure for audit; Kinesis-buffered audit records held until S3 recovers; no refill actions blocked by audit-write failure (audit catch-up on recovery).
 - E-prescribing platform (Surescripts) outage: recipe-distinct critical dependency requiring honest user-facing communication ("we cannot send prescriptions right now; a staff member will follow up with you within [SLA]") and queue-for-clinical-staff-follow-up with structured context.
 - electronic health record (EHR) outage: explicit user-facing communication that the bot is degraded and an alternate channel (phone number) is provided; no medication-list access means no refill actions.
-- clinical decision support (CDS) layer outage: conservative-deny-or-route disposition for all refill requests (the bot cannot verify interactions without the CDS layer, so it routes to clinical staff).
+- CDS layer outage: conservative-deny-or-route disposition for all refill requests (the bot cannot verify interactions without the CDS layer, so it routes to clinical staff).
 
 Failover-detection thresholds, failover-back triggers, and quarterly testing cadence. Cross-region failover for Bedrock, Bedrock Agents, Bedrock Knowledge Bases, Lambda, DynamoDB, the EHR integration, and the e-prescribing platform integration where the institution's RTO and RPO require it.
 
@@ -1663,7 +1663,7 @@ Downstream consumers maintain a deduplication store (DynamoDB with TTL on the de
 
 **Accessibility conformance and per-channel authentication.** WCAG 2.1 AA conformance for the chat widget: ARIA labeling, keyboard navigation, screen-reader announcements for new messages, high-contrast mode, font scaling, alternative input methods including the voice channel. Named ownership at the accessibility program manager and the patient-experience team's elderly-patient-focused review (recipe-distinct: the canonical user Eleanor at 71 is the equity-stake population).
 
-Per-channel data-in-transit posture: TLS 1.2 minimum for all channels, per-channel session-token TTL and isolation policy. Per-channel business associate agreement (BAA) scope: web chat and in-app under the institution's AWS BAA; voice via Connect under the institutional BAA; SMS via aggregator with aggregator BAA; authenticated patient-portal embed under the patient-portal vendor's BAA (which must explicitly cover the embedded chat surface). The recipe's recommended path for refill actions is the authenticated portal embed. Per-channel TCPA/10DLC compliance for SMS. Audit-record propagation of the per-channel authentication context.
+Per-channel data-in-transit posture: TLS 1.2 minimum for all channels, per-channel session-token TTL and isolation policy. Per-channel BAA scope: web chat and in-app under the institution's AWS BAA; voice via Connect under the institutional BAA; SMS via aggregator with aggregator BAA; authenticated patient-portal embed under the patient-portal vendor's BAA (which must explicitly cover the embedded chat surface). The recipe's recommended path for refill actions is the authenticated portal embed. Per-channel TCPA/10DLC compliance for SMS. Audit-record propagation of the per-channel authentication context.
 
 **Lab-reconciliation pipeline as architectural prerequisite.** The institution's lab-reconciliation pipeline (recipe 5.6 patterns) is the upstream integration point for the refill bot's protocol evaluation. When the relevant lab was drawn at an outside facility and the result has not been reconciled, the bot's protocol evaluation may incorrectly find "monitoring overdue." Investing in faster outside-lab reconciliation is the operational floor for the bot's auto-approval rate. The lab-reconciliation tool checks for pending-reconciliation outside-lab results, but the institution's lab-reconciliation pipeline determines how quickly those results become available.
 
@@ -1677,7 +1677,7 @@ PrivateLink egress hierarchy for external integrations: PrivateLink preferred wh
 
 ## Variations and Extensions
 
-**Voice channel deployment.** The same refill logic, served through automatic speech recognition (ASR) and text-to-speech (TTS) over Amazon Connect, gives patients a phone-equivalent refill experience without hold time. The conversation logic is shared; the channel adapter handles ASR and TTS. Voice-specific design considerations: slower pacing, explicit medication-name read-back ("you said metformin, the diabetes medication, is that right?"), voice-friendly phrasings of medication names that are difficult to pronounce, tighter latency budgets. Recipe 10.5 (patient-facing voice assistant) covers the voice-channel patterns this variation builds on.
+**Voice channel deployment.** The same refill logic, served through ASR and TTS over Amazon Connect, gives patients a phone-equivalent refill experience without hold time. The conversation logic is shared; the channel adapter handles ASR and TTS. Voice-specific design considerations: slower pacing, explicit medication-name read-back ("you said metformin, the diabetes medication, is that right?"), voice-friendly phrasings of medication names that are difficult to pronounce, tighter latency budgets. Recipe 10.5 (patient-facing voice assistant) covers the voice-channel patterns this variation builds on.
 
 **Authenticated patient-portal embed with proactive prompts.** When the bot is embedded inside the patient portal and the patient navigates to the medication-list page, the bot can offer to refill medications that are running low ("I see your metformin has 4 days left and no refills authorized; want me to request a refill?"). The architectural extension is the proactive-prompt logic against the medication-list state and the patient's recent fill history.
 
@@ -1739,7 +1739,7 @@ PrivateLink egress hierarchy for external integrations: PrivateLink preferred wh
 - [CDS Hooks Specification](https://cds-hooks.org/): the standard for clinical-decision-support invocation
 - [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): the standardized nomenclature for clinical drugs
 - [DEA EPCS (Electronic Prescribing of Controlled Substances)](https://www.deadiversion.usdoj.gov/ecomm/e_rx/): DEA requirements for controlled-substance e-prescribing
-- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs protected health information (PHI) in conversational logs and refill records
+- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in conversational logs and refill records
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [988 Suicide and Crisis Lifeline](https://988lifeline.org/): the national crisis line for crisis routing
 - [WCAG 2.1 Accessibility Guidelines](https://www.w3.org/WAI/standards-guidelines/wcag/): accessibility standards relevant to chat-widget surfaces
