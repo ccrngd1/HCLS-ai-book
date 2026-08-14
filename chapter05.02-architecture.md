@@ -1,6 +1,6 @@
 # Recipe 5.2 Architecture and Implementation: Provider NPI Matching
 
-*Companion to [Recipe 5.2: Provider NPI Matching](chapter05.02-provider-npi-matching). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to the National Provider Identifier (NPI) matching pattern in [Recipe 5.2: Provider NPI Matching](chapter05.02-provider-npi-matching). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
