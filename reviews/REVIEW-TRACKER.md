@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 23 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 22 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -39,7 +39,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-8.1 | Significant | OPEN | Fairness as a summed penalty can concentrate bad shifts on a few nurses; us... | Chapter 14 optimization |
 | V-8.2 | Significant | OPEN | No infeasibility handling despite a scenario that makes it likely; add IIS... | Chapter 14 optimization |
 | A-2 | Minor | DEFERRED | About the Author orphan: decide at physical proof | Author-owned work |
-| G-03 | Minor | OPEN | False Claims Act exposure not named in ICD-10 coding chapter 8.3 (Raghav 8-02) | Raghav: 15-recipe technical review |
 | R-9 | Minor | OPEN | `categories/` is tracked in git but is not published and is superseded | Radwin: accessibility, register, s |
 | V-1.7h | Minor | OPEN | Ch12: LOS math — bed count is algebraically irrelevant; 8% implies LOS 3.75d | Factual and coding errors |
 | V-11.3 | Minor | OPEN | Body chapter titles use recipe names, Appendix A uses capability areas | Positioning, front/back matter, st |
@@ -47,7 +46,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**23 open** (Significant 15 · Minor 8) · 89 closed · 112 total
+**22 open** (Significant 15 · Minor 7) · 90 closed · 112 total
 
 <!-- DIGEST:END -->
 
@@ -248,7 +247,7 @@ Items the author raised, tracked here so the central list stays the single place
 |----|------|-----|--------|------|
 | G-01 | Reward hacking / reward misspecification absent from the RL sepsis chapter 15.4 (Raghav 15-04) | Significant | DONE | DONE. Added a reward-hacking item to 15.4's Why-This-Is-Hard section: an offline policy optimizes the written reward not the intended outcome, tied to the chapter's own reward choices (survival-horizon gaming, early-discharge, surrogate-chasing on lactate/blood pressure), with why offline RL and off-policy evaluation are especially exposed, and defense routed to the clinical/ethics reward-design review already in the recipe. Sharpens the existing don't-deploy stance. 5178767b |
 | G-02 | No patient opt-out / clinician-written alternative for the AI-generated after-visit summary, 2.5 (Raghav 2-05) | Minor | DONE | DONE. Added the patient's option to decline an AI-drafted summary (clinician-written alternative) as a capturable preference in 2.5's personalization section. 28424b71 |
-| G-03 | False Claims Act exposure not named in ICD-10 coding chapter 8.3 (Raghav 8-02) | Minor | OPEN | Partial gap. 8.3 covers upcoding bias and the suggest-vs-autocode legal distinction, but does not name False Claims Act exposure when a suggester systematically drifts toward higher-paying codes. Name the exposure (consistent with our name-what-exists posture); decline Raghav's prescriptive anti-upcoding guardrail methodology. Print-bound flagship, draft before applying. |
+| G-03 | False Claims Act exposure not named in ICD-10 coding chapter 8.3 (Raghav 8-02) | Minor | DONE | DONE. 8.3's upcoding paragraph already covered the substance (enforcement risk, 'the model suggested it' is no defence, drift routed to compliance and counsel); added the missing statute name as a parenthetical (US: False Claims Act is the usual vehicle). Names the exposure, does not instruct. 08911e19 |
 | G-04 | External validation across sites missing from severity stratification 6.4 (Raghav 6-05) | Minor | DONE | DONE. Added cross-site validation to 6.4's validation list: tiers learned at one hospital may not transfer to another. 28424b71 |
 | G-05 | Competing risk (death) not addressed in readmission model 7.5 (Raghav 7-05) | Minor | DONE | DONE. Added death-as-competing-risk to 7.5's what-makes-this-harder section. 28424b71 |
 | G-06 | K-Means spherical/Euclidean assumption not stated for mixed-type clinical features 6.4 (Raghav 6-03) | Minor | DONE | DONE. Added the K-Means spherical/Euclidean assumption and the mixed-type caveat (Gower + K-Medoids) to 6.4. 28424b71 |
