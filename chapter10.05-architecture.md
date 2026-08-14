@@ -1471,6 +1471,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Lex healthcare," "Bedrock healthcare," "patient assistant" for relevant pattern posts
 
 **External References (Standards and Frameworks):**
+
+Fast Healthcare Interoperability Resources (FHIR) is the healthcare-data standard referenced throughout this recipe; the links below cover the base specification, the SMART launch-context extension, and the resource types the fulfillment Lambdas call.
+
 - [FHIR Specification](https://www.hl7.org/fhir/): Health Level Seven (HL7) data model and API substrate for EHR integration
 - [SMART on FHIR](https://docs.smarthealthit.org/): the launch-context and authorization specification for clinically-aware apps
 - [FHIR Appointment Resource](https://www.hl7.org/fhir/appointment.html): canonical FHIR resource for appointment lookup
