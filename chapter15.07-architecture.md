@@ -14,7 +14,7 @@
 
 **AWS Lambda for inference orchestration.** When a clinician opens a patient's chart at a quarterly visit, the system needs to fetch the patient's longitudinal state, construct the state vector, call the policy endpoint, apply safety constraints, and return a recommendation within seconds. Lambda handles this stateless orchestration.
 
-**Amazon DynamoDB for patient state tracking.** The RL agent needs the patient's longitudinal history (recent HbA1c values, current treatment, adherence metrics, comorbidities) to construct the state vector. DynamoDB provides low-latency key-value access for per-patient state that updates at each quarterly visit.
+**Amazon DynamoDB for patient state tracking.** The reinforcement learning (RL) agent needs the patient's longitudinal history (recent HbA1c values, current treatment, adherence metrics, comorbidities) to construct the state vector. DynamoDB provides low-latency key-value access for per-patient state that updates at each quarterly visit.
 
 **Amazon CloudWatch for monitoring and outcome tracking.** Track recommendation acceptance rates, override patterns, patient outcomes for followed vs. overridden recommendations, and model drift indicators. Alert on anomalous patterns (e.g., consistently recommending de-escalation when HbA1c is rising).
 
@@ -407,7 +407,7 @@ FUNCTION generate_treatment_recommendation(patient_id, new_hba1c, visit_data, po
 
 ## Why This Isn't Production-Ready
 
-**Regulatory classification is unresolved.** A system that recommends specific medication changes almost certainly qualifies as a Software as a Medical Device (SaMD) under FDA guidance, not a CDS exemption. The 2022 FDA CDS guidance exempts tools that "enable a healthcare professional to independently review the basis for the recommendation." An RL policy's basis (a Q-table or neural network trained on thousands of trajectories) is not independently reviewable in the way a risk score formula is. Expect a Class II 510(k) pathway at minimum, which means clinical validation studies, a predicate device argument, and ongoing post-market surveillance.
+**Regulatory classification is unresolved.** A system that recommends specific medication changes almost certainly qualifies as a Software as a Medical Device (SaMD) under FDA guidance, not a clinical decision support (CDS) exemption. The 2022 FDA CDS guidance exempts tools that "enable a healthcare professional to independently review the basis for the recommendation." An RL policy's basis (a Q-table or neural network trained on thousands of trajectories) is not independently reviewable in the way a risk score formula is. Expect a Class II 510(k) pathway at minimum, which means clinical validation studies, a predicate device argument, and ongoing post-market surveillance.
 
 **Off-policy evaluation gives estimates, not guarantees.** The concordance metrics in this example show how often the policy agrees with clinicians, but they don't prove the policy would produce better outcomes. Full OPE (importance sampling, doubly-robust estimators) gives tighter counterfactual estimates but requires accurate behavior policy modeling, which is hard when clinician behavior varies by institution, experience level, and patient context. You need a prospective randomized trial to actually prove benefit.
 
