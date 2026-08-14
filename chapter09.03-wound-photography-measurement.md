@@ -49,7 +49,7 @@ For most deployments, the physical reference marker approach wins on the balance
 
 ### Metadata Privacy: A Hidden Risk in Smartphone Photography
 
-One thing that catches teams off guard: smartphone photographs contain EXIF metadata including GPS coordinates, device serial numbers, and sometimes the photographer's name. For home health wound photography, GPS coordinates in the image metadata directly reveal the patient's home address. This is PHI leakage beyond what's necessary for the clinical purpose.
+One thing that catches teams off guard: smartphone photographs contain EXIF metadata including GPS coordinates, device serial numbers, and sometimes the photographer's name. For home health wound photography, GPS coordinates in the image metadata directly reveal the patient's home address. This is protected health information (PHI) leakage beyond what's necessary for the clinical purpose.
 
 Your pipeline needs to strip EXIF metadata from wound photographs before permanent storage, or store EXIF data separately with strict access controls. Retain only clinically relevant metadata (timestamp, image dimensions) and discard location, device identifiers, and photographer information. If EXIF data is needed for audit purposes, store it in a separate, access-controlled record rather than embedded in the image file.
 

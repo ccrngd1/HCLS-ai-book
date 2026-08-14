@@ -12,7 +12,7 @@
 
 **Amazon SageMaker for model training and hosting.** If you need pixel-level segmentation (and for clinical wound measurement, you do), SageMaker provides the training infrastructure for U-Net or similar architectures, plus real-time inference endpoints for serving predictions. SageMaker's built-in algorithms include semantic segmentation, and you can bring your own model code for custom architectures. SageMaker also supports model versioning and production variants for A/B testing, which matters when you retrain on new data (see The Honest Take for why this is important).
 
-**Amazon S3 for image storage.** Wound photographs are PHI. They need encrypted, durable, auditable storage. S3 with SSE-KMS, versioning enabled, and lifecycle policies for retention compliance.
+**Amazon S3 for image storage.** Wound photographs are protected health information (PHI). They need encrypted, durable, auditable storage. S3 with SSE-KMS, versioning enabled, and lifecycle policies for retention compliance.
 
 **AWS Lambda for orchestration.** The measurement pipeline (receive image, strip metadata, detect marker, call segmentation endpoint, compute measurements, store results) is a stateless workflow that fits Lambda's execution model. For real-time use (clinician takes photo, wants measurement back in seconds), Lambda behind API Gateway provides the synchronous path.
 
