@@ -30,7 +30,7 @@ The information is there, buried in clinical notes. Extracting it reliably, norm
 
 ### What Is Medical NER?
 
-Named Entity Recognition (NER) is the natural language processing (NLP) task of identifying specific types of entities in unstructured text and classifying them into predefined categories. In general NLP, those categories might be "person," "organization," "location." In clinical NLP, the categories that matter are "medication," "dosage," "route," "frequency," "duration," "condition," and "reason."
+Named entity recognition (NER) is the natural language processing (NLP) task of identifying specific types of entities in unstructured text and classifying them into predefined categories. In general NLP, those categories might be "person," "organization," "location." In clinical NLP, the categories that matter are "medication," "dosage," "route," "frequency," "duration," "condition," and "reason."
 
 Medical NER is a specialized variant trained on clinical text rather than news articles or web pages. This distinction matters enormously because clinical language is nothing like general English. Physicians write in a compressed, abbreviated style full of domain jargon: "ASA 325 PO QD for afib" is a perfectly normal sentence in a clinical note. A general-purpose NER system would struggle with every token in that phrase.
 
