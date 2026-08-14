@@ -18,7 +18,7 @@
 
 **Amazon OpenSearch Service (or Bedrock-managed vector store) for the retrieval indices.** The clinical-guideline corpus, the patient-education library, and the longitudinal conversation history all benefit from vector retrieval. The longitudinal conversation history specifically is indexed for retrieval-over-history (when a patient mentions something said three months ago, the coach can find it).
 
-**AWS HealthLake for FHIR-native chart-context data.** Where the institution stores the patient's problem list, medication list, allergies, encounter history, observations (vitals, labs), CarePlan resources, and Goal resources in FHIR, HealthLake provides a managed FHIR data store the coach queries. The CarePlan and Goal resources are particularly relevant for the care-plan integration; the Observation resources are particularly relevant for biometric-data integration (when the institution stores device data in FHIR).
+**AWS HealthLake for FHIR-native chart-context data.** Where the institution stores the patient's problem list, medication list, allergies, encounter history, observations (vitals, labs), CarePlan resources, and Goal resources in Fast Healthcare Interoperability Resources (FHIR), HealthLake provides a managed FHIR data store the coach queries. The CarePlan and Goal resources are particularly relevant for the care-plan integration; the Observation resources are particularly relevant for biometric-data integration (when the institution stores device data in FHIR).
 
 **Amazon DynamoDB for state and longitudinal store.** Multiple tables supporting the coach's longitudinal pattern: `patient-longitudinal-store` (per-patient stable state including stated preferences, behavior-change-stage estimates, life-context disclosures), `conversation-state` (per-conversation transient state), `conversation-metadata` (per-conversation turn-by-turn data), `tool-call-ledger` (audited tool invocations), `coaching-decision-record-journal` (durable record of coaching events with citations), `engagement-schedule` (upcoming proactive engagement events), `biometric-event-store` (recent biometric data and threshold events with TTL for hot path; archive to S3 for long-term), `care-team-alert-queue` (alerts pending care-team review), and `outcome-correlation-pending` (pending outcome correlation records).
 
@@ -1526,6 +1526,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [Global Initiative for Chronic Obstructive Lung Disease (GOLD) Strategy](https://goldcopd.org/): COPD management guidelines
 - [Kidney Disease Improving Global Outcomes (KDIGO) Guidelines](https://kdigo.org/): kidney disease management guidelines
 - [American Psychiatric Association Practice Guidelines](https://www.psychiatry.org/psychiatrists/practice/clinical-practice-guidelines): mental-health management guidelines
+
+The Health Level Seven (HL7) FHIR resource specifications the coach reads and writes:
+
 - [HL7 FHIR CarePlan Resource](https://www.hl7.org/fhir/careplan.html): FHIR specification for the CarePlan resource
 - [HL7 FHIR Goal Resource](https://www.hl7.org/fhir/goal.html): FHIR specification for the Goal resource
 - [HL7 FHIR Observation Resource](https://www.hl7.org/fhir/observation.html): FHIR specification for the Observation resource (relevant for biometric data)
