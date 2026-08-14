@@ -1,6 +1,6 @@
 # Recipe 1.7 Architecture and Implementation: Prescription Label OCR
 
-*Companion to [Recipe 1.7: Prescription Label OCR](chapter01.07-prescription-label-ocr). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Optical character recognition (OCR) for prescription labels, on AWS. Companion to [Recipe 1.7: Prescription Label OCR](chapter01.07-prescription-label-ocr). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
 
