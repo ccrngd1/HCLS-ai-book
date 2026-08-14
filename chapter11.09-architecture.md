@@ -1991,7 +1991,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "care coordination," "transitions of care," "patient engagement," "interoperability"
 
 **External References (Standards, Frameworks, and Clinical Guidelines):**
-- [HL7 v2 Messaging Standard](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185): legacy clinical-event messaging standard widely deployed for ADT and ORU
+- [HL7 v2 Messaging Standard](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185): legacy clinical-event messaging standard widely deployed for admission, discharge, and transfer (ADT) and ORU
 - [HL7 FHIR R4 Specification](https://www.hl7.org/fhir/R4/): the modern interchange standard
 - [HL7 FHIR US Core Implementation Guide](https://hl7.org/fhir/us/core/): U.S. baseline FHIR profiles
 - [USCDI (United States Core Data for Interoperability)](https://www.healthit.gov/isa/united-states-core-data-interoperability-uscdi): minimum data set required by ONC certification
