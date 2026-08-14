@@ -103,9 +103,21 @@ For each of the three layers, a small number of methods consistently work in pro
 
 **For outflow forecasting (Layer 2):** Survival models (Cox proportional hazards, accelerated failure time, gradient-boosted survival models like XGBSE, or deep survival models like DeepHit) on per-patient features. The patient-level approach is more accurate and more operationally useful than aggregate count forecasting. Output: per-patient discharge probability over the forecast horizon, summed for unit-level expected discharges. State-space methods (per-service LOS distributions updated as new discharges arrive) are a simpler alternative when patient-level features are sparse.
 
-**For census composition (Layer 3):** Bookkeeping plus Monte Carlo. Sample N times from each component distribution (admissions, discharges, transfers), compose the census trajectory for each sample, take the mean and percentiles across samples. This naturally produces calibrated prediction intervals. Monte Carlo (and its close cousin, discrete-event simulation) is a long-established standard for hospital bed-occupancy and patient-flow modeling, so the composition step here is well-trodden ground rather than a novel technique. A hospital with thousands of patient-state combinations runs this comfortably with N=500 to 1000 samples; per-unit calibration improves with more samples but with diminishing returns past 1000.
+**For census composition (Layer 3):** Bookkeeping plus Monte Carlo. Sample N times from each component distribution (admissions, discharges, transfers), compose the census trajectory for each sample, take the mean and percentiles across samples. This produces prediction intervals. Whether they're honest is something you verify, not something the method hands you for free, which is the point of the caveat above and the checks below. Monte Carlo (and its close cousin, discrete-event simulation) is a long-established standard for hospital bed-occupancy and patient-flow modeling, so the composition step here is well-trodden ground rather than a novel technique. A hospital with thousands of patient-state combinations runs this comfortably with N=500 to 1000 samples; per-unit calibration improves with more samples but with diminishing returns past 1000.
 
 **For real-time updating:** Particle filters or sequential Monte Carlo methods are theoretically elegant but operationally heavy. The simpler approach is to re-run the full pipeline every 15 to 60 minutes with the latest state and let the new forecast supersede the old. The marginal cost of compute is low compared to the operational complexity of online filtering.
+
+### Knowing the Forecast Is Actually Good
+
+A census forecast is easy to demo and hard to trust. Before you put one in front of a bed huddle, be honest about how you'll judge it. Four questions matter more than any single accuracy score.
+
+**Beat the dumb guess.** The dumbest reasonable forecast is "same day and hour as last week." Hospitals run on a weekly rhythm, so that guess is surprisingly hard to beat. If your model doesn't clearly beat it, you don't have a forecast. You have an expensive way to reproduce last Tuesday.
+
+**Judge the range, not just the middle.** The forecast gives you a range, not a single number, so judge the range. Look back over the last few months: when you said census had a 90% chance of landing under some ceiling, did it actually land under that ceiling about nine times out of ten? If your ceiling gets blown through half the time, the range is lying, no matter how good the middle number looks. And a range only helps if it's tight enough to act on. "Somewhere between 40 and 200 patients" can be perfectly honest and completely useless.
+
+**Check it at the horizon you actually use.** A model can be sharp four hours out and hopeless three days out. The huddle uses those horizons for different decisions, so measure them separately. Don't let a good same-shift number hide a useless day-ahead one.
+
+**Retrain on the numbers, not the calendar.** The pipeline already refreshes on a schedule, but treat that as a backstop. The real trigger is the forecast starting to slip: the range stops holding up, or the edge over that same-week-last-week guess quietly erodes. That's when you retrain, whatever day it is.
 
 ### The General Architecture Pattern
 
