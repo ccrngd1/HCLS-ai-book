@@ -92,8 +92,11 @@ FUNCTION engineer_patient_features(patient_id, raw_clinical_data):
     features["bmi"]  = most_recent_value(raw_clinical_data.vitals, "BMI")
 
     // Clinical markers: use most recent values, normalized to population z-scores.
-    // Z-scoring ensures that A1C (range 4-14) and creatinine (range 0.5-5)
-    // contribute equally to distance calculations.
+    // Z-scoring puts A1C (range 4-14) and creatinine (range 0.5-5) on a common
+    // scale so neither dominates the distance by magnitude alone. It rescales but
+    // does not decorrelate: correlated markers (a metabolic panel moves together)
+    // still collectively pull the distance, so prune redundant features or reduce
+    // with PCA when that over-weighting matters.
     lab_features = ["a1c", "creatinine", "ldl", "hdl", "triglycerides",
                     "systolic_bp", "diastolic_bp"]
     FOR each lab in lab_features:

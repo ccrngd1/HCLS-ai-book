@@ -321,7 +321,15 @@ FUNCTION validate_and_label(clustering_results, feature_matrix, outcomes_data):
     tier_labels[sorted_tiers[2]] = "High Complexity, Active Complications"
     tier_labels[sorted_tiers[3]] = "Severe, Functional Decline"
 
-    RETURN best_result.assignments, tier_labels
+    // Map each arbitrary cluster id to its severity rank (0 = mildest).
+    // K-Means and GMM cluster numbers are unordered labels: cluster 2 is not
+    // "more severe" than cluster 0. The ordering must be derived here, from the
+    // profiles, and never read off the raw cluster number.
+    tier_rank = empty map
+    FOR r in 0..best_k-1:
+        tier_rank[sorted_tiers[r]] = r
+
+    RETURN best_result.assignments, tier_labels, tier_rank
 ```
 
 **Step 6: Store and operationalize.** The final step writes tier assignments to a database where care management platforms and EHR systems can look them up in real time. Each record includes the patient ID, their assigned tier, the run date (so you can track changes over time), and the key feature values that drove the assignment (for explainability). This step also writes the full results to the data lake for dashboarding and longitudinal analysis.
@@ -329,14 +337,15 @@ FUNCTION validate_and_label(clustering_results, feature_matrix, outcomes_data):
 The severity-tiers table contains protected health information (PHI): disease diagnosis, severity classification, clinical indicators. Restrict access by role: the pipeline write role gets `dynamodb:PutItem` only; the care management read role gets `dynamodb:GetItem` by patient_id only (no Scan); analytics queries run via Athena over the S3 Parquet copy, not DynamoDB directly. Use an opaque patient identifier as the partition key and maintain the MRN-to-opaque mapping in a separate identity service with tighter access controls.
 
 ```pseudocode
-FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_matrix, run_date):
+FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, tier_rank, feature_matrix, run_date):
     // Write to operational database for real-time lookups
     FOR each patient_id, tier_index in zip(patient_ids, assignments):
         write record to database table "severity-tiers":
             patient_id       = patient_id
             disease_cohort   = "type_2_diabetes"          // which disease this stratification covers
             tier_label       = tier_labels[tier_index]     // human-readable tier name
-            tier_numeric     = tier_index                  // numeric tier for sorting/filtering
+            tier_numeric     = tier_rank[tier_index]        // severity rank (0 = mildest), NOT the raw
+                                                           // cluster id, which is an unordered label
             run_date         = run_date                    // when this assignment was computed
             key_drivers      = top 3 features with highest // which features most influenced this
                                z-scores for this patient   // patient's tier (for explainability)
