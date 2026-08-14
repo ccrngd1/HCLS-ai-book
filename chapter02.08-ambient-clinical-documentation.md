@@ -119,7 +119,7 @@ A production ambient documentation system supports multiple note templates and t
 
 ### Grounded Generation and the Citation Back to the Transcript
 
-Just like in literature retrieval-augmented generation (RAG) (Recipe 2.7), clinical note summarization (Recipe 2.6), and after-visit summaries (Recipe 2.5), the generation step here needs to be grounded. The new twist is that the grounding source is conversational audio transcribed into text, which is noisier than a clean document.
+Just like in literature retrieval-augmented generation (RAG) from Recipe 2.7, clinical note summarization (Recipe 2.6), and after-visit summaries (Recipe 2.5), the generation step here needs to be grounded. The new twist is that the grounding source is conversational audio transcribed into text, which is noisier than a clean document.
 
 The trust pattern: every statement in the generated note should trace to a segment of the transcript (or to a named EHR source, for content pulled from the EHR rather than the conversation). The UX surfaces this: the clinician hovers on a sentence in the note and sees the transcript segment that generated it. Clinicians who can audit this way trust the system; clinicians who can't end up re-reading the whole transcript, defeating the purpose.
 
