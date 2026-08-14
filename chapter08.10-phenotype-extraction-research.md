@@ -30,7 +30,7 @@ The stakes are real. The difficulty is real. And the need is enormous: observati
 
 A clinical phenotype, in the research computing sense, is a computable definition of a patient characteristic. It's not just "does this patient have diabetes?" but a precise specification: "Type 2 diabetes, defined as two or more outpatient encounters with ICD-10 codes E11.x, OR one inpatient encounter with E11.x, OR HbA1c >= 6.5% on two measurements at least 90 days apart, OR documented treatment with metformin for glucose management (not PCOS), EXCLUDING patients with cystic fibrosis-related diabetes or steroid-induced hyperglycemia."
 
-That definition mixes structured data (codes, labs) with unstructured text requirements (confirming the metformin indication, excluding specific etiologies). The structured part is a database query. The unstructured part is an NLP problem.
+That definition mixes structured data (codes, labs) with unstructured text requirements (confirming the metformin indication, excluding specific etiologies). The structured part is a database query. The unstructured part is an natural language processing (NLP) problem.
 
 Phenotype extraction is the NLP layer that resolves the unstructured text components of a phenotype definition. It transforms free-text clinical documentation into computable assertions: "this patient has documentation of failing two antidepressant trials," or "this patient's chest pain is described as non-cardiac in origin," or "this patient has family history of early-onset colorectal cancer."
 

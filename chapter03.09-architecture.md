@@ -1047,7 +1047,7 @@ The pseudocode shows the shape. A production access-monitoring program closes se
 - [HIPAA Security Rule (45 CFR Part 164, Subpart C)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C): the regulatory backbone for audit controls.
 - [HIPAA Privacy Rule (45 CFR Part 164, Subpart E)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E): minimum-necessary, accounting of disclosures, and other relevant provisions.
 - [OCR Resolution Agreements](https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/agreements/index.html): published settlements; several involve inadequate audit controls.
-- [HHS OCR HIPAA Audit Program](https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/audit/index.html): the OCR audit framework and protocol.
+- [HHS OCR HIPAA Audit Program](https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/audit/index.html): the optical character recognition (OCR) audit framework and protocol.
 - [HHS OCR Cybersecurity Newsletter](https://www.hhs.gov/hipaa/for-professionals/security/guidance/cybersecurity-newsletter-archive/index.html): recurring guidance on monitoring, audit controls, and emerging threats.
 - [NIST SP 800-66 Rev. 2: Implementing the HIPAA Security Rule](https://csrc.nist.gov/pubs/sp/800/66/r2/final): NIST guidance on HIPAA Security Rule implementation including audit controls.
 - [NIST SP 800-53 Rev. 5](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final): broader security control catalog with audit and accountability families that align with HIPAA Security Rule requirements.

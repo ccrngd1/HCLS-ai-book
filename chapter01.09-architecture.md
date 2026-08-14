@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Textract with FORMS and SIGNATURES feature types.** Textract handles the structured portion of the recipe: extracting key-value pairs from form fields and detecting signature regions. It remains the right tool for these tasks. The SIGNATURES feature type runs an additional detection pass specifically for handwritten signature regions, returning SIGNATURE blocks with confidence scores and bounding boxes. This is exactly the capability you need for authorization signature validation: not OCR of the signature, but a binary "there's a signature here" with confidence. Textract is purpose-built for this. An LLM with vision capability would work, but Textract is faster, cheaper, and returns structured confidence scores without requiring you to engineer them from model output.
+**Amazon Textract with FORMS and SIGNATURES feature types.** Textract handles the structured portion of the recipe: extracting key-value pairs from form fields and detecting signature regions. It remains the right tool for these tasks. The SIGNATURES feature type runs an additional detection pass specifically for handwritten signature regions, returning SIGNATURE blocks with confidence scores and bounding boxes. This is exactly the capability you need for authorization signature validation: not optical character recognition (OCR) of the signature, but a binary "there's a signature here" with confidence. Textract is purpose-built for this. An LLM with vision capability would work, but Textract is faster, cheaper, and returns structured confidence scores without requiring you to engineer them from model output.
 
 Medical records request forms are one to two pages, so the synchronous `AnalyzeDocument` API works without the job-tracking complexity of the async pattern. One API call, one response.
 
@@ -24,7 +24,7 @@ Medical records request forms are one to two pages, so the synchronous `AnalyzeD
 
 **Amazon SNS for deficiency notification.** When the rule-based check fails an authorization, the pipeline publishes to an SNS topic. Subscriptions on that topic can feed a deficiency letter workflow, a ticketing system, or email notifications for urgent cases.
 
-**AWS KMS for customer-managed encryption.** Medical records request forms are PHI. Every storage layer is encrypted with a customer-managed key: S3 documents, DynamoDB records, SQS queue messages. The key policy restricts access to the Lambda execution roles and authorized administrators.
+**AWS KMS for customer-managed encryption.** Medical records request forms are protected health information (PHI). Every storage layer is encrypted with a customer-managed key: S3 documents, DynamoDB records, SQS queue messages. The key policy restricts access to the Lambda execution roles and authorized administrators.
 
 ### Architecture Diagram
 

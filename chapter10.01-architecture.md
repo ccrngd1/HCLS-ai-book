@@ -599,7 +599,7 @@ ON call_end(call_id, end_reason):
 
 ### DLQ Topology
 
-Every fulfillment Lambda has its own Dead-Letter Queue (not a pooled DLQ shared across functions). The architectural primitives:
+Every fulfillment Lambda has its own Dead-Letter Queue (not a pooled dead-letter queue (DLQ) shared across functions). The architectural primitives:
 
 - **Per-Lambda DLQ.** Each Lambda (caller-verifier, refill-fulfillment, appointment-fulfillment, urgency-escalator) has its own SQS DLQ. Per-Lambda isolation means a DLQ alarm instantly identifies which function is failing.
 - **Maximum-receive-count tuned per Lambda.** The urgency-escalator gets a low maxReceiveCount (2) because a retried escalation is a clinical-safety concern. The refill-fulfillment Lambda gets a slightly higher maxReceiveCount (3) because back-office API transient failures are more common.

@@ -61,11 +61,15 @@ def prose_of(text: str) -> str:
     text = re.sub(r"~~~.*?~~~", blank, text, flags=re.S)
     text = re.sub(r"`[^`\n]*`", blank, text)
     text = re.sub(r"<!--.*?-->", blank, text, flags=re.S)
-    text = re.sub(r"\]\([^)]*\)", blank, text)
+    # Blank the whole markdown link (label AND target) in one pass. Doing the target
+    # first, as an earlier version did, consumed the closing bracket and left the label
+    # visible, so abbreviations inside link text were miscounted as prose first-uses.
+    text = re.sub(r"\[[^\]]*\]\([^)]*\)", blank, text)        # inline links [label](target)
+    text = re.sub(r"\[[^\]]*\]\[[^\]]*\]", blank, text)      # reference links [text][ref]
+    text = re.sub(r"\[[^\]]*\]", blank, text)                  # remaining bare [labels] / citations
     text = re.sub(r"^\s{4,}\S.*$", blank, text, flags=re.M)
     text = re.sub(r"^\s*\|.*$", blank, text, flags=re.M)      # table rows
     text = re.sub(r"^#{1,6} .*$", blank, text, flags=re.M)     # headings
-    text = re.sub(r"\[[^\]]*\]", blank, text)                   # link and citation labels
     return text
 
 
