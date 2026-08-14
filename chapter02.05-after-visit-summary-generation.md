@@ -66,6 +66,7 @@ Modern LLMs can hit these targets reliably when instructed to, and the reading l
 - **Specific context.** A diabetic who was just started on insulin needs instructions about hypoglycemia. That's not true for most patients. The summary includes the hypoglycemia warning only when the medication change warrants it.
 - **Delivery channel.** A patient who uses the portal sees a formatted web page. A patient who wants a printout gets a PDF optimized for an 8.5x11 sheet. A patient who prefers SMS gets the essentials broken into a short sequence of messages.
 - **Comprehension aids.** Low-literacy patients benefit from iconography and illustrations. Older patients benefit from larger type. These aren't content changes; they're rendering decisions driven by the patient profile.
+- **The choice to receive one at all.** Some patients would rather read a summary their own clinician wrote than one a machine drafted, even a reviewed one. Treat that as a capturable preference: route those patients to a clinician-written summary and keep generation off their record. Not everyone wants machine-drafted prose about their own health, and honoring that costs little.
 
 The content personalization decisions are architectural. They drive what data the system needs (patient preferences, demographics, the specific clinical changes from the visit) and how it structures the generation (one prompt per section? one prompt for the whole document? per-language generation or generate-then-translate?).
 

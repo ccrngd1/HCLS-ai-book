@@ -45,6 +45,8 @@ This sounds like a straightforward supervised learning problem, and conceptually
 
 **Case mix variation.** A hospital that treats sicker patients will naturally have higher readmission rates. CMS accounts for this through risk adjustment (comparing your observed rate against an expected rate given your patient mix). Your internal prediction model needs to be useful for operational decisions (who gets the intervention), not just for reporting. That means raw probability matters more than relative ranking.
 
+**Death is a competing risk.** A patient who dies within the 30-day window cannot be readmitted, but plain binary classification records that patient as a clean negative, which quietly understates risk in the sickest group. Decide up front how you handle it: model death as a competing risk, or fold it into a composite outcome (readmission or death). Do not silently score the deceased as not-readmitted and move on.
+
 ### Feature Categories That Drive Predictions
 
 The features that predict 30-day readmission cluster into several domains:

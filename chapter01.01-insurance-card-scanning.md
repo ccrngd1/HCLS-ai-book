@@ -62,6 +62,8 @@ Here's the honest list of things that will humble you when you first build this:
 
 **Non-standard layouts.** You'll build a field mapping for the top 20 payers in your market and feel good about your coverage. Then a patient hands you a card from a small regional plan and none of your labels match. Your normalization logic needs to handle unknown fields gracefully, not crash.
 
+**Cards from populations you didn't sample.** Your test set probably skews toward the big commercial payers. Medicaid managed-care plans, tribal and Indian Health Service cards, and cards printed in Spanish or another language carry different layouts, field labels, and sometimes non-Latin characters. If they aren't in your test set, you won't find the failures until those patients are standing at the desk. Build the test set to look like the population you actually serve.
+
 **Handwriting.** Most insurance cards are printed, but the "copay" field is sometimes handwritten by a benefits coordinator. Handwriting recognition is dramatically harder than printed text recognition. The error rates are measurably worse. Plan for it.
 
 **Fields that span multiple lines or sections.** "Blue Cross Blue Shield of North Carolina" might wrap. Copay tiers might be in a table. Front vs. back matters: member information typically lives on the front, pharmacy benefit fields (RX BIN, PCN, Group) on the back. If you only process one side, you're missing half the data.
