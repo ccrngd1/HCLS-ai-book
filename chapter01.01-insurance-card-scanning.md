@@ -104,6 +104,8 @@ The confidence threshold is where you make your reliability tradeoff. 90% sounds
 
 The part that surprised me: front-of-card processing gets you maybe 70% of what you need. The pharmacy benefit fields (RX BIN, PCN, Group) almost always live on the back. If your use case touches medication workflows at all, you need both sides.
 
+Keep the shelf life in mind, too. As insurance cards move into digital wallets and payer apps, the need to photograph a card at all will decline; where a card is already digital, pull it through a structured path, a direct API feed or a scannable code, rather than photographing a member's phone screen.
+
 ---
 
 ## Related Recipes

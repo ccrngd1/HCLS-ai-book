@@ -46,7 +46,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**22 open** (Significant 15 · Minor 7) · 75 closed · 97 total
+**22 open** (Significant 15 · Minor 7) · 79 closed · 101 total
 
 <!-- DIGEST:END -->
 
@@ -57,6 +57,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V | Vince Skinner (vskin) | Sr TAM, AWS HCLS | `book.pdf`, 268pp, 57,466 words | 2026-08-11 | Reviewed the 2026-07-30 build, so a number of findings were already fixed. Retracted two of his own findings unprompted. |
 | A | Nick Lawson (author) | Author | own work items, not review findings | ongoing | Prefix `A-` distinguishes author-raised tasks from reviewer findings. |
 | R | (radwin) | — | Digital edition (site) | 2026-08-11 | Short-form feedback, 110 words, 5 findings. Focused on reader accessibility and site structure rather than technical content. |
+| C | Crystal (external reviewer) | External reviewer | Chapter 1, recipe 1.1 (insurance card scanning) | 2026-08-14 | Structural feedback on 1.1: digital cards, multiple-card/COB handling, depth of security/privacy, and an ROI framework. Discussed with the author before logging; dispositions below. |
 
 ---
 
@@ -229,6 +230,15 @@ Items the author raised, tracked here so the central list stays the single place
 | A-2 | About the Author orphan: decide at physical proof | Minor | DEFERRED | The page runs to 336 words and spans pages 3 and 4, with only 37 words landing on page 4. Author decision 2026-08-12: leave as is and judge it on the physical proof, since orphans read differently on paper than on screen. Three options when the proof arrives: split the acknowledgements onto their own Acknowledgements page, which is conventional and keeps every word; cut roughly 40 words to fit one page; or accept it. **Do not silently 'fix' this in a later tidying pass.** Note the growth had a useful side effect: the interior went from 263 to 264 pages, so it is now even and needs no trailing blank to end on a verso. |
 
 ---
+
+## 14. Crystal: recipe 1.1 scope and depth
+
+| ID | Item | Sev | Status | Note |
+|----|------|-----|--------|------|
+| C-1 | 1.1 covers only physical card photos; insurance credentials are moving to digital wallets and payer apps | Minor | DONE | Accepted narrowly. Added one line to the 1.1 Honest Take: as cards move into digital wallets and payer apps this use case declines, and where a card is already digital you should pull it through a structured path (a direct API feed or a scannable code) rather than photographing a phone screen. Author was explicit that this is a forward-looking aside, not the point of the chapter, so it stays a single sentence and no digital-capture pipeline is added. |
+| C-2 | 1.1 does not cover multiple cards per member or primary/secondary coordination of benefits (COB) | Minor | WONTFIX | Out of scope by author decision. The recipe is deliberately just "use OCR instead of typing card fields in." Which card is primary, COB resolution, tying cards to a member, and applying them to claims are downstream data-model and business-rules concerns, not OCR, and belong to entity resolution / eligibility recipes. Adding them would blur what the chapter is about. |
+| C-3 | Security/privacy section too light; reviewer wants a subsection on retention, consent, de-identification, audit trails, and compliance | Significant | WONTFIX | Declined by author decision, and it cuts against the book's standing posture. 1.1 already carries the PHI callout to the shared "Before You Send PHI" page (V-7.1/7.2), which names the vendor, retention, consent, and secondary-use questions and routes them to the reader's own privacy, security, and legal or compliance teams. The book deliberately names what exists and does not instruct on how to comply: writing a per-recipe compliance how-to invites incompleteness, and a healthcare audience will (rightly) lose trust the moment it is wrong or partial. We call out that this is a PHI recipe and to be careful; we do not try to cover the regulatory surface. |
+| C-4 | No ROI framework to size the opportunity; reviewer linked an AWS QuickSight "AI Business Value Calculator" | Minor | WONTFIX | Two parts. The linked calculator is an internal Amazon QuickSight/BI tool: inaccessible to readers, internal and likely confidential, and it will not appear anywhere in the book or be retained as a source link. The ROI-sizing idea itself does not belong in the print recipe; if it is ever pursued it would live in the architecture companion (digital-only), vendor-neutral and formula-not-figures, and even then cost models go stale fast and tip toward consulting. Parked, not planned. |
 
 ## Retracted by the reviewer
 
