@@ -888,4 +888,4 @@ This example works. Run it against a real clinical note (with a trained classifi
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 8.6](chapter08.06-sdoh-extraction.md) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See [Recipe 8.6](chapter08.06-sdoh-extraction) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
