@@ -1,5 +1,8 @@
 # Recipe 8.6 Architecture and Implementation: Social Determinants of Health (SDOH) Extraction
 
+<!-- vendor-note -->
+> **Confirm the vendor's data-handling terms before you build.** This recipe sends protected health information to a hosted model or managed AI service. For the specific service you choose, confirm whether it is covered by your business associate agreement, whether it trains on your inputs and how you opt out, and how long inputs are retained and where. These are contract-and-configuration questions, not model questions. See "Before You Send Protected Health Information Anywhere" for the full set of questions to take to your privacy, security, and legal or compliance teams.
+
 This is the AWS architecture companion for the recipe on extracting social determinants of health (SDOH) from clinical text.
 
 *Companion to [Recipe 8.6: Social Determinants of Health (SDOH) Extraction](chapter08.06-sdoh-extraction). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*

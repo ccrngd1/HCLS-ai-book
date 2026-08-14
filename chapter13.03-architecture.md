@@ -1,5 +1,8 @@
 # Recipe 13.3 Architecture and Implementation: ICD/CPT Hierarchy Navigation
 
+<!-- vendor-note -->
+> **Confirm the vendor's data-handling terms before you build.** This recipe sends protected health information to a hosted model or managed AI service. For the specific service you choose, confirm whether it is covered by your business associate agreement, whether it trains on your inputs and how you opt out, and how long inputs are retained and where. These are contract-and-configuration questions, not model questions. See "Before You Send Protected Health Information Anywhere" for the full set of questions to take to your privacy, security, and legal or compliance teams.
+
 *The AWS companion for navigating ICD-10 and Current Procedural Terminology (CPT) hierarchies. See [Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode walkthrough. For the problem framing, conceptual approach, and honest assessment, start with the main recipe.*
 
 ---

@@ -17,14 +17,13 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 24 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 23 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Sev | Status | Item | Area |
 |----|-----|--------|------|------|
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
-| R-12 | Significant | OPEN | Add train/retention/residency lines to the 22 recipes that send PHI to a th... | Author-owned work |
 | V-2.4 | Significant | OPEN | Ch6: z-scoring does not decorrelate; K-means/GMM clusters are unordered so... | Model soundness |
 | V-2.5 | Significant | OPEN | Ch12: Monte Carlo intervals falsely narrow (flows sampled independently) | Model soundness |
 | V-2.6 | Significant | OPEN | Ch12: no forecasting evaluation methodology (rolling-origin, pinball, per-h... | Model soundness |
@@ -48,7 +47,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**24 open** (Significant 17 · Minor 7) · 73 closed · 97 total
+**23 open** (Significant 16 · Minor 7) · 74 closed · 97 total
 
 <!-- DIGEST:END -->
 
@@ -226,7 +225,7 @@ Items the author raised, tracked here so the central list stays the single place
 
 | ID | Item | Sev | Status | Notes |
 |----|------|-----|--------|-------|
-| R-12 | Add train/retention/residency lines to the 22 recipes that send PHI to a third-party model | Significant | OPEN | Measured: 30 of 152 main recipes send PHI to a hosted model or speech service, and 22 of those say nothing about training, retention or residency in either the recipe or its architecture companion. Four are in the print sampler and three of those are in the gap, including 11.6, a patient-facing triage bot that sends symptom narratives to a model. V-7.1 covers the general posture in both editions, so this is the per-recipe specificity rather than the posture itself, which is why it is Significant and not Critical. Good pattern to copy already exists in 2.8: 'many vendors offer a no-training option under their healthcare BAA; verify it'. Repetitive and well specified, so a good ralph candidate once R-1 finishes; must reuse the R-1 diff gate so it cannot rewrite technical content. |
+| R-12 | Add train/retention/residency lines to the 22 recipes that send PHI to a third-party model | Significant | DONE | Done deterministically, not via ralph: the note is a canonical block, so a reversible inserter (add_vendor_notes.py, --apply/--remove) is more reliable than a generated pass and avoids the ralph no-op/gate problems R-1 hit. Added a concrete vendor data-handling note to the architecture companion of all 46 recipes that send PHI to a hosted model or managed AI service and lacked train/retention/residency language. The note sits after the companion H1 and says: confirm, for the specific service chosen, whether it is covered by the business associate agreement, whether it trains on inputs and how to opt out, and retention window and location, framed as contract-and-configuration questions, and points to the shared 'Before You Send PHI' page. Worded with protected health information and business associate agreement spelled out and NO acronym tokens, so it introduces no PHI/BAA first-use that would collide with R-1. Architecture-companion only, so digital-only and not print-bound. Verified insert-only (0 existing lines changed), zero new R-1 violations, print unchanged at 270pp, site 0 warnings. This is the per-recipe specificity beyond the general callout added under V-7.2. |
 | A-1 | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Significant | OPEN | **Why it was withheld:** the Honest Take is the author's own voice and judgement, written in the first person. Publishing an opinion about a recipe the author has not personally reviewed asserts a position he has not actually taken. The recipes themselves are fine to publish; the opinion is what needs review first. So the gate is per-recipe author review, not a date. **Mechanism:** `honest_takes.py --restore 7.3` returns one recipe's section byte-for-byte from `honest-takes-stash/` and removes it from the stash, so `--status` reports real progress. `--restore` with no arguments returns all 137. Round trip verified exact against git HEAD. **Progress:** 0 of 137 restored. **Loose end when they return:** roughly a dozen companion pages contain in-body references such as "as noted in the recipe's honest take", which read oddly while the sections are absent and correct themselves when they come back; about 100 more are a stock footer and need nothing. **Do not** hand-edit files in the stash: restore the section, then edit the recipe. |
 | A-2 | About the Author orphan: decide at physical proof | Minor | DEFERRED | The page runs to 336 words and spans pages 3 and 4, with only 37 words landing on page 4. Author decision 2026-08-12: leave as is and judge it on the physical proof, since orphans read differently on paper than on screen. Three options when the proof arrives: split the acknowledgements onto their own Acknowledgements page, which is conventional and keeps every word; cut roughly 40 words to fit one page; or accept it. **Do not silently 'fix' this in a later tidying pass.** Note the growth had a useful side effect: the interior went from 263 to 264 pages, so it is now even and needs no trailing blank to end on a verso. |
 

@@ -1,5 +1,8 @@
 # Recipe 10.1 Architecture and Implementation: IVR Call Routing Enhancement
 
+<!-- vendor-note -->
+> **Confirm the vendor's data-handling terms before you build.** This recipe sends protected health information to a hosted model or managed AI service. For the specific service you choose, confirm whether it is covered by your business associate agreement, whether it trains on your inputs and how you opt out, and how long inputs are retained and where. These are contract-and-configuration questions, not model questions. See "Before You Send Protected Health Information Anywhere" for the full set of questions to take to your privacy, security, and legal or compliance teams.
+
 *Companion to [Recipe 10.1: IVR Call Routing Enhancement](chapter10.01-ivr-call-routing-enhancement). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---

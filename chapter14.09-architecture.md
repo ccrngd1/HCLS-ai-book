@@ -1,5 +1,8 @@
 # Recipe 14.9 Architecture and Implementation: Chemotherapy Scheduling
 
+<!-- vendor-note -->
+> **Confirm the vendor's data-handling terms before you build.** This recipe sends protected health information to a hosted model or managed AI service. For the specific service you choose, confirm whether it is covered by your business associate agreement, whether it trains on your inputs and how you opt out, and how long inputs are retained and where. These are contract-and-configuration questions, not model questions. See "Before You Send Protected Health Information Anywhere" for the full set of questions to take to your privacy, security, and legal or compliance teams.
+
 *Companion to [Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling). This page covers the AWS architecture, services, prerequisites, and implementation guidance. For the problem framing, conceptual approach, and pseudocode walkthrough, start with the main recipe.*
 
 ---
