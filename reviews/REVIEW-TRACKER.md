@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 23 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 22 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -25,7 +25,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 |----|-----|--------|------|------|
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
 | AN-6 | Significant | OPEN | Print-scoped acronym sweep: confirm every acronym is expanded on its first... | Anna: business-reader review |
-| V-2.8 | Significant | OPEN | Ch12: "discharge order written" is near-label leakage; add point-in-time wa... | Model soundness |
 | V-3.8 | Significant | OPEN | Tagged-PDF quality low; no figure/table/TOC tagging | Production and accessibility |
 | V-4.4 | Significant | OPEN | Ch11 Honest Take references five bots absent from this volume; other dangli... | Chapter 11 patient safety and stan |
 | V-6.2 | Significant | OPEN | No coherent evaluation story (LLM-as-judge reliability, golden datasets, re... | Missing technical layer |
@@ -47,7 +46,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**23 open** (Significant 14 · Minor 9) · 97 closed · 120 total
+**22 open** (Significant 13 · Minor 9) · 98 closed · 120 total
 
 <!-- DIGEST:END -->
 
@@ -110,7 +109,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-2.5 | Ch12: Monte Carlo intervals falsely narrow (flows sampled independently) | Significant | DONE | DONE. Added a plain-language 'Flows are not independent either' bullet to 12.5: independent per-flow sampling makes intervals too narrow because inflow and outflow co-move on surge days (the days you run out of beds); fix is to keep flows tied together (resample whole historical days) and validate against real outcomes. Matching honesty note added to both digital companions, which implement the independent sampling. Finding verified against corpus; avoided the review's imprecise cross-flow-covariance framing. a2fd28f2 |
 | V-2.6 | Ch12: no forecasting evaluation methodology (rolling-origin, pinball, per-horizon skill, coverage) | Significant | DONE | DONE. Added a plain-language 'Knowing the Forecast Is Actually Good' subsection to 12.5: beat a seasonal-naive baseline, judge the interval (calibration + sharpness, no jargon), grade skill per horizon, retrain on degradation not the calendar. Completes the V-2.5 'check the range against real outcomes' hook. Also replaced the adjacent 'naturally produces calibrated intervals' overclaim with a pointer to the caveat/checks. Scoped to 12.5 (= Ch12 in print). Verified: drift-refresh and seasonal/per-horizon were partly present, so the 'no methodology' framing was overstated; the consolidation gap was real. 2ddd4acf |
 | V-2.7 | Ch12: Poisson vs negative binomial applied inconsistently to ED admits | Minor | DONE | Real and print-bound. 12.03 already hedged correctly ("Poisson, or if overdispersed, negative binomial"), and 12.05 justified negative binomial for direct admits and transfers on overdispersion grounds, yet asserted plain Poisson for ED admits in the same breath. 12.05 now says to test the assumption, and that if residual variance exceeds the mean after conditioning on calendar features you want negative binomial for ED admits too, for exactly the same reason. |
-| V-2.8 | Ch12: "discharge order written" is near-label leakage; add point-in-time warning | Significant | OPEN | |
+| V-2.8 | Ch12: "discharge order written" is near-label leakage; add point-in-time warning | Significant | DONE | DONE. Added a point-in-time-correctness warning to 12.5 right after the 'strongest single predictor' claim: the discharge-order feature is only fair if recorded as of the prediction moment; reading it from inside the label window is leakage that looks great offline and fails at 06:30. Directs to build it point-in-time and grade per horizon (ties to V-2.6). Matching note added to the Python companion. Verified the claim is in the print body, so print-bound; framed as point-in-time rather than the review's flat 'leakage' since the feature is legitimate when captured as-of. 87758d2c |
 
 ## 3. Production and accessibility
 
