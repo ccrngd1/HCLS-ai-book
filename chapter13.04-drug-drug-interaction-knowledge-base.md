@@ -83,7 +83,7 @@ Building a drug interaction knowledge graph requires integrating multiple author
 
 **NDF-RT / MED-RT** (National Drug File Reference Terminology): A Veterans Affairs terminology that explicitly encodes drug-drug interactions with mechanism classifications. It categorizes interactions by type (pharmacokinetic, pharmacodynamic) and mechanism (enzyme inhibition, protein binding displacement, etc.). This is one of the few sources that provides mechanism-level classification in a structured format.
 
-**Clinical decision support knowledge bases**: Commercial products like First Databank (FDB), Medi-Span, and Clinical Pharmacology maintain curated interaction databases with severity ratings and clinical management recommendations. These are the sources that most EHR systems use today. They're well-curated but expensive, and they typically don't expose the underlying mechanism data in a graph-friendly format.
+**Clinical decision support (CDS) knowledge bases**: Commercial products like First Databank (FDB), Medi-Span, and Clinical Pharmacology maintain curated interaction databases with severity ratings and clinical management recommendations. These are the sources that most EHR systems use today. They're well-curated but expensive, and they typically don't expose the underlying mechanism data in a graph-friendly format.
 
 ### Interaction Classification
 
@@ -130,7 +130,7 @@ Not all interactions are created equal, and your graph needs to represent this. 
 
 **Interaction engine.** Given a patient's medication list, the engine traverses the graph to find interaction paths. It scores each path based on mechanism strength, evidence quality, and patient context. It returns a ranked list of clinically significant interactions with explanations.
 
-**Clinical integration.** The interaction engine exposes an API that clinical systems call at the point of prescribing. The response includes not just "these drugs interact" but "here's why, here's how severe it is for this patient, and here's what to do about it."
+**Clinical integration.** The interaction engine exposes an API that clinical systems call at the point of prescribing. The response includes not just "these drugs interact" but "here's why, here's how severe it is for this patient, and here's what to do about it." The standard for delivering this inside the prescriber's workflow is CDS Hooks, a Health Level Seven (HL7) specification that lets the EHR call your service as the clinician selects or signs a medication order (the `order-select` and `order-sign` hooks) and render the result as a card carrying an urgency level, the explanation, and a suggested action the prescriber can accept. That standard is also where the alert-fatigue fight is won or lost: CDS Hooks defines a feedback channel that reports whether each card was accepted, overridden, or ignored, so you can measure which warnings actually change prescribing and retire the ones that only teach clinicians to click past them.
 
 ---
 
