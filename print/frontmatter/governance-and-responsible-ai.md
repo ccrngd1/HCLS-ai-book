@@ -77,6 +77,26 @@ assume this exists. Many organizations discover, when asked, that it does not.
 privacy, equity, security, and operational owners) actually examined this system and decided,
 on the record, to deploy it, with the conditions and the rollback plan attached.
 
+## Least privilege, and a plan for when it fails
+
+Two security expectations sit underneath every recipe in this book, and a governance review
+will ask about both.
+
+**Least privilege for models and agents.** Give a model, and especially a tool-using agent,
+only the data and the actions it genuinely needs, and enforce that outside the model rather
+than in the prompt. An instruction to "stay in your lane" is not a control; a system that has
+been manipulated or tricked will ignore it. A permission boundary enforced by the systems the
+agent calls will not, so the worst a hijacked request can do is whatever the agent was actually
+authorized to do, and no more. Who granted those permissions, who reviews them, and can you
+show the agent cannot write, order, or disclose beyond its remit?
+
+**A plan for when prevention fails.** The recipes describe graceful degradation, what a system
+does when a component fails. That is not the same as an incident-response plan, which is what
+you do when a component is breached or abused: a transcript or model-input store exposed, an
+inference endpoint compromised, an agent driven to act outside its scope. These carry
+breach-notification obligations on clocks that belong to your privacy and security teams, not
+to a cookbook. Name the owner, write the runbook, and rehearse it before you need it.
+
 ## The frameworks worth knowing by name
 
 You do not need to adopt all of these, but your governance function will recognize them, and
