@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 20 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 19 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -27,7 +27,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-3 | Significant | OPEN | Verify EPUB accessibility before publishing | Author-owned work |
 | A-5 | Significant | OPEN | Regenerate TOC page numbers before final print (two-pass map is stale) | Author-owned work |
 | AN-6 | Significant | OPEN | Print-scoped acronym sweep: confirm every acronym is expanded on its first... | Anna: business-reader review |
-| V-6.5 | Significant | OPEN | CDS Hooks missing from the body (Appendix B only) | Missing technical layer |
 | V-7.4 | Significant | OPEN | No model change-control or rollback (version pinning in the audit record, c... | Enterprise readiness |
 | V-7.5 | Significant | OPEN | No security incident-response or breach-notification runbook for serving ch... | Enterprise readiness |
 | V-7.6 | Significant | OPEN | Automation bias unmonitored (no reviewer edit-rate tracking, no seeded errors) | Enterprise readiness |
@@ -44,7 +43,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**20 open** (Significant 10 · Minor 10) · 103 closed · 123 total
+**19 open** (Significant 9 · Minor 10) · 104 closed · 123 total
 
 <!-- DIGEST:END -->
 
@@ -158,7 +157,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-6.2 | No coherent evaluation story (LLM-as-judge reliability, golden datasets, red-teaming, MedHELM, HealthBench) | Significant | DONE | DONE. Added 'A Note on Evaluation' to the Ch2 preface (digital canon): golden datasets, LLM-as-judge with human anchoring, red-teaming, and the 2025 benchmarks MedHELM/HealthBench (shortlist, do not certify). Right-sized against the 'wants a chapter' framing to a preface note mirroring the Ch12 precedent. Verified the eval vocabulary previously lived only in digital companions, never surfaced centrally. Prefaces are digital-only, so a one-line pointer was added to 2.5's Honest Take for the print reader. R-1 clean, print 276 even. e1963eb2 |
 | V-6.3 | No governance artifacts (CHAI model cards, AI use inventories) | Significant | DONE | DONE. Added a book-level 'Governance and Responsible AI' front-matter page (sibling to Before You Send PHI): responsible-AI questions (equity, human oversight/override, local validation, post-deployment monitoring), the artifacts a review asks for (CHAI applied model card, AI use inventory, record of governance-committee review), and frameworks by name (NIST AI RMF, Joint Commission + CHAI Responsible Use, ONC HTI-1). Name-and-route per the standing scope rule, no compliance instruction. Front matter prints, so it reaches both editions and the compliance print buyer. sync_phi_page.py generalized to sync both shared pages with placeholder substitution; build.py + _Sidebar.md wired. Print 276->279 (odd), noted on A-2. 2861610f |
 | V-6.4 | No LLM security (prompt injection, jailbreaks, PHI in prompts/logs, OWASP LLM Top 10) | Significant | DONE | DONE. Added 'A Note on Security' to the Ch2 preface (digital canon): prompt injection (direct + indirect), jailbreaks/scope escape, PHI in prompts and logs, and the crux - authorization enforced outside the model, not in the prompt, for tool-using LLMs. Points to OWASP LLM Top 10. Print pointer added to 11.6 (tool-using triage flagship). Same preface-note template as V-6.2; verified the vocabulary was scattered in companions, never consolidated. R-1 clean, print 276 even. 985674c6 |
-| V-6.5 | CDS Hooks missing from the body (Appendix B only) | Significant | OPEN | Standard integration point for Ch7 and Ch13 alerting. |
+| V-6.5 | CDS Hooks missing from the body (Appendix B only) | Significant | DONE | DONE. Added CDS Hooks to the Ch7 and Ch13 flagship bodies. 13.4: 'Clinical integration' point now names CDS Hooks (order-select/order-sign returning interaction-warning cards) with the accepted/overridden/ignored feedback channel tied to the alert-fatigue theme. 7.5: 'Intervention Routing' now covers delivery via CDS Hooks (patient-view/encounter-discharge) alongside the care-management worklist, framed as two patterns. Verified hook names against HL7 CDS Hooks v2.0.1: medication-prescribe is DEPRECATED, so order-select/order-sign used. HL7 and CDS expanded on first use. R-1 clean, print 279->280 (even). f732a555 |
 | V-6.6 | Epic Sepsis Model external-validation failure (Wong 2021, AUC 0.63 vs claimed 0.76-0.83) omitted from Ch7 and Ch15 | Significant | DONE | Added to Ch7's Honest Take, directly after the buy-versus-build verdict, where it makes the abstract advice 'measure it on your own population' concrete. **Correction to the finding as filed:** the book did not claim the optimistic figures. `Epic` appeared 0 times in the entire corpus, so this was a pure omission, and the 0.76-0.83 in the finding is the vendor's claim rather than the book's. Cites Wong et al., JAMA Internal Medicine 2021, Michigan Medicine, ~38,000 hospitalisations, AUC 0.63. Deliberately did not state the sensitivity percentage, which I could not verify in-session. Not added to Ch15: that recipe already counsels against deploying sepsis RL, so the caution would be redundant there. |
 | V-6.7 | Prenosis Sepsis ImmunoScore (first FDA De Novo sepsis AI, 2024-04) omitted from Ch15 | Significant | DONE | Pre-existing fix, `646a6818`. Added to 15.4's buy-vs-build verdict with DEN230036. |
 
