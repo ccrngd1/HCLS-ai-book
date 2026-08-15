@@ -4,6 +4,8 @@
 
 **[Before You Send PHI](before-you-send-phi)**
 
+**[Governance and Responsible AI](governance-and-responsible-ai)**
+
 ---
 
 #### Ch 1: Document Intelligence

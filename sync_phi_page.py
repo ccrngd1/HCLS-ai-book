@@ -1,44 +1,62 @@
 #!/usr/bin/env python3
-"""Generate the digital copy of the PHI governance page from the print source.
+"""Generate the digital copies of shared front-matter pages from the print sources.
 
-The page belongs in both editions, but print/ is excluded from the site build, so the
-digital edition needs a copy at the repo root. Copying it by hand would create two files
-that drift, which is the failure mode that has already bitten this project three times
-today: a generated digest that disagreed with its own tracker row, a stale page count in
-kdp-metadata.md, and a build cache that hid two warnings.
+Some front-matter pages belong in both editions, but print/ is excluded from the site
+build, so the digital edition needs copies at the repo root. Copying by hand creates two
+files that drift, which is the failure mode that has already bitten this project: a
+generated digest that disagreed with its own tracker row, a stale page count, and a build
+cache that hid warnings. So print/frontmatter/*.md are the single sources of truth, the
+ones the author edits, and this writes the root copies from them.
 
-So print/frontmatter/before-you-send-phi.md is the single source of truth, the one the
-author edits, and this writes the root copy from it.
+    python3 sync_phi_page.py           # regenerate all shared pages
+    python3 sync_phi_page.py --check   # exit 1 if any copy is stale
 
-    python3 sync_phi_page.py           # regenerate
-    python3 sync_phi_page.py --check   # exit 1 if the copy is stale
-
-The editing notes in the print source are HTML comments. The print loader strips them; so
-does this, because an HTML comment is invisible in a browser but still sits in the page
-source where a reader can find it.
+HTML editing notes in the sources are stripped (invisible in a browser but still present in
+page source where a reader can find them). Manifest placeholders such as {digital_url} are
+substituted so the digital copy matches what the print build renders.
 """
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 
-SRC = Path("print/frontmatter/before-you-send-phi.md")
-DST = Path("before-you-send-phi.md")
-
-HEADER = (
-    "<!-- GENERATED FILE. Do not edit.\n"
-    "     Source: print/frontmatter/before-you-send-phi.md\n"
-    "     Regenerate: python3 sync_phi_page.py\n"
-    "     This page is in both editions; the print source is authoritative. -->\n\n"
-)
+# (print source, digital destination). Add a pair here to share another front page.
+PAGES = [
+    (Path("print/frontmatter/before-you-send-phi.md"), Path("before-you-send-phi.md")),
+    (Path("print/frontmatter/governance-and-responsible-ai.md"),
+     Path("governance-and-responsible-ai.md")),
+]
+MANIFEST = Path("print/manifest.json")
 
 
-def render() -> str:
-    text = SRC.read_text(encoding="utf-8")
+def _subs() -> dict:
+    m = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    n = m["total_recipes_in_digital"]
+    return dict(
+        title=m["title"], subtitle=m["subtitle"], author=m["author"],
+        year=m["copyright_year"], digital_url=m["digital_edition_url"],
+        recipe_count=n, extra_recipes=n - 15,
+    )
+
+
+def _header(src: Path) -> str:
+    return (
+        "<!-- GENERATED FILE. Do not edit.\n"
+        f"     Source: {src.as_posix()}\n"
+        "     Regenerate: python3 sync_phi_page.py\n"
+        "     This page is in both editions; the print source is authoritative. -->\n\n"
+    )
+
+
+def render(src: Path, subs: dict) -> str:
+    text = src.read_text(encoding="utf-8")
     text = re.sub(r"<!--.*?-->", "", text, flags=re.S).strip()
-    return HEADER + text + "\n"
+    for key, value in subs.items():
+        text = text.replace("{" + key + "}", str(value))
+    return _header(src) + text + "\n"
 
 
 def main() -> int:
@@ -46,23 +64,25 @@ def main() -> int:
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
 
-    if not SRC.is_file():
-        print(f"  source missing: {SRC}")
-        return 1
-
-    want = render()
-    have = DST.read_text(encoding="utf-8") if DST.is_file() else None
-
-    if args.check:
-        if have != want:
-            print("  STALE: run python3 sync_phi_page.py")
+    subs = _subs()
+    stale = False
+    for src, dst in PAGES:
+        if not src.is_file():
+            print(f"  source missing: {src}")
             return 1
-        print(f"  {DST} is current ({len(want.split())} words)")
-        return 0
+        want = render(src, subs)
+        have = dst.read_text(encoding="utf-8") if dst.is_file() else None
+        if args.check:
+            if have != want:
+                print(f"  STALE: {dst} (run python3 sync_phi_page.py)")
+                stale = True
+            else:
+                print(f"  {dst} is current ({len(want.split())} words)")
+        else:
+            dst.write_text(want, encoding="utf-8")
+            print(f"  wrote {dst} ({len(want.split())} words) from {src}")
 
-    DST.write_text(want, encoding="utf-8")
-    print(f"  wrote {DST} ({len(want.split())} words) from {SRC}")
-    return 0
+    return 1 if (args.check and stale) else 0
 
 
 if __name__ == "__main__":
