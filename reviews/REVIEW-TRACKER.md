@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 21 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 20 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -26,7 +26,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
 | A-3 | Significant | OPEN | Verify EPUB accessibility before publishing | Author-owned work |
 | AN-6 | Significant | OPEN | Print-scoped acronym sweep: confirm every acronym is expanded on its first... | Anna: business-reader review |
-| V-6.2 | Significant | OPEN | No coherent evaluation story (LLM-as-judge reliability, golden datasets, re... | Missing technical layer |
 | V-6.3 | Significant | OPEN | No governance artifacts (CHAI model cards, AI use inventories) | Missing technical layer |
 | V-6.4 | Significant | OPEN | No LLM security (prompt injection, jailbreaks, PHI in prompts/logs, OWASP L... | Missing technical layer |
 | V-6.5 | Significant | OPEN | CDS Hooks missing from the body (Appendix B only) | Missing technical layer |
@@ -45,7 +44,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**21 open** (Significant 12 · Minor 9) · 100 closed · 121 total
+**20 open** (Significant 11 · Minor 9) · 101 closed · 121 total
 
 <!-- DIGEST:END -->
 
@@ -156,7 +155,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
 | V-6.1 | Agentic AI absent (MCP, prior-auth agents, revenue-cycle agents) | Significant | WONTFIX | Author decision 2026-08-12: agentic AI and MCP stay out. The print volume is a 15-recipe sampler, and it is reasonable for agentic patterns not to be a banner use case in a curated subset. No scope note added either, per instruction, so the book does not draw attention to the omission. The digital edition is expected to cover this eventually, which is where a new capability area belongs: it can be added there without touching the manifest, pagination or spine. |
-| V-6.2 | No coherent evaluation story (LLM-as-judge reliability, golden datasets, red-teaming, MedHELM, HealthBench) | Significant | OPEN | |
+| V-6.2 | No coherent evaluation story (LLM-as-judge reliability, golden datasets, red-teaming, MedHELM, HealthBench) | Significant | DONE | DONE. Added 'A Note on Evaluation' to the Ch2 preface (digital canon): golden datasets, LLM-as-judge with human anchoring, red-teaming, and the 2025 benchmarks MedHELM/HealthBench (shortlist, do not certify). Right-sized against the 'wants a chapter' framing to a preface note mirroring the Ch12 precedent. Verified the eval vocabulary previously lived only in digital companions, never surfaced centrally. Prefaces are digital-only, so a one-line pointer was added to 2.5's Honest Take for the print reader. R-1 clean, print 276 even. e1963eb2 |
 | V-6.3 | No governance artifacts (CHAI model cards, AI use inventories) | Significant | OPEN | |
 | V-6.4 | No LLM security (prompt injection, jailbreaks, PHI in prompts/logs, OWASP LLM Top 10) | Significant | OPEN | |
 | V-6.5 | CDS Hooks missing from the body (Appendix B only) | Significant | OPEN | Standard integration point for Ch7 and Ch13 alerting. |
