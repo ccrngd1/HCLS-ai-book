@@ -65,6 +65,8 @@ What are you optimizing for? This is where it gets political. Common objectives 
 
 These objectives conflict. The cheapest schedule is rarely the fairest. The fairest schedule rarely maximizes individual preferences. You need a weighted combination, and those weights encode organizational values. Getting stakeholders to agree on weights is often harder than building the solver.
 
+Fairness needs one more caution, because of how it is usually encoded. If you fold fairness into the weighted sum as a penalty on undesirable shifts, the solver minimizes the total, and the total does not care how the load is spread. Nothing stops it from piling the nights and weekends onto a few nurses if that satisfies the other objectives at least cost. Minimizing the sum is a utilitarian goal; equitable distribution is not the same thing. If you actually mean equity, optimize the worst-off nurse rather than the aggregate (a max-min objective) or cap the gap directly (bound the spread between the most and least burdened nurse), so "fair" is a constraint the schedule must meet, not an average it can hit by hurting a few people.
+
 ### Solver Technologies
 
 Three main approaches exist for this class of problem:
@@ -153,4 +155,4 @@ Start with a single unit. Prove it works. Then expand. Trying to optimize across
 
 ## Tags
 
-`optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `hipaa` · `real-time` · `dynamodb` · `eventbridge` · `lambda` · `sagemaker`
+`optimization` · `constraint-programming` · `mixed-integer-programming` · `operations-research` · `fairness` · `hipaa` · `real-time` · `dynamodb` · `eventbridge` · `lambda` · `sagemaker`
