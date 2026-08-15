@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 15 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 14 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -27,7 +27,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-3 | Significant | OPEN | Verify EPUB accessibility before publishing | Author-owned work |
 | A-5 | Significant | OPEN | Regenerate TOC page numbers before final print (two-pass map is stale) | Author-owned work |
 | AN-6 | Significant | OPEN | Print-scoped acronym sweep: confirm every acronym is expanded on its first... | Anna: business-reader review |
-| V-8.2 | Significant | OPEN | No infeasibility handling despite a scenario that makes it likely; add IIS... | Chapter 14 optimization |
 | A-2 | Minor | DEFERRED | About the Author orphan: decide at physical proof | Author-owned work |
 | A-4 | Minor | OPEN | Chapter prefaces use inconsistent structures; adopt a common template | Author-owned work |
 | AN-5 | Minor | OPEN | Roll the `User:` persona line out to all digital recipes (full ~152-recipe... | Anna: business-reader review |
@@ -39,7 +38,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**15 open** (Significant 5 · Minor 10) · 108 closed · 123 total
+**14 open** (Significant 4 · Minor 10) · 109 closed · 123 total
 
 <!-- DIGEST:END -->
 
@@ -176,7 +175,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
 | V-8.1 | Fairness as a summed penalty can concentrate bad shifts on a few nurses; use max-min or bounded-spread | Significant | DONE | DONE. Added a caveat to 14.4's Objective Function section: fairness folded into a weighted sum minimizes the aggregate, which is indifferent to how the load is spread and can concentrate nights/weekends on a few nurses. Names the utilitarian-vs-equitable distinction and the remedies (max-min objective, or bound the spread). In-body, print-bound; textbook OR, Vince correct. R-1 clean, print 282 even. 838aea45 |
-| V-8.2 | No infeasibility handling despite a scenario that makes it likely; add IIS or elastic constraints | Significant | OPEN | |
+| V-8.2 | No infeasibility handling despite a scenario that makes it likely; add IIS or elastic constraints | Significant | DONE | DONE. Added an infeasibility-handling caveat to 14.4's Constraints section: a solver returning 'infeasible' is useless to a manager, so compute the irreducible infeasible subset (report which hard constraints conflict) or make hard constraints elastic (feasibility relaxation: penalized slack) so the optimizer returns the least-bad schedule and names the violations. Verified both against Gurobi computeIIS and IBM CPLEX FeasOpt docs before writing (not asserted from memory). Vendor-neutral in-body. R-1 clean, print 282->283 (odd). |
 
 ## 9-11. Positioning, front/back matter, structure
 
