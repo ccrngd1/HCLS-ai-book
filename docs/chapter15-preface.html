@@ -366,7 +366,7 @@
 <p>This is a Markov Decision Process (MDP), whether the clinician thinks of it that way or not. There's a state (patient vitals, labs, current treatments), actions (clinical interventions), transitions (how the patient responds), and rewards (did the patient get better?). The goal is to find the policy that maximizes long-term outcomes, not just the immediate next step.</p>
 <p>Traditional supervised learning can't handle this well. You could train a model to predict &quot;given this patient state, what did the best clinicians do?&quot; but that's imitation learning, not optimization. It copies existing behavior rather than discovering potentially better strategies. And it can't reason about the downstream consequences of actions. If giving more fluids now means you can avoid vasopressors later (which have their own side effects), a supervised model won't discover that trade-off. An RL agent, at least in theory, can.</p>
 <hr />
-<h2 id="the-key-paradigms-and-why-they-matter-for-healthcare">The Key Paradigms (And Why They Matter for Healthcare)</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <h3 id="online-vs-offline-rl">Online vs. Offline RL</h3>
 <p>This distinction is everything in healthcare.</p>
 <p><strong>Online RL</strong> learns by interacting with the environment directly. The agent takes actions, observes outcomes, and updates its policy in real time. This is how AlphaGo learned to play Go: by playing millions of games against itself. It's also completely unacceptable for most clinical applications. You cannot explore randomly with real patients. &quot;Let's try a suboptimal treatment to see what happens&quot; is not an ethical experimental design.</p>
@@ -399,7 +399,22 @@
 <p>The simpler use cases in this chapter (alert threshold optimization, notification timing) likely fall under clinical decision support exemptions because they're not making treatment decisions. The complex use cases (sepsis management, chemotherapy dosing) would almost certainly require FDA clearance, and the pathway for that clearance is still being defined.</p>
 <p>This is not a reason to avoid the technology. It's a reason to understand where each use case falls on the regulatory spectrum and to build accordingly. The recipes are ordered partly by regulatory complexity: the early ones are deployable today, the later ones are research-stage with a path toward clinical use.</p>
 <hr />
-<h2 id="what-this-chapter-covers">What This Chapter Covers</h2>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the reinforcement-learning recipes, worth naming once.</p>
+<p><strong>Offline by default.</strong> You cannot explore on patients, so the recipes learn policies from historical trajectories rather than live interaction, and treat the training data's own policy as a confound to reason about, not ignore.</p>
+<p><strong>Off-policy evaluation stands in for a live test.</strong> Because you cannot A/B a treatment policy on real patients, the recipes lean on off-policy evaluation to estimate how a learned policy would have performed, with explicit uncertainty.</p>
+<p><strong>A constrained, conservative policy layer.</strong> Hard limits (dose ceilings, contraindications) and conservative objectives (stay close to observed practice unless the evidence is strong) are built into the policy, not bolted on, which is what Conservative Q-Learning and its relatives are for.</p>
+<p><strong>Bandits when the state does not change.</strong> Where an action does not move the underlying state (which notification, which threshold), the recipes use the simpler, safer multi-armed bandit rather than full RL.</p>
+<p><strong>Clinician-in-the-loop serving.</strong> The policy recommends and a clinician decides; the serving path is decision support with override and logging, not an autonomous agent.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>The safety, reward, and regulatory problems above are the heart of healthcare RL; a few additional deployment realities recur across the recipes.</p>
+<p><strong>The data is retrospective PHI.</strong> Offline learning runs on historical patient trajectories, so the pipeline carries the usual encryption, access-control, and business associate agreement obligations, and the training distribution reflects whatever clinicians did, confounders and all.</p>
+<p><strong>Distribution shift is the central hazard.</strong> A policy that recommends actions unlike anything in the data has no evidence behind it, so the recipes keep policies near the support of the data and flag when they wander outside it.</p>
+<p><strong>Decision support, not autonomy, for now.</strong> Both the regulatory posture and the trust gap mean these systems recommend to a clinician rather than act, and the recipes are built that way.</p>
+<p><strong>Monitoring is continuous.</strong> Populations and practice drift, so a deployed policy is watched over time rather than validated once.</p>
+<hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
 <p>The recipes progress from immediately practical to research-frontier:</p>
 <p><strong>Simple (deployable now):</strong> Alert threshold optimization and notification timing. These use bandit algorithms or simple RL to tune operational parameters. The &quot;patient&quot; isn't directly affected by exploration because the actions are low-stakes (adjusting a threshold, choosing a notification time). Clear reward signals, fast feedback loops, minimal regulatory burden.</p>
 <p><strong>Medium (requires careful validation):</strong> Sepsis treatment optimization, ventilator weaning, glucose control. These are well-studied problems with published research. Offline RL on historical EHR data. Deployment as clinical decision support with physician override. Significant validation required before any clinical use.</p>
@@ -409,15 +424,25 @@
 <p>I want to be upfront about something: reinforcement learning in healthcare is mostly research. The gap between &quot;published a paper showing our offline RL policy would have improved outcomes on a retrospective dataset&quot; and &quot;deployed a system that actually helps patients in real time&quot; is enormous. It involves regulatory approval, clinical validation, workflow integration, clinician trust, and ongoing monitoring.</p>
 <p>The simpler recipes in this chapter (threshold tuning, notification optimization) are genuinely deployable today. They use well-understood algorithms, have clear safety boundaries, and don't require regulatory approval. Start there.</p>
 <p>The complex recipes are included because the architecture patterns, safety frameworks, and evaluation methodologies are valuable to understand even if full deployment is years away. When you're ready to build toward treatment optimization, you'll want to have thought through these problems in advance.</p>
+<hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Deployable-now parameter tuning: alert-threshold and notification-timing optimization with bandits or simple RL</li>
+<li>Carefully-validated offline RL on historical data: sepsis treatment, ventilator weaning, glucose control, as decision support with physician override</li>
+<li>Research-stage sequential problems: chronic-disease management, chemotherapy dosing, radiation-therapy adaptation</li>
+</ul>
+<p>Across all of them the discipline is the same: learn offline from honest data, evaluate off-policy with real uncertainty, constrain the policy so it cannot recommend the unsafe, and keep a clinician in the loop.</p>
 <p>Let's start with something concrete. Recipe 15.1 takes a problem every health system has (alert fatigue) and shows how a simple RL formulation can learn better thresholds than any static rule.</p>
 <hr />
-<p><em>→ <a href="chapter15.01-alert-threshold-optimization.html">Recipe 15.1 — Alert Threshold Optimization</a></em></p>
 <h2 id="further-reading">Further Reading</h2>
 <ul>
-<li><a href="https://arxiv.org/abs/2005.01643">Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems</a> — comprehensive overview of offline RL, the paradigm most relevant to healthcare applications</li>
-<li><a href="https://www.nature.com/articles/s41591-018-0310-5">Guidelines for Reinforcement Learning in Healthcare</a> — Nature Medicine perspective on challenges and best practices for clinical RL</li>
-<li><a href="https://arxiv.org/abs/2006.04779">Conservative Q-Learning for Offline Reinforcement Learning</a> — the CQL algorithm designed for safe policy learning from fixed datasets</li>
+<li><a href="https://arxiv.org/abs/2005.01643">Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems</a> - comprehensive overview of offline RL, the paradigm most relevant to healthcare applications</li>
+<li><a href="https://www.nature.com/articles/s41591-018-0310-5">Guidelines for Reinforcement Learning in Healthcare</a> - Nature Medicine perspective on challenges and best practices for clinical RL</li>
+<li><a href="https://arxiv.org/abs/2006.04779">Conservative Q-Learning for Offline Reinforcement Learning</a> - the CQL algorithm designed for safe policy learning from fixed datasets</li>
 </ul>
+<hr />
+<p><em>→ <a href="chapter15.01-alert-threshold-optimization.html">Recipe 15.1: Alert Threshold Optimization</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="chapter14.10-architecture.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">14.10 — Health System Network Design · Architecture</span></a><a class="pn-link pn-next" href="chapter15.01-alert-threshold-optimization.html" rel="next"><span class="pn-label">15.1 — Alert Threshold Optimization</span><span class="pn-arrow">→</span></a></nav>

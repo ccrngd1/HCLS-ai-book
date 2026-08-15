@@ -62,7 +62,7 @@ Supervised anomaly detection (train a model on labeled examples of normal and an
 
 ---
 
-## The Techniques You'll See in This Chapter
+## The Techniques You'll See
 
 The recipes pull from several technique families. Quick tour, because you'll see these names repeatedly:
 
@@ -81,24 +81,6 @@ The recipes pull from several technique families. Quick tour, because you'll see
 **LLM-assisted anomaly detection (the new kid).** This is worth flagging because it's a pattern you'll see increasingly in 2026 and beyond. Large language models can help with the context interpretation problem: given a flagged anomaly and its surrounding data, an LLM can generate a plain-language explanation of why it might be unusual, check it against clinical or billing rules encoded as natural language, and even draft investigation notes. They don't replace the detection pipeline, but they can substantially reduce the human time required to triage each alert. 
 
 You don't need all of these. You do need to know roughly when each one applies and why, so that when a recipe uses Isolation Forest rather than a neural autoencoder, you understand the tradeoff.
-
----
-
-## The Progression: Simple to Complex
-
-This chapter is ordered by a combination of stakes, data complexity, and architectural difficulty. Here's the shape of the journey:
-
-**Recipes 3.1 to 3.2 (Simple).** Well-defined problems with clear outcomes, low-stakes interventions, and abundant historical data. Duplicate claim detection and no-show pattern detection. The "did we catch it correctly?" question is easy to answer because the ground truth is observable (the claim really is or isn't a duplicate; the patient really did or didn't show up). These are your 4- to 8-week projects and a great place to demonstrate value before tackling harder problems. They're also excellent introductions to the operational patterns (review queues, feedback loops, threshold tuning) that you'll rely on for the complex recipes later.
-
-**Recipes 3.3 to 3.5 (Simple-Medium to Medium).** Baselines become personal: provider-specific billing patterns, patient-specific lab history, pharmacy context. The data gets higher-dimensional. The stakes rise (medication errors, missed critical values). Real-time alerting starts to enter the picture. These are your two- to four-month projects. Plan for an operational dashboard and a clinician or analyst who owns the alerts.
-
-**Recipe 3.6 (Medium-Complex).** Healthcare fraud/waste/abuse. This is where adversarial dynamics enter the picture and the cost of being wrong (in either direction) jumps significantly. Graph-based methods become genuinely useful here. Legal and compliance review becomes part of the architecture, not an afterthought. Budget a quarter to a half-year, and make sure your SIU (Special Investigations Unit) is involved from day one.
-
-**Recipes 3.7 to 3.8 (Complex).** Direct clinical implications. Patient deterioration early warning and readmission risk detection. Minutes matter in one case, continuous monitoring matters in the other. You're integrating vital signs, labs, nursing notes, and sometimes patient-reported outcomes into a single scoring pipeline. FDA considerations may apply depending on how the output is used (decision support vs. autonomous action). These require clinical governance, validation on your own patient population, and often parallel running against the existing standard of care for months before go-live.
-
-**Recipes 3.9 to 3.10 (Complex).** Cybersecurity access pattern anomalies and epidemic/outbreak detection. High-dimensional behavior spaces, adversarial dynamics (in 3.9), low signal-to-noise ratios, and coordination requirements that extend beyond your organization. These are the hardest recipes in the chapter, and frankly, they're included because they're important, not because most readers should start here. Organizations typically attempt these after they've built anomaly detection maturity on simpler problems.
-
-You can read the chapter in order or jump to a specific recipe. If you're brand new to anomaly detection as a practice, starting with 3.1 and 3.2 will build the mental models that make the harder recipes easier to follow.
 
 ---
 
@@ -136,6 +118,24 @@ Beyond the general anomaly detection challenges, healthcare adds texture:
 
 ---
 
+## How This Chapter Is Organized
+
+This chapter is ordered by a combination of stakes, data complexity, and architectural difficulty. Here's the shape of the journey:
+
+**Recipes 3.1 to 3.2 (Simple).** Well-defined problems with clear outcomes, low-stakes interventions, and abundant historical data. Duplicate claim detection and no-show pattern detection. The "did we catch it correctly?" question is easy to answer because the ground truth is observable (the claim really is or isn't a duplicate; the patient really did or didn't show up). These are your 4- to 8-week projects and a great place to demonstrate value before tackling harder problems. They're also excellent introductions to the operational patterns (review queues, feedback loops, threshold tuning) that you'll rely on for the complex recipes later.
+
+**Recipes 3.3 to 3.5 (Simple-Medium to Medium).** Baselines become personal: provider-specific billing patterns, patient-specific lab history, pharmacy context. The data gets higher-dimensional. The stakes rise (medication errors, missed critical values). Real-time alerting starts to enter the picture. These are your two- to four-month projects. Plan for an operational dashboard and a clinician or analyst who owns the alerts.
+
+**Recipe 3.6 (Medium-Complex).** Healthcare fraud/waste/abuse. This is where adversarial dynamics enter the picture and the cost of being wrong (in either direction) jumps significantly. Graph-based methods become genuinely useful here. Legal and compliance review becomes part of the architecture, not an afterthought. Budget a quarter to a half-year, and make sure your SIU (Special Investigations Unit) is involved from day one.
+
+**Recipes 3.7 to 3.8 (Complex).** Direct clinical implications. Patient deterioration early warning and readmission risk detection. Minutes matter in one case, continuous monitoring matters in the other. You're integrating vital signs, labs, nursing notes, and sometimes patient-reported outcomes into a single scoring pipeline. FDA considerations may apply depending on how the output is used (decision support vs. autonomous action). These require clinical governance, validation on your own patient population, and often parallel running against the existing standard of care for months before go-live.
+
+**Recipes 3.9 to 3.10 (Complex).** Cybersecurity access pattern anomalies and epidemic/outbreak detection. High-dimensional behavior spaces, adversarial dynamics (in 3.9), low signal-to-noise ratios, and coordination requirements that extend beyond your organization. These are the hardest recipes in the chapter, and frankly, they're included because they're important, not because most readers should start here. Organizations typically attempt these after they've built anomaly detection maturity on simpler problems.
+
+You can read the chapter in order or jump to a specific recipe. If you're brand new to anomaly detection as a practice, starting with 3.1 and 3.2 will build the mental models that make the harder recipes easier to follow.
+
+---
+
 ## A Note on Supervised vs. Unsupervised
 
 Most of these recipes use a mix of supervised and unsupervised approaches, and the choice depends on label availability and problem structure. Don't assume you need one or the other before understanding your data situation:
@@ -166,6 +166,14 @@ By the end of this chapter, you'll have patterns for:
 Each recipe is self-contained, but the operational patterns compound. Organizations that build Recipe 3.1 well find that their review queue tooling, feedback loops, and drift monitoring infrastructure are directly reusable for Recipes 3.6 and 3.7. Treat the early recipes as capability-building, not just use-case-solving.
 
 Alright. Let's go find the weird stuff.
+
+---
+
+## Further Reading
+
+- [Anomaly Detection: A Survey (Chandola, Banerjee & Kumar, ACM Computing Surveys 2009)](https://doi.org/10.1145/1541880.1541882) - the canonical map of the field's problem types and techniques.
+- [Isolation Forest (Liu, Ting & Zhou, ICDM 2008)](https://doi.org/10.1109/ICDM.2008.17) - the tree-based method that isolates anomalies directly rather than profiling normality.
+- [scikit-learn: Novelty and Outlier Detection](https://scikit-learn.org/stable/modules/outlier_detection.html) - a practical guide to the estimators (Isolation Forest, Local Outlier Factor, One-Class SVM) this chapter uses.
 
 ---
 

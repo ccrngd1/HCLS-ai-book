@@ -72,7 +72,7 @@ Time series data in healthcare is almost always PHI. Vital signs, lab results, c
 
 ---
 
-## The Methods, Briefly
+## The Techniques You'll See
 
 The recipes in this chapter use a range of techniques. Here's a quick orientation so you know what you're walking into:
 
@@ -86,7 +86,23 @@ The recipes in this chapter use a range of techniques. Here's a quick orientatio
 
 ---
 
-## HIPAA and PHI Considerations
+## Key Architectural Patterns
+
+A few patterns recur across the forecasting recipes, worth naming once.
+
+**Assemble features as of forecast time.** A forecast is only honest if it uses data that would actually have been available at the moment it was made; the recipes build features against an explicit as-of timestamp so a value that arrived later cannot leak into the past.
+
+**Predict distributions, not points.** "Between 35 and 50 patients with 90 percent probability" drives staffing better than "42," so the recipes favor probabilistic output because healthcare decisions ride on the tail, not the average.
+
+**Plan for changepoints.** Protocols change, populations shift, pandemics happen; the pipelines either detect these breaks or are told about them, rather than assuming the future resembles the past.
+
+**Batch and streaming are different pipelines.** Operational aggregates run as scheduled batch jobs; high-frequency vitals and waveforms run as low-latency streams, and the recipes are explicit about which a use case needs.
+
+**Backtest on a rolling origin, and score the tails.** Evaluation replays history forward and weighs performance during the surges and storms that matter, not just average error on ordinary days.
+
+---
+
+## Healthcare-Specific Considerations
 
 Every recipe in this chapter handles data that is or could be PHI. The key compliance patterns you'll see repeated:
 
@@ -131,14 +147,28 @@ Every recipe includes honest discussion of what "good performance" actually mean
 
 ---
 
+## What You'll Build
+
+By the end of this chapter, you'll have patterns for:
+
+- Forecasting operational aggregates, appointment volume, supply consumption, and ED arrivals, where a good interval beats a precise point
+- Tracking irregular patient-level series like lab trends without mistaking a dehydrated draw for real decline
+- Forecasting hospital census and revenue-cycle cash flow to plan staffing and money
+- Monitoring continuous vital-sign and waveform streams to catch deterioration early without drowning the team in false alerts
+- Reaching the complex end: disease-progression and epidemic forecasting across multiple data sources
+
+Across all of them the shape is the same: assemble features as of the moment the forecast would be made, predict a distribution rather than a number, watch for the changepoints healthcare deliberately creates, and evaluate on the tails where the stakes live.
+
 Let's start with the friendliest problem in the chapter: predicting how many patients will show up next week.
 
 ---
-
-*Next: [Recipe 12.1: Appointment Volume Forecasting](chapter12.01-appointment-volume-forecasting.md)*
 
 ## Further Reading
 
 - [Forecasting: Principles and Practice (Hyndman & Athanasopoulos)](https://otexts.com/fpp3/) - the gold standard open textbook on time series forecasting methods
 - [Prophet: Forecasting at Scale (Meta/Facebook Research)](https://facebook.github.io/prophet/) - widely used library for business time series with strong seasonality
 - [GluonTS: Probabilistic Time Series Modeling](https://ts.gluon.ai/) - deep learning toolkit for time series that supports uncertainty estimation
+
+---
+
+*→ [Recipe 12.1: Appointment Volume Forecasting](chapter12.01-appointment-volume-forecasting.md)*

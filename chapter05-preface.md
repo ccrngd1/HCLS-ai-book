@@ -76,28 +76,6 @@ Provider matching to NPI (5.2) is administratively important and has minimal pat
 
 ---
 
-## The Progression: Simple to Complex
-
-This chapter is ordered by a combination of data complexity, governance complexity, and stakes. Here's the journey:
-
-**Recipes 5.1 to 5.2 (Simple).** Internal duplicate patient detection within one system, and provider NPI matching against an authoritative registry. Both are constrained problems with controllable inputs and well-understood techniques. Recipe 5.1 is your first stop because every healthcare organization has duplicate patient records sitting in their database right now, and a focused dedup project pays for itself fast (in cleaner reporting, in avoided clinical mistakes, in reclaimed staff time). Recipe 5.2 is similarly tractable: NPI is a real, reliable national identifier (just not for patients), and the registry is queryable. These are your two- to four-month projects, and they build the operational muscle (review queues, threshold tuning, survivorship rules, audit trails) that the harder recipes need.
-
-**Recipe 5.3 (Simple-Medium).** Address standardization and household linkage. Where geography enters the picture. USPS address standardization is a solved problem if you use the right tools, and household inference is a useful extension for outreach and SDOH analysis. The complexity comes from data quality and from being thoughtful about what assumptions you're encoding when you say "these two patients live in the same household" (you might be right about the address and wrong about the relationship).
-
-**Recipes 5.4 to 5.5 (Medium).** Insurance eligibility matching and cross-facility patient matching for health information exchange. Now you're crossing organizational boundaries. No shared identifiers. Different demographic conventions. Real-time performance requirements (eligibility checks happen at point-of-service). Governance layers (HIE consent, BAA, data use agreements) become part of the architecture. Budget a quarter, and make sure your privacy and compliance team is at the table from the scoping phase.
-
-**Recipe 5.6 (Medium-Complex).** Claims-to-clinical data linkage. The headache problem of healthcare analytics: link the administrative trail of a patient's encounter (claims) to the clinical record of that same encounter (EHR data). Different identifiers, timing misalignment, many-to-many relationships, data quality issues on both sides. This is the recipe that powers most outcomes research, most quality measurement, and most value-based care contracting. It's harder than it looks.
-
-**Recipe 5.7 (Complex).** Longitudinal patient matching across name changes. Real-world identity is not stable in time, and your matching system has to handle that without losing data continuity or violating patient autonomy around their own identity. This recipe pulls in temporal logic, history-aware matching, and a sensitivity layer that most entity resolution systems don't have. It's also the recipe most likely to be retrofitted into an existing system, with all the migration complexity that implies.
-
-**Recipe 5.8 (Complex).** Privacy-preserving record linkage. When you can't exchange raw data, you exchange Bloom filters, secure hashes, or computed match keys instead. The cryptographic techniques are well-established (Bloom-filter-based protocols have been in academic literature for over a decade), but operational deployment is still uncommon and the accuracy ceiling is lower than direct matching. The reason this is in the chapter is that the legal and trust frameworks around healthcare data sharing are tightening, not loosening, and you should know what your options are when "send me your data" stops being one of them.
-
-**Recipes 5.9 to 5.10 (Complex).** National-scale patient matching under TEFCA, and deceased patient resolution. Both stretch the operational and governance dimensions to their limits. National-scale matching has to work at populations of hundreds of millions of records across thousands of participating organizations with widely varying data quality, no central authority, and governance frameworks that are still maturing. Deceased patient resolution sounds simpler but isn't: death data sources are heterogeneous, lag months to years, and surface duplicates that nobody noticed. These recipes are in the chapter because they matter, not because most readers should start here.
-
-You can read the chapter in order or jump to the recipe that maps to your immediate problem. If you're new to entity resolution as a practice, recipes 5.1 and 5.2 will build the mental models that make 5.5 onward make sense.
-
----
-
 ## The Techniques You'll See
 
 The recipes pull from several technique families. Quick tour, because the names recur:
@@ -158,6 +136,28 @@ Beyond the patterns, a few considerations recur:
 
 ---
 
+## How This Chapter Is Organized
+
+This chapter is ordered by a combination of data complexity, governance complexity, and stakes. Here's the journey:
+
+**Recipes 5.1 to 5.2 (Simple).** Internal duplicate patient detection within one system, and provider NPI matching against an authoritative registry. Both are constrained problems with controllable inputs and well-understood techniques. Recipe 5.1 is your first stop because every healthcare organization has duplicate patient records sitting in their database right now, and a focused dedup project pays for itself fast (in cleaner reporting, in avoided clinical mistakes, in reclaimed staff time). Recipe 5.2 is similarly tractable: NPI is a real, reliable national identifier (just not for patients), and the registry is queryable. These are your two- to four-month projects, and they build the operational muscle (review queues, threshold tuning, survivorship rules, audit trails) that the harder recipes need.
+
+**Recipe 5.3 (Simple-Medium).** Address standardization and household linkage. Where geography enters the picture. USPS address standardization is a solved problem if you use the right tools, and household inference is a useful extension for outreach and SDOH analysis. The complexity comes from data quality and from being thoughtful about what assumptions you're encoding when you say "these two patients live in the same household" (you might be right about the address and wrong about the relationship).
+
+**Recipes 5.4 to 5.5 (Medium).** Insurance eligibility matching and cross-facility patient matching for health information exchange. Now you're crossing organizational boundaries. No shared identifiers. Different demographic conventions. Real-time performance requirements (eligibility checks happen at point-of-service). Governance layers (HIE consent, BAA, data use agreements) become part of the architecture. Budget a quarter, and make sure your privacy and compliance team is at the table from the scoping phase.
+
+**Recipe 5.6 (Medium-Complex).** Claims-to-clinical data linkage. The headache problem of healthcare analytics: link the administrative trail of a patient's encounter (claims) to the clinical record of that same encounter (EHR data). Different identifiers, timing misalignment, many-to-many relationships, data quality issues on both sides. This is the recipe that powers most outcomes research, most quality measurement, and most value-based care contracting. It's harder than it looks.
+
+**Recipe 5.7 (Complex).** Longitudinal patient matching across name changes. Real-world identity is not stable in time, and your matching system has to handle that without losing data continuity or violating patient autonomy around their own identity. This recipe pulls in temporal logic, history-aware matching, and a sensitivity layer that most entity resolution systems don't have. It's also the recipe most likely to be retrofitted into an existing system, with all the migration complexity that implies.
+
+**Recipe 5.8 (Complex).** Privacy-preserving record linkage. When you can't exchange raw data, you exchange Bloom filters, secure hashes, or computed match keys instead. The cryptographic techniques are well-established (Bloom-filter-based protocols have been in academic literature for over a decade), but operational deployment is still uncommon and the accuracy ceiling is lower than direct matching. The reason this is in the chapter is that the legal and trust frameworks around healthcare data sharing are tightening, not loosening, and you should know what your options are when "send me your data" stops being one of them.
+
+**Recipes 5.9 to 5.10 (Complex).** National-scale patient matching under TEFCA, and deceased patient resolution. Both stretch the operational and governance dimensions to their limits. National-scale matching has to work at populations of hundreds of millions of records across thousands of participating organizations with widely varying data quality, no central authority, and governance frameworks that are still maturing. Deceased patient resolution sounds simpler but isn't: death data sources are heterogeneous, lag months to years, and surface duplicates that nobody noticed. These recipes are in the chapter because they matter, not because most readers should start here.
+
+You can read the chapter in order or jump to the recipe that maps to your immediate problem. If you're new to entity resolution as a practice, recipes 5.1 and 5.2 will build the mental models that make 5.5 onward make sense.
+
+---
+
 ## What You'll Build
 
 By the end of this chapter, you'll have patterns for:
@@ -178,6 +178,14 @@ Each recipe is self-contained, but the infrastructure compounds. The blocking in
 One last thing before we dive in: entity resolution is a problem that is never finished. The data keeps coming, the people keep changing, and the systems keep evolving. Treat it as ongoing operational work rather than a project that completes. The organizations that do entity resolution well have a team that owns it, monitors it, and improves it continuously. The organizations that treat it as a one-time data cleanup are the organizations that, three years later, are doing the cleanup again, with worse data and harder problems.
 
 Alright. Let's figure out who's who.
+
+---
+
+## Further Reading
+
+- [A Theory for Record Linkage (Fellegi & Sunter, JASA 1969)](https://doi.org/10.1080/01621459.1969.10501049) - the probabilistic model underneath most modern matching, including the recipes here.
+- [Splink (UK Ministry of Justice)](https://github.com/moj-analytical-services/splink) - an open-source, Fellegi-Sunter-based record-linkage library that scales to hundreds of millions of records.
+- [Data Matching (Christen, Springer 2012)](https://doi.org/10.1007/978-3-642-31164-2) - the standard textbook on entity resolution, blocking strategies, and evaluation.
 
 ---
 

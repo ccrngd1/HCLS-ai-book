@@ -374,14 +374,6 @@
 <p>So the frame for this chapter is: the algorithms are (mostly) not the hard part. The hard parts are everything around the algorithms.</p>
 <p>The chapter covers ten recipes, ordered from &quot;you can ship this in a quarter&quot; to &quot;this is research-grade and you need a clinical informatics board to approve it.&quot; The spread is intentional. Most organizations land somewhere in the first half of the list, and they land there because the second half requires a level of data, governance, and organizational maturity that's genuinely rare. That's fine. Recipe 4.1 (appointment reminder channel optimization) and Recipe 4.2 (patient education content matching) pay for themselves quickly and build the infrastructure you'll need later. Treat them as capability investments, not just point solutions.</p>
 <hr />
-<h2 id="what-youll-see-in-this-chapter">What You'll See in This Chapter</h2>
-<p>A quick scan of the progression, so you can find the right entry point:</p>
-<p><strong>Recipes 4.1 to 4.2 (Simple).</strong> Channel and content recommendations. The stakes are low, the success metric is obvious (did the patient open it, show up, engage?), and A/B testing is straightforward. These are your three-to-four-month projects and a great first taste of operational recommender infrastructure.</p>
-<p><strong>Recipe 4.3 (Simple-Medium).</strong> Provider directory search ranking. Where personalization starts colliding with fairness: how you rank providers affects how patients flow to them, and algorithmic ranking choices can have material effects on access equity.</p>
-<p><strong>Recipes 4.4 to 4.6 (Medium).</strong> Wellness programs, medication adherence interventions, and care gap prioritization. Now you're predicting not just preference but behavioral response, and the downstream decisions affect how limited resources (program slots, outreach calls, clinical attention) get allocated. Budget a full quarter plus governance time.</p>
-<p><strong>Recipe 4.7 (Medium-Complex).</strong> Care management program enrollment. This is where rationing gets explicit: programs have capacity, patients have needs, and your recommender is choosing. The ethical weight of that choice needs to be designed into the system, not bolted on after.</p>
-<p><strong>Recipes 4.8 to 4.10 (Complex).</strong> Treatment response prediction, personalized care plan generation, and dynamic treatment regime recommendation. Direct clinical impact. Regulatory exposure. Counterfactual reasoning. These recipes are in the chapter because they represent where the field is heading, but they are not where you start, and most organizations will need partnerships with research institutions or vendors to attempt them responsibly.</p>
-<hr />
 <h2 id="why-healthcare-personalization-is-hard-and-different">Why Healthcare Personalization Is Hard (And Different)</h2>
 <p>A few things separate healthcare personalization from the retail playbook. Calling these out now, because every recipe bumps into at least one of them.</p>
 <h3 id="the-goal-isnt-engagement-its-outcomes">The Goal Isn't Engagement, It's Outcomes</h3>
@@ -401,7 +393,7 @@
 <h3 id="regulatory-exposure-ramps-fast">Regulatory Exposure Ramps Fast</h3>
 <p>Recipes 4.1 through 4.4 are generally in &quot;operational tooling&quot; territory: not FDA-regulated, not subject to significant external oversight beyond HIPAA. Recipes 4.5 through 4.7 start bumping into payer contracting, CMS quality measures, and state-level regulations around care management. Recipes 4.8 through 4.10 are at or near the FDA's expanding interest in AI-driven clinical decision support, and the regulatory posture is still evolving. Where a recipe sits on that spectrum, it says so. Your legal and compliance teams need to be partners from the scoping phase, not reviewers at the end.</p>
 <hr />
-<h2 id="the-technique-families-youll-see">The Technique Families You'll See</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>The recipes pull from several technique families. Quick map, because you'll see these names repeatedly:</p>
 <p><strong>Rule-based recommendation.</strong> Explicit &quot;if-then&quot; logic. &quot;Patient has diabetes plus HbA1c &gt; 9, recommend the intensive diabetes management program.&quot; Transparent, auditable, clinically reviewable. Doesn't scale when the rules multiply, and doesn't learn from feedback, but it's the right starting point for many use cases and often the right long-term answer for high-stakes decisions where explainability matters more than sophistication.</p>
 <p><strong>Content-based filtering.</strong> Recommend items that are similar to items the patient has engaged with, based on item features. &quot;Patient read three articles tagged 'newly diagnosed diabetes type 2'; recommend more articles with that tag at a similar reading level.&quot; Works well for curated content libraries and cold-start scenarios because it doesn't need a user history for similar users.</p>
@@ -431,6 +423,14 @@
 <p><strong>Social determinants of health (SDOH).</strong> Several recipes include SDOH data: transportation, housing stability, food security, financial strain. These features are enormously predictive and enormously sensitive. The recipes note where SDOH data is used, where it could encode bias, and where additional governance is warranted.</p>
 <p><strong>Equity-specific outcomes monitoring.</strong> Beyond &quot;is the model accurate on average,&quot; you track &quot;is it accurate and fair across the populations we serve.&quot; For some use cases, that means reporting stratified metrics to regulators, to quality committees, or to the communities the system serves. Plan for that reporting up front; retrofitting it is painful.</p>
 <hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
+<p>A quick scan of the progression, so you can find the right entry point:</p>
+<p><strong>Recipes 4.1 to 4.2 (Simple).</strong> Channel and content recommendations. The stakes are low, the success metric is obvious (did the patient open it, show up, engage?), and A/B testing is straightforward. These are your three-to-four-month projects and a great first taste of operational recommender infrastructure.</p>
+<p><strong>Recipe 4.3 (Simple-Medium).</strong> Provider directory search ranking. Where personalization starts colliding with fairness: how you rank providers affects how patients flow to them, and algorithmic ranking choices can have material effects on access equity.</p>
+<p><strong>Recipes 4.4 to 4.6 (Medium).</strong> Wellness programs, medication adherence interventions, and care gap prioritization. Now you're predicting not just preference but behavioral response, and the downstream decisions affect how limited resources (program slots, outreach calls, clinical attention) get allocated. Budget a full quarter plus governance time.</p>
+<p><strong>Recipe 4.7 (Medium-Complex).</strong> Care management program enrollment. This is where rationing gets explicit: programs have capacity, patients have needs, and your recommender is choosing. The ethical weight of that choice needs to be designed into the system, not bolted on after.</p>
+<p><strong>Recipes 4.8 to 4.10 (Complex).</strong> Treatment response prediction, personalized care plan generation, and dynamic treatment regime recommendation. Direct clinical impact. Regulatory exposure. Counterfactual reasoning. These recipes are in the chapter because they represent where the field is heading, but they are not where you start, and most organizations will need partnerships with research institutions or vendors to attempt them responsibly.</p>
+<hr />
 <h2 id="what-youll-build">What You'll Build</h2>
 <p>By the end of this chapter, you'll have patterns for:</p>
 <ul>
@@ -448,6 +448,13 @@
 <p>Each recipe is self-contained, but the infrastructure compounds. The feature store you build for Recipe 4.1 powers Recipes 4.4 and 4.5. The preference capture you implement for Recipe 4.1 is reused everywhere. The fairness monitoring dashboard you stand up for Recipe 4.3 extends naturally to every subsequent recipe. Treat the early recipes as capability investments. The later ones will be easier, faster, and safer because of them.</p>
 <p>One last thing before we dive in: personalization in healthcare works best when it feels invisible. The patient who gets reminded in their preferred channel, the clinician who sees the right care gaps surfaced at the right moment, the care manager whose outreach list is prioritized by who will actually respond. Nobody says &quot;wow, that was a great recommendation algorithm.&quot; They say &quot;this system just works for me.&quot; That's the goal. If the system feels like it's recommending at you, the personalization failed, regardless of how good the AUC was.</p>
 <p>Alright. Let's make healthcare feel like it's actually for them.</p>
+<hr />
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://doi.org/10.1109/MC.2009.263">Matrix Factorization Techniques for Recommender Systems (Koren, Bell &amp; Volinsky, IEEE Computer 2009)</a> - the canonical account of the collaborative-filtering approach underneath most recommenders.</li>
+<li><a href="https://doi.org/10.1126/science.aax2342">Dissecting racial bias in an algorithm used to manage the health of populations (Obermeyer et al., Science 2019)</a> - the fairness cautionary tale this chapter's &quot;Fairness Is Not Optional&quot; section alludes to.</li>
+<li><a href="https://github.com/uber/causalml">CausalML (Uber)</a> - an open-source library for the uplift and causal modeling the chapter highlights as underused in healthcare.</li>
+</ul>
 <hr />
 <p><em>→ <a href="chapter04.01-appointment-reminder-channel-optimization.html">Recipe 4.1: Appointment Reminder Channel Optimization</a></em></p>
 

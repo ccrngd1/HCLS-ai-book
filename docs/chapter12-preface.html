@@ -391,14 +391,22 @@
 <h3 id="regulatory-and-privacy-constraints-shape-architecture">Regulatory and Privacy Constraints Shape Architecture</h3>
 <p>Time series data in healthcare is almost always PHI. Vital signs, lab results, census counts (when combined with dates), and appointment records all fall under HIPAA. This means your forecasting infrastructure needs encryption at rest and in transit, audit logging, access controls, and BAA-covered compute environments. You can't just spin up a Jupyter notebook on a public cloud instance and start training on patient data. The architecture decisions in this chapter all assume HIPAA compliance as a baseline requirement.</p>
 <hr />
-<h2 id="the-methods-briefly">The Methods, Briefly</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>The recipes in this chapter use a range of techniques. Here's a quick orientation so you know what you're walking into:</p>
 <p><strong>Classical statistical methods (ARIMA, ETS, Prophet):</strong> These remain excellent for operational forecasting where patterns are seasonal and data is plentiful. Don't let anyone tell you that deep learning has replaced ARIMA for predicting next week's appointment volume. It hasn't. The simple methods are often more interpretable, faster to train, and just as accurate for well-behaved series.</p>
 <p><strong>Machine learning approaches (gradient boosted trees, random forests):</strong> When you have rich feature sets (day of week, weather, events, historical patterns as engineered features), ML methods that treat forecasting as a regression problem can be surprisingly effective. They handle non-linearities and feature interactions well. The downside is they don't naturally model temporal dependencies, so you're encoding time structure through feature engineering.</p>
 <p><strong>Deep learning (LSTMs, Transformers, temporal CNNs):</strong> These shine when you have lots of related series (thousands of patients, hundreds of supply items) and want to learn shared patterns across them. They're also the go-to for streaming physiological data where the temporal structure is complex and the features are learned rather than engineered. The cost is interpretability and data requirements.</p>
 <p><strong>Probabilistic forecasting:</strong> Several recipes emphasize predicting distributions rather than point estimates. When you forecast &quot;the ED will see 42 patients tomorrow,&quot; that's less useful than &quot;the ED will see between 35 and 50 patients tomorrow with 90% probability.&quot; Uncertainty quantification is critical in healthcare because decisions depend on worst-case scenarios, not averages.</p>
 <hr />
-<h2 id="hipaa-and-phi-considerations">HIPAA and PHI Considerations</h2>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the forecasting recipes, worth naming once.</p>
+<p><strong>Assemble features as of forecast time.</strong> A forecast is only honest if it uses data that would actually have been available at the moment it was made; the recipes build features against an explicit as-of timestamp so a value that arrived later cannot leak into the past.</p>
+<p><strong>Predict distributions, not points.</strong> &quot;Between 35 and 50 patients with 90 percent probability&quot; drives staffing better than &quot;42,&quot; so the recipes favor probabilistic output because healthcare decisions ride on the tail, not the average.</p>
+<p><strong>Plan for changepoints.</strong> Protocols change, populations shift, pandemics happen; the pipelines either detect these breaks or are told about them, rather than assuming the future resembles the past.</p>
+<p><strong>Batch and streaming are different pipelines.</strong> Operational aggregates run as scheduled batch jobs; high-frequency vitals and waveforms run as low-latency streams, and the recipes are explicit about which a use case needs.</p>
+<p><strong>Backtest on a rolling origin, and score the tails.</strong> Evaluation replays history forward and weighs performance during the surges and storms that matter, not just average error on ordinary days.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
 <p>Every recipe in this chapter handles data that is or could be PHI. The key compliance patterns you'll see repeated:</p>
 <ul>
 <li>All compute runs in BAA-covered environments</li>
@@ -491,15 +499,26 @@
 <p>One thing that trips people up in healthcare forecasting: <strong>your standard evaluation metrics might be lying to you.</strong> Mean Absolute Error looks great when your model is accurate 95% of the time but catastrophically wrong during the 5% that matters most (the COVID surge, the ice storm, the unexpected sepsis). Always evaluate your models on the tails, not just the average. If your ED forecasting model is perfect on normal Tuesdays but useless during mass casualty events, it's failing at exactly the moment you need it most.</p>
 <p>Every recipe includes honest discussion of what &quot;good performance&quot; actually means in context, because in healthcare, &quot;the model is 93% accurate&quot; is never the end of the conversation.</p>
 <hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Forecasting operational aggregates, appointment volume, supply consumption, and ED arrivals, where a good interval beats a precise point</li>
+<li>Tracking irregular patient-level series like lab trends without mistaking a dehydrated draw for real decline</li>
+<li>Forecasting hospital census and revenue-cycle cash flow to plan staffing and money</li>
+<li>Monitoring continuous vital-sign and waveform streams to catch deterioration early without drowning the team in false alerts</li>
+<li>Reaching the complex end: disease-progression and epidemic forecasting across multiple data sources</li>
+</ul>
+<p>Across all of them the shape is the same: assemble features as of the moment the forecast would be made, predict a distribution rather than a number, watch for the changepoints healthcare deliberately creates, and evaluate on the tails where the stakes live.</p>
 <p>Let's start with the friendliest problem in the chapter: predicting how many patients will show up next week.</p>
 <hr />
-<p><em>Next: <a href="chapter12.01-appointment-volume-forecasting.html">Recipe 12.1: Appointment Volume Forecasting</a></em></p>
 <h2 id="further-reading">Further Reading</h2>
 <ul>
 <li><a href="https://otexts.com/fpp3/">Forecasting: Principles and Practice (Hyndman &amp; Athanasopoulos)</a> - the gold standard open textbook on time series forecasting methods</li>
 <li><a href="https://facebook.github.io/prophet/">Prophet: Forecasting at Scale (Meta/Facebook Research)</a> - widely used library for business time series with strong seasonality</li>
 <li><a href="https://ts.gluon.ai/">GluonTS: Probabilistic Time Series Modeling</a> - deep learning toolkit for time series that supports uncertainty estimation</li>
 </ul>
+<hr />
+<p><em>→ <a href="chapter12.01-appointment-volume-forecasting.html">Recipe 12.1: Appointment Volume Forecasting</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="chapter11.10-architecture.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">11.10 — Clinical Trial Recruitment Conversationalist · Architecture</span></a><a class="pn-link pn-next" href="chapter12.01-appointment-volume-forecasting.html" rel="next"><span class="pn-label">12.1 — Appointment Volume Forecasting</span><span class="pn-arrow">→</span></a></nav>

@@ -389,7 +389,7 @@
 <p>&quot;Optimize the schedule&quot; sounds simple until someone asks: optimize for what? Minimize cost? Maximize throughput? Minimize wait times? Maximize staff satisfaction? Ensure equitable workload distribution? These objectives frequently conflict. The cheapest schedule might burn out your best nurses. The highest-throughput OR schedule might leave no buffer for emergencies. The most equitable assignment might not match patients to the best-qualified providers.</p>
 <p>Real healthcare optimization is almost always multi-objective, which means you're not finding &quot;the answer.&quot; You're finding a set of trade-offs and helping decision-makers choose among them. This is a fundamentally different user experience than &quot;the computer tells you what to do.&quot; It's &quot;the computer shows you three good options and explains what you're giving up with each one.&quot;</p>
 <hr />
-<h2 id="the-solver-landscape-a-quick-tour">The Solver Landscape (A Quick Tour)</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>If you're new to optimization, the landscape of solution approaches can feel overwhelming. Here's a practical taxonomy of what you'll encounter in this chapter, ordered roughly from simplest to most complex.</p>
 <h3 id="linear-programming-lp">Linear Programming (LP)</h3>
 <p>The workhorse. You have a linear objective function (minimize cost, maximize utilization) subject to linear constraints (total hours ≤ 40, demand ≥ supply). The simplex method or interior-point methods solve these efficiently, even at large scale. If your problem can be formulated as an LP, you're in good shape: solutions are fast, provably optimal, and well-understood.</p>
@@ -414,7 +414,22 @@
 <p><strong>Decision-makers are ready.</strong> COVID broke a lot of healthcare operations teams' confidence in manual scheduling and allocation. When your census swings wildly, your staff is calling off unpredictably, and your supply chain is disrupted, the whiteboard approach doesn't scale. There's genuine appetite for tools that can reoptimize quickly as conditions change.</p>
 <p><strong>The &quot;good enough&quot; bar has risen.</strong> Healthcare margins are thin and getting thinner. The difference between 70% OR utilization and 82% OR utilization is millions of dollars annually for a mid-size hospital. The difference between optimal and suboptimal nurse scheduling is burnout, turnover, and agency spend. The financial case for optimization has never been stronger.</p>
 <hr />
-<h2 id="what-this-chapter-covers">What This Chapter Covers</h2>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the optimization recipes, worth naming once.</p>
+<p><strong>Discover the constraints before formulating.</strong> The formal rules (labor law, certification, room capability) are only half the model; the unwritten ones decide whether a schedule is accepted, so the recipes spend real effort eliciting constraints from the people who make these decisions today.</p>
+<p><strong>Optimize against noisy estimates, not perfect data.</strong> Case durations, demand, and availability are wrong in predictable ways, so the models are fed by a pipeline that carries uncertainty rather than assuming exact parameters.</p>
+<p><strong>Multi-objective means options, not an answer.</strong> Cost, throughput, wait time, and staff fairness conflict; the recipes surface a few good trade-offs and explain what each gives up, rather than handing back one &quot;optimal&quot; schedule.</p>
+<p><strong>Match the solver to the problem.</strong> Linear programs, mixed-integer programs, constraint programming, metaheuristics, and simulation-optimization each fit different shapes; the recipes choose deliberately, and note where a simple heuristic beats an exact solver that is too slow or too data-hungry.</p>
+<p><strong>Reoptimize as conditions change.</strong> Call-offs, surges, and disruptions move the problem during the day, so the dynamic recipes re-solve quickly from the current state rather than producing one static plan.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>Beyond the model, a few considerations shape every deployment in this chapter.</p>
+<p><strong>Adoption is a people problem.</strong> A mathematically optimal schedule the charge nurse ignores changes nothing, so every recipe treats change management and clinician trust as part of the build, not an afterthought.</p>
+<p><strong>The inputs are often PHI.</strong> Schedules, assignments, and the demand and acuity data behind them are derived from patient records, so the encryption, access-control, and business associate agreement obligations from earlier chapters apply to the optimization pipeline.</p>
+<p><strong>Some objectives are life-safety, not efficiency.</strong> Ambulance routing and chemotherapy timing carry direct patient impact, so the recipes weight constraints accordingly and keep a human accountable for the decision.</p>
+<p><strong>Equity is an explicit objective, not a byproduct.</strong> Distributing call, weekends, and undesirable shifts fairly is something the model must be told to optimize; left implicit, least-cost solutions concentrate the burden on a few people.</p>
+<hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
 <p>The recipes in this chapter progress from simple, well-bounded optimization problems to complex, multi-stakeholder network design challenges. Here's the arc:</p>
 <p><strong>Recipes 14.1-14.2</strong> start with straightforward assignment and allocation problems. Appointment slot optimization and patient-provider assignment have clean objective functions, manageable constraint sets, and can deliver value quickly. These are your &quot;prove the concept&quot; implementations.</p>
 <p><strong>Recipes 14.3-14.5</strong> move into medium-complexity territory. Inventory optimization introduces uncertainty (demand variability, lead times). Nurse staffing adds complex labor constraints and fairness objectives. OR block scheduling brings political dynamics and competing stakeholder interests. These are the problems where you'll spend as much time on change management as on model building.</p>
@@ -426,16 +441,28 @@
 <p>I want to be upfront about something: optimization in healthcare is as much a people problem as a math problem. The best model in the world is worthless if the charge nurse ignores its output. The most elegant formulation fails if it doesn't capture the constraints that actually matter to the humans making decisions.</p>
 <p>Every recipe in this chapter includes a section on adoption and change management, because I've seen too many technically brilliant optimization projects die on the vine because they were built by people who understood solvers but didn't understand how healthcare operations actually work.</p>
 <p>The other thing I'll be honest about: not every problem in this chapter needs a sophisticated solver. Sometimes a well-designed heuristic (a set of rules that produces good-enough solutions quickly) outperforms an optimal solver that takes too long to run or requires data you don't have. I'll call out where simpler approaches might be the right starting point, and where the full optimization machinery is genuinely worth the investment.</p>
+<hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Cleanly-bounded assignment and allocation: appointment slots and patient-provider matching</li>
+<li>Medium-complexity scheduling with real constraints: inventory under uncertainty, nurse staffing, OR block allocation</li>
+<li>Dynamic, real-time reoptimization of patient flow and OR case sequencing as the day changes</li>
+<li>Life-safety operations: ambulance routing and chemotherapy scheduling, where suboptimal is expensive</li>
+<li>The strategic capstone: multi-year health-system network design</li>
+</ul>
+<p>The recurring shape holds throughout: discover the real constraints, optimize against honest (uncertain) data, present trade-offs rather than a single answer, and design for the humans who have to accept the result.</p>
 <p>Let's start with the simplest version of the problem: making appointment slots work better.</p>
 <hr />
-<p><em>→ <a href="chapter14.01-appointment-slot-optimization.html">Recipe 14.1 — Appointment Slot Optimization</a></em></p>
 <h2 id="further-reading">Further Reading</h2>
 <ul>
-<li><a href="https://www.athenasc.com/linoptbook.html">Introduction to Linear Optimization</a> by Bertsimas and Tsitsiklis — the standard graduate text on LP and its extensions</li>
-<li><a href="https://highs.dev/">HiGHS</a> — high-performance open-source solver for LP, MIP, and QP problems</li>
-<li><a href="https://developers.google.com/optimization">Google OR-Tools</a> — open-source optimization toolkit with constraint programming, routing, and scheduling solvers</li>
-<li><a href="https://www.informs.org/Explore/Healthcare">INFORMS Healthcare</a> — the professional society for operations research, with a dedicated healthcare applications community</li>
+<li><a href="https://www.athenasc.com/linoptbook.html">Introduction to Linear Optimization</a> by Bertsimas and Tsitsiklis - the standard graduate text on LP and its extensions</li>
+<li><a href="https://highs.dev/">HiGHS</a> - high-performance open-source solver for LP, MIP, and QP problems</li>
+<li><a href="https://developers.google.com/optimization">Google OR-Tools</a> - open-source optimization toolkit with constraint programming, routing, and scheduling solvers</li>
+<li><a href="https://www.informs.org/Explore/Healthcare">INFORMS Healthcare</a> - the professional society for operations research, with a dedicated healthcare applications community</li>
 </ul>
+<hr />
+<p><em>→ <a href="chapter14.01-appointment-slot-optimization.html">Recipe 14.1: Appointment Slot Optimization</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="chapter13.10-architecture.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">13.10 — Federated Clinical Knowledge Network · Architecture</span></a><a class="pn-link pn-next" href="chapter14.01-appointment-slot-optimization.html" rel="next"><span class="pn-label">14.1 — Appointment Slot Optimization</span><span class="pn-arrow">→</span></a></nav>

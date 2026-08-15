@@ -26,7 +26,7 @@ None of this means LLMs are bad. They're genuinely transformative for certain ta
 
 ---
 
-## The Core Techniques
+## The Techniques You'll See
 
 Let me give you a quick map of the algorithmic approaches we'll use across these recipes, so you have the vocabulary before we dive in.
 
@@ -70,7 +70,37 @@ On the AWS side, Amazon Comprehend Medical provides pre-built clinical NLP capab
 
 ---
 
-## How the Recipes Progress
+## Key Architectural Patterns
+
+A few patterns recur across the extraction recipes, worth naming once.
+
+**A pipeline of narrow components, not one model.** Clinical extraction is a sequence: tokenize and split sentences, recognize entities, decide each entity's assertion status, then normalize to a standard code. The recipes compose these stages rather than asking a single model to do everything, which is what makes each step testable and swappable.
+
+**Assertion detection is a mandatory stage, not a nicety.** "Denies chest pain" and "reports chest pain" carry the same entity and opposite meaning, so negation and assertion sit in the pipeline by default. Skipping it does not lower accuracy a little; it produces confidently wrong clinical facts.
+
+**Normalization is its own step.** Mapping a mention to SNOMED CT, ICD-10, RxNorm, or LOINC is an entity-linking problem against large, hierarchical vocabularies, kept separate from extraction so the target terminology can be updated without retraining the extractor.
+
+**Determinism and provenance, on purpose.** For research and safety use the recipes prefer approaches whose output can be traced to the rule or feature that produced it, so a match can be explained to a reviewer, an institutional review board, or a regulator.
+
+**Confidence gating and human review for the high-stakes extractions.** The same review-queue pattern from earlier chapters applies: low-confidence or safety-relevant extractions route to a human rather than flowing straight into a downstream system.
+
+---
+
+## Healthcare-Specific Considerations
+
+Beyond the pipeline, a few considerations shape every deployment in this chapter.
+
+**The notes and everything pulled from them are PHI.** Clinical text, extracted entities, and the training corpora all carry protected health information; the encryption, access controls, and business associate agreement obligations from earlier chapters apply, and the research datasets (i2b2/n2c2, MIMIC) come with their own data use agreements and institutional review.
+
+**Assertion errors are a safety issue, not just an accuracy number.** Because a flipped assertion inverts a clinical fact, the recipes treat assertion and negation evaluation as a safety check with its own error budget.
+
+**Determinism is what makes the output defensible.** Reproducible, auditable extraction is a precondition for regulatory submissions, safety surveillance, and IRB-approved phenotyping, which is much of why this chapter exists alongside the LLM chapter.
+
+**Vocabularies drift.** ICD-10, SNOMED CT, and RxNorm are versioned and change; normalization mappings go stale, so the recipes treat the terminology as a maintained dependency rather than a fixed table.
+
+---
+
+## How This Chapter Is Organized
 
 We start simple and build complexity deliberately.
 
@@ -84,7 +114,7 @@ We start simple and build complexity deliberately.
 
 ---
 
-## A Word About the LLM Elephant in the Room
+## A Note on the LLM Elephant in the Room
 
 Every technique in this chapter predates the current LLM wave. Some of these approaches are 20+ years old. That might make them sound outdated. They're not.
 
@@ -92,11 +122,23 @@ Here's the honest assessment: LLMs will eventually handle many of these tasks we
 
 Build with what works today. Keep an eye on what's coming. That's the pragmatic engineering approach.
 
+---
+
+## What You'll Build
+
+By the end of this chapter, you'll have patterns for:
+
+- Classifying short clinical text: chief complaints into categories, patient feedback by tone and theme
+- Extracting diagnostic concepts and mapping them to ICD-10, and pulling medications with their full sig and normalizing to RxNorm
+- Separating a patient's active problems from family history and resolved conditions
+- Surfacing the signals clinicians document obliquely: social determinants and adverse drug events
+- Classifying assertion status, ordering events in time without explicit dates, and assembling multi-component phenotype algorithms for research
+
+Underneath all of them sits the same scaffolding: an entity-extraction pipeline with a mandatory assertion stage, normalization to a standard vocabulary, and a confidence-gated human review step for the high-stakes extractions.
+
 Let's start with the simplest pattern: taking a short text string and putting it in a bucket.
 
 ---
-
-*-> [Recipe 8.1: Chief Complaint Classification](chapter08.01-chief-complaint-classification)*
 
 ## Further Reading
 
@@ -106,3 +148,7 @@ Let's start with the simplest pattern: taking a short text string and putting it
 - [medspaCy](https://github.com/medspacy/medspacy) - clinical text processing toolkit extending spaCy with assertion detection, context analysis, and section tagging
 - [UMLS (Unified Medical Language System)](https://www.nlm.nih.gov/research/umls/index.html) - the NLM meta-thesaurus referenced throughout this chapter
 - [i2b2/n2c2 NLP Research Data Sets](https://www.i2b2.org/NLP/DataSets/) - clinical NLP challenge datasets for training and benchmarking
+
+---
+
+*→ [Recipe 8.1: Chief Complaint Classification](chapter08.01-chief-complaint-classification)*

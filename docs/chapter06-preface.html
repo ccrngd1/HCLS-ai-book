@@ -367,7 +367,7 @@
 <p>The simplest mental model: imagine plotting your patients on a scatter plot where the X axis is &quot;number of ED visits per year&quot; and the Y axis is &quot;number of chronic conditions.&quot; You'd probably see clumps. Some patients cluster in the low-low corner (healthy, rarely use services). Some cluster in the high-high corner (complex, frequent utilizers). Some are in the high-visits-but-low-conditions zone (maybe behavioral health, maybe social determinants driving ED use). Those clumps are clusters. The algorithm finds them without you having to define the boundaries in advance.</p>
 <p>Now scale that from two dimensions to two hundred. Age, diagnoses, medications, lab values, utilization patterns, social determinants, geographic factors, payer information, provider relationships. The human brain can't visualize 200-dimensional space, but clustering algorithms navigate it just fine. That's where the real value lives: in the high-dimensional patterns that are invisible to human intuition.</p>
 <hr />
-<h2 id="the-algorithmic-landscape">The Algorithmic Landscape</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>You don't need to be a mathematician to build useful clustering systems, but you do need to understand the trade-offs between approaches. Here's the landscape at a practical level.</p>
 <h3 id="k-means-and-its-variants">K-Means and Its Variants</h3>
 <p>The workhorse. You tell it how many clusters you want (k), it iterates until it finds k groups that minimize within-group distance. Fast, scalable, easy to explain to stakeholders. The catch: you have to pick k in advance, it assumes roughly spherical clusters, and it's sensitive to outliers. For healthcare, k-means works great when you have a reasonable hypothesis about how many segments exist (say, 4-6 utilization tiers) and your features are relatively well-behaved numerically.</p>
@@ -397,19 +397,31 @@
 <h3 id="the-validation-problem">The Validation Problem</h3>
 <p>This is the big one. In supervised learning, you have ground truth: the model either predicted correctly or it didn't. In clustering, there's no ground truth. How do you know your clusters are &quot;good&quot;? Internal metrics (silhouette score, Davies-Bouldin index) tell you about mathematical separation but not clinical meaning. External validation requires clinical experts to review the clusters and say &quot;yes, these groups make sense and are actionable.&quot; That's expensive and subjective.</p>
 <hr />
-<h2 id="the-equity-dimension">The Equity Dimension</h2>
-<p>I want to flag something that doesn't get enough attention in technical discussions of patient clustering: these algorithms can encode and amplify existing disparities.</p>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the clustering recipes, worth naming once.</p>
+<p><strong>Reduce, then cluster.</strong> With hundreds of healthcare features, distance metrics degrade in high dimensions, so the recipes follow a two-stage pipeline: reduce dimensionality first (PCA, UMAP, or an autoencoder), then cluster in the reduced space. It is the most common production shape and it is reusable across recipes.</p>
+<p><strong>One feature store, many segmentations.</strong> The patient- and provider-level features engineered for one clustering job are the same features the next one wants. The recipes assume a shared feature store rather than a bespoke extract per model, which also keeps the definition of &quot;similar&quot; consistent across the chapter.</p>
+<p><strong>Batch segmentation versus real-time similarity.</strong> Two serving shapes appear here: a periodic batch job that assigns everyone to a cohort, and interactive &quot;find patients like this one&quot; similarity search. The recipes are explicit about which a use case needs, because a scheduled job and a vector index behind an API are different architectures.</p>
+<p><strong>A validation harness, not a one-off.</strong> Because clustering has no ground truth, the recipes wrap each model in a repeatable evaluation: internal metrics for separation plus a structured clinical review for meaning. That harness is what lets you re-run on new data and know whether the segments still hold.</p>
+<p><strong>Clusters are recomputed, because patients move.</strong> A segment is a snapshot. The recipes treat re-clustering as a scheduled operation with a defined cadence and track how patients migrate between cohorts, rather than assuming last quarter's segments still describe today's population.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>The algorithms are mature; the healthcare context is where clustering gets dangerous. A few considerations recur across the recipes.</p>
+<p><strong>Clusters can encode and amplify disparities.</strong> In technical discussions of patient clustering this gets too little attention: these algorithms can encode and amplify existing disparities.</p>
 <p>If your training data reflects a system where Black patients receive fewer referrals to specialists, your utilization-based clusters will show Black patients as &quot;lower utilizers&quot; when the reality is &quot;under-served.&quot; If your features include zip code (even indirectly through geographic clustering), you're encoding structural racism into your segments. If your &quot;high-risk&quot; cluster disproportionately contains patients from marginalized communities, is that because they're genuinely higher risk, or because the system has failed them in ways that create risk?</p>
 <p>Every recipe in this chapter includes a section on bias considerations. Not because it's fashionable, but because clustering without equity analysis is genuinely dangerous in healthcare. You can build a technically excellent segmentation model that systematically disadvantages vulnerable populations if you're not careful.</p>
+<p><strong>A cluster label is PHI.</strong> The segment a patient lands in is a derived statement about them; cluster assignments, the features behind them, and the logs that record them all carry protected health information and inherit the same encryption, access-control, and business associate agreement obligations as the source data.</p>
+<p><strong>A cohort is not a stereotype.</strong> A segment that is statistically valid across a population can be misleading, or offensive, applied to one person. The recipes use cohorts to prioritize outreach and to design programs, not to make individual determinations, and they say where that line sits.</p>
+<p><strong>Statistical structure is not clinical meaning.</strong> An algorithm will always return clusters; whether they are actionable is a clinical judgment, not a silhouette score. The recipes pair internal validation with clinician review before any segment drives a care decision.</p>
 <hr />
-<h2 id="how-this-chapter-progresses">How This Chapter Progresses</h2>
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
 <p>The ten recipes in this chapter move from straightforward, well-bounded clustering problems to genuinely complex research-grade challenges.</p>
 <p><strong>Recipes 6.1-6.3</strong> start with clustering problems where the features are clear, the interpretation is straightforward, and the results drive operational (not clinical) decisions. Geographic clustering, utilization segmentation, and financial risk grouping. These are the &quot;quick wins&quot; where you can demonstrate value without needing deep clinical validation.</p>
 <p><strong>Recipes 6.4-6.5</strong> introduce clinical complexity. Disease severity stratification requires clinical domain knowledge to select features and validate results. Provider practice pattern analysis adds political sensitivity (providers don't love being clustered and compared). These recipes teach you how to work with clinical stakeholders and handle the human side of clustering.</p>
 <p><strong>Recipes 6.6-6.7</strong> tackle similarity-based problems where the goal isn't just &quot;find groups&quot; but &quot;find patients like this specific patient.&quot; Patient similarity for care planning and clinical trial matching require careful feature selection, validated similarity metrics, and real-time inference. The architecture patterns shift from batch analytics to interactive systems.</p>
 <p><strong>Recipes 6.8-6.10</strong> are the complex, research-adjacent problems. Disease subtype discovery, social determinant phenotyping, and multi-morbidity pattern discovery all involve unsupervised learning on high-dimensional clinical data with no ground truth. These recipes teach validation strategies, clinical collaboration patterns, and how to handle the uncertainty inherent in discovering new knowledge from data.</p>
 <hr />
-<h2 id="what-youll-learn">What You'll Learn</h2>
+<h2 id="what-youll-build">What You'll Build</h2>
 <p>By the end of this chapter, you'll understand:</p>
 <ul>
 <li>How to choose the right clustering algorithm for your specific healthcare problem</li>
@@ -422,6 +434,13 @@
 </ul>
 <p>The technology here is mature. The algorithms work. The hard part, and the part these recipes focus on, is making clustering <em>useful</em> in a healthcare context where &quot;interesting pattern&quot; isn't good enough. The clusters have to drive action. They have to be interpretable by clinicians. They have to be fair. And they have to update as patients change.</p>
 <p>Let's start with the simplest version of the problem and build from there.</p>
+<hr />
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/clustering.html">scikit-learn: Clustering</a> - a practical comparison of K-Means, hierarchical, DBSCAN/HDBSCAN, and Gaussian mixtures, with guidance on when each fits.</li>
+<li><a href="https://github.com/scikit-learn-contrib/hdbscan">HDBSCAN</a> - the density-based method this chapter recommends over plain DBSCAN, robust to varying density and light on parameter tuning.</li>
+<li><a href="https://arxiv.org/abs/1802.03426">UMAP: Uniform Manifold Approximation and Projection (McInnes, Healy &amp; Melville, 2018)</a> - the dimensionality-reduction step in the reduce-then-cluster pipeline.</li>
+</ul>
 <hr />
 <p><em>→ <a href="chapter06.01-geographic-patient-clustering.html">Recipe 6.1: Geographic Patient Clustering</a></em></p>
 

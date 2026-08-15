@@ -66,7 +66,7 @@ The recipes in this chapter are explicit about where each use case falls on this
 
 ---
 
-## The Technology Stack
+## The Techniques You'll See
 
 Medical imaging AI builds on the same deep learning foundations as general computer vision, but with domain-specific adaptations:
 
@@ -96,7 +96,37 @@ Every recipe includes strategies for monitoring and mitigating these failure mod
 
 ---
 
-## How the Recipes Progress
+## Key Architectural Patterns
+
+A few patterns recur across the imaging recipes, worth naming once.
+
+**Tile and reassemble.** Whole-slide pathology images and 3D CT/MRI volumes are too large to feed a network whole, so the recipes process patches or slices and stitch the results back together; that decomposition shapes the entire pipeline.
+
+**Transfer learning by default.** Medical datasets are small next to natural-image corpora, so the recipes pre-train on general images and fine-tune, which works well despite the visual domain gap.
+
+**Backbone follows task.** U-Net and its variants for segmentation, CNN or Vision Transformer backbones for classification and detection: the recipes match architecture to the operation rather than reaching for one model.
+
+**Triage reprioritizes a worklist; it does not replace a read.** The dominant integration pattern is reordering the PACS queue so the urgent study is read first, with the radiologist still making the call, which also keeps most use cases in a lower regulatory tier.
+
+**Subgroup-stratified monitoring, on DICOM rails.** Because failures are invisible unless you look for them, the recipes monitor performance and calibration split by scanner make, site, and patient demographics, with DICOM as the ingest and interchange substrate.
+
+---
+
+## Healthcare-Specific Considerations
+
+Beyond the architecture, a few considerations shape every deployment in this chapter.
+
+**Images and their metadata are PHI.** DICOM headers carry patient identifiers alongside the pixels, so de-identification, encryption, business associate agreement obligations, and PACS access controls apply to the whole pipeline.
+
+**The FDA line depends on intended use.** Triage and prioritization, computer-aided detection, and autonomous diagnosis sit at increasing regulatory burden; each recipe flags where it falls and routes the determination to your own regulatory and compliance teams.
+
+**Subgroup performance is a patient-safety issue.** A model that works on most of a population but fails on a subgroup (a skin tone, pediatric anatomy, a scanner make) is dangerous precisely because the failures are quiet; stratified reporting is planned in, not retrofitted.
+
+**Ground truth is expensive and contested.** Labels come from busy specialists who disagree, so many systems validate against consensus reads, which adds cost and shapes the data pipeline.
+
+---
+
+## How This Chapter Is Organized
 
 The ten recipes in this chapter are ordered by complexity along several axes: regulatory burden, clinical risk, technical difficulty, and integration complexity.
 
@@ -120,14 +150,28 @@ That said, there are plenty of non-clinical computer vision applications (image 
 
 ---
 
+## What You'll Build
+
+By the end of this chapter, you'll have patterns for:
+
+- Gatekeeping image quality before anything downstream tries to interpret a study
+- Verifying patient identity from a photo without building a face-surveillance system
+- Measuring wounds and triaging dermatology and chest imaging as decision support, not diagnosis
+- Reaching the autonomous-diagnosis bar where it has been cleared, as in diabetic retinopathy screening
+- Handling the heavy end: multi-modality radiology triage, gigapixel pathology, and research-frontier fusion
+
+The recurring shape is triage that reprioritizes a worklist rather than replacing a read, wrapped in subgroup-stratified monitoring and a clear read on where each use case sits with the FDA.
+
 Let's start with the simplest pattern: making sure the image is good enough to use before anyone tries to interpret it.
 
 ---
-
-*→ [Recipe 9.1: Image Quality Assessment](chapter09.01-image-quality-assessment.md)*
 
 ## Further Reading
 
 - [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597). The foundational architecture for medical image segmentation.
 - [CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels](https://arxiv.org/abs/1901.07031). One of the landmark public datasets for chest X-ray AI research.
 - [FDA: Artificial Intelligence and Machine Learning in Software as a Medical Device](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device). The regulatory framework for medical imaging AI.
+
+---
+
+*→ [Recipe 9.1: Image Quality Assessment](chapter09.01-image-quality-assessment.md)*

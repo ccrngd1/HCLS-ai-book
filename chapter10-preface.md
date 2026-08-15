@@ -80,28 +80,6 @@ Voice is a biometric. A voiceprint can identify a specific person, in some cases
 
 ---
 
-## The Progression: Simple to Complex
-
-This chapter is ordered roughly by clinical risk and operational complexity. Quick map:
-
-**Recipes 10.1 to 10.2 (Simple).** IVR call routing enhancement and voicemail transcription with classification. Bounded vocabularies, async or recoverable failure modes, clear success metrics, abundant historical data from existing call logs to train against. These are your two- to three-month projects, and they let you build the operational muscles (telephony integration, ASR vendor selection, intent labeling pipelines, monitoring dashboards) that the harder recipes need. Most healthcare organizations should start here, because there's almost certainly an underperforming phone tree somewhere in your environment that's quietly costing you millions in patient leakage.
-
-**Recipe 10.3 (Simple-Medium).** Voice-to-text for EHR navigation. Where voice meets the actual clinical workflow. The technology is straightforward; the integration is not. EHR vendors have varied tolerance for third-party voice integration, and the user-acceptance work (which clinicians actually use it, what training they need, what the failure mode looks like when the system mis-recognizes a command) often dominates the engineering work. Treat this as a workflow project that happens to use ASR.
-
-**Recipe 10.4 (Medium).** Medical transcription. The classic dictation use case. Specialty-specific vocabularies, formatting templates, integration with documentation workflows. The market is mature, the accuracy benchmarks are well-established, and the build-versus-buy math usually favors buying. The recipe explains what's actually happening under the hood at the major vendors, what to evaluate, and where the differentiation lives if you're considering a custom build for an underserved specialty.
-
-**Recipes 10.5 to 10.6 (Medium).** Patient-facing voice assistants and telehealth speech-to-text. Both add a multi-party dimension and patient-side audio quality variability. Recipe 10.5 specifically intersects with accessibility (older patients, patients with disabilities) and telephony (the patients who don't have apps still have phones). Recipe 10.6 brings real-time constraints and diarization. Budget a quarter to a couple of quarters, with significant front-loaded work on consent capture, audio quality monitoring, and integration with the actual visit workflow.
-
-**Recipe 10.7 (Complex).** Ambient clinical documentation. The fastest-moving recipe in this chapter, in the sense that the commercial state of the art is moving in months rather than years. The build-versus-buy math here heavily favors buying for most organizations, because the leading vendors have invested an enormous amount in clinical-domain ASR, diarization, structured note generation, and EHR integration. The recipe walks through what's actually happening in those systems (it's a layered pipeline, not a single magic model), what to evaluate, how to deploy it without alienating the clinicians, and what the failure modes look like at scale. If you're building rather than buying, this is a multi-year endeavor with real research-level engineering effort.
-
-**Recipes 10.8 to 10.9 (Complex).** Voice biomarker detection and speech therapy assessment and monitoring. Both move from "transcription as productivity tool" to "voice acoustics as clinical signal." The technical work shifts toward signal processing and feature engineering specific to acoustic biomarkers. The regulatory work shifts toward clinical validation, FDA pathways, and population-specific accuracy validation. These are recipes you build with clinical research partners, IRB oversight, and a regulatory roadmap, not as ordinary product engineering. They are in the chapter because they represent where the field is heading, but the production deployments today are limited.
-
-**Recipe 10.10 (Complex).** Multilingual real-time medical interpretation. Tight latency, medical vocabulary in multiple languages, liability for interpretation errors, and direct competition with human medical interpreters who provide a standard of care that has well-defined legal protections. The technology has gotten substantially better in the last few years; the operational, legal, and ethical questions have not. The recipe is honest about where machine interpretation can be safely deployed today (asynchronous communications, low-stakes interactions, as a backup when human interpreters are unavailable) and where it should not (informed consent for surgery, mental health crisis triage, anything where misinterpretation has direct safety consequences).
-
-You can read the chapter linearly or jump to the recipe that matches your current problem. If you're new to voice AI as a discipline, the simple recipes will build the mental models that the complex ones depend on.
-
----
-
 ## The Techniques You'll See
 
 Quick reference on the technique families, because the names recur:
@@ -176,6 +154,28 @@ Beyond the architectural patterns, a few considerations recur across every recip
 
 ---
 
+## How This Chapter Is Organized
+
+This chapter is ordered roughly by clinical risk and operational complexity. Quick map:
+
+**Recipes 10.1 to 10.2 (Simple).** IVR call routing enhancement and voicemail transcription with classification. Bounded vocabularies, async or recoverable failure modes, clear success metrics, abundant historical data from existing call logs to train against. These are your two- to three-month projects, and they let you build the operational muscles (telephony integration, ASR vendor selection, intent labeling pipelines, monitoring dashboards) that the harder recipes need. Most healthcare organizations should start here, because there's almost certainly an underperforming phone tree somewhere in your environment that's quietly costing you millions in patient leakage.
+
+**Recipe 10.3 (Simple-Medium).** Voice-to-text for EHR navigation. Where voice meets the actual clinical workflow. The technology is straightforward; the integration is not. EHR vendors have varied tolerance for third-party voice integration, and the user-acceptance work (which clinicians actually use it, what training they need, what the failure mode looks like when the system mis-recognizes a command) often dominates the engineering work. Treat this as a workflow project that happens to use ASR.
+
+**Recipe 10.4 (Medium).** Medical transcription. The classic dictation use case. Specialty-specific vocabularies, formatting templates, integration with documentation workflows. The market is mature, the accuracy benchmarks are well-established, and the build-versus-buy math usually favors buying. The recipe explains what's actually happening under the hood at the major vendors, what to evaluate, and where the differentiation lives if you're considering a custom build for an underserved specialty.
+
+**Recipes 10.5 to 10.6 (Medium).** Patient-facing voice assistants and telehealth speech-to-text. Both add a multi-party dimension and patient-side audio quality variability. Recipe 10.5 specifically intersects with accessibility (older patients, patients with disabilities) and telephony (the patients who don't have apps still have phones). Recipe 10.6 brings real-time constraints and diarization. Budget a quarter to a couple of quarters, with significant front-loaded work on consent capture, audio quality monitoring, and integration with the actual visit workflow.
+
+**Recipe 10.7 (Complex).** Ambient clinical documentation. The fastest-moving recipe in this chapter, in the sense that the commercial state of the art is moving in months rather than years. The build-versus-buy math here heavily favors buying for most organizations, because the leading vendors have invested an enormous amount in clinical-domain ASR, diarization, structured note generation, and EHR integration. The recipe walks through what's actually happening in those systems (it's a layered pipeline, not a single magic model), what to evaluate, how to deploy it without alienating the clinicians, and what the failure modes look like at scale. If you're building rather than buying, this is a multi-year endeavor with real research-level engineering effort.
+
+**Recipes 10.8 to 10.9 (Complex).** Voice biomarker detection and speech therapy assessment and monitoring. Both move from "transcription as productivity tool" to "voice acoustics as clinical signal." The technical work shifts toward signal processing and feature engineering specific to acoustic biomarkers. The regulatory work shifts toward clinical validation, FDA pathways, and population-specific accuracy validation. These are recipes you build with clinical research partners, IRB oversight, and a regulatory roadmap, not as ordinary product engineering. They are in the chapter because they represent where the field is heading, but the production deployments today are limited.
+
+**Recipe 10.10 (Complex).** Multilingual real-time medical interpretation. Tight latency, medical vocabulary in multiple languages, liability for interpretation errors, and direct competition with human medical interpreters who provide a standard of care that has well-defined legal protections. The technology has gotten substantially better in the last few years; the operational, legal, and ethical questions have not. The recipe is honest about where machine interpretation can be safely deployed today (asynchronous communications, low-stakes interactions, as a backup when human interpreters are unavailable) and where it should not (informed consent for surgery, mental health crisis triage, anything where misinterpretation has direct safety consequences).
+
+You can read the chapter linearly or jump to the recipe that matches your current problem. If you're new to voice AI as a discipline, the simple recipes will build the mental models that the complex ones depend on.
+
+---
+
 ## What You'll Build
 
 By the end of this chapter, you'll have patterns for:
@@ -196,6 +196,13 @@ Each recipe is self-contained, but the infrastructure compounds. The telephony i
 One last thing before we get into it. Voice is, in some ways, the most personal data modality healthcare touches. A typed note records what the clinician chose to write. A transcript records what was actually said. The audio itself records *how* it was said: the hesitation in the patient's answer, the doctor's reassurance, the family member's quiet sob in the corner. Building systems that handle this data well is an ethical responsibility as much as a technical challenge. The recipes that follow take that seriously. The hype around voice AI in healthcare is going to outpace the engineering reality for at least a few more years; the responsible path is to build the simple things well, learn the operational patterns deeply, and earn the right to attempt the harder things.
 
 Alright. Let's teach the computer to listen.
+
+---
+
+## Further Reading
+
+- [Robust Speech Recognition via Large-Scale Weak Supervision (Radford et al., 2022) - Whisper](https://arxiv.org/abs/2212.04356) - the weak-supervision approach behind modern general-purpose speech recognition.
+- [pyannote.audio](https://github.com/pyannote/pyannote-audio) - an open-source speaker diarization toolkit for the "who spoke when" problem this chapter treats as first-class.
 
 ---
 

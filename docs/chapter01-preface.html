@@ -362,7 +362,7 @@
 <p>What makes this worth a deep dive before we jump into the recipes isn't the solution, it's understanding <em>why</em> this was hard for so long, and how the technology got good enough to trust with something as high-stakes as healthcare data.</p>
 <hr />
 <h2 id="what-ocr-actually-is-and-what-it-isnt">What OCR Actually Is (And What It Isn't)</h2>
-<p>Optical Character Recognition (OCR0) is the process of taking an image of text and converting it into machine-readable characters. If you've ever taken a photo of a restaurant menu and had your phone offer to translate it, you've seen OCR in action. If you've ever scanned a document and had the resulting PDF be fully searchable, that's OCR too.</p>
+<p>Optical Character Recognition (OCR) is the process of taking an image of text and converting it into machine-readable characters. If you've ever taken a photo of a restaurant menu and had your phone offer to translate it, you've seen OCR in action. If you've ever scanned a document and had the resulting PDF be fully searchable, that's OCR too.</p>
 <p>The &quot;optical&quot; part is a bit of a historical artifact. We're not doing anything particularly optical here; we're doing signal processing and pattern recognition on a pixel grid. &quot;Image-to-text conversion&quot; would be more accurate, but &quot;OCR&quot; stuck, and here we are.</p>
 <p>At its most fundamental level, OCR works by trying to match regions of pixels against known patterns. This idea is far older than most people assume: Gustav Tauschek patented a mechanical reading machine in 1929, and David Shepard's GISMO, the first commercial OCR device, was recognising characters in the early 1950s. The systems most enterprises actually installed, though, were almost comically rigid: they expected a specific font, at a specific size, at a specific resolution, on a clean white background. Deviate from any of those parameters and accuracy fell off a cliff. These template-matching systems essentially said &quot;I know exactly what the letter 'A' looks like in Helvetica 12pt, and I will find it.&quot; They were decent at processing clean typed documents in controlled environments. They were useless in the real world.</p>
 <p>The field took a big step forward in the 1990s and 2000s with machine learning-based approaches, specifically, neural networks trained on large corpora of character images. Instead of matching against a fixed template, these systems learned statistical patterns: what makes an 'A' look like an 'A' regardless of font, slight rotation, or minor degradation? This is when OCR started becoming usable for real-world document processing, and it's around this era that you started seeing commercial document scanning workflows become viable at scale.</p>
@@ -423,14 +423,25 @@
 <p>The important architectural insight (and this is the one pattern that repeats across every recipe in this chapter) is: <strong>don't treat this as a perfect system, treat it as a high-throughput first pass with a confidence-gated review queue.</strong> Any field below your confidence threshold gets flagged for human review. You're not replacing the human; you're having the machine handle the 85-95% of cases that are clean and readable, and routing the rest to a human with the hard ones already identified. That's a much better use of everyone's time.</p>
 <p>For healthcare documents specifically, there are also favorable structural properties. The domain vocabulary is constrained: you know roughly what fields will appear and what valid values look like. A member ID should match a certain format; a copay should be a dollar amount; an ICD-10 code has a known structure. These business-rule validations act as a secondary confidence check on top of the model's internal confidence scores, which substantially reduces the risk of confident-but-wrong extractions getting through.</p>
 <hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Turning a photographed insurance card into structured, validated JSON, the simplest end-to-end version of the problem</li>
+<li>Pulling fields off scanned claims forms and explanation-of-benefits documents with confidence scores you can act on</li>
+<li>Splitting and routing the multi-page provider attachments that arrive as one undifferentiated file</li>
+<li>Reading prescription labels, and the handwritten annotations that staff and clinicians leave on printed forms</li>
+<li>Standing up the confidence-gated review queue that ties these together, so the machine clears the clean 85 to 95 percent and a human sees only the hard cases, already flagged</li>
+</ul>
+<p>The through-line is the architectural move from the top of this chapter: treat extraction as a high-throughput first pass with a confidence-gated human review queue, not as a perfect system. Every recipe is a variation on that pattern, tuned to a different document type and its own business-rule validations.</p>
 <p>With that foundation in place, let's start building. Recipe 1.1 is the simplest pattern in the chapter, a single image of an insurance card, structured JSON out, and it's a great place to see all of these concepts come together in a concrete implementation.</p>
 <hr />
-<p><em>→ <a href="chapter01.01-insurance-card-scanning.html">Recipe 1.1 — Insurance Card Scanning</a></em></p>
 <h2 id="further-reading">Further Reading</h2>
 <ul>
-<li><a href="https://arxiv.org/abs/1912.13318">LayoutLM: Pre-training of Text and Layout for Document Image Understanding</a> — the transformer-based document understanding approach referenced throughout this chapter</li>
-<li><a href="https://github.com/tesseract-ocr/tesseract">Tesseract OCR</a> — the open-source OCR engine that still powers many production workloads</li>
+<li><a href="https://arxiv.org/abs/1912.13318">LayoutLM: Pre-training of Text and Layout for Document Image Understanding</a> - the transformer-based document understanding approach referenced throughout this chapter</li>
+<li><a href="https://github.com/tesseract-ocr/tesseract">Tesseract OCR</a> - the open-source OCR engine that still powers many production workloads</li>
 </ul>
+<hr />
+<p><em>→ <a href="chapter01.01-insurance-card-scanning.html">Recipe 1.1: Insurance Card Scanning</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="governance-and-responsible-ai.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">Governance and Responsible AI</span></a><a class="pn-link pn-next" href="chapter01.01-insurance-card-scanning.html" rel="next"><span class="pn-label">1.1 — Insurance Card Scanning</span><span class="pn-arrow">→</span></a></nav>

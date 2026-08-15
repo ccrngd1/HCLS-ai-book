@@ -389,14 +389,29 @@
 <p><strong>Medium (Recipes 13.3-13.6):</strong> Integrate multiple data sources into a unified graph, often combining standard ontologies (SNOMED, RxNorm, ICD) with institutional data. The relationships come partly from standards and partly from inference or clinical rules. These patterns enable reasoning that crosses traditional data silos: connecting diagnoses to procedures to drugs to guidelines in a single queryable structure.</p>
 <p><strong>Complex (Recipes 13.7-13.10):</strong> Build and maintain knowledge graphs where the relationships themselves are uncertain, evolving, or distributed across organizations. Evidence-graded relationships from literature. Federated queries across institutional boundaries. Concept normalization across heterogeneous terminologies. These are the patterns where graph technology intersects with NLP, machine learning, and distributed systems.</p>
 <hr />
-<h2 id="the-technical-landscape">The Technical Landscape</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>Graph databases and knowledge graph tooling have matured significantly in the last five years. A few things worth knowing before diving into the recipes:</p>
 <p><strong>Property graph vs. RDF:</strong> Two competing data models. Property graphs (used by Neo4j, Amazon Neptune in its Gremlin mode, and most modern graph databases) treat nodes and edges as first-class objects that can carry arbitrary key-value properties. RDF (Resource Description Framework) represents everything as subject-predicate-object triples and is the foundation of the Semantic Web standards. Healthcare ontologies like SNOMED CT are natively distributed in RDF. In practice, you'll often need to work with both: RDF for ingesting standard ontologies, property graphs for application-level queries. Neptune supports both, which turns out to be genuinely useful in this domain.</p>
 <p><strong>SPARQL vs. Gremlin vs. Cypher:</strong> The query languages. SPARQL queries RDF graphs and is the standard for querying ontologies. Gremlin is a traversal-based language for property graphs (think of it as &quot;start here, walk this path, collect what you find&quot;). Cypher (Neo4j's language, also supported by Neptune via openCypher) is a pattern-matching language that reads more like SQL. Each has strengths; the recipes will use whichever is most natural for the specific use case.</p>
 <p><strong>Graph embeddings and GNNs:</strong> The intersection of knowledge graphs and machine learning. Graph Neural Networks can learn vector representations of nodes based on their neighborhood structure, enabling similarity search, link prediction (predicting missing relationships), and node classification. This is where knowledge graphs stop being just a query tool and become a feature source for ML models.</p>
 <p><strong>Ontology alignment and mapping:</strong> The unsexy but critical problem of connecting different terminologies. SNOMED CT uses one set of concepts; ICD-10 uses another; your EHR vendor uses a third. Mapping between them is a many-to-many problem with semantic nuances that automated tools handle imperfectly. Recipe 13.8 tackles this head-on.</p>
 <hr />
-<h2 id="what-youll-build">What You'll Build</h2>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the knowledge-graph recipes, worth naming once.</p>
+<p><strong>Stand on existing ontologies.</strong> Healthcare's vocabularies (SNOMED CT, RxNorm, ICD-10, LOINC) already encode the relationships, so the recipes ingest and align these rather than inventing a schema, and treat the ontology as a maintained input.</p>
+<p><strong>RDF for ingest, property graph for the application.</strong> Standard ontologies arrive as RDF triples; application queries are usually easier on a property graph, so the recipes often load in one model and serve in the other (Neptune supporting both is convenient here).</p>
+<p><strong>Traversals over JOINs.</strong> The queries that matter are multi-hop path-finding (drug to interaction to alternative to formulary), expressed in Gremlin, SPARQL, or Cypher, not seven-way relational JOINs.</p>
+<p><strong>Embeddings and GNNs turn the graph into features.</strong> Graph neural networks learn node representations for similarity search and link prediction, which is where the graph stops being only a query tool and becomes a feature source for models in other chapters.</p>
+<p><strong>Speed comes from indexing and precomputation.</strong> Because a 30-second traversal is useless at the point of care, the recipes lean on indexing, query planning, caching, and precomputed common paths to hit clinical latency.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>Beyond the graph itself, a few considerations shape every deployment in this chapter.</p>
+<p><strong>A wrong or missing edge is a clinical hazard.</strong> If a drug-interaction edge is absent, the system confidently reports no interaction, which is worse than having no system; the recipes treat data completeness as a safety property, not a quality metric.</p>
+<p><strong>Stale knowledge is dangerous knowledge.</strong> Guidelines, approvals, and interactions change weekly, so the graph is a continuously maintained asset with a defined update cadence rather than a one-time build.</p>
+<p><strong>The graph and its queries touch PHI.</strong> When institutional patient data joins the standard ontologies, query inputs and logs carry protected health information and inherit the usual encryption, access-control, and business associate agreement obligations.</p>
+<p><strong>Value lives in the workflow.</strong> A graph nobody queries is an expensive hobby; the recipes embed graph-powered answers into the EHR, order entry, and care-management surfaces where decisions actually happen.</p>
+<hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
 <p>This chapter progresses from &quot;put your existing data in a graph and query it better&quot; to &quot;build a reasoning engine over distributed medical knowledge.&quot; Here's the arc:</p>
 <p><strong>Recipes 13.1-13.2</strong> get you comfortable with graph modeling in healthcare. You'll take familiar data (formularies, provider directories) and see how graph representations enable queries that would be painful or impossible in relational databases.</p>
 <p><strong>Recipes 13.3-13.4</strong> introduce standard medical ontologies as graph structures. You'll work with ICD hierarchies and drug interaction databases, learning how to ingest, query, and maintain these knowledge bases.</p>
@@ -422,16 +437,28 @@
 </li>
 </ol>
 <p>Every recipe in this chapter addresses these challenges explicitly. We're not building demos; we're building systems that need to work reliably, at speed, with real clinical data, in production.</p>
+<hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Turning flat data (a formulary, a provider directory) into a graph you can traverse and path-find over</li>
+<li>Ingesting and querying the standard ontologies (ICD hierarchies, drug-interaction bases) as living knowledge</li>
+<li>Reasoning across silos: connecting diagnoses, procedures, drugs, and guidelines in one queryable structure</li>
+<li>Handling uncertain and cross-terminology knowledge: evidence-graded relationships and concept normalization</li>
+<li>Reaching the frontier: extracting knowledge from literature and federating queries across organizations</li>
+</ul>
+<p>The recurring shape holds throughout: build on ontologies that already exist, keep them current, serve multi-hop answers at clinical speed, and put those answers where clinicians decide.</p>
 <p>Let's start with the simplest pattern: taking a drug formulary and making it navigable as a graph.</p>
 <hr />
-<p><em>→ <a href="chapter13.01-drug-formulary-navigation.html">Recipe 13.1 — Drug Formulary Navigation</a></em></p>
 <h2 id="further-reading">Further Reading</h2>
 <ul>
-<li><a href="https://browser.ihtsdotools.org/">SNOMED CT Browser</a> — explore the SNOMED CT ontology interactively to understand its structure and relationship types</li>
-<li><a href="https://www.nlm.nih.gov/research/umls/rxnorm/overview.html">RxNorm Overview (NLM)</a> — the National Library of Medicine's documentation on RxNorm structure and use</li>
-<li><a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS (Unified Medical Language System)</a> — the NLM's metathesaurus that maps between healthcare terminologies</li>
-<li><a href="https://www.w3.org/TR/rdf11-primer/">W3C RDF Primer</a> — foundational reading if you're new to RDF and triple-based knowledge representation</li>
+<li><a href="https://browser.ihtsdotools.org/">SNOMED CT Browser</a> - explore the SNOMED CT ontology interactively to understand its structure and relationship types</li>
+<li><a href="https://www.nlm.nih.gov/research/umls/rxnorm/overview.html">RxNorm Overview (NLM)</a> - the National Library of Medicine's documentation on RxNorm structure and use</li>
+<li><a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS (Unified Medical Language System)</a> - the NLM's metathesaurus that maps between healthcare terminologies</li>
+<li><a href="https://www.w3.org/TR/rdf11-primer/">W3C RDF Primer</a> - foundational reading if you're new to RDF and triple-based knowledge representation</li>
 </ul>
+<hr />
+<p><em>→ <a href="chapter13.01-drug-formulary-navigation.html">Recipe 13.1: Drug Formulary Navigation</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="chapter12.10-architecture.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">12.10 — Physiological Waveform Analysis · Architecture</span></a><a class="pn-link pn-next" href="chapter13.01-drug-formulary-navigation.html" rel="next"><span class="pn-label">13.1 — Drug Formulary Navigation</span><span class="pn-arrow">→</span></a></nav>

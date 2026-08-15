@@ -368,7 +368,7 @@
 <p><strong>Third, interpretability.</strong> When a clinical assertion classifier marks &quot;diabetes&quot; as &quot;historical&quot; rather than &quot;active,&quot; you can trace exactly which linguistic features drove that decision. The negation cue &quot;history of&quot; triggered a specific rule. The assertion model weighted specific contextual tokens. You can explain this to a clinician, a regulator, or a safety officer. Try explaining why GPT-4 classified something a particular way. You'll get a plausible-sounding explanation that may or may not reflect what actually happened inside the model.</p>
 <p>None of this means LLMs are bad. They're genuinely transformative for certain tasks (see Chapter 2). But the vast majority of clinical NLP in production today uses the techniques in this chapter, and that's not going to change overnight. These approaches are battle-tested, well-understood, and importantly, already validated in clinical contexts where &quot;move fast and break things&quot; gets people hurt.</p>
 <hr />
-<h2 id="the-core-techniques">The Core Techniques</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>Let me give you a quick map of the algorithmic approaches we'll use across these recipes, so you have the vocabulary before we dive in.</p>
 <h3 id="tokenization-and-sentence-splitting">Tokenization and Sentence Splitting</h3>
 <p>Breaking text into meaningful units. Sounds trivial until you encounter &quot;Dr. Smith prescribed 2.5mg q.d. for 30d&quot; and need to figure out where the sentences end without treating every period as a sentence boundary. Clinical text has its own punctuation conventions that break general-purpose tokenizers.</p>
@@ -390,20 +390,45 @@
 <p><strong>Clinical NLP corpora</strong> for training and evaluation: i2b2/n2c2 shared task datasets have been the gold standard for clinical NLP research for over 15 years. MIMIC-III/IV provides real (de-identified) clinical notes for development and testing. These resources are invaluable, but access requires data use agreements and institutional review.</p>
 <p>On the AWS side, Amazon Comprehend Medical provides pre-built clinical NLP capabilities (entity extraction, relationship detection, assertion classification) as a managed service. Several of our recipes use it as an accelerator, but we always teach the underlying concepts first so you understand what the service is doing and where its limitations lie.</p>
 <hr />
-<h2 id="how-the-recipes-progress">How the Recipes Progress</h2>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the extraction recipes, worth naming once.</p>
+<p><strong>A pipeline of narrow components, not one model.</strong> Clinical extraction is a sequence: tokenize and split sentences, recognize entities, decide each entity's assertion status, then normalize to a standard code. The recipes compose these stages rather than asking a single model to do everything, which is what makes each step testable and swappable.</p>
+<p><strong>Assertion detection is a mandatory stage, not a nicety.</strong> &quot;Denies chest pain&quot; and &quot;reports chest pain&quot; carry the same entity and opposite meaning, so negation and assertion sit in the pipeline by default. Skipping it does not lower accuracy a little; it produces confidently wrong clinical facts.</p>
+<p><strong>Normalization is its own step.</strong> Mapping a mention to SNOMED CT, ICD-10, RxNorm, or LOINC is an entity-linking problem against large, hierarchical vocabularies, kept separate from extraction so the target terminology can be updated without retraining the extractor.</p>
+<p><strong>Determinism and provenance, on purpose.</strong> For research and safety use the recipes prefer approaches whose output can be traced to the rule or feature that produced it, so a match can be explained to a reviewer, an institutional review board, or a regulator.</p>
+<p><strong>Confidence gating and human review for the high-stakes extractions.</strong> The same review-queue pattern from earlier chapters applies: low-confidence or safety-relevant extractions route to a human rather than flowing straight into a downstream system.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>Beyond the pipeline, a few considerations shape every deployment in this chapter.</p>
+<p><strong>The notes and everything pulled from them are PHI.</strong> Clinical text, extracted entities, and the training corpora all carry protected health information; the encryption, access controls, and business associate agreement obligations from earlier chapters apply, and the research datasets (i2b2/n2c2, MIMIC) come with their own data use agreements and institutional review.</p>
+<p><strong>Assertion errors are a safety issue, not just an accuracy number.</strong> Because a flipped assertion inverts a clinical fact, the recipes treat assertion and negation evaluation as a safety check with its own error budget.</p>
+<p><strong>Determinism is what makes the output defensible.</strong> Reproducible, auditable extraction is a precondition for regulatory submissions, safety surveillance, and IRB-approved phenotyping, which is much of why this chapter exists alongside the LLM chapter.</p>
+<p><strong>Vocabularies drift.</strong> ICD-10, SNOMED CT, and RxNorm are versioned and change; normalization mappings go stale, so the recipes treat the terminology as a maintained dependency rather than a fixed table.</p>
+<hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
 <p>We start simple and build complexity deliberately.</p>
 <p><strong>Recipes 8.1-8.2</strong> are classification tasks on short text. Chief complaint classification (8.1) takes a brief free-text string and assigns it to a category. Patient sentiment analysis (8.2) classifies feedback text by tone and theme. These are well-understood problems with abundant training data and low clinical risk. If you've never built clinical NLP before, start here.</p>
 <p><strong>Recipes 8.3-8.5</strong> introduce entity extraction and normalization. ICD-10 code suggestion (8.3) extracts diagnostic concepts and maps them to a massive code vocabulary. Medication extraction (8.4) pulls out drug mentions with their full sig (dose, route, frequency) and normalizes to RxNorm. Problem list extraction (8.5) identifies active diagnoses, which requires understanding the difference between &quot;patient has diabetes&quot; and &quot;patient's father had diabetes.&quot;</p>
 <p><strong>Recipes 8.6-8.7</strong> tackle harder extraction problems where the signal is sparse and implicit. SDOH extraction (8.6) finds social determinant mentions that clinicians document inconsistently and in varied language. Adverse event detection (8.7) identifies safety signals that are often documented obliquely (&quot;patient developed rash, medication discontinued&quot; rather than &quot;adverse drug reaction to amoxicillin&quot;).</p>
 <p><strong>Recipes 8.8-8.10</strong> are the deep end. Clinical assertion classification (8.8) determines whether an extracted entity is present, absent, possible, historical, or hypothetical, which requires understanding complex linguistic context. Temporal relationship extraction (8.9) figures out the order of clinical events when explicit dates are rarely given. Phenotype extraction (8.10) combines multiple NLP components into complex patient identification algorithms for research, where precision requirements are extreme and reproducibility is non-negotiable.</p>
 <hr />
-<h2 id="a-word-about-the-llm-elephant-in-the-room">A Word About the LLM Elephant in the Room</h2>
+<h2 id="a-note-on-the-llm-elephant-in-the-room">A Note on the LLM Elephant in the Room</h2>
 <p>Every technique in this chapter predates the current LLM wave. Some of these approaches are 20+ years old. That might make them sound outdated. They're not.</p>
 <p>Here's the honest assessment: LLMs will eventually handle many of these tasks well. Some of them, they already handle well in research settings. But &quot;handles well in research&quot; and &quot;deployable in a regulated clinical environment at scale&quot; are separated by a chasm of validation, regulatory approval, cost optimization, and operational maturity that takes years to cross. The techniques in this chapter have already crossed that chasm. They're in production. They work. They're validated. They have published performance characteristics that you can cite in a regulatory submission.</p>
 <p>Build with what works today. Keep an eye on what's coming. That's the pragmatic engineering approach.</p>
+<hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Classifying short clinical text: chief complaints into categories, patient feedback by tone and theme</li>
+<li>Extracting diagnostic concepts and mapping them to ICD-10, and pulling medications with their full sig and normalizing to RxNorm</li>
+<li>Separating a patient's active problems from family history and resolved conditions</li>
+<li>Surfacing the signals clinicians document obliquely: social determinants and adverse drug events</li>
+<li>Classifying assertion status, ordering events in time without explicit dates, and assembling multi-component phenotype algorithms for research</li>
+</ul>
+<p>Underneath all of them sits the same scaffolding: an entity-extraction pipeline with a mandatory assertion stage, normalization to a standard vocabulary, and a confidence-gated human review step for the high-stakes extractions.</p>
 <p>Let's start with the simplest pattern: taking a short text string and putting it in a bucket.</p>
 <hr />
-<p><em>-&gt; <a href="chapter08.01-chief-complaint-classification.html">Recipe 8.1: Chief Complaint Classification</a></em></p>
 <h2 id="further-reading">Further Reading</h2>
 <ul>
 <li><a href="https://pubmed.ncbi.nlm.nih.gov/26133894/">Clinical Natural Language Processing for Radiology: Exploiting the Text</a> - foundational survey of clinical NLP techniques and their applications</li>
@@ -413,6 +438,8 @@
 <li><a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS (Unified Medical Language System)</a> - the NLM meta-thesaurus referenced throughout this chapter</li>
 <li><a href="https://www.i2b2.org/NLP/DataSets/">i2b2/n2c2 NLP Research Data Sets</a> - clinical NLP challenge datasets for training and benchmarking</li>
 </ul>
+<hr />
+<p><em>→ <a href="chapter08.01-chief-complaint-classification.html">Recipe 8.1: Chief Complaint Classification</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="chapter07.12-architecture.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">7.12 — Cohort Matching for Novel Claims · Architecture</span></a><a class="pn-link pn-next" href="chapter08.01-chief-complaint-classification.html" rel="next"><span class="pn-label">8.1 — Chief Complaint Classification</span><span class="pn-arrow">→</span></a></nav>

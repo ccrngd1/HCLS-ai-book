@@ -22,7 +22,7 @@ Traditional supervised learning can't handle this well. You could train a model 
 
 ---
 
-## The Key Paradigms (And Why They Matter for Healthcare)
+## The Techniques You'll See
 
 ### Online vs. Offline RL
 
@@ -88,7 +88,37 @@ This is not a reason to avoid the technology. It's a reason to understand where 
 
 ---
 
-## What This Chapter Covers
+## Key Architectural Patterns
+
+A few patterns recur across the reinforcement-learning recipes, worth naming once.
+
+**Offline by default.** You cannot explore on patients, so the recipes learn policies from historical trajectories rather than live interaction, and treat the training data's own policy as a confound to reason about, not ignore.
+
+**Off-policy evaluation stands in for a live test.** Because you cannot A/B a treatment policy on real patients, the recipes lean on off-policy evaluation to estimate how a learned policy would have performed, with explicit uncertainty.
+
+**A constrained, conservative policy layer.** Hard limits (dose ceilings, contraindications) and conservative objectives (stay close to observed practice unless the evidence is strong) are built into the policy, not bolted on, which is what Conservative Q-Learning and its relatives are for.
+
+**Bandits when the state does not change.** Where an action does not move the underlying state (which notification, which threshold), the recipes use the simpler, safer multi-armed bandit rather than full RL.
+
+**Clinician-in-the-loop serving.** The policy recommends and a clinician decides; the serving path is decision support with override and logging, not an autonomous agent.
+
+---
+
+## Healthcare-Specific Considerations
+
+The safety, reward, and regulatory problems above are the heart of healthcare RL; a few additional deployment realities recur across the recipes.
+
+**The data is retrospective PHI.** Offline learning runs on historical patient trajectories, so the pipeline carries the usual encryption, access-control, and business associate agreement obligations, and the training distribution reflects whatever clinicians did, confounders and all.
+
+**Distribution shift is the central hazard.** A policy that recommends actions unlike anything in the data has no evidence behind it, so the recipes keep policies near the support of the data and flag when they wander outside it.
+
+**Decision support, not autonomy, for now.** Both the regulatory posture and the trust gap mean these systems recommend to a clinician rather than act, and the recipes are built that way.
+
+**Monitoring is continuous.** Populations and practice drift, so a deployed policy is watched over time rather than validated once.
+
+---
+
+## How This Chapter Is Organized
 
 The recipes progress from immediately practical to research-frontier:
 
@@ -108,14 +138,28 @@ The simpler recipes in this chapter (threshold tuning, notification optimization
 
 The complex recipes are included because the architecture patterns, safety frameworks, and evaluation methodologies are valuable to understand even if full deployment is years away. When you're ready to build toward treatment optimization, you'll want to have thought through these problems in advance.
 
+---
+
+## What You'll Build
+
+By the end of this chapter, you'll have patterns for:
+
+- Deployable-now parameter tuning: alert-threshold and notification-timing optimization with bandits or simple RL
+- Carefully-validated offline RL on historical data: sepsis treatment, ventilator weaning, glucose control, as decision support with physician override
+- Research-stage sequential problems: chronic-disease management, chemotherapy dosing, radiation-therapy adaptation
+
+Across all of them the discipline is the same: learn offline from honest data, evaluate off-policy with real uncertainty, constrain the policy so it cannot recommend the unsafe, and keep a clinician in the loop.
+
 Let's start with something concrete. Recipe 15.1 takes a problem every health system has (alert fatigue) and shows how a simple RL formulation can learn better thresholds than any static rule.
 
 ---
 
-*→ [Recipe 15.1 — Alert Threshold Optimization](chapter15.01-alert-threshold-optimization)*
-
 ## Further Reading
 
-- [Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems](https://arxiv.org/abs/2005.01643) — comprehensive overview of offline RL, the paradigm most relevant to healthcare applications
-- [Guidelines for Reinforcement Learning in Healthcare](https://www.nature.com/articles/s41591-018-0310-5) — Nature Medicine perspective on challenges and best practices for clinical RL
-- [Conservative Q-Learning for Offline Reinforcement Learning](https://arxiv.org/abs/2006.04779) — the CQL algorithm designed for safe policy learning from fixed datasets
+- [Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems](https://arxiv.org/abs/2005.01643) - comprehensive overview of offline RL, the paradigm most relevant to healthcare applications
+- [Guidelines for Reinforcement Learning in Healthcare](https://www.nature.com/articles/s41591-018-0310-5) - Nature Medicine perspective on challenges and best practices for clinical RL
+- [Conservative Q-Learning for Offline Reinforcement Learning](https://arxiv.org/abs/2006.04779) - the CQL algorithm designed for safe policy learning from fixed datasets
+
+---
+
+*→ [Recipe 15.1: Alert Threshold Optimization](chapter15.01-alert-threshold-optimization)*

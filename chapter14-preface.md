@@ -60,7 +60,7 @@ Real healthcare optimization is almost always multi-objective, which means you'r
 
 ---
 
-## The Solver Landscape (A Quick Tour)
+## The Techniques You'll See
 
 If you're new to optimization, the landscape of solution approaches can feel overwhelming. Here's a practical taxonomy of what you'll encounter in this chapter, ordered roughly from simplest to most complex.
 
@@ -110,7 +110,37 @@ If the math has existed since the 1940s, why is healthcare optimization becoming
 
 ---
 
-## What This Chapter Covers
+## Key Architectural Patterns
+
+A few patterns recur across the optimization recipes, worth naming once.
+
+**Discover the constraints before formulating.** The formal rules (labor law, certification, room capability) are only half the model; the unwritten ones decide whether a schedule is accepted, so the recipes spend real effort eliciting constraints from the people who make these decisions today.
+
+**Optimize against noisy estimates, not perfect data.** Case durations, demand, and availability are wrong in predictable ways, so the models are fed by a pipeline that carries uncertainty rather than assuming exact parameters.
+
+**Multi-objective means options, not an answer.** Cost, throughput, wait time, and staff fairness conflict; the recipes surface a few good trade-offs and explain what each gives up, rather than handing back one "optimal" schedule.
+
+**Match the solver to the problem.** Linear programs, mixed-integer programs, constraint programming, metaheuristics, and simulation-optimization each fit different shapes; the recipes choose deliberately, and note where a simple heuristic beats an exact solver that is too slow or too data-hungry.
+
+**Reoptimize as conditions change.** Call-offs, surges, and disruptions move the problem during the day, so the dynamic recipes re-solve quickly from the current state rather than producing one static plan.
+
+---
+
+## Healthcare-Specific Considerations
+
+Beyond the model, a few considerations shape every deployment in this chapter.
+
+**Adoption is a people problem.** A mathematically optimal schedule the charge nurse ignores changes nothing, so every recipe treats change management and clinician trust as part of the build, not an afterthought.
+
+**The inputs are often PHI.** Schedules, assignments, and the demand and acuity data behind them are derived from patient records, so the encryption, access-control, and business associate agreement obligations from earlier chapters apply to the optimization pipeline.
+
+**Some objectives are life-safety, not efficiency.** Ambulance routing and chemotherapy timing carry direct patient impact, so the recipes weight constraints accordingly and keep a human accountable for the decision.
+
+**Equity is an explicit objective, not a byproduct.** Distributing call, weekends, and undesirable shifts fairly is something the model must be told to optimize; left implicit, least-cost solutions concentrate the burden on a few people.
+
+---
+
+## How This Chapter Is Organized
 
 The recipes in this chapter progress from simple, well-bounded optimization problems to complex, multi-stakeholder network design challenges. Here's the arc:
 
@@ -134,15 +164,31 @@ Every recipe in this chapter includes a section on adoption and change managemen
 
 The other thing I'll be honest about: not every problem in this chapter needs a sophisticated solver. Sometimes a well-designed heuristic (a set of rules that produces good-enough solutions quickly) outperforms an optimal solver that takes too long to run or requires data you don't have. I'll call out where simpler approaches might be the right starting point, and where the full optimization machinery is genuinely worth the investment.
 
+---
+
+## What You'll Build
+
+By the end of this chapter, you'll have patterns for:
+
+- Cleanly-bounded assignment and allocation: appointment slots and patient-provider matching
+- Medium-complexity scheduling with real constraints: inventory under uncertainty, nurse staffing, OR block allocation
+- Dynamic, real-time reoptimization of patient flow and OR case sequencing as the day changes
+- Life-safety operations: ambulance routing and chemotherapy scheduling, where suboptimal is expensive
+- The strategic capstone: multi-year health-system network design
+
+The recurring shape holds throughout: discover the real constraints, optimize against honest (uncertain) data, present trade-offs rather than a single answer, and design for the humans who have to accept the result.
+
 Let's start with the simplest version of the problem: making appointment slots work better.
 
 ---
 
-*→ [Recipe 14.1 — Appointment Slot Optimization](chapter14.01-appointment-slot-optimization)*
-
 ## Further Reading
 
-- [Introduction to Linear Optimization](https://www.athenasc.com/linoptbook.html) by Bertsimas and Tsitsiklis — the standard graduate text on LP and its extensions
-- [HiGHS](https://highs.dev/) — high-performance open-source solver for LP, MIP, and QP problems
-- [Google OR-Tools](https://developers.google.com/optimization) — open-source optimization toolkit with constraint programming, routing, and scheduling solvers
-- [INFORMS Healthcare](https://www.informs.org/Explore/Healthcare) — the professional society for operations research, with a dedicated healthcare applications community
+- [Introduction to Linear Optimization](https://www.athenasc.com/linoptbook.html) by Bertsimas and Tsitsiklis - the standard graduate text on LP and its extensions
+- [HiGHS](https://highs.dev/) - high-performance open-source solver for LP, MIP, and QP problems
+- [Google OR-Tools](https://developers.google.com/optimization) - open-source optimization toolkit with constraint programming, routing, and scheduling solvers
+- [INFORMS Healthcare](https://www.informs.org/Explore/Healthcare) - the professional society for operations research, with a dedicated healthcare applications community
+
+---
+
+*→ [Recipe 14.1: Appointment Slot Optimization](chapter14.01-appointment-slot-optimization)*

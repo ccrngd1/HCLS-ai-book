@@ -14,7 +14,7 @@ What makes this worth a deep dive before we jump into the recipes isn't the solu
 
 ## What OCR Actually Is (And What It Isn't)
 
-Optical Character Recognition (OCR0) is the process of taking an image of text and converting it into machine-readable characters. If you've ever taken a photo of a restaurant menu and had your phone offer to translate it, you've seen OCR in action. If you've ever scanned a document and had the resulting PDF be fully searchable, that's OCR too.
+Optical Character Recognition (OCR) is the process of taking an image of text and converting it into machine-readable characters. If you've ever taken a photo of a restaurant menu and had your phone offer to translate it, you've seen OCR in action. If you've ever scanned a document and had the resulting PDF be fully searchable, that's OCR too.
 
 The "optical" part is a bit of a historical artifact. We're not doing anything particularly optical here; we're doing signal processing and pattern recognition on a pixel grid. "Image-to-text conversion" would be more accurate, but "OCR" stuck, and here we are.
 
@@ -109,13 +109,27 @@ For healthcare documents specifically, there are also favorable structural prope
 
 ---
 
+## What You'll Build
+
+By the end of this chapter, you'll have patterns for:
+
+- Turning a photographed insurance card into structured, validated JSON, the simplest end-to-end version of the problem
+- Pulling fields off scanned claims forms and explanation-of-benefits documents with confidence scores you can act on
+- Splitting and routing the multi-page provider attachments that arrive as one undifferentiated file
+- Reading prescription labels, and the handwritten annotations that staff and clinicians leave on printed forms
+- Standing up the confidence-gated review queue that ties these together, so the machine clears the clean 85 to 95 percent and a human sees only the hard cases, already flagged
+
+The through-line is the architectural move from the top of this chapter: treat extraction as a high-throughput first pass with a confidence-gated human review queue, not as a perfect system. Every recipe is a variation on that pattern, tuned to a different document type and its own business-rule validations.
+
 With that foundation in place, let's start building. Recipe 1.1 is the simplest pattern in the chapter, a single image of an insurance card, structured JSON out, and it's a great place to see all of these concepts come together in a concrete implementation.
 
 ---
 
-*→ [Recipe 1.1 — Insurance Card Scanning](chapter01.01-insurance-card-scanning.md)*
-
 ## Further Reading
 
-- [LayoutLM: Pre-training of Text and Layout for Document Image Understanding](https://arxiv.org/abs/1912.13318) — the transformer-based document understanding approach referenced throughout this chapter
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) — the open-source OCR engine that still powers many production workloads
+- [LayoutLM: Pre-training of Text and Layout for Document Image Understanding](https://arxiv.org/abs/1912.13318) - the transformer-based document understanding approach referenced throughout this chapter
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) - the open-source OCR engine that still powers many production workloads
+
+---
+
+*→ [Recipe 1.1: Insurance Card Scanning](chapter01.01-insurance-card-scanning.md)*

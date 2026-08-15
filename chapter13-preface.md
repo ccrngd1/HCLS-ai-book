@@ -68,7 +68,7 @@ Not every knowledge graph use case requires building a comprehensive medical ont
 
 ---
 
-## The Technical Landscape
+## The Techniques You'll See
 
 Graph databases and knowledge graph tooling have matured significantly in the last five years. A few things worth knowing before diving into the recipes:
 
@@ -82,7 +82,37 @@ Graph databases and knowledge graph tooling have matured significantly in the la
 
 ---
 
-## What You'll Build
+## Key Architectural Patterns
+
+A few patterns recur across the knowledge-graph recipes, worth naming once.
+
+**Stand on existing ontologies.** Healthcare's vocabularies (SNOMED CT, RxNorm, ICD-10, LOINC) already encode the relationships, so the recipes ingest and align these rather than inventing a schema, and treat the ontology as a maintained input.
+
+**RDF for ingest, property graph for the application.** Standard ontologies arrive as RDF triples; application queries are usually easier on a property graph, so the recipes often load in one model and serve in the other (Neptune supporting both is convenient here).
+
+**Traversals over JOINs.** The queries that matter are multi-hop path-finding (drug to interaction to alternative to formulary), expressed in Gremlin, SPARQL, or Cypher, not seven-way relational JOINs.
+
+**Embeddings and GNNs turn the graph into features.** Graph neural networks learn node representations for similarity search and link prediction, which is where the graph stops being only a query tool and becomes a feature source for models in other chapters.
+
+**Speed comes from indexing and precomputation.** Because a 30-second traversal is useless at the point of care, the recipes lean on indexing, query planning, caching, and precomputed common paths to hit clinical latency.
+
+---
+
+## Healthcare-Specific Considerations
+
+Beyond the graph itself, a few considerations shape every deployment in this chapter.
+
+**A wrong or missing edge is a clinical hazard.** If a drug-interaction edge is absent, the system confidently reports no interaction, which is worse than having no system; the recipes treat data completeness as a safety property, not a quality metric.
+
+**Stale knowledge is dangerous knowledge.** Guidelines, approvals, and interactions change weekly, so the graph is a continuously maintained asset with a defined update cadence rather than a one-time build.
+
+**The graph and its queries touch PHI.** When institutional patient data joins the standard ontologies, query inputs and logs carry protected health information and inherit the usual encryption, access-control, and business associate agreement obligations.
+
+**Value lives in the workflow.** A graph nobody queries is an expensive hobby; the recipes embed graph-powered answers into the EHR, order entry, and care-management surfaces where decisions actually happen.
+
+---
+
+## How This Chapter Is Organized
 
 This chapter progresses from "put your existing data in a graph and query it better" to "build a reasoning engine over distributed medical knowledge." Here's the arc:
 
@@ -114,15 +144,31 @@ The hard parts aren't the graph database. Neptune, Neo4j, and their peers are ma
 
 Every recipe in this chapter addresses these challenges explicitly. We're not building demos; we're building systems that need to work reliably, at speed, with real clinical data, in production.
 
+---
+
+## What You'll Build
+
+By the end of this chapter, you'll have patterns for:
+
+- Turning flat data (a formulary, a provider directory) into a graph you can traverse and path-find over
+- Ingesting and querying the standard ontologies (ICD hierarchies, drug-interaction bases) as living knowledge
+- Reasoning across silos: connecting diagnoses, procedures, drugs, and guidelines in one queryable structure
+- Handling uncertain and cross-terminology knowledge: evidence-graded relationships and concept normalization
+- Reaching the frontier: extracting knowledge from literature and federating queries across organizations
+
+The recurring shape holds throughout: build on ontologies that already exist, keep them current, serve multi-hop answers at clinical speed, and put those answers where clinicians decide.
+
 Let's start with the simplest pattern: taking a drug formulary and making it navigable as a graph.
 
 ---
 
-*→ [Recipe 13.1 — Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)*
-
 ## Further Reading
 
-- [SNOMED CT Browser](https://browser.ihtsdotools.org/) — explore the SNOMED CT ontology interactively to understand its structure and relationship types
-- [RxNorm Overview (NLM)](https://www.nlm.nih.gov/research/umls/rxnorm/overview.html) — the National Library of Medicine's documentation on RxNorm structure and use
-- [UMLS (Unified Medical Language System)](https://www.nlm.nih.gov/research/umls/index.html) — the NLM's metathesaurus that maps between healthcare terminologies
-- [W3C RDF Primer](https://www.w3.org/TR/rdf11-primer/) — foundational reading if you're new to RDF and triple-based knowledge representation
+- [SNOMED CT Browser](https://browser.ihtsdotools.org/) - explore the SNOMED CT ontology interactively to understand its structure and relationship types
+- [RxNorm Overview (NLM)](https://www.nlm.nih.gov/research/umls/rxnorm/overview.html) - the National Library of Medicine's documentation on RxNorm structure and use
+- [UMLS (Unified Medical Language System)](https://www.nlm.nih.gov/research/umls/index.html) - the NLM's metathesaurus that maps between healthcare terminologies
+- [W3C RDF Primer](https://www.w3.org/TR/rdf11-primer/) - foundational reading if you're new to RDF and triple-based knowledge representation
+
+---
+
+*→ [Recipe 13.1: Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)*

@@ -391,7 +391,7 @@
 </ul>
 <p>The recipes in this chapter are explicit about where each use case falls on this spectrum. Some (image quality assessment, photo verification) don't trigger FDA oversight at all. Others (diabetic retinopathy screening, radiology triage) are squarely in regulated territory.</p>
 <hr />
-<h2 id="the-technology-stack">The Technology Stack</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>Medical imaging AI builds on the same deep learning foundations as general computer vision, but with domain-specific adaptations:</p>
 <p><strong>Convolutional Neural Networks (CNNs)</strong> remain the workhorse for most medical imaging tasks. Architectures like ResNet, DenseNet, and EfficientNet (originally developed for ImageNet classification) transfer surprisingly well to medical images with appropriate fine-tuning. The key insight is that low-level visual features (edges, textures, gradients) are universal; it's the high-level interpretation that's domain-specific.</p>
 <p><strong>U-Net and its variants</strong> dominate segmentation tasks. The encoder-decoder architecture with skip connections was literally invented for medical image segmentation (biomedical cell segmentation, specifically), and it remains the go-to architecture for outlining structures in medical images. If you're segmenting anything in healthcare imaging, you're probably starting with some flavor of U-Net.</p>
@@ -410,7 +410,22 @@
 </ul>
 <p>Every recipe includes strategies for monitoring and mitigating these failure modes. The pattern is consistent: never deploy without ongoing performance monitoring, stratified by relevant subgroups.</p>
 <hr />
-<h2 id="how-the-recipes-progress">How the Recipes Progress</h2>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the imaging recipes, worth naming once.</p>
+<p><strong>Tile and reassemble.</strong> Whole-slide pathology images and 3D CT/MRI volumes are too large to feed a network whole, so the recipes process patches or slices and stitch the results back together; that decomposition shapes the entire pipeline.</p>
+<p><strong>Transfer learning by default.</strong> Medical datasets are small next to natural-image corpora, so the recipes pre-train on general images and fine-tune, which works well despite the visual domain gap.</p>
+<p><strong>Backbone follows task.</strong> U-Net and its variants for segmentation, CNN or Vision Transformer backbones for classification and detection: the recipes match architecture to the operation rather than reaching for one model.</p>
+<p><strong>Triage reprioritizes a worklist; it does not replace a read.</strong> The dominant integration pattern is reordering the PACS queue so the urgent study is read first, with the radiologist still making the call, which also keeps most use cases in a lower regulatory tier.</p>
+<p><strong>Subgroup-stratified monitoring, on DICOM rails.</strong> Because failures are invisible unless you look for them, the recipes monitor performance and calibration split by scanner make, site, and patient demographics, with DICOM as the ingest and interchange substrate.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>Beyond the architecture, a few considerations shape every deployment in this chapter.</p>
+<p><strong>Images and their metadata are PHI.</strong> DICOM headers carry patient identifiers alongside the pixels, so de-identification, encryption, business associate agreement obligations, and PACS access controls apply to the whole pipeline.</p>
+<p><strong>The FDA line depends on intended use.</strong> Triage and prioritization, computer-aided detection, and autonomous diagnosis sit at increasing regulatory burden; each recipe flags where it falls and routes the determination to your own regulatory and compliance teams.</p>
+<p><strong>Subgroup performance is a patient-safety issue.</strong> A model that works on most of a population but fails on a subgroup (a skin tone, pediatric anatomy, a scanner make) is dangerous precisely because the failures are quiet; stratified reporting is planned in, not retrofitted.</p>
+<p><strong>Ground truth is expensive and contested.</strong> Labels come from busy specialists who disagree, so many systems validate against consensus reads, which adds cost and shapes the data pipeline.</p>
+<hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
 <p>The ten recipes in this chapter are ordered by complexity along several axes: regulatory burden, clinical risk, technical difficulty, and integration complexity.</p>
 <p><strong>Recipes 9.1-9.2 (Simple)</strong> start with non-diagnostic applications. Image quality assessment and patient photo verification don't require clinical interpretation, don't trigger FDA oversight, and use well-established computer vision techniques. These are great starting points because you get real operational value with manageable risk.</p>
 <p><strong>Recipes 9.3-9.5 (Simple to Medium)</strong> introduce clinical measurement and triage. Wound measurement, dermatology triage, and chest X-ray prioritization start touching clinical workflows but remain in the &quot;decision support&quot; category rather than autonomous diagnosis. The regulatory considerations become real here, but the technical approaches are well-validated.</p>
@@ -422,15 +437,26 @@
 <p>More than any other chapter in this book, computer vision in healthcare has a robust commercial ecosystem. Companies like Aidoc, Viz.ai, Paige, and dozens of others offer FDA-cleared algorithms for specific clinical use cases. The &quot;build&quot; recipes in this chapter are educational. They teach you how these systems work, what the architecture looks like, and where the hard problems are. For production clinical deployment, you'll likely integrate a commercial solution (or build on top of one) rather than training your own model from scratch.</p>
 <p>That said, there are plenty of non-clinical computer vision applications (image quality, identity verification, wound measurement, operational analytics) where building your own is entirely reasonable. The recipes make clear which category each use case falls into.</p>
 <hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Gatekeeping image quality before anything downstream tries to interpret a study</li>
+<li>Verifying patient identity from a photo without building a face-surveillance system</li>
+<li>Measuring wounds and triaging dermatology and chest imaging as decision support, not diagnosis</li>
+<li>Reaching the autonomous-diagnosis bar where it has been cleared, as in diabetic retinopathy screening</li>
+<li>Handling the heavy end: multi-modality radiology triage, gigapixel pathology, and research-frontier fusion</li>
+</ul>
+<p>The recurring shape is triage that reprioritizes a worklist rather than replacing a read, wrapped in subgroup-stratified monitoring and a clear read on where each use case sits with the FDA.</p>
 <p>Let's start with the simplest pattern: making sure the image is good enough to use before anyone tries to interpret it.</p>
 <hr />
-<p><em>→ <a href="chapter09.01-image-quality-assessment.html">Recipe 9.1: Image Quality Assessment</a></em></p>
 <h2 id="further-reading">Further Reading</h2>
 <ul>
 <li><a href="https://arxiv.org/abs/1505.04597">U-Net: Convolutional Networks for Biomedical Image Segmentation</a>. The foundational architecture for medical image segmentation.</li>
 <li><a href="https://arxiv.org/abs/1901.07031">CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels</a>. One of the landmark public datasets for chest X-ray AI research.</li>
 <li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device">FDA: Artificial Intelligence and Machine Learning in Software as a Medical Device</a>. The regulatory framework for medical imaging AI.</li>
 </ul>
+<hr />
+<p><em>→ <a href="chapter09.01-image-quality-assessment.html">Recipe 9.1: Image Quality Assessment</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="chapter08.10-architecture.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">8.10 — Phenotype Extraction for Research · Architecture</span></a><a class="pn-link pn-next" href="chapter09.01-image-quality-assessment.html" rel="next"><span class="pn-label">9.1 — Image Quality Assessment</span><span class="pn-arrow">→</span></a></nav>

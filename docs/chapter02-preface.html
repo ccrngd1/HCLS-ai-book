@@ -390,13 +390,6 @@
 </ul>
 <p>The architectural response to hallucination is grounding: giving the model access to verified source material and constraining its output to reference that material. This is the Retrieval-Augmented Generation (RAG) pattern, and you'll see it in nearly every recipe from 2.4 onward. RAG doesn't eliminate hallucination, but it dramatically reduces it and makes the remaining errors detectable (you can check whether the output actually reflects the retrieved sources).</p>
 <hr />
-<h2 id="the-progression-simple-to-complex">The Progression: Simple to Complex</h2>
-<p>This chapter is ordered by risk and architectural complexity. Here's the logic:</p>
-<p><strong>Recipes 2.1-2.2 (Simple):</strong> Human always reviews before output reaches anyone. Low clinical risk. The LLM is drafting, not deciding. These are your quick wins, the use cases where you can demonstrate value in weeks, build organizational confidence, and learn operational patterns before tackling harder problems.</p>
-<p><strong>Recipes 2.3-2.6 (Medium):</strong> Output quality matters more. Grounding becomes essential. Integration with clinical workflows adds complexity. But the failure mode is still &quot;a human catches a bad draft,&quot; not &quot;a patient is harmed.&quot; These are your six-month projects.</p>
-<p><strong>Recipes 2.7-2.8 (Medium-Complex):</strong> Multiple data sources. Real-time constraints. The system needs to be right, not just plausible, because the humans reviewing it are busy and may not catch subtle errors. RAG architectures, citation verification, and confidence scoring become non-negotiable.</p>
-<p><strong>Recipes 2.9-2.10 (Complex):</strong> Direct clinical impact. Regulatory exposure. Multi-modal inputs. These are the use cases that require extensive validation, possibly FDA consideration, and organizational maturity with simpler LLM applications before you attempt them. They're included because they represent where the field is heading, but they're not where you start.</p>
-<hr />
 <h2 id="key-architectural-patterns-youll-see-repeatedly">Key Architectural Patterns You'll See Repeatedly</h2>
 <p>A few patterns show up across multiple recipes. Understanding them here will save repetition later:</p>
 <p><strong>Human-in-the-loop review:</strong> Every recipe includes a review step. The question is where in the workflow it sits and how much friction it adds. For simple drafting (2.1, 2.2), review is the natural endpoint. For real-time applications (2.8), review happens after generation with a tight feedback loop.</p>
@@ -411,6 +404,13 @@
 <p><strong>Regulatory ambiguity:</strong> The FDA has signaled interest in regulating AI-generated clinical content, but the boundaries are still forming. Recipes that approach clinical decision-making (2.9, 2.10) note the regulatory landscape honestly: it's uncertain, it's evolving, and your legal team needs to be involved.</p>
 <p><strong>Bias and equity:</strong> LLMs inherit biases from their training data. In healthcare, this can manifest as differential quality of generated content for different patient populations, or recommendations that reflect historical disparities in care. The recipes note where bias monitoring is particularly important.</p>
 <p><strong>Provenance and auditability:</strong> When an LLM generates a clinical document, you need to know what inputs produced that output. Not just for debugging, but for legal and compliance purposes. The architectures in this chapter include logging and provenance tracking as first-class concerns.</p>
+<hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
+<p>This chapter is ordered by risk and architectural complexity. Here's the logic:</p>
+<p><strong>Recipes 2.1-2.2 (Simple):</strong> Human always reviews before output reaches anyone. Low clinical risk. The LLM is drafting, not deciding. These are your quick wins, the use cases where you can demonstrate value in weeks, build organizational confidence, and learn operational patterns before tackling harder problems.</p>
+<p><strong>Recipes 2.3-2.6 (Medium):</strong> Output quality matters more. Grounding becomes essential. Integration with clinical workflows adds complexity. But the failure mode is still &quot;a human catches a bad draft,&quot; not &quot;a patient is harmed.&quot; These are your six-month projects.</p>
+<p><strong>Recipes 2.7-2.8 (Medium-Complex):</strong> Multiple data sources. Real-time constraints. The system needs to be right, not just plausible, because the humans reviewing it are busy and may not catch subtle errors. RAG architectures, citation verification, and confidence scoring become non-negotiable.</p>
+<p><strong>Recipes 2.9-2.10 (Complex):</strong> Direct clinical impact. Regulatory exposure. Multi-modal inputs. These are the use cases that require extensive validation, possibly FDA consideration, and organizational maturity with simpler LLM applications before you attempt them. They're included because they represent where the field is heading, but they're not where you start.</p>
 <hr />
 <h2 id="a-note-on-model-selection">A Note on Model Selection</h2>
 <p>These recipes are deliberately model-agnostic in their architecture sections. The patterns work whether you're using GPT-4, Claude, Llama, Mistral, or a domain-specific medical model. The AWS-specific sections show implementations using Amazon Bedrock, which provides access to multiple foundation models through a single API with built-in HIPAA eligibility.</p>
@@ -451,6 +451,13 @@
 </ul>
 <p>Each recipe stands alone, but they build on each other conceptually. Start with 2.1 or 2.2 to get comfortable with the patterns, then work forward as your use cases demand.</p>
 <p>Let's start writing.</p>
+<hr />
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://doi.org/10.1038/s41586-023-06291-2">Large language models encode clinical knowledge (Singhal et al., Nature 2023)</a> - how well large language models actually hold medical knowledge, and the evaluation framework behind that claim.</li>
+<li><a href="https://arxiv.org/abs/2005.11401">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (Lewis et al., 2020)</a> - the grounding pattern this chapter leans on to keep generation tied to source text.</li>
+<li><a href="https://arxiv.org/abs/2202.03629">Survey of Hallucination in Natural Language Generation (Ji et al., 2023)</a> - a systematic account of why models fabricate and what mitigations exist.</li>
+</ul>
 <hr />
 <p><em>→ <a href="chapter02.01-patient-message-response-drafting.html">Recipe 2.1: Patient Message Response Drafting</a></em></p>
 

@@ -24,7 +24,7 @@ Now scale that from two dimensions to two hundred. Age, diagnoses, medications, 
 
 ---
 
-## The Algorithmic Landscape
+## The Techniques You'll See
 
 You don't need to be a mathematician to build useful clustering systems, but you do need to understand the trade-offs between approaches. Here's the landscape at a practical level.
 
@@ -84,17 +84,41 @@ This is the big one. In supervised learning, you have ground truth: the model ei
 
 ---
 
-## The Equity Dimension
+## Key Architectural Patterns
 
-I want to flag something that doesn't get enough attention in technical discussions of patient clustering: these algorithms can encode and amplify existing disparities.
+A few patterns recur across the clustering recipes, worth naming once.
+
+**Reduce, then cluster.** With hundreds of healthcare features, distance metrics degrade in high dimensions, so the recipes follow a two-stage pipeline: reduce dimensionality first (PCA, UMAP, or an autoencoder), then cluster in the reduced space. It is the most common production shape and it is reusable across recipes.
+
+**One feature store, many segmentations.** The patient- and provider-level features engineered for one clustering job are the same features the next one wants. The recipes assume a shared feature store rather than a bespoke extract per model, which also keeps the definition of "similar" consistent across the chapter.
+
+**Batch segmentation versus real-time similarity.** Two serving shapes appear here: a periodic batch job that assigns everyone to a cohort, and interactive "find patients like this one" similarity search. The recipes are explicit about which a use case needs, because a scheduled job and a vector index behind an API are different architectures.
+
+**A validation harness, not a one-off.** Because clustering has no ground truth, the recipes wrap each model in a repeatable evaluation: internal metrics for separation plus a structured clinical review for meaning. That harness is what lets you re-run on new data and know whether the segments still hold.
+
+**Clusters are recomputed, because patients move.** A segment is a snapshot. The recipes treat re-clustering as a scheduled operation with a defined cadence and track how patients migrate between cohorts, rather than assuming last quarter's segments still describe today's population.
+
+---
+
+## Healthcare-Specific Considerations
+
+The algorithms are mature; the healthcare context is where clustering gets dangerous. A few considerations recur across the recipes.
+
+**Clusters can encode and amplify disparities.** In technical discussions of patient clustering this gets too little attention: these algorithms can encode and amplify existing disparities.
 
 If your training data reflects a system where Black patients receive fewer referrals to specialists, your utilization-based clusters will show Black patients as "lower utilizers" when the reality is "under-served." If your features include zip code (even indirectly through geographic clustering), you're encoding structural racism into your segments. If your "high-risk" cluster disproportionately contains patients from marginalized communities, is that because they're genuinely higher risk, or because the system has failed them in ways that create risk?
 
 Every recipe in this chapter includes a section on bias considerations. Not because it's fashionable, but because clustering without equity analysis is genuinely dangerous in healthcare. You can build a technically excellent segmentation model that systematically disadvantages vulnerable populations if you're not careful.
 
+**A cluster label is PHI.** The segment a patient lands in is a derived statement about them; cluster assignments, the features behind them, and the logs that record them all carry protected health information and inherit the same encryption, access-control, and business associate agreement obligations as the source data.
+
+**A cohort is not a stereotype.** A segment that is statistically valid across a population can be misleading, or offensive, applied to one person. The recipes use cohorts to prioritize outreach and to design programs, not to make individual determinations, and they say where that line sits.
+
+**Statistical structure is not clinical meaning.** An algorithm will always return clusters; whether they are actionable is a clinical judgment, not a silhouette score. The recipes pair internal validation with clinician review before any segment drives a care decision.
+
 ---
 
-## How This Chapter Progresses
+## How This Chapter Is Organized
 
 The ten recipes in this chapter move from straightforward, well-bounded clustering problems to genuinely complex research-grade challenges.
 
@@ -108,7 +132,7 @@ The ten recipes in this chapter move from straightforward, well-bounded clusteri
 
 ---
 
-## What You'll Learn
+## What You'll Build
 
 By the end of this chapter, you'll understand:
 
@@ -123,6 +147,14 @@ By the end of this chapter, you'll understand:
 The technology here is mature. The algorithms work. The hard part, and the part these recipes focus on, is making clustering *useful* in a healthcare context where "interesting pattern" isn't good enough. The clusters have to drive action. They have to be interpretable by clinicians. They have to be fair. And they have to update as patients change.
 
 Let's start with the simplest version of the problem and build from there.
+
+---
+
+## Further Reading
+
+- [scikit-learn: Clustering](https://scikit-learn.org/stable/modules/clustering.html) - a practical comparison of K-Means, hierarchical, DBSCAN/HDBSCAN, and Gaussian mixtures, with guidance on when each fits.
+- [HDBSCAN](https://github.com/scikit-learn-contrib/hdbscan) - the density-based method this chapter recommends over plain DBSCAN, robust to varying density and light on parameter tuning.
+- [UMAP: Uniform Manifold Approximation and Projection (McInnes, Healy & Melville, 2018)](https://arxiv.org/abs/1802.03426) - the dimensionality-reduction step in the reduce-then-cluster pipeline.
 
 ---
 

@@ -369,7 +369,7 @@
 <p><strong>Prescriptive analytics</strong> tells you what to do about it. &quot;For this patient, a home health visit on day 3 post-discharge reduces readmission probability by 15%.&quot; That is the goal worth wanting, but it requires causal reasoning that goes beyond what most predictive models can deliver. (We touch on this in Recipe 7.10, and it connects to the reinforcement learning chapter.)</p>
 <p>Predictive analytics sits in the middle: it tells you <em>who</em> is at risk and <em>how much</em> risk they carry. The &quot;what to do about it&quot; part still requires clinical judgment, care management protocols, and operational capacity to act. A risk score without an intervention pathway is just an anxiety generator.</p>
 <hr />
-<h2 id="the-algorithmic-landscape">The Algorithmic Landscape</h2>
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
 <p>If you're coming from a software engineering background and haven't spent much time in the ML weeds, here's the lay of the land for the kinds of models that power healthcare risk prediction.</p>
 <h3 id="logistic-regression-the-workhorse">Logistic Regression (The Workhorse)</h3>
 <p>Don't let the simplicity fool you. Logistic regression remains the most widely deployed algorithm in healthcare risk scoring, and for good reason. It's interpretable (you can explain exactly why a patient scored high), it's well-calibrated (the probabilities it outputs actually mean something), and it's been validated in thousands of clinical studies. LACE scores for readmission risk, Framingham risk scores for cardiovascular events, APACHE scores for ICU mortality: these are all fundamentally logistic regression models with carefully chosen features.</p>
@@ -408,7 +408,23 @@
 </ol>
 <p>I've seen beautifully validated models sit unused because the care management team was already at capacity, or because the score appeared in a dashboard nobody checked, or because clinicians didn't trust a number they couldn't explain. The recipes in this chapter spend as much time on operational integration as on model building, because that's where most deployments actually fail.</p>
 <hr />
-<h2 id="how-this-chapter-progresses">How This Chapter Progresses</h2>
+<h2 id="key-architectural-patterns">Key Architectural Patterns</h2>
+<p>A few patterns recur across the risk-modeling recipes, so it is worth naming them once here rather than re-deriving them ten times.</p>
+<p><strong>Point-in-time feature assembly.</strong> Every score is only as honest as the data available at the moment it would have been made. The recurring trap is training on features that were not yet known at prediction time (a lab that resulted after discharge, a diagnosis coded retrospectively), which inflates validation numbers and collapses in production. The recipes assemble features against a fixed &quot;as-of&quot; timestamp and reuse one feature store.</p>
+<p><strong>A calibration stage, not just a model.</strong> Because clinical action is threshold-based, the pipelines treat calibration as an explicit step (Platt scaling, isotonic regression, a held-out recalibration set) rather than trusting the model's raw output.</p>
+<p><strong>The score reaches a person, in a workflow.</strong> A risk number that lands in a dashboard nobody opens changes nothing. The recipes route scores to a specific role at a specific moment (the discharge planner at discharge, the care manager on the Monday work list) and carry an explainability payload so the recipient can trust and act on it.</p>
+<p><strong>Shadow and holdout by default.</strong> Because interventions change the outcome the model is trained on, the pipelines keep a holdout group and run new models silently alongside the incumbent before switching, so drift and the intervention-effect feedback loop stay visible rather than inferred.</p>
+<p><strong>Drift detection and scheduled recalibration.</strong> Populations, coding, and treatments move, so every deployed model has a monitoring job on its input distributions and calibration, with a defined recalibration cadence rather than a &quot;retrain when someone notices&quot; policy.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>Beyond the modeling problems above, a few considerations shape every deployment in this chapter.</p>
+<p><strong>The score is PHI, and so is the log.</strong> A risk score is a statement about a patient derived from their record. Inputs, outputs, and the audit log all carry protected health information; the encryption, access controls, and business associate agreement obligations from the earlier chapters apply to the scoring pipeline exactly as they do to the source data.</p>
+<p><strong>The regulation is often financial before it is clinical.</strong> Several of these outcomes sit on top of payment programs. Thirty-day readmission is tied directly to the Centers for Medicare and Medicaid Services Hospital Readmissions Reduction Program and real penalties. That shapes who the stakeholders are and how a score gets used, well before anyone asks whether the tool is a regulated device.</p>
+<p><strong>Where prediction shades into diagnosis, the device line appears.</strong> Most recipes here are operational risk stratification and stay clear of device regulation. A model that begins to drive individual clinical decisions can move toward Software as a Medical Device; each recipe flags where it sits and routes the regulatory question to your own regulatory and compliance teams.</p>
+<p><strong>Fairness reporting is an external artifact, not an internal note.</strong> Subgroup performance is frequently something you report (to a quality committee, a payer, the community served), not just something you check. Plan for stratified reporting up front, because retrofitting it onto a deployed model is painful.</p>
+<p><strong>Clinical trust is a deployment requirement.</strong> A model clinicians do not trust is one they route around. Transparent validation and a clear account of what the score does and does not claim are the difference between a deployed model and a shelved one.</p>
+<hr />
+<h2 id="how-this-chapter-is-organized">How This Chapter Is Organized</h2>
 <p>The ten recipes are ordered from simple to complex along several dimensions: outcome stakes, time horizon, data requirements, and operational integration complexity.</p>
 <p><strong>Recipes 7.1-7.2</strong> start with low-stakes, well-defined outcomes. Predicting appointment no-shows and propensity to pay are essentially classification problems with clear labels, abundant training data, and interventions (reminders, payment plans) that are low-cost and low-risk. If you're new to healthcare prediction, start here. The patterns you learn (feature engineering from EHR data, confidence calibration, threshold selection) apply to everything that follows.</p>
 <p><strong>Recipes 7.3-7.5</strong> move into medium-complexity territory. Patient churn prediction, ED visit prediction, and 30-day readmission risk all involve higher stakes, longer time horizons, and more complex feature spaces. Readmission risk in particular is one of the most studied problems in healthcare ML, with established benchmarks and regulatory implications (CMS penalties). These recipes introduce concepts like survival framing, fairness auditing, and clinical workflow integration.</p>
@@ -427,10 +443,17 @@
 </ul>
 <p>This isn't paranoia. It's the minimum standard for deploying predictions that influence clinical decisions. Every recipe includes a validation section that's specific to its use case and outcome type.</p>
 <hr />
-<h2 id="lets-build">Let's Build</h2>
+<h2 id="what-youll-build">What You'll Build</h2>
 <p>With that context in place, let's start with the simplest and most universally applicable pattern in the chapter: predicting which patients won't show up for their appointments. It's a great first recipe because the outcome is binary, the data is plentiful, the intervention is cheap, and the stakes are low enough that you can iterate quickly without anyone getting hurt. Everything you learn here (feature engineering, threshold selection, calibration, operational integration) carries forward into the harder problems.</p>
 <hr />
-<p><em>→ <a href="chapter07.01-appointment-no-show-prediction.html">Recipe 7.1 — Appointment No-Show Prediction</a></em></p>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://doi.org/10.1126/science.aax2342">Dissecting racial bias in an algorithm used to manage the health of populations (Obermeyer et al., Science 2019)</a> - the study behind this chapter's fairness warnings: a widely used risk algorithm underestimated the needs of Black patients because it used cost as a proxy for need.</li>
+<li><a href="https://doi.org/10.1186/s12916-019-1466-7">Calibration: the Achilles heel of predictive analytics (Van Calster et al., BMC Medicine 2019)</a> - why a model with strong discrimination can still be dangerously miscalibrated, and how to check.</li>
+<li><a href="https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps/hospital-readmissions-reduction-program-hrrp">CMS Hospital Readmissions Reduction Program</a> - the Medicare payment program that ties 30-day readmission to real penalties.</li>
+</ul>
+<hr />
+<p><em>→ <a href="chapter07.01-appointment-no-show-prediction.html">Recipe 7.1: Appointment No-Show Prediction</a></em></p>
 
       </article>
       <nav class="prev-next" aria-label="Previous and next page"><a class="pn-link pn-prev" href="chapter06.10-architecture.html" rel="prev"><span class="pn-arrow">←</span><span class="pn-label">6.10 — Multi-Morbidity Pattern Discovery · Architecture</span></a><a class="pn-link pn-next" href="chapter07.01-appointment-no-show-prediction.html" rel="next"><span class="pn-label">7.1 — Appointment No-Show Prediction</span><span class="pn-arrow">→</span></a></nav>
