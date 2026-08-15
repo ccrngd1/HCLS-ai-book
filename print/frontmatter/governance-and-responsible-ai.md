@@ -42,6 +42,19 @@ population, and who is accountable when it is uneven?
 clinician relying on it, or overridden by them, or by an audit team then it is a liability wearing a lab coat. Where does a
 person stay in the loop, and does that person have the authority and the information to say no? 
 
+**Is the human review real?** Nearly every recipe here leans on a person, a clinician, a
+coder, a reviewer, as its safety control, and that control is only as good as the attention
+behind it. Attention decays: when a system is usually right, the people checking it drift
+toward approving on reflex, and a review step that has quietly become a rubber stamp is worse
+than no review, because it manufactures a record of oversight that was never actually given.
+So measure whether the review is happening rather than assuming it. Watch how often reviewers
+actually change or reject what the system proposed, and how long they spend before signing
+off, and treat a rate that drifts toward zero as an alarm rather than a success. When it
+slips, the levers are workload and design, not exhortation: reduce how much any one reviewer
+has to clear, make what the system generated visually distinct from what it grounded, route
+the highest-risk cases to deliberate review, and periodically re-check a sample of approved
+output against the source. Who owns those numbers, and who acts when they move the wrong way?
+
 **Was it validated on your patients, not someone else's?** A number from a paper, a vendor, or
 a benchmark is a starting point, not evidence that the system works in your setting. Who signs
 off that it was validated locally before it touched care?
