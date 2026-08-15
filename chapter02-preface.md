@@ -120,6 +120,19 @@ None of this is exotic, and none of it is optional. The teams that deploy genera
 
 ---
 
+## A Note on Security
+
+An LLM application has an attack surface the rest of your stack does not: the model will faithfully follow instructions it finds in its inputs, and it cannot reliably tell your instructions from someone else's. Most of what follows descends from that one fact.
+
+- **Prompt injection, direct and indirect.** The obvious version is a user typing "ignore your instructions and..." The dangerous version is indirect: malicious instructions riding inside the content the model is processing, a retrieved document, a patient message, a scanned fax, an external web result. The model reads it all as one stream. Treat every input the model sees as untrusted, especially the parts you retrieved rather than wrote.
+- **Jailbreaks and scope escape.** Patients, and the occasional bad actor, will try to talk the model out of its lane, into diagnosing, prescribing, or disclosing another patient's data. Scope has to be enforced, not politely requested. The prompt that says "you only do triage" is a starting point, not a fence.
+- **PHI in prompts and logs.** Every prompt and every completion is protected health information. It flows to your model provider, which is why you need a business associate agreement and a no-training, no-retention commitment. It also flows into your own logs, traces, and error dashboards, where it quietly becomes the least-protected copy of patient data you own. Decide what you log on purpose, and redact by default.
+- **The authorization boundary is not the prompt.** This is the one teams get wrong. When the model can call tools, schedule a visit, request a refill, pull a chart, "be conservative" in the system prompt is not a security control. A jailbroken or injected prompt ignores it completely. Put least privilege outside the model: each tool checks the authenticated user's own permissions before it acts, so the worst a hijacked prompt can do is whatever that user could already do by hand. The model proposes; the authorization layer disposes.
+
+The [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) is the current working checklist for all of this, and it is worth reading before you ship anything that puts a model between a patient and their record.
+
+---
+
 ## What You'll Build
 
 By the end of this chapter, you'll have patterns for:
