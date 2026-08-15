@@ -50,6 +50,13 @@ off that it was validated locally before it touched care?
 at go-live may not be safe a year later. Who owns the monitoring, and what triggers taking it
 out of service?
 
+**What happens when the model changes?** A retrained model is a new model, even when only the
+data changed and the code did not. Does that update pass the same review gate as the first
+version, or does it reach production because the pipeline ran on schedule? Is the model version
+pinned in the record, so a decision can be traced to the version that made it, and can you roll
+back and show a new version beats the old one before it goes live rather than after? Who owns
+that, and who signs off on the change?
+
 None of these is answered by choosing a better model. They are answered by people and process.
 
 ## The artifacts your review will ask for
