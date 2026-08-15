@@ -1190,7 +1190,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **External References (Standards and Frameworks):**
 - [HIPAA De-identification Standard (Safe Harbor and Expert Determination)](https://www.hhs.gov/hipaa/for-professionals/privacy/special-topics/de-identification/): the regulatory framework for de-identified data that PPRL deployments operate under
-- [NIST SP 800-188 (De-Identification of Personal Information)](https://csrc.nist.gov/publications/detail/sp/800-188/draft): NIST guidance on de-identification including PPRL-relevant techniques 
+- [NIST SP 800-188 (De-Identification of Personal Information)](https://csrc.nist.gov/publications/detail/sp/800-188/draft): National Institute of Standards and Technology (NIST) guidance on de-identification including PPRL-relevant techniques 
 - [21st Century Cures Act Information Blocking Rule](https://www.healthit.gov/topic/information-blocking): the regulatory framework that interacts with PPRL-mediated research disclosures
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): the foundational regulatory framework
 - [42 CFR Part 2](https://www.ecfr.gov/current/title-42/chapter-I/subchapter-A/part-2): the substance-use-treatment record disclosure framework that imposes specific constraints on PPRL inclusion 
@@ -1201,7 +1201,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [Christen, P., Schnell, R., Vatsalan, D., and Ranbaduge, T. (2017). "Efficient Cryptanalysis of Bloom Filters for Privacy-Preserving Record Linkage." Pacific-Asia Conference on Knowledge Discovery and Data Mining.](https://link.springer.com/chapter/10.1007/978-3-319-57454-7_50) The reference paper on the re-identification attacks against CLK encoding 
 
 **External References (Industry):**
-- [ONC Data Use Agreements and Patient Matching](https://www.healthit.gov/topic/scientific-initiatives/patient-matching): ONC's published guidance on patient matching including privacy-preserving techniques 
+- [ONC Data Use Agreements and Patient Matching](https://www.healthit.gov/topic/scientific-initiatives/patient-matching): Office of the National Coordinator for Health Information Technology (ONC)'s published guidance on patient matching including privacy-preserving techniques 
 - [Sequoia Project Patient Matching Framework](https://sequoiaproject.org/): industry-developed framework for patient-matching including PPRL recommendations 
 - [PCORnet Common Data Model](https://pcornet.org/): a multi-institution research network that has explored PPRL approaches for cross-network linkage 
 

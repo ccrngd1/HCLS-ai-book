@@ -1361,7 +1361,7 @@ The subsections below specify governance, security, and operational patterns tha
 
 ### Voice-as-Biometric-Data Governance Scaffolding with Pediatric-Records, FERPA, and COPPA Layering
 
-Voice samples are biometric data under Illinois BIPA, Texas CUBI, Washington's biometric-data law, and GDPR Article 9 for EU patients. This governance scaffolding treats voice-as-biometric as an architectural primitive rather than a footnote.
+Voice samples are biometric data under Illinois Biometric Information Privacy Act (BIPA), Texas CUBI, Washington's biometric-data law, and GDPR Article 9 for EU patients. This governance scaffolding treats voice-as-biometric as an architectural primitive rather than a footnote.
 
 **Per-jurisdiction biometric-data consent at collection.** At Step 1C (consent capture), the system identifies the patient's jurisdiction and presents the applicable biometric-data consent disclosure. For minors, the parent or legal guardian provides consent on behalf of the child. The consent record stores the jurisdiction, the specific statutory basis (BIPA written informed consent, CUBI notice-and-consent, Washington biometric-data law consent, GDPR Article 9 explicit consent), and the identity of the consenting party. When the patient reaches age of majority, the system triggers a consent-authority handoff: the patient receives notice and the opportunity to provide or withdraw consent on their own behalf.
 

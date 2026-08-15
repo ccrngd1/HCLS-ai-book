@@ -115,7 +115,7 @@ A useful FWA graph has node types that include:
 - Individual providers (NPI level)
 - Provider organizations (tax ID, facility NPI, corporate entity)
 - Patients
-- Services (CPT/HCPCS grouped into meaningful clusters)
+- Services (CPT/Healthcare Common Procedure Coding System (HCPCS) grouped into meaningful clusters)
 - Claims
 - Payments
 - Ownership entities (who owns what)

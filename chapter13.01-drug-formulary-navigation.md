@@ -83,7 +83,7 @@ For formulary navigation, property graphs are usually the better fit. The data i
 Here's what the graph looks like for a typical formulary:
 
 **Node types:**
-- Drug (identified by RxNorm CUI or NDC): the medication itself
+- Drug (identified by RxNorm concept unique identifier (CUI) or NDC): the medication itself
 - DrugStrength: a specific strength/form (atorvastatin 20mg tablet vs. 40mg tablet)
 - TherapeuticClass: AHFS or USP classification hierarchy
 - Plan: a specific benefit plan

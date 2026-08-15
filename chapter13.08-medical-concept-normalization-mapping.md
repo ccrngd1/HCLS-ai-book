@@ -41,7 +41,7 @@ The major players:
 
 **Current Procedural Terminology (CPT)**. Procedure codes for outpatient billing. Maintained by the AMA. Proprietary (you pay for a license).
 
-**HCPCS** (Healthcare Common Procedure Coding System). Extends CPT with codes for supplies, equipment, and non-physician services. Maintained by CMS.
+**Healthcare Common Procedure Coding System (HCPCS)** (Healthcare Common Procedure Coding System). Extends CPT with codes for supplies, equipment, and non-physician services. Maintained by CMS.
 
 Each of these terminologies has its own structure, its own versioning scheme, its own release cadence, and its own licensing terms. The relationships between them are maintained by various organizations (NLM's UMLS being the most comprehensive), but those relationships are imperfect, incomplete, and require ongoing curation.
 
@@ -81,7 +81,7 @@ The alternative to a graph is a relational database with a stack of join tables.
 
 The Unified Medical Language System (UMLS), maintained by the National Library of Medicine, is the most comprehensive source of terminology mappings in healthcare. It integrates over 200 source vocabularies and provides:
 
-**Concept Unique Identifiers (CUIs).** Each distinct clinical meaning gets a CUI. Multiple terms from multiple vocabularies that mean the same thing share a CUI. This is the normalization layer: map any term to its CUI, and you've normalized it.
+**Concept Unique Identifiers (CUIs).** Each distinct clinical meaning gets a concept unique identifier (CUI). Multiple terms from multiple vocabularies that mean the same thing share a CUI. This is the normalization layer: map any term to its CUI, and you've normalized it.
 
 **Relationships.** The UMLS Metathesaurus contains millions of relationships between concepts: synonymy, hierarchy, association, and more.
 

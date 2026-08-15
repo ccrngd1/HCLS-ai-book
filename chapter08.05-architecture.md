@@ -453,7 +453,7 @@ This pipeline extracts problems and produces recommendations. But several gaps s
 
 **Specialty-adapted assertion models.** Different specialties have different documentation patterns. An orthopedic note uses abbreviations and shorthand that an internal medicine model hasn't seen. Train or fine-tune separate assertion classifiers per specialty, using the note's authoring provider specialty as a routing signal. This adds complexity but can improve assertion accuracy by 5-10% for high-volume specialty note types.
 
-**FHIR Condition resource integration.** Map extracted problems directly to FHIR Condition resources and push them to a FHIR server for interoperability. This enables problem list synchronization across systems that speak FHIR (which is increasingly most of them under ONC Cures Act requirements). The FHIR Condition resource has fields for clinical status (active, recurrence, relapse, inactive, remission, resolved) that map cleanly to the assertion categories in this pipeline.
+**FHIR Condition resource integration.** Map extracted problems directly to FHIR Condition resources and push them to a FHIR server for interoperability. This enables problem list synchronization across systems that speak FHIR (which is increasingly most of them under Office of the National Coordinator for Health Information Technology (ONC) Cures Act requirements). The FHIR Condition resource has fields for clinical status (active, recurrence, relapse, inactive, remission, resolved) that map cleanly to the assertion categories in this pipeline.
 
 ---
 

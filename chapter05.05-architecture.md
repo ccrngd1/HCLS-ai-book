@@ -1063,7 +1063,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [SMART on FHIR](https://docs.smarthealthit.org/): the application authorization and identity framework increasingly used for patient-mediated identity flows 
 
 **External References (Industry):**
-- [ONC Patient Matching Resources](https://www.healthit.gov/topic/scientific-initiatives/patient-matching): ONC's patient-matching pilot programs, benchmarks, and recommended practices 
+- [ONC Patient Matching Resources](https://www.healthit.gov/topic/scientific-initiatives/patient-matching): Office of the National Coordinator for Health Information Technology (ONC)'s patient-matching pilot programs, benchmarks, and recommended practices 
 - [AHIMA MPI Resources](https://www.ahima.org/): the American Health Information Management Association's MPI maturity guidance 
 - [Pew Charitable Trusts Patient Identification Reports](https://www.pewtrusts.org/en/research-and-analysis/issue-briefs): published research on patient-matching disparities and policy recommendations 
 

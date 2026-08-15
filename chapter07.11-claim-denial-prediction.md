@@ -61,7 +61,7 @@ This isn't just nice-to-have. It's operationally essential. A model without expl
 
 The features that predict claim determinations fall into several categories:
 
-**Procedure and diagnosis codes.** The CPT/HCPCS procedure code, ICD-10 diagnosis codes (primary and secondary), and critically, the diagnosis-procedure pairs. A diagnosis code alone might be perfectly fine. A procedure code alone might be perfectly fine. But the combination might violate medical necessity criteria for a specific payer. These pairs (and triples) are where most of the predictive signal lives.
+**Procedure and diagnosis codes.** The CPT/Healthcare Common Procedure Coding System (HCPCS) procedure code, ICD-10 diagnosis codes (primary and secondary), and critically, the diagnosis-procedure pairs. A diagnosis code alone might be perfectly fine. A procedure code alone might be perfectly fine. But the combination might violate medical necessity criteria for a specific payer. These pairs (and triples) are where most of the predictive signal lives.
 
 **Payer-specific context.** Payer ID, specific plan/product, the payer's historical denial rate for this procedure code, and whether payer-specific rules require prior authorization, specific modifiers, or documentation. Different payers have wildly different denial patterns for the same procedure.
 

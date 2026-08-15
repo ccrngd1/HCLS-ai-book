@@ -128,7 +128,7 @@ The pipeline for prescription label OCR looks like this:
 
 **Capture:** A mobile photo of the pill bottle, a portal upload, or a scanned label from a point-of-care device. Quality guidance at capture time (lay the bottle flat, ensure good lighting) is the highest-leverage quality improvement and has no computational cost.
 
-**OCR / KVP Extraction:** Pass the image to a document intelligence service that returns key-value pairs, not just raw text. For single-page structured labels, synchronous processing is appropriate. Results come back in under 3 seconds.
+**OCR / key-value pair (KVP) Extraction:** Pass the image to a document intelligence service that returns key-value pairs, not just raw text. For single-page structured labels, synchronous processing is appropriate. Results come back in under 3 seconds.
 
 **Field Normalization and SIG Parsing:** Map the extracted labels to canonical field names across pharmacy chains. Decode SIG abbreviations from the directions field into human-readable text.
 

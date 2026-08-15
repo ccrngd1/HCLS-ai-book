@@ -89,7 +89,7 @@ The assignment record should carry the matched Type 1 NPI as the primary anchor 
 
 ### The Three-Bucket Output, Familiar From 5.1
 
-A provider matching system has the same three-bucket output as a patient matcher: auto-match (high confidence, attach the NPI to the internal record automatically), human review (medium confidence, queue for credentialing or operations review), and auto-non-match (low confidence, no action). The thresholds are set by operations leadership, typically on the conservative side because the cost of a wrong NPI on a credentialed-provider record propagates into claims processing, network adequacy reporting, and member-facing directories. Because the volumes are lower than patient matching, the review queue is much smaller, and the team that staffs it is typically the credentialing or provider-data-management team rather than a dedicated HIM function.
+A provider matching system has the same three-bucket output as a patient matcher: auto-match (high confidence, attach the NPI to the internal record automatically), human review (medium confidence, queue for credentialing or operations review), and auto-non-match (low confidence, no action). The thresholds are set by operations leadership, typically on the conservative side because the cost of a wrong NPI on a credentialed-provider record propagates into claims processing, network adequacy reporting, and member-facing directories. Because the volumes are lower than patient matching, the review queue is much smaller, and the team that staffs it is typically the credentialing or provider-data-management team rather than a dedicated health information management (HIM) function.
 
 ### Where the Field Has Moved
 

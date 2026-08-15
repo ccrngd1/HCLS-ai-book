@@ -39,7 +39,7 @@ Multiply that by 40 criteria and you start to see why this is hard. Each criteri
 
 Patient eligibility information lives in two places, and you need both.
 
-**Structured data** includes diagnosis codes (ICD-10), procedure codes (CPT, HCPCS), medication lists (RxNorm), lab results coded in Logical Observation Identifiers Names and Codes (LOINC), vital signs, and demographics. This is the easy part. You can write deterministic rules: "A1C between 7.5 and 10.5" maps directly to a LOINC code and a value range. "On metformin for at least 90 days" maps to an active medication with a start date.
+**Structured data** includes diagnosis codes (ICD-10), procedure codes (CPT, Healthcare Common Procedure Coding System (HCPCS)), medication lists (RxNorm), lab results coded in Logical Observation Identifiers Names and Codes (LOINC), vital signs, and demographics. This is the easy part. You can write deterministic rules: "A1C between 7.5 and 10.5" maps directly to a LOINC code and a value range. "On metformin for at least 90 days" maps to an active medication with a start date.
 
 **Unstructured data** includes clinical notes, discharge summaries, pathology reports, and radiology reports. This is where the hard cases live. "No history of pancreatitis" might only be documented in a note from three years ago. "Willing to discontinue SGLT2 inhibitors" is a patient preference that exists nowhere in structured data until someone asks. Allergies, surgical history, social history, and family history are often documented in free text even when structured fields exist.
 

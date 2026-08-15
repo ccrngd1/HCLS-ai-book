@@ -32,7 +32,7 @@
 
 **Kinesis registration-events stream.** The producer IAM role (`arn:aws:iam::<account>:role/registration-source-<env>`) is the only principal authorized to PutRecord. Each event carries a signed envelope (HMAC-SHA256 with a shared secret rotated quarterly); the normalize Lambda validates the signature before processing and rejects unsigned or mis-signed events to a rejected-events dead-letter queue (DLQ). An allowed-list of `source_system` values gates acceptance. An idempotency window (DynamoDB TTL-backed, 24 hours) prevents duplicate-event processing from Kinesis retry behavior.
 
-**Review-queue API.** Amazon Cognito authenticates HIM-team members (SAML federation with the institution's identity provider). An authorization layer enforces: (1) reviewer-to-queue assignment (a reviewer can only act on pairs assigned to their queue segment), (2) conflict-of-interest checks (the reviewer is not a relative of or the patient in the candidate pair, verified against an exclusion list maintained by HIM leadership). Every API invocation is logged at both the API Gateway and Lambda layers with the authenticated principal, the action taken, and the candidate-pair ID.
+**Review-queue API.** Amazon Cognito authenticates HIM-team members (SAML federation with the institution's identity provider). An authorization layer enforces: (1) reviewer-to-queue assignment (a reviewer can only act on pairs assigned to their queue segment), (2) conflict-of-interest checks (the reviewer is not a relative of or the patient in the candidate pair, verified against an exclusion list maintained by health information management (HIM) leadership). Every API invocation is logged at both the API Gateway and Lambda layers with the authenticated principal, the action taken, and the candidate-pair ID.
 
 **apply_merge caller validation.** The `invocation_source` enum (`auto_match_pipeline`, `review_queue_decision`, `backfill_pipeline`) maps to a per-source caller IAM role. The merge Lambda validates the caller's assumed role ARN against the expected role for the declared invocation source; mismatches are rejected with a `identity_boundary_rejection` CloudWatch metric emission and a logged security event.
 
@@ -964,7 +964,7 @@ Before surfacing stored demographic data to the patient in a self-service portal
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for healthcare data quality, master data management, and patient matching reference architectures
-- [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "patient matching," "master data management," and "EMPI" for relevant deep-dives
+- [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "patient matching," "master data management," and "enterprise master patient index (EMPI)" for relevant deep-dives
 - [AWS Big Data Blog](https://aws.amazon.com/blogs/big-data/): search "entity resolution," "fuzzy matching," and "Splink" for relevant pipeline patterns
 
 **External References (Methodology):**

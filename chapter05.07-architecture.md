@@ -1100,7 +1100,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for healthcare data lake and patient-data-management reference architectures
-- [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "patient matching," "MPI," "EMPI," "FHIR," "interoperability" for relevant deep-dives
+- [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "patient matching," "MPI," "enterprise master patient index (EMPI)," "FHIR," "interoperability" for relevant deep-dives
 
 **External References (Standards):**
 - [HL7 FHIR Patient Resource](https://www.hl7.org/fhir/patient.html): the FHIR resource for patient identity, with the HumanName list supporting the time-varying-name model
@@ -1120,7 +1120,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [21st Century Cures Act Information Blocking Rule](https://www.healthit.gov/topic/information-blocking): the regulatory framework that governs patient-record release including release of records under prior names
 - [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): the foundational regulatory framework
 - [CMS Interoperability and Patient Access Final Rule](https://www.cms.gov/Regulations-and-Guidance/Guidance/Interoperability/index): the rule mandating Patient Access APIs that release patient records on demand 
-- [ONC Patient Matching](https://www.healthit.gov/topic/scientific-initiatives/patient-matching): ONC's published research and guidance on patient matching 
+- [ONC Patient Matching](https://www.healthit.gov/topic/scientific-initiatives/patient-matching): Office of the National Coordinator for Health Information Technology (ONC)'s published research and guidance on patient matching 
 - [Sequoia Project Patient Matching Framework](https://sequoiaproject.org/): industry-developed framework for patient-matching practices and benchmarking 
 - [Pew Charitable Trusts Patient Matching Research](https://www.pewtrusts.org/en/projects/health-information-technology): published research on patient-matching accuracy, equity, and disparate impact 
 

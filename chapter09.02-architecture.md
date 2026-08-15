@@ -257,7 +257,7 @@ FUNCTION enroll_patient_photo(patient_id, photo_bytes):
 
 ## Why This Isn't Production-Ready
 
-**Bias evaluation.** Before deploying any face comparison system in healthcare, you must evaluate its performance across the demographic groups in your patient population. NIST FRVT data provides a starting point, but your specific population mix, camera hardware, and lighting conditions will produce different results. Run a controlled pilot with known face pairs across demographic segments. If you find meaningful accuracy disparities, you have a choice: adjust thresholds per group (ethically complex), improve your capture environment (lighting, camera quality), or limit the system's role to advisory only until performance is equitable.
+**Bias evaluation.** Before deploying any face comparison system in healthcare, you must evaluate its performance across the demographic groups in your patient population. National Institute of Standards and Technology (NIST) FRVT data provides a starting point, but your specific population mix, camera hardware, and lighting conditions will produce different results. Run a controlled pilot with known face pairs across demographic segments. If you find meaningful accuracy disparities, you have a choice: adjust thresholds per group (ethically complex), improve your capture environment (lighting, camera quality), or limit the system's role to advisory only until performance is equitable.
 
 **Consent management.** You need infrastructure to capture, store, and honor biometric consent preferences. Patients must be able to opt out at any time, and opting out must trigger immediate deletion of their stored photos and embeddings. This is a legal requirement in many states, not a nice-to-have.
 
