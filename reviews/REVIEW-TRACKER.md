@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 22 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 21 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -26,7 +26,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-1 | Significant | OPEN | Restore the Honest Take to digital recipes, one at a time, as each is reviewed | Author-owned work |
 | A-3 | Significant | OPEN | Verify EPUB accessibility before publishing | Author-owned work |
 | AN-6 | Significant | OPEN | Print-scoped acronym sweep: confirm every acronym is expanded on its first... | Anna: business-reader review |
-| V-4.4 | Significant | OPEN | Ch11 Honest Take references five bots absent from this volume; other dangli... | Chapter 11 patient safety and stan |
 | V-6.2 | Significant | OPEN | No coherent evaluation story (LLM-as-judge reliability, golden datasets, re... | Missing technical layer |
 | V-6.3 | Significant | OPEN | No governance artifacts (CHAI model cards, AI use inventories) | Missing technical layer |
 | V-6.4 | Significant | OPEN | No LLM security (prompt injection, jailbreaks, PHI in prompts/logs, OWASP L... | Missing technical layer |
@@ -46,7 +45,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**22 open** (Significant 13 · Minor 9) · 99 closed · 121 total
+**21 open** (Significant 12 · Minor 9) · 100 closed · 121 total
 
 <!-- DIGEST:END -->
 
@@ -135,7 +134,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-4.1 | Bot gives a drug and dose (chew 325mg aspirin) pre-EMS, no anticoagulant/bleeding/dissection check | Critical | DONE | Drug and dose removed. The bot now defers the aspirin question to the 911 dispatcher and says why: it cannot know whether the patient took an anticoagulant, and cannot see a dissection at all. Also reinforced the scope-discipline paragraph so a later edit does not restore the dose. |
 | V-4.2 | Escalation logic self-contradictory: architecture says chest pain routes immediately to 911, exemplar escalates "by turn ten" | Critical | DONE | Resolved by correcting the architecture claim rather than the walkthrough. The walkthrough escalates after four questions, not ten as the review states, and that behaviour is clinically defensible; the defect was the screening step overclaiming that active chest pain routes immediately to 911. It now separates presentations needing no further questions from those needing a short red-flag pass. |
 | V-4.3 | HEART and Wells presented as conversationally gatherable; both need ECG/troponin/exam | Significant | DONE | Rewritten. Centor and the Ottawa rules are genuinely reachable from a conversation; HEART needs an ECG and a troponin, and Wells needs examination findings plus a clinician's judgment on whether PE is the likeliest diagnosis. The passage now separates the two groups and says what a bot can legitimately do, which is collect the history components and hand them forward, and warns against computing a partial score and presenting it as the real thing. |
-| V-4.4 | Ch11 Honest Take references five bots absent from this volume; other dangling refs 5.5, 5.7, 5.9, 2.8, 10.4, 10.6 | Significant | OPEN | Violates the Preface promise to describe rather than cross-reference. |
+| V-4.4 | Ch11 Honest Take references five bots absent from this volume; other dangling refs 5.5, 5.7, 5.9, 2.8, 10.4, 10.6 | Significant | DONE | DONE. Made the flagship print bodies self-contained. Verified first: all of Vince's cited refs (5.5/5.7/5.9/2.8) live in Related Recipes, which the build already reframes to a digital pointer (originals kept only as HTML comments), so they never print. The genuine reader-visible danglers were in body/Honest-Take prose and were fixed: 10.7 (recurring-theme-in-this-chapter + recipe 10.4/10.6/2.8 pointers, plus a 'recipe in this chapter' flourish), 11.6 (the 'five bots' Honest Take reframed from 'previous bots you built' to 'every patient-facing bot has...', keeping all examples; dropped 'non-triage bots' and 'recipe in this chapter'), 4.9 ('this chapter's recipes' + flourish), 5.1 ('recipes in this chapter, including this one' + a self-ref). 14.4->12.5 left as-is (valid in-volume ref). R-1 clean, print 276 even. 9dbc711d |
 
 ## 5. Regulatory layer (2024-2026)
 
