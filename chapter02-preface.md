@@ -107,6 +107,19 @@ Model capabilities are improving rapidly. A recipe that requires a frontier mode
 
 ---
 
+## A Note on Evaluation
+
+Generative systems break the evaluation habits you bring from the rest of machine learning. There is no single correct output to check against, so "accuracy" quietly stops meaning anything, and a demo that looks flawless on ten hand-picked cases tells you nothing about the ten thousand you haven't seen. Every recipe in this chapter discusses what "good" means in its specific context, but the underlying toolkit is shared, and it is worth naming in one place.
+
+- **Golden datasets.** Build a curated, versioned set of real inputs paired with known-good outputs, and salt it with the failure cases that have already burned you. Re-run it on every prompt change, every model swap, every retrieval tweak. If you cannot say whether last week's change made the system better or worse, you do not have an evaluation, you have a feeling.
+- **LLM-as-judge, with a leash.** Using a strong model to grade another model's output is how you evaluate at volume, because human review does not scale to every release. But judges are biased, inconsistent, and easily fooled by a fluent wrong answer. Anchor the judge to a sample of human-rated examples, measure how often it actually agrees with them, and re-check that agreement over time. A judge you have not validated is just a second opinion you have not earned.
+- **Red-teaming.** Before your patients find the failure modes, go find them yourself. Feed the system adversarial inputs, prompt-injection attempts, contradictory histories, and the ugly edge cases that never make it into a golden set. In healthcare the prize is not catching a chatbot saying something rude; it is catching a summary that silently drops an allergy or a message that invents a dose.
+- **Benchmarks, in their place.** The 2025 medical benchmarks (MedHELM, HealthBench) are genuinely useful for shortlisting models that are broadly strong on healthcare tasks. They are not a substitute for evaluating your own system. A leaderboard score reflects someone else's prompts, someone else's data, and a population that is not yours. Use them to decide what to try, never to decide what to ship.
+
+None of this is exotic, and none of it is optional. The teams that deploy generative systems safely in healthcare are not the ones with the best model; they are the ones who built the evaluation harness before they needed it.
+
+---
+
 ## What You'll Build
 
 By the end of this chapter, you'll have patterns for:
