@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 16 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 15 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -27,7 +27,6 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-3 | Significant | OPEN | Verify EPUB accessibility before publishing | Author-owned work |
 | A-5 | Significant | OPEN | Regenerate TOC page numbers before final print (two-pass map is stale) | Author-owned work |
 | AN-6 | Significant | OPEN | Print-scoped acronym sweep: confirm every acronym is expanded on its first... | Anna: business-reader review |
-| V-8.1 | Significant | OPEN | Fairness as a summed penalty can concentrate bad shifts on a few nurses; us... | Chapter 14 optimization |
 | V-8.2 | Significant | OPEN | No infeasibility handling despite a scenario that makes it likely; add IIS... | Chapter 14 optimization |
 | A-2 | Minor | DEFERRED | About the Author orphan: decide at physical proof | Author-owned work |
 | A-4 | Minor | OPEN | Chapter prefaces use inconsistent structures; adopt a common template | Author-owned work |
@@ -40,7 +39,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
 
-**16 open** (Significant 6 · Minor 10) · 107 closed · 123 total
+**15 open** (Significant 5 · Minor 10) · 108 closed · 123 total
 
 <!-- DIGEST:END -->
 
@@ -176,7 +175,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 
 | ID | Finding | Sev | Status | Notes |
 |----|---------|-----|--------|-------|
-| V-8.1 | Fairness as a summed penalty can concentrate bad shifts on a few nurses; use max-min or bounded-spread | Significant | OPEN | |
+| V-8.1 | Fairness as a summed penalty can concentrate bad shifts on a few nurses; use max-min or bounded-spread | Significant | DONE | DONE. Added a caveat to 14.4's Objective Function section: fairness folded into a weighted sum minimizes the aggregate, which is indifferent to how the load is spread and can concentrate nights/weekends on a few nurses. Names the utilitarian-vs-equitable distinction and the remedies (max-min objective, or bound the spread). In-body, print-bound; textbook OR, Vince correct. R-1 clean, print 282 even. 838aea45 |
 | V-8.2 | No infeasibility handling despite a scenario that makes it likely; add IIS or elastic constraints | Significant | OPEN | |
 
 ## 9-11. Positioning, front/back matter, structure
@@ -187,8 +186,8 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-10.1 | No About the Author | Critical | DONE | `9bf83650` added the page after the copyright page, first person to match the body voice; `5f228547` moved the prose into `print/frontmatter/about-the-author.md` so it is editable without touching build.py. Renders on page 3. Row was left OPEN after the work shipped, and the digest audit caught it. |
 | V-10.2 | No ISBN | Minor | DONE | KDP provides ISBN - 9798192171134 |
 | V-10.3 | Appendix B unusable as a print index (recipe numbers, not pages) | Significant | DONE | Pre-existing fix, `68704943`. Now generated from tags with 120 page-numbered entries. |
-| V-10.4 | Appendix B casing errors (Rxnorm, Sns, Sqs, Waf, Cloudtrail, Samd, Elasticache, Gpu, Shap, Transcribe medical) | Minor | DONE | Pre-existing fix, `68704943`, via the `DISPLAY` map. All ten verified. |
-| V-10.5 | Appendix B Fairness entry omits 14.4 | Minor | DONE | Index now derived from tags, so it cannot drift. |
+| V-10.4 | Appendix B casing errors (Rxnorm, Sns, Sqs, Waf, Cloudtrail, Samd, Elasticache, Gpu, Shap, Transcribe medical) | Minor | DONE | DONE. The DISPLAY map (68704943) fixed Vince's cited ten, but three -ai tags still mis-rendered (Conversational ai, Generative ai, Speech voice ai). Added DISPLAY entries so they render Conversational AI / Generative AI / Speech and Voice AI. Completing fix 838aea45. |
+| V-10.5 | Appendix B Fairness entry omits 14.4 | Minor | DONE | DONE. The tag-derived index cannot drift, BUT 14.4 carried no fairness tag, so it never actually appeared under any fairness entry despite fairness being a headline theme. Added a  tag to 14.4 (its workload-distribution fairness is distinct from the demographic equity-monitoring tag); it now indexes as a Fairness entry (Chapter 14). Completing fix 838aea45. |
 | V-10.6 | Ch13 placeholder citations ("[RCT: Smith et al. 2018]") look like real citations | Significant | DONE | The invented names were an intentional illustration by the author, but intent is invisible to a reader: `[RCT: Smith et al. 2018]` is formatted exactly like the real citations the book uses elsewhere, so a reader who looks it up concludes the book invents sources. Resolved by keeping the study shape and making it obviously a schema slot: `[RCT: PMID <study id>, level 1]` and `[Product label: <drug>, Drug Interactions]`. Angle-bracket placeholders need no disclaimer, and the prose now explains that a real node stores an identifier (PMID, DOI, label section) rather than a prose citation, which is what lets you re-check an interaction when the evidence is superseded. Checked the pattern was contained: `Smith`/`Johnson et al.` appeared once each, in this file only, and no other placeholder-shaped citations exist in the corpus. |
 | V-10.7 | Disclaimer lacks not-medical-advice, no clinician-patient disclaimer, no drug-dosing carve-out | Critical | DONE | Copyright page and site landing page state that nothing in the book is medical advice, that the clinical scenarios, drug names, interaction severities, dosing figures and treatment thresholds are illustrative material rather than clinical guidance or a maintained clinical reference, and that reading creates no clinician-patient relationship. Verified in the rendered PDF text layer. Per-recipe banners on all 30 recipes whose output a clinician or patient could act on, tailored by risk type rather than one generic block: medication and dispensing, treatment selection, triage and disposition, decision support, and a distinct stronger banner for 11.8 mental health support that names the 988 Suicide and Crisis Lifeline and requires routing any crisis indication to human clinicians. Every banner routes the reader to their own clinical, legal and compliance teams; none says how to comply. Scope was measured, not taken from the finding: Vince named chapters 11, 13 and 15, but the affected recipes span 10 chapters. Two corrections to the finding: his premise that a specific aspirin dose is printed is wrong, 81 mg and mg/kg appear zero times in the sampler, but he was right about 13.4, which carries a Major interaction with dose-adjustment language and a Contraindicated severity tier. Last recipe, 11.4 pre-visit intake, was held back while queued in the R-1 ralph pass and added once safe. |
 | V-10.8 | AI content disclosure (KDP), trademark acknowledgment, employer clearance, "views are my own" | Critical | DONE | Resolved 2026-08-12. Employer clearance **granted** by the author's employer. Added to the generated copyright page and to the digital edition's Introduction page (note: these did **not** reach the site's actual landing page until `Home.md` was collapsed into `README.md` later the same day, because the builder generated `index.html` from `Home.md`, which had no Disclaimers section): (1) a views disclaimer that names both current *and former* employers plus any affiliated organization, per author instruction; (2) a trademark acknowledgment naming the 13 Amazon and AWS marks that actually appear in the print volume, with the standard editorial-use, no-affiliation and no-endorsement language. KDP's AI-content disclosure was completed on the KDP side. Per explicit author instruction, **no mention of AI use appears in the published content of either edition**, verified by grep across the print book, README and Home. Copyright page absorbed both additions without spilling: 259 pages unchanged. |
