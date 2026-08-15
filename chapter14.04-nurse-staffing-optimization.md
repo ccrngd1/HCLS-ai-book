@@ -54,6 +54,8 @@ Constraints come in two flavors, and the distinction matters enormously for solv
 
 The art of nurse scheduling is in the formulation. A scheduler has to decide which constraints are hard (non-negotiable) and which are soft (penalized), and calibrating the penalty weights so the solver produces schedules that humans actually accept.
 
+There is a question this framing eventually forces: what does the tool do when there is no feasible schedule at all? Short-staffing makes that common rather than rare, and a solver that simply returns "infeasible" is useless to a manager building next week's roster. Two techniques make it usable. One is to compute the smallest set of hard constraints that cannot all be satisfied at once, the irreducible infeasible subset, so the tool can point at exactly which rules are in conflict rather than shrugging. The other, usually more useful day to day, is to make the hard constraints elastic: keep them as heavy penalties rather than absolute bars, so the optimizer always returns the least-bad schedule and reports which constraints it had to break and by how much. A manager does not want "no solution." She wants "here is the closest thing to a legal schedule, and it needs one nurse on mandatory overtime Tuesday night, or one bed closed."
+
 ### The Objective Function
 
 What are you optimizing for? This is where it gets political. Common objectives include:
