@@ -138,6 +138,17 @@ The feedback loop is where the real value emerges. When you track which suggesti
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Fathom**, an autonomous medical coding company, reports that its customer Your Health reached a 95.5 percent encounter automation rate at 98.3 percent accuracy across all service lines after going live. See the [announcement](https://www.fathomhealth.com/insights/your-health-deploys-fathom-autonomous-medical-coding-to-achieve-95-5-automation-rate-at-98-3-accuracy-rate-across-all-service-lines).
+- **CodaMetrix** provides autonomous coding to health systems and reports revenue-cycle results including fewer denials and coders redeployed to higher-value work. See its [health-system results](https://www.codametrix.com/for-health-systems).
+- **AWS solution guidance** documents using generative AI to identify diagnosis codes from clinical notes, and Amazon Comprehend Medical links extracted entities to ICD-10-CM. See the [guidance](https://docs.aws.amazon.com/solutions/identifying-diagnosis-codes-from-clinical-notes-on-aws/).
+- Independent **KLAS validation** of Fathom recorded customers confirming 90 percent-plus automation at same or better accuracy than their prior tools, a useful third-party check on vendor claims. See the [report summary](https://www.fathomhealth.com/insights/fathom-achieves-95-5-overall-performance-score-in-klas-research-autonomous-coding-report-with-customers-validating-90-automation-rates).
+
+---
+
 ## Related Recipes
 
 - **Recipe 1.3 (Lab Requisition Form Extraction):** Uses InferICD10CM in a document extraction context rather than a coding workflow. Shows the same API applied to a different use case.

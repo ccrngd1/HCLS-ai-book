@@ -138,6 +138,16 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 
 **Two frameworks you will be asked about, neither of which is law.** Keep the distinction clear, because it changes who you argue with. The National Institute of Standards and Technology (NIST) AI Risk Management Framework, published in 2023 and extended since with companion profiles including one for generative AI, is voluntary, and it has become the vocabulary that governance committees, auditors and enterprise customers use when they ask how you manage model risk. Separately, the Joint Commission and the Coalition for Health AI have produced guidance on responsible AI use in healthcare, and the Joint Commission now offers a voluntary certification against it; the first health system earned that certification in 2026. Nothing compels you to adopt either one. What they do is set the shape of the question you will be asked, so a model card, a documented validation, and a monitoring plan are worth having in a form you can hand over, whichever framework the person asking happens to favour.
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Cleveland Clinic Health System** implemented a 30-day readmission risk score inside its electronic medical record and published the implementation experience, including where a statistically sound model runs into workflow reality. See the [study](https://link.springer.com/article/10.1007/s11606-021-07277-4).
+- **AWS HealthLake and Amazon SageMaker** are documented together for building patient-outcome prediction applications, the training-and-serving pattern behind a readmission model. See the [reference](https://aws.amazon.com/blogs/machine-learning/build-patient-outcome-prediction-applications-using-amazon-healthlake-and-amazon-sagemaker/).
+- A peer-reviewed **evaluation of algorithmic bias in 30-day readmission models** documents how these models can perform unevenly across groups, the fairness check this recipe treats as a launch gate. See the [analysis](https://pmc.ncbi.nlm.nih.gov/articles/PMC11066744/).
+
+---
+
 ## Related Recipes
 
 - **Recipe 7.4: ED Visit Prediction** - Predicts emergency department utilization; shares many features and can be combined with readmission prediction for a unified acute utilization model.

@@ -245,6 +245,16 @@ Ambient clinical documentation, done well, gives clinicians their evenings back.
 
 **A regulatory note, and its limits.** The per-cohort accuracy monitoring described above has a legal backdrop as well as an ethical one. The Section 1557 final rule issued in 2024, with its patient-care decision support provisions phasing in during 2025, prohibits discrimination in health programs and reaches tools that perform unevenly across protected characteristics. Systematically worse transcription for some patient populations is the kind of disparity that sits inside that scope. Read this as a reason to keep the monitoring and to involve your legal and compliance teams early, not as a compliance recipe. It is not one.
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **AWS HealthScribe** (generally available since 2023) is a HIPAA-eligible managed service that transcribes a patient-clinician conversation, identifies speaker roles, and generates a preliminary, section-structured note for clinician review, the end-to-end pattern this recipe describes. See the [general-availability announcement](https://aws.amazon.com/about-aws/whats-new/2023/11/aws-healthscribe-generally-available/) and the [service overview](https://aws.amazon.com/healthscribe/).
+- **Netsmart** built ambient documentation for behavioral health on AWS HealthScribe, adapting the note structure to a specialty whose encounters look nothing like a primary-care visit. See the [case study](https://aws.amazon.com/blogs/industries/netsmart-transforms-behavioral-healthcare-with-new-feature-of-aws-healthscribe/).
+- **Kaiser Permanente** rolled out ambient AI documentation (built by Abridge) to roughly 25,000 clinicians and published its quality-assurance methodology rather than only a press release. The evaluation, peer-reviewed in NEJM AI in 2025, reported clinician-rated note quality averaging 4.35 of 5 across more than 1,000 clinicians. It is clear public evidence that the mandatory-clinician-review posture in this recipe is how careful adopters actually operate. See the [quality-assurance summary](https://divisionofresearch.kaiserpermanente.org/quality-assurance-informs-large-scale-use-of-ambient-ai-clinical-documentation/) and the [deployment announcement](https://about.kaiserpermanente.org/news/press-release-archive/kaiser-permanente-improves-member-experience-with-ai-enabled-clinical-technology).
+
+---
+
 ## Related Recipes
 
 - **Recipe 10.1 (IVR Call Routing Enhancement):** Same chapter, simplest analog. Recipe 10.1 routes calls based on intent; recipe 10.7 captures conversations for documentation. The telephony plumbing patterns from 10.1 are foundational for any voice work, even though 10.7 does not use telephony directly.

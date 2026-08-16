@@ -106,6 +106,16 @@ Lastly, the patients who most need screening (uncontrolled diabetes, multiple co
 
 **Two regulatory notes, and their limits.** First, the Section 1557 final rule issued in 2024, with its patient-care decision support provisions phasing in during 2025, prohibits discrimination in health programs and reaches tools that use protected characteristics as inputs or perform unevenly across them. That is the legal backdrop to the per-cohort accuracy work described above, and a reason to treat disparity monitoring as load-bearing rather than optional. Second, if you are buying a cleared device, ask the vendor whether it carries an FDA Predetermined Change Control Plan and what that plan covers, because a predetermined change control plan (PCCP) is the mechanism that lets a manufacturer ship certain model updates without a new marketing submission, and it shapes how the product you deployed will change underneath you. Neither point is compliance guidance. Both are questions to take to your legal and compliance teams before you sign anything.
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **LumineticsCore** (formerly IDx-DR, by Digital Diagnostics) became the first FDA-authorized autonomous AI diagnostic, cleared in 2018 to detect diabetic retinopathy in primary care without a specialist overread. See the [FDA De Novo summary](https://www.accessdata.fda.gov/cdrh_docs/reviews/DEN180001.pdf) and the [company announcement](https://www.digitaldiagnostics.com/fda-permits-marketing-of-lumineticscore-formerly-known-as-idx-dr-for-automated-detection-of-diabetic-retinopathy-in-primary-care/).
+- **Eyenuk's EyeArt** is a second FDA-cleared autonomous system for diabetic retinopathy; a peer-reviewed subgroup study compared it against ophthalmologists' dilated examinations. See the [study](https://pmc.ncbi.nlm.nih.gov/articles/PMC9636573/).
+- A peer-reviewed analysis of **determinants for scalable adoption of autonomous AI** in diabetic eye disease documents what actually gates real-world use: workflow, reimbursement, and quality-measure alignment, not model accuracy. See the [paper](https://pubmed.ncbi.nlm.nih.gov/37274764/).
+
+---
+
 ## Related Recipes
 
 - **Recipe 9.1 (Image Quality Assessment):** The quality gate in this recipe is a specialized application of the general image quality assessment pattern

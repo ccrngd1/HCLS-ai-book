@@ -188,6 +188,17 @@ The part that took me the longest to internalize is that this is fundamentally a
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Qventus** builds AI-driven operations tooling for patient flow and capacity and runs on AWS, a named commercial instance of this recipe's forecasting and operations layer. See the [case study](https://aws.amazon.com/solutions/case-studies/qventus/).
+- **GE HealthCare's Command Center** uses machine learning on historical and real-time data to forecast hospital census and staffing needs, and has published the modeling approach. See the [technical write-up](https://research.gehealthcare.com/blog/the-science-behind-ge-healthcares-command-center-census-forecast-and-staffing-helping-hospitals-predict-resource-needs-with-astonishing-accuracy-jb33676xx/).
+- A peer-reviewed **NHS mixed-methods evaluation** of an AI command centre at Bradford is candid about what these systems do and do not deliver in practice, a useful corrective to command-center marketing. See the [study](https://pubmed.ncbi.nlm.nih.gov/39523572/).
+- A public-sector **cloud occupancy-planning project** built a census prediction pipeline on Amazon S3 and AWS analytics, a concrete build of the data path this recipe describes. See the [project](https://cic.ubc.ca/project/leveraging-the-cloud-to-improve-hospital-occupancy-planning/).
+
+---
+
 ## Related Recipes
 
 - **Recipe 12.1 (Appointment Volume Forecasting):** Outpatient counterpart to this recipe. Shares the calendar-feature engineering and the operational dashboard pattern; differs in clinical context and decision latency.

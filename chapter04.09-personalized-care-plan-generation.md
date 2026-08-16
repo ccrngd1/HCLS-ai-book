@@ -175,6 +175,16 @@ A note about patient engagement. The patient-facing narrative is the surface are
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Memora Health** runs an AI-driven care-program platform for complex and chronic care, deployed at health systems including Virtua Health and Boston Medical Center, with a research collaboration at Mayo Clinic. It is a direct instance of this recipe's build advice, buy the care-management and engagement plumbing and keep the care team in the loop, though it automates and personalizes program delivery and follow-up rather than synthesizing the full plan. See the [Virtua Health partnership](https://www.memorahealth.com/news/memora-health-and-virtua-health-partner-to-transform-care-experience-for-patients-and-care-teams-of-south-jerseys-largest-health-system).
+- **AWS HealthLake and Amazon Bedrock** are combined in a documented pattern that assembles a patient's structured FHIR record into a personalized, clinician-reviewed narrative. It is the structured-data-then-narrative discipline this recipe treats as the difference between an auditable plan and a plausible-looking one. See the [reference architecture](https://aws.amazon.com/blogs/industries/ai-powered-patient-profiles-using-aws-healthlake-and-amazon-bedrock/).
+- The governance anchor: a peer-reviewed **Mayo Clinic case study** describes the Software as a Medical Device Review Board it established in 2022, an independent panel of physicians and domain experts that runs each clinical decision support tool through the FDA criteria for non-device CDS, the exact determination this recipe's design is built around. That test turns on whether a clinician can independently review the basis for a recommendation, which is precisely why this recipe keeps the care team in the loop and makes the plan's reasoning auditable rather than letting the LLM decide. See the [case study](https://pmc.ncbi.nlm.nih.gov/articles/PMC11975809/).
+
+---
+
 ## Related Recipes
 
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** Channel preferences from 4.1 drive the patient-facing narrative delivery in 4.9. The infrastructure compounds: 4.1 establishes the channel preference store; 4.9 reads from it.

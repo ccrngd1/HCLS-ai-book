@@ -299,6 +299,16 @@ Last point, because it is specific to this domain: duplicate patient records are
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Verato** takes a different technical route than the probabilistic record linkage this recipe builds. Rather than comparing two records to each other, its referential matching resolves each record against a large, continuously updated reference database of US identities (names, addresses, and other demographics carrying decades of history), so it can link records whose data is out-of-date, sparse, or inconsistent. Its primer is a clear read on how deterministic, probabilistic, and referential matching differ, and where each breaks. See [what referential matching is](https://verato.com/blog/what-is-referential-matching-a-primer/).
+- **Duplicate-record resolution on AWS** documents a blocking-and-matching pipeline built with AWS Glue, the same probabilistic-matching machinery this recipe describes. See the [solution](https://docs.aws.amazon.com/solutions/identifying-and-resolving-duplicate-customer-records-on-aws/).
+- The independent picture: The Pew Charitable Trusts' landmark patient-matching report found that match rates within a single facility can be as low as 80 percent and between organizations as low as 50 percent, with duplicate records averaging roughly 18 percent, and it singled out referential matching as having among the highest published match rates. It is a credible, non-vendor account of both the stakes and the competing approaches. See the [report](https://www.pewtrusts.org/en/research-and-analysis/reports/2018/10/02/enhanced-patient-matching-critical-to-achieving-full-promise-of-digital-health-records).
+
+---
+
 ## Related Recipes
 
 Several sibling recipes reuse the blocking, comparator, and review-queue infrastructure built here. Recipe 5.2 applies these primitives to the National Provider Identifier (NPI) registry; recipe 5.5 extends the framework to a health information exchange (HIE); the master patient index (MPI) that this recipe produces is the anchor for the personalization and predictive-modeling recipes in later chapters.

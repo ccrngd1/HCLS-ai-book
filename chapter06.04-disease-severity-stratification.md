@@ -130,6 +130,17 @@ One more thing to keep in mind. Tier assignments are not destiny; they're a snap
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Johns Hopkins ACG System** is the most widely deployed population-segmentation and case-mix methodology, used by health systems and payers worldwide to turn each person's full diagnosis and medication profile into clinically coherent groups and severity tiers for targeting care management. Johns Hopkins HealthCare itself uses it to segment its US Family Health Plan population and direct interventions. It is this recipe's own advice in practice: before you cluster, check whether a validated index already exists. See the [ACG System](https://www.hopkinsacg.org/about-the-acg-system/) and a [published health-plan use](https://bmchealthservres.biomedcentral.com/articles/10.1186/1472-6963-9-S1-A16).
+- **NHS Wales** deployed the PRISM stratification tool, which sorts every general-practice population into four tiers using 37 variables drawn from routine records plus a deprivation index (developed on 300,000 patients), then had it evaluated in a stepped-wedge randomized trial (PRISMATIC). It is a rare rigorous, real-world test, and a sobering one: introducing the tool did not deliver the intended reduction in emergency admissions. It is a useful reminder that a technically sound stratification can still fail to change outcomes if the downstream intervention does not. See the [trial report](https://www.ncbi.nlm.nih.gov/books/NBK475995/).
+- The **ASSEHS study** examined how risk stratification actually gets implemented across several European health systems, drawing on the people who designed and ran those programs. Its findings map onto this recipe's hard parts: the work that decides success is organizational (clinician engagement, workflow fit, trust), not algorithmic. See the [study](https://link.springer.com/doi/10.1186/s12913-017-2275-3).
+- The cautionary implementation: **Obermeyer and colleagues** (Science, 2019) dissected a commercial algorithm used across US health systems to stratify roughly 200 million people a year for extra care management, the exact use case in this recipe. Because it used prior cost as a proxy for need, it systematically under-selected Black patients who were sicker but had lower spending. It is the clearest worked example of how the choice of what to stratify on becomes a clinical-equity decision. See the [study](https://www.science.org/doi/10.1126/science.aax2342).
+
+---
+
 ## Related Recipes
 
 - **Recipe 6.2 (Utilization Pattern Segmentation):** Segments by utilization behavior; severity stratification adds clinical dimensions on top of utilization signals

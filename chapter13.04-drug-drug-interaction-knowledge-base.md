@@ -156,6 +156,15 @@ Not all interactions are created equal, and your graph needs to represent this. 
 
 **A regulatory note, and its limits.** An interaction alert that fires inside prescribing workflow is what regulators call a decision support intervention, and the significance scoring described above is precisely the part that makes it predictive rather than a lookup. The Office of the National Coordinator for Health Information Technology (ONC) HTI-1 rule, whose requirements took effect in January 2025, sets transparency expectations for predictive decision support delivered through certified health IT, requiring a defined set of source attributes covering things like the training data, the validation performed, and the model's ongoing maintenance. It binds developers of certified health IT rather than provider organizations directly, but it reaches you through your EHR vendor, and the attributes it asks for overlap heavily with what a model card already contains. That is the whole of what this book will say about it. Whether it applies to what you are building, and what you would owe if it does, is a question for your legal and compliance teams. Nothing here is a compliance plan.
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Wolters Kluwer's Medi-Span** and similar commercial drug databases have supplied drug-drug interaction content to production clinical decision support across the industry for decades. It is the incumbent version of this recipe's knowledge base. See [Medi-Span](https://www.wolterskluwer.com/en/solutions/medi-span).
+- The essential honesty reference: a peer-reviewed **comparison of three commercial interaction knowledge bases** found that 79 percent of flagged drug pairs appeared in only one of the three, and just 5 percent in all three. The knowledge bases disagree profoundly, which is the root of both missed interactions and alert fatigue. See the [comparison](https://pubmed.ncbi.nlm.nih.gov/28339701/).
+
+---
+
 ## Related Recipes
 
 - **[Recipe 13.1: Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)** covers the foundational graph model for drug data. The formulary graph provides the drug identity and classification nodes that this recipe's interaction graph builds upon.

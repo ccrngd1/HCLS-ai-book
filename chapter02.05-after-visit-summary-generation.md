@@ -199,6 +199,16 @@ There's a bigger opportunity hiding in this use case, too. The AVS is the visibl
 
 **A regulatory note, and its limits.** If you operate in California, AB 3030 took effect in January 2025 and applies to generative AI used to produce patient communications about clinical information, requiring a disclaimer and instructions for reaching a human clinician. It broadly exempts communications that a licensed provider reads and reviews, which is worth knowing here because it means the clinician review step described above is not only a safety control, it is the pivot the rule turns on. Other states are legislating in the same direction. Treat that as awareness and nothing more: whether and how any of it applies to your deployment is a question for your legal and compliance teams, not for a cookbook.
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **AWS HealthLake and Amazon Bedrock** are combined in a documented pattern that assembles and summarizes a patient's record into readable prose grounded in FHIR data, the grounded-generation approach this recipe insists on. See the [reference architecture](https://aws.amazon.com/blogs/industries/ai-powered-patient-profiles-using-aws-healthlake-and-amazon-bedrock/).
+- **Forcura**, a healthcare technology company, built a generative-AI feature on Amazon Bedrock that summarizes patient referrals into structured, reviewable text. See the [case study](https://aws.amazon.com/solutions/case-studies/forcura-case-study/).
+- **Flo Health** uses Amazon Bedrock to scale expert review of medical content at high volume, an example of the generation-plus-human-review posture this recipe treats as mandatory for patient-facing text. See the [case study](https://aws.amazon.com/blogs/machine-learning/scaling-medical-content-review-at-flo-health-using-amazon-bedrock-part-1/).
+
+---
+
 ## Related Recipes
 
 - **Recipe 2.1 (Patient Message Response Drafting):** Uses similar LLM patterns but for one-off messages rather than structured document generation. The tone and reading-level considerations transfer directly.

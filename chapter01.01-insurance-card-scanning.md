@@ -112,6 +112,15 @@ Keep the shelf life in mind, too. As insurance cards move into digital wallets a
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Elevance Health** (formerly Anthem), one of the largest US health insurers, worked with AWS to extract data from claims forms and their attachments at scale, replacing manual keying. See the [case study](https://aws.amazon.com/solutions/case-studies/anthem/).
+- **Notable Health** runs automated insurance capture and verification for provider organizations, using OCR and machine learning to read coverage details and write structured data back to the electronic health record. See their [write-up](https://www.notablehealth.com/blog/unlocking-revenue-cycle-efficiency-with-automated-insurance-verification).
+
+---
+
 ## Related Recipes
 
 - **Recipe 1.2 (Patient Intake Form Digitization):** Extends this single-image pattern to multi-section forms with tables and checkboxes

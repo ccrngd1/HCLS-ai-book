@@ -229,6 +229,16 @@ The fifth trap is shipping without an explicit equity commitment. Studies of nur
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Infermedica** powers Healthdirect, Australia's national symptom checker and triage helpline, which serves up to 26 million people, a national-scale instance of protocol-grounded triage. See the [case study](https://infermedica.com/blog/articles/connecting-care-healthdirect).
+- **Ada Health** publishes how it validates its assessment engine, a look at the accuracy testing this recipe argues is mandatory before deployment. See their [validation write-up](https://ada.com/editorial/how-do-we-test-the-performance-of-ai-health-assessment-tools/).
+- The honest counterweight: **Semigran and colleagues** (BMJ, 2015) audited 23 symptom checkers and found the correct diagnosis listed first only about a third of the time, the reason triage safety and scope containment matter more than diagnostic cleverness. See the [audit](https://www.bmj.com/content/351/bmj.h3480).
+
+---
+
 ## Related Recipes
 
 - **Recipe 11.1 (FAQ Chatbot):** Same chapter, foundational. The triage bot inherits the input-screening pipeline, scope filtering, conversation logging, audit pattern, persona discipline, and per-cohort monitoring.

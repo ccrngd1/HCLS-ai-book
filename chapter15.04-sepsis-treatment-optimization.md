@@ -140,6 +140,18 @@ If you're building this, start with the data pipeline and evaluation infrastruct
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+This recipe is deliberately research-stage, and the honest signal from the field is that no reinforcement-learning sepsis policy is in autonomous clinical use. What exists is a landmark and its serious critiques.
+
+- The **AI Clinician** (Komorowski and colleagues, Nature Medicine, 2018) is the landmark: an offline reinforcement-learning policy for vasopressors and fluids in sepsis, reported to match or exceed clinician value on retrospective ICU data. See the [paper](https://www.nature.com/articles/s41591-018-0213-5).
+- The necessary counterweight: a **published critique** (Jeter and colleagues, 2019) questioned whether the AI Clinician actually learns optimal strategies, highlighting how sensitive offline RL is to modeling choices. See the [critique](https://arxiv.org/abs/1902.03271).
+- A 2025 study on **reinforcement-learning model transportability for sepsis** documents how a policy learned in one setting degrades in another, the distribution-shift hazard this recipe treats as central. See the [study](https://www.nature.com/articles/s41746-025-01485-6).
+
+---
+
 ## Related Recipes
 
 - **Recipe 15.1 (Alert Threshold Optimization):** A simpler RL application that demonstrates the core concepts (state, action, reward) in a lower-stakes setting. Good starting point before tackling treatment optimization.

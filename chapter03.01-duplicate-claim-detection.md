@@ -200,6 +200,16 @@ What I recommend to any team looking to embark on this project, start with a det
 
 ---
 
+## As Seen In Production
+
+*Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
+
+- **Cotiviti**, a payment-integrity company that works across many US health plans, applies machine learning and pattern recognition to flag duplicate, wasteful, and abusive claims before and after payment. It is a direct commercial instance of this recipe's problem. See its [claim pattern review](https://www.cotiviti.com/solutions/payment-accuracy/claim-pattern-review).
+- **AWS fraud-detection guidance** documents building self-improving detection models with Amazon SageMaker, the supervised-plus-anomaly approach this recipe uses. See the [guidance](https://aws.amazon.com/solutions/guidance/fraud-detection-using-machine-learning-on-aws/).
+- **Duplicate-record resolution on AWS** is a documented reference that blocks, matches, and resolves duplicate records with AWS Glue, the entity-resolution machinery underneath duplicate-claim detection. See the [solution](https://docs.aws.amazon.com/solutions/identifying-and-resolving-duplicate-customer-records-on-aws/).
+
+---
+
 ## Related Recipes
 
 - **Recipe 3.3 (Billing Code Anomalies):** Extends the pattern here to provider-specific baselines and detects claim patterns that don't appear to be duplicates but are still unusual. Shares the review-queue and feedback-loop infrastructure.
