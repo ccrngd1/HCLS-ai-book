@@ -149,7 +149,7 @@ Start with a single unit. Prove it works. Then expand. Trying to optimize across
 
 *Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
 
-- **Wellstar Health System** rolled out the vflok Swift AI scheduling copilot across its 11 hospitals after a pilot, combining machine learning and generative AI to give nurses more schedule control while reducing managers' administrative burden. See the [announcement](https://www.prnewswire.com/news-releases/wellstar-health-system-rolls-out-the-swift-ai-scheduling-copilot-for-nursing-teams-the-first-workforce-solution-by-vflok-inc-302560710.html).
+- **Wellstar Health System** rolled out the Swift AI scheduling copilot (built by Swift Workforce AI, formerly vflok) across its 11 hospitals after a pilot, combining machine learning and generative AI to give nurses more schedule control while reducing managers' administrative burden. See the [announcement](https://www.prnewswire.com/news-releases/wellstar-health-system-rolls-out-the-swift-ai-scheduling-copilot-for-nursing-teams-the-first-workforce-solution-by-vflok-inc-302560710.html).
 - A **Columbia Business School** study reports that AI combined with mathematical optimization can cut nurse-staffing costs while maintaining patient access, the exact objective-and-constraint trade-off this recipe formulates. See the [summary](https://business.columbia.edu/press-release/cbs-press-releases/ai-driven-nurse-staffing-can-cut-costs-and-maintain-patient-access).
 
 ---
