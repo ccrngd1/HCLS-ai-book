@@ -17,7 +17,7 @@ on first use in body prose.
 
 # About the Author
 
-I am a Solution Architect at Amazon Web Services, working in healthcare. Most of what I do is help organizations design and deploy systems that survive contact with real clinical, regulatory, and operational constraints. I routinely get the same question from teams: "How should we be leveraging AI in our org?" That is what this book and its digital edition aim to answer, by providing a cookbook of recipes that show how AI is actually being used across the healthcare landscape, along with some honest feedback on how I have seen a few of them go wrong.
+I am Nick Lawson, a Solution Architect at Amazon Web Services, working in healthcare. Most of what I do is help organizations design and deploy systems that survive contact with real clinical, regulatory, and operational constraints. I routinely get the same question from teams: "How should we be leveraging AI in our org?" That is what this book and its digital edition aim to answer, by providing a cookbook of recipes that show how AI is actually being used across the healthcare landscape, along with some honest feedback on how I have seen a few of them go wrong.
 
 I spent most of my career as a software engineer before moving into architecture, and it shows. I love building, I want to deeply understand the problem space and then see the thing running, and I am wary of anything described as turnkey.
 
