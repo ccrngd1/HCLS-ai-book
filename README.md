@@ -22,19 +22,34 @@ deliberately kept out of the site navigation so nobody mistakes them for a start
 point for production work. Read them to understand the shape of a solution; build from
 current vendor documentation.
 
+## Why This Book Exists
+
+Most writing about healthcare AI falls into one of two camps. Vendor material shows a polished demo and skips the failure modes. Academic papers prove a model works on a retrospective dataset and stop short of how you would run it. Neither tells a practitioner how these systems fit together, where they break, and what it takes to deploy them responsibly around real patients and real clinicians. This book is written to fill that gap. It is architecture-first, honest about limitations, and vendor-neutral, and it spans the breadth of healthcare AI rather than a single product or specialty. Every recipe ends with an Honest Take because the hard-won lessons are usually the part left out everywhere else.
+
 ## Who This Is For
 
 - Solution architects designing healthcare AI systems
 - Technical leaders evaluating AI opportunities
 - Engineers building healthcare ML pipelines
 - Product managers scoping AI features
+- Operations and business leaders weighing where AI is, and is not, ready
+
+You do not need to write code to get value here. Every recipe opens with a plain-language problem and a concrete scenario before any technology, so a clinical, operations, or business leader can follow the same thread an engineer does.
 
 ## How to Use This Book
 
 1. **Browse categories** to find relevant AI/ML capabilities
-2. **Start simple** — each category begins with quick-win use cases
-3. **Understand complexity** — use the ordering to gauge implementation effort
+2. **Start simple**: each category begins with quick-win use cases
+3. **Understand complexity**: use the ordering to gauge implementation effort
 4. **Reference architecture patterns** when designing systems
+
+## How to Read a Recipe
+
+Every recipe opens with a single line: **Effort**, **Maturity**, and **Oversight**. Each answers a question the others cannot.
+
+- **Effort (1 to 5)** is the honest total cost to reach a trustworthy production system, not the difficulty of the model alone. It counts the data plumbing, clinical governance, integration, and change management, which in most recipes dwarf the modeling. A 1 is something a small team ships in weeks; a 5 is a standing program with clinical safety review and permanent operations.
+- **Maturity** describes how settled the technology is across the industry, not your own readiness. **Commodity**: managed services do this well and cheaply. **Proven**: deployed at scale, with known failure modes. **Emerging**: real products exist, but practice and regulation are still consolidating. **Research**: compelling literature, no routine clinical use.
+- **Oversight** is how much human review each output needs before it can act, a property of the design. **Autonomous**: acts with no per-case review. **Exception review**: auto-accept above a confidence threshold, humans see the rest. **Every output**: a human reviews and signs each one. **Dual review**: two reviewers or committee sign-off. Oversight is not a proxy for difficulty; a low-effort recipe can still be Autonomous, and that is often what makes it high-stakes.
 
 ## Chapters
 
