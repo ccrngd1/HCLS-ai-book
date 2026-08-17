@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 13 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 16 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -36,8 +36,11 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | V-11.4 | Minor | OPEN | Define the header fields in "How to Use This Book" | Positioning, front/back matter, st |
 | V-3.10 | Minor | OPEN | Bold body font embedded twice | Production and accessibility |
 | V-3.11 | Minor | OPEN | Front matter uses arabic, not roman, numerals | Production and accessibility |
+| VH-2 | Minor | OPEN | EHR used (print p24) before it is expanded (p26) | Veronica: print copy-edit review |
+| VH-3 | Minor | OPEN | "use case" should be one word (print p39, p41) | Veronica: print copy-edit review |
+| VH-4 | Minor | OPEN | Abbreviation placed later in the paragraph than the first mention: "skilled... | Veronica: print copy-edit review |
 
-**13 open** (Significant 3 · Minor 10) · 112 closed · 125 total
+**16 open** (Significant 3 · Minor 13) · 114 closed · 130 total
 
 <!-- DIGEST:END -->
 
