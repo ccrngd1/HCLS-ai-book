@@ -419,11 +419,11 @@
 </tr>
 <tr>
 <td><strong>Sample Data</strong></td>
-<td>Synthetic insurance card images. CMS provides <a href="https://www.cms.gov/medicare/new-medicare-card">sample Medicare cards</a> for layout reference. Never use real member cards in dev.</td>
+<td>Synthetic commercial insurance card images with representative Member ID, Group, copay, and Rx BIN/PCN/Group fields. CMS <a href="https://www.cms.gov/medicare/new-medicare-card">sample Medicare cards</a> show a card layout but do not carry the commercial fields this recipe extracts. Never use real member cards in dev.</td>
 </tr>
 <tr>
 <td><strong>Cost Estimate</strong></td>
-<td>Textract AnalyzeDocument (FORMS): $0.05 per page. At one page per card, that's $0.05/card. Lambda and DynamoDB costs are negligible at this scale.</td>
+<td>Amazon Textract AnalyzeDocument (FORMS) is the dominant cost, billed per page; Lambda and DynamoDB are negligible at this scale. See the <a href="https://aws.amazon.com/textract/pricing/">Textract pricing page</a> for current rates.</td>
 </tr>
 </tbody>
 </table>
@@ -654,12 +654,8 @@ FUNCTION flag_low_confidence(fields):
 <td>95-99.5% per field</td>
 </tr>
 <tr>
-<td>Cost per card</td>
-<td>~$0.05 (Textract dominates; Lambda + DynamoDB negligible)</td>
-</tr>
-<tr>
 <td>Throughput</td>
-<td>~50 cards/second (Lambda concurrency limited)</td>
+<td>Bounded by the Amazon Textract AnalyzeDocument transactions-per-second service quota, not Lambda concurrency; request a quota increase for high volume</td>
 </tr>
 </tbody>
 </table>
@@ -667,7 +663,7 @@ FUNCTION flag_low_confidence(fields):
 <hr />
 <h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
 <p>The pseudocode and architecture above demonstrate the pattern. Deploying this to a clinic requires addressing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will bite you:</p>
-<p><strong>Dead Letter Queue.</strong> Lambda invocations from S3 events are asynchronous. If the function fails (Textract outage, DynamoDB unavailable, uncaught exception), the event retries up to three times and then silently disappears. In a healthcare intake pipeline, a silently lost document means a patient record gap with no visible signal. Configure an SQS dead letter queue on each Lambda and set a CloudWatch alarm on the queue depth.</p>
+<p><strong>Dead Letter Queue.</strong> Lambda invocations from S3 events are asynchronous. If the function fails (Textract outage, DynamoDB unavailable, uncaught exception), the event is retried twice (three attempts total) and then silently disappears. In a healthcare intake pipeline, a silently lost document means a patient record gap with no visible signal. Configure an SQS dead letter queue on each Lambda and set a CloudWatch alarm on the queue depth.</p>
 <p><strong>IAM resource scoping.</strong> The prerequisites list the right API actions, but most readers will scope them to <code>*</code> (all resources). Don't. Restrict <code>s3:GetObject</code> to <code>arn:aws:s3:::cards-inbox/*</code>, <code>dynamodb:PutItem</code> to your specific table ARN, and <code>kms:Decrypt</code> to your specific key ARN. Least privilege means least privilege, not &quot;least actions.&quot;</p>
 <p><strong>Idempotency.</strong> S3 delivers event notifications at least once, not exactly once. Your Lambda can be invoked twice for the same card image. Without a conditional DynamoDB write (check whether a record with the same <code>image_key</code> already exists before writing), you'll create duplicate extraction records or silently overwrite existing ones.</p>
 <hr />

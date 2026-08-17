@@ -48,8 +48,8 @@ flowchart LR
 | **DynamoDB PITR** | Enable DynamoDB Point-in-Time Recovery (PITR) for PHI tables; it provides continuous backup and supports disaster recovery and incident response. |
 | **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Textract, DynamoDB, and CloudWatch Logs. The Logs endpoint is easy to forget: a Lambda in a private subnet without it silently drops all log output. Enable VPC Flow Logs for network-level audit trail (CloudTrail covers API calls; Flow Logs cover network traffic, completing the HIPAA audit picture). |
 | **CloudTrail** | Enabled: log all Textract and S3 API calls for HIPAA audit trail |
-| **Sample Data** | Synthetic insurance card images. CMS provides [sample Medicare cards](https://www.cms.gov/medicare/new-medicare-card) for layout reference. Never use real member cards in dev. |
-| **Cost Estimate** | Textract AnalyzeDocument (FORMS): $0.05 per page. At one page per card, that's $0.05/card. Lambda and DynamoDB costs are negligible at this scale. |
+| **Sample Data** | Synthetic commercial insurance card images with representative Member ID, Group, copay, and Rx BIN/PCN/Group fields. CMS [sample Medicare cards](https://www.cms.gov/medicare/new-medicare-card) show a card layout but do not carry the commercial fields this recipe extracts. Never use real member cards in dev. |
+| **Cost Estimate** | Amazon Textract AnalyzeDocument (FORMS) is the dominant cost, billed per page; Lambda and DynamoDB are negligible at this scale. See the [Textract pricing page](https://aws.amazon.com/textract/pricing/) for current rates. |
 
 ### Ingredients
 
@@ -257,8 +257,7 @@ FUNCTION store_result(image_key, fields, flagged):
 | End-to-end latency | 1.5-3 seconds |
 | Field extraction accuracy | 95-99% for printed cards |
 | Confidence score (clean cards) | 95-99.5% per field |
-| Cost per card | ~$0.05 (Textract dominates; Lambda + DynamoDB negligible) |
-| Throughput | ~50 cards/second (Lambda concurrency limited) |
+| Throughput | Bounded by the Amazon Textract AnalyzeDocument transactions-per-second service quota, not Lambda concurrency; request a quota increase for high volume |
 
 **Where it struggles:** Cards photographed at steep angles, poor lighting, or heavy glare. Cracked or worn cards with damaged print. Cards from smaller regional payers with non-standard layouts (your FIELD_MAP will need expansion). And handwritten fields, especially copays added after the card was printed.
 
@@ -268,7 +267,7 @@ FUNCTION store_result(image_key, fields, flagged):
 
 The pseudocode and architecture above demonstrate the pattern. Deploying this to a clinic requires addressing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will bite you:
 
-**Dead Letter Queue.** Lambda invocations from S3 events are asynchronous. If the function fails (Textract outage, DynamoDB unavailable, uncaught exception), the event retries up to three times and then silently disappears. In a healthcare intake pipeline, a silently lost document means a patient record gap with no visible signal. Configure an SQS dead letter queue on each Lambda and set a CloudWatch alarm on the queue depth.
+**Dead Letter Queue.** Lambda invocations from S3 events are asynchronous. If the function fails (Textract outage, DynamoDB unavailable, uncaught exception), the event is retried twice (three attempts total) and then silently disappears. In a healthcare intake pipeline, a silently lost document means a patient record gap with no visible signal. Configure an SQS dead letter queue on each Lambda and set a CloudWatch alarm on the queue depth.
 
 **IAM resource scoping.** The prerequisites list the right API actions, but most readers will scope them to `*` (all resources). Don't. Restrict `s3:GetObject` to `arn:aws:s3:::cards-inbox/*`, `dynamodb:PutItem` to your specific table ARN, and `kms:Decrypt` to your specific key ARN. Least privilege means least privilege, not "least actions."
 
