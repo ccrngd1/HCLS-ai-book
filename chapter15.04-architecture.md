@@ -577,7 +577,7 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this as
 
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker training and deployment patterns including custom algorithm containers
-- [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare-specific ML examples on AWS including clinical data processing patterns
+- [`aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): Healthcare-specific ML examples on AWS including clinical data processing patterns
 
 **AWS Solutions and Blogs:**
 - [Machine Learning for Healthcare on AWS](https://aws.amazon.com/health/machine-learning/): Overview of AWS ML services for healthcare use cases

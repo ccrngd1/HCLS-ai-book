@@ -630,10 +630,10 @@ The architecture above gives you a working pipeline. Deploying it at a health sy
 **AWS Sample Repos:**
 - [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock patterns including prompting, guardrails, and retrieval-augmented generation (RAG)
 - [`aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): Healthcare-specific ML patterns including clinical text processing and FHIR integration
-- [`amazon-comprehend-medical-examples`](https://github.com/aws-samples/amazon-comprehend-medical-examples): Comprehend Medical usage patterns for clinical text extraction
+- [Amazon Comprehend Medical](https://aws.amazon.com/comprehend/medical/): Comprehend Medical usage patterns for clinical text extraction
 
 **AWS Solutions and Blogs:**
-- [Generative AI on AWS for Healthcare](https://aws.amazon.com/health/generative-ai/): Overview of healthcare LLM applications on AWS
+- [Generative AI on AWS for Healthcare](https://aws.amazon.com/health/): Overview of healthcare LLM applications on AWS
 - [Build a Contextual Chatbot Using Amazon Bedrock Knowledge Bases](https://aws.amazon.com/blogs/machine-learning/build-a-contextual-chatbot-application-using-knowledge-bases-for-amazon-bedrock/): RAG patterns applicable to encounter-scoped retrieval
 - [AWS for Healthcare Reference Architectures](https://aws.amazon.com/architecture/reference-architecture-diagrams/?solutions-all.sort-by=item.additionalFields.sortDate&solutions-all.sort-order=desc&awsf.content-type=*all&awsf.methodology=*all&awsf.tech-category=tech-category%23ai-ml&awsf.industries=industries%23healthcare): Filter by AI/ML and Healthcare
 

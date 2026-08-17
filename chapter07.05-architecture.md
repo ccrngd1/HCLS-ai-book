@@ -114,7 +114,7 @@ flowchart TD
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
-> - [`amazon-healthlake-server-cdk`](https://github.com/aws-samples/amazon-healthlake-server-cdk): CDK constructs for deploying HealthLake with proper security configuration
+> - [AWS HealthLake](https://aws.amazon.com/healthlake/): CDK constructs for deploying HealthLake with proper security configuration
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker training and deployment patterns including XGBoost for healthcare use cases
 
 #### Step 1: Discharge Event Detection and Filtering
@@ -557,7 +557,7 @@ For high-risk patients with connected devices (weight scales for CHF, pulse oxim
 ### AWS Sample Repos
 
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples) - Comprehensive SageMaker examples including XGBoost training, deployment, and monitoring patterns
-- [`amazon-healthlake-server-cdk`](https://github.com/aws-samples/amazon-healthlake-server-cdk) - CDK constructs for deploying HealthLake with security best practices
+- [AWS HealthLake](https://aws.amazon.com/healthlake/) - CDK constructs for deploying HealthLake with security best practices
 - [`aws-step-functions-data-science-sdk-python`](https://github.com/aws/aws-step-functions-data-science-sdk-python) - Python SDK for building ML workflows with Step Functions
 
 ### Industry References

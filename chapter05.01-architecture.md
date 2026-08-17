@@ -977,7 +977,7 @@ Before surfacing stored demographic data to the patient in a self-service portal
 - [ONC Patient Identification and Matching Final Report](https://www.healthit.gov/sites/default/files/patient_identification_matching_final_report.pdf) 
 - [AHIMA Best Practices for Patient Identity Integrity](https://www.ahima.org/): operational guidance on MPI management, survivorship, and review processes
 - [The Sequoia Project Patient Matching White Papers](https://sequoiaproject.org/): industry-collaborative work on patient matching standards
-- [The Pew Charitable Trusts Patient Matching Reports](https://www.pewtrusts.org/en/projects/health-information-technology/patient-matching): policy and operational research on the state of patient matching in the United States 
+- [The Pew Charitable Trusts Patient Matching Reports](https://www.pewtrusts.org/en/research-and-analysis/reports/2018/10/02/enhanced-patient-matching-critical-to-achieving-full-promise-of-digital-health-records): policy and operational research on the state of patient matching in the United States 
 - [ECRI Top 10 Patient Safety Concerns](https://www.ecri.org/): annual report consistently flagging patient identification as a top concern 
 
 **External References (Equity):**

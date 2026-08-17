@@ -1361,16 +1361,16 @@ Per-language quality metrics and launch gates apply independently: a language is
 - [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
 **AWS Sample Repos:**
-- [`aws-samples/amazon-healthscribe-samples`](https://github.com/aws-samples/amazon-healthscribe-samples): HealthScribe end-to-end patterns and sample applications
-- [`aws-samples/amazon-transcribe-streaming-python`](https://github.com/aws-samples/amazon-transcribe-streaming-python): streaming Transcribe Python examples that apply to the streaming portion of this pipeline
+- [`aws-samples/aws-healthscribe-demo`](https://github.com/aws-samples/aws-healthscribe-demo): HealthScribe end-to-end patterns and sample applications
+- [`awslabs/amazon-transcribe-streaming-sdk`](https://github.com/awslabs/amazon-transcribe-streaming-sdk): streaming Transcribe Python examples that apply to the streaming portion of this pipeline
 - [`aws-samples/amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock invocation patterns including healthcare-relevant grounded-generation examples
-- [`aws-samples/amazon-comprehend-medical-samples`](https://github.com/aws-samples/amazon-comprehend-medical-samples): medical-entity extraction patterns
-- [`aws-samples/amazon-chime-sdk-samples`](https://github.com/aws-samples/amazon-chime-sdk-samples): Chime SDK integration examples
+- [Amazon Comprehend Medical](https://aws.amazon.com/comprehend/medical/): medical-entity extraction patterns
+- [`aws/amazon-chime-sdk-js`](https://github.com/aws/amazon-chime-sdk-js): Chime SDK integration examples
 - [`aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): healthcare AI/ML sample notebooks
 
 **AWS Solutions and Blogs:**
 - [AWS HealthScribe Product Page](https://aws.amazon.com/healthscribe/): overview, use cases, and pricing for HealthScribe
-- [Generative AI on AWS for Healthcare](https://aws.amazon.com/health/generative-ai/): overview of healthcare LLM applications on AWS
+- [Generative AI on AWS for Healthcare](https://aws.amazon.com/health/): overview of healthcare LLM applications on AWS
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for ambient documentation and clinical-documentation reference architectures
 - [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "HealthScribe," "ambient documentation," "Transcribe Medical" for relevant content
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "HealthScribe," "clinical documentation," "ambient" for current case studies and implementation deep dives
@@ -1387,18 +1387,18 @@ Per-language quality metrics and launch gates apply independently: a language is
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [42 CFR Part 2](https://www.ecfr.gov/current/title-42/chapter-I/subchapter-A/part-2): governs substance-use disorder treatment records
 - [Reporters Committee for Freedom of the Press: state-by-state recording laws](https://www.rcfp.org/reporters-recording-guide/): state-by-state telephone and conversation recording-consent reference
-- [Illinois Biometric Information Privacy Act (BIPA)](https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004): biometric-data law that applies to clinician voiceprint enrollment in Illinois; similar laws exist in Texas and Washington
+- [Illinois Biometric Information Privacy Act (BIPA)](https://ilga.gov/Legislation/ILCS/Articles?ActID=3004&ChapterID=57): biometric-data law that applies to clinician voiceprint enrollment in Illinois; similar laws exist in Texas and Washington
 
 **Research and Benchmarks:**
 - [MTS-Dialog](https://github.com/abachaa/MTS-Dialog): a dataset of doctor-patient conversations paired with clinical notes, useful for ambient documentation research and evaluation 
 - [Primock57](https://github.com/babylonhealth/primock57): dataset of simulated primary-care consultations with associated notes 
 
 **Industry and Clinical Resources:**
-- [American Medical Association: Augmented Intelligence in Health Care](https://www.ama-assn.org/practice-management/digital/augmented-intelligence-ai): AMA perspective and guidance on AI in clinical settings, including documentation
+- [American Medical Association: Augmented Intelligence in Health Care](https://www.ama-assn.org/practice-management/digital-health/augmented-intelligence-medicine): AMA perspective and guidance on AI in clinical settings, including documentation
 - [American Medical Informatics Association (AMIA)](https://amia.org/): peer-reviewed informatics research on AI-assisted clinical documentation
 - [JAMIA (Journal of the American Medical Informatics Association)](https://academic.oup.com/jamia): peer-reviewed research on conversational AI and AI-assisted documentation
 - [HHS Office for Civil Rights HIPAA Guidance](https://www.hhs.gov/hipaa/index.html): HIPAA Privacy and Security Rule guidance applicable to recording and storing clinical conversations
-- [ONC on Health IT and AI](https://www.healthit.gov/topic/scientific-initiatives/artificial-intelligence-health-it): Office of the National Coordinator resources on AI in health IT
+- [ONC on Health IT and AI](https://www.healthit.gov/topic/artificial-intelligence): Office of the National Coordinator resources on AI in health IT
 
 ---
 

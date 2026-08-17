@@ -1608,7 +1608,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [Cumulative Complexity Model (Shippee, Shah, May, Mair & Montori, Journal of Clinical Epidemiology 2012)](https://pubmed.ncbi.nlm.nih.gov/22762139/): the canonical framework for therapeutic burden in chronic illness 
 - [We need minimally disruptive medicine (May, Montori & Mair, BMJ 2009)](https://www.bmj.com/content/339/bmj.b2803): the earlier paper that framed treatment burden as a design problem; often miscited as the source of the Cumulative Complexity Model, which came three years later
 - [STOPP/START Criteria for Older Adults](https://academic.oup.com/ageing/article/44/2/213/2812233): screening tool for inappropriate prescribing in older adults 
-- [Beers Criteria for Potentially Inappropriate Medication Use](https://www.americangeriatrics.org/programs/beers-criteria): geriatric prescribing safety criteria
+- [Beers Criteria for Potentially Inappropriate Medication Use](https://www.americangeriatrics.org/guidelines-recommendations-position-statements): geriatric prescribing safety criteria
 - [Obermeyer et al. 2019, *Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations*](https://www.science.org/doi/10.1126/science.aax2342): the canonical cautionary tale for fairness failures in healthcare AI; required reading for anyone building care plan generation
 
 **External References (Regulatory and Standards):**

@@ -1634,7 +1634,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [American Association of Poison Control Centers](https://aapcc.org/): U.S. Poison Control resource (1-800-222-1222)
 - [Schmitt-Thompson Clinical Content (ClearTriage)](https://www.cleartriage.com/): one of the dominant licensed nurse-line triage protocol vendors in the U.S. 
 - [Manchester Triage System](https://www.triagenet.net/): international ED triage standard
-- [Emergency Severity Index (American College of Emergency Physicians)](https://www.acep.org/administration/quality/the-emergency-severity-index/): U.S. in-ED triage standard
+- [Emergency Severity Index (Emergency Nurses Association)](https://www.ena.org/news-publications/newsroom/ena-updates-emergency-severity-index-resources-improve-patient-triage): U.S. in-ED triage standard
 - [HEART Score for Major Cardiac Events (MDCalc)](https://www.mdcalc.com/calc/1752/heart-score-major-cardiac-events): chest-pain risk stratification
 - [Wells Score for Pulmonary Embolism (MDCalc)](https://www.mdcalc.com/calc/115/wells-criteria-pulmonary-embolism): PE risk stratification
 - [Centor Score for Strep Pharyngitis (MDCalc)](https://www.mdcalc.com/calc/104/centor-score-modified-mcisaac-strep-pharyngitis): pharyngitis risk stratification
@@ -1643,7 +1643,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
 - [WCAG 2.1 Accessibility Guidelines](https://www.w3.org/WAI/standards-guidelines/wcag/): accessibility standards relevant to chat-widget surfaces
 - [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/): security framework for LLM-backed applications
-- [Mandatory Reporting of Child Abuse (Child Welfare Information Gateway)](https://www.childwelfare.gov/topics/systemwide/laws-policies/state/can-laws/): state-by-state child-abuse reporting laws
+- [Mandatory Reporting of Child Abuse (Child Welfare Information Gateway)](https://www.childwelfare.gov/topics/can/): state-by-state child-abuse reporting laws
 
 **Industry Resources:**
 - [American Academy of Ambulatory Care Nursing (AAACN)](https://www.aaacn.org/): nursing-specialty association including telephone-triage clinical resources
