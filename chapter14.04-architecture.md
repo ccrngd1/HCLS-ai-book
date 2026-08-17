@@ -7,7 +7,9 @@
 
 ---
 
-## Why These Services
+## The AWS Implementation
+
+### Why These Services
 
 **Amazon SageMaker for solver hosting.** The optimization solver (whether you're using OR-Tools, HiGHS, or a commercial solver) needs compute. SageMaker provides managed infrastructure for running optimization workloads: you package your solver as a container, deploy it as an endpoint for real-time requests, or run batch transform jobs for schedule generation. For the real-time path (where 2-5 second response times are required), configure a minimum instance count of 1 so the endpoint never scales to zero. Cold starts on SageMaker endpoints can take 3-5 minutes, which is incompatible with the "nurse called off at 5 AM" scenario. An alternative for the real-time path: run the solver directly in Lambda (OR-Tools fits in a Lambda deployment package under 250MB), trading the 15-minute maximum runtime and 10GB memory limit for guaranteed cold-start latency under 10 seconds. The batch path benefits from SageMaker's larger instance types and longer runtimes.
 
@@ -21,7 +23,7 @@
 
 **Amazon SNS for notifications.** When the solver recommends coverage options, nurses need to be notified. SNS handles multi-channel delivery (SMS, push notification, email) with delivery tracking. Important: SMS messages traverse carrier networks in plaintext beyond the AWS boundary. Coverage request notifications sent via SMS should contain only the shift time, unit name, and overtime status. Never include patient census, acuity, or reason-for-need in SMS notifications. For richer context, use push notifications via an encrypted mobile app with certificate pinning and at-rest encryption on the device.
 
-## Architecture Diagram
+### Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -52,7 +54,7 @@ flowchart TD
     end
 ```
 
-## Prerequisites
+### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -66,7 +68,7 @@ flowchart TD
 | **Sample Data** | Synthetic staff roster with certifications, shift patterns, and availability. Never use real employee data in dev. |
 | **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large, min 1 instance): ~$0.12/hr (~$86/month). Lambda invocations: negligible. DynamoDB on-demand: ~$5-20/month depending on schedule size. Total: ~$100-200/month for a single hospital. |
 
-## Ingredients
+### Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -79,7 +81,7 @@ flowchart TD
 | **Amazon CloudWatch** | Monitors solver performance, staffing coverage metrics, and system health |
 | **AWS KMS** | Manages encryption keys for data at rest |
 
-## Pseudocode Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Assemble the optimization problem.** Before the solver can run, you need to gather all inputs and translate them into a structured problem definition. This means pulling the staff roster (who's available, what are their certifications, what's their FTE commitment), the demand forecast (how many nurses per unit per shift), and the constraint set (labor rules, preferences, fairness targets). The output is a JSON problem definition that the solver can consume. Skip this step or get the data wrong, and the solver will produce schedules that violate rules you forgot to encode, which is worse than no optimization at all because people trust the output.
 
@@ -381,7 +383,7 @@ FUNCTION publish_schedule(schedule, schedule_type):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and Google OR-Tools, check out the [Python Example](chapter14.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-## Expected Results
+### Expected Results
 
 **Sample output for a 2-week schedule (36-bed med-surg unit, 42 nurses):**
 

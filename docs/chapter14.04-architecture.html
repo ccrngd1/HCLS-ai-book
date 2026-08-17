@@ -361,14 +361,15 @@
 </blockquote>
 <p><em>Companion to <a href="chapter14.04-nurse-staffing-optimization.html">Recipe 14.4: Nurse Staffing Optimization</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
 <hr />
-<h2 id="why-these-services">Why These Services</h2>
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
 <p><strong>Amazon SageMaker for solver hosting.</strong> The optimization solver (whether you're using OR-Tools, HiGHS, or a commercial solver) needs compute. SageMaker provides managed infrastructure for running optimization workloads: you package your solver as a container, deploy it as an endpoint for real-time requests, or run batch transform jobs for schedule generation. For the real-time path (where 2-5 second response times are required), configure a minimum instance count of 1 so the endpoint never scales to zero. Cold starts on SageMaker endpoints can take 3-5 minutes, which is incompatible with the &quot;nurse called off at 5 AM&quot; scenario. An alternative for the real-time path: run the solver directly in Lambda (OR-Tools fits in a Lambda deployment package under 250MB), trading the 15-minute maximum runtime and 10GB memory limit for guaranteed cold-start latency under 10 seconds. The batch path benefits from SageMaker's larger instance types and longer runtimes.</p>
 <p><strong>AWS Lambda for orchestration and event handling.</strong> The glue between systems: receiving call-off notifications, triggering reoptimization, publishing results. Lambda's event-driven model fits the real-time adjustment workflow perfectly. A call-off event arrives, Lambda assembles the current state, invokes the solver endpoint, and routes the recommendation.</p>
 <p><strong>Amazon DynamoDB for schedule state.</strong> The current schedule, staff availability, and constraint parameters need fast read/write access. DynamoDB's key-value model works well for schedule lookups (get all shifts for nurse X, get all nurses for shift Y on date Z). Global secondary indexes support the multiple access patterns. For the real-time path, use DynamoDB conditional writes or transactions to prevent race conditions: before assigning a nurse to cover a gap, verify atomically that she hasn't already been assigned by a concurrent request.</p>
 <p><strong>Amazon EventBridge for event routing.</strong> Call-offs, census changes, schedule publications, and manual overrides are events that trigger downstream workflows. EventBridge provides the event bus that connects the scheduling system to notification services, dashboards, and audit logs.</p>
 <p><strong>Amazon S3 for historical data and model artifacts.</strong> Historical schedules, demand forecasts, and solver configurations live in S3. The batch scheduling pipeline reads from S3 (staff data, constraints, demand forecast) and writes results back.</p>
 <p><strong>Amazon SNS for notifications.</strong> When the solver recommends coverage options, nurses need to be notified. SNS handles multi-channel delivery (SMS, push notification, email) with delivery tracking. Important: SMS messages traverse carrier networks in plaintext beyond the AWS boundary. Coverage request notifications sent via SMS should contain only the shift time, unit name, and overtime status. Never include patient census, acuity, or reason-for-need in SMS notifications. For richer context, use push notifications via an encrypted mobile app with certificate pinning and at-rest encryption on the device.</p>
-<h2 id="architecture-diagram">Architecture Diagram</h2>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
 <pre class="mermaid">flowchart TD
     subgraph Data Sources
         A[HR/Payroll System] --&gt;|Staff roster, certs| B[S3 Data Lake]
@@ -396,7 +397,7 @@
         L --&gt; M[Dashboard: Coverage Gaps]
     end
 </pre>
-<h2 id="prerequisites">Prerequisites</h2>
+<h3 id="prerequisites">Prerequisites</h3>
 <table>
 <thead>
 <tr>
@@ -443,7 +444,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="ingredients">Ingredients</h2>
+<h3 id="ingredients">Ingredients</h3>
 <table>
 <thead>
 <tr>
@@ -486,7 +487,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="pseudocode-walkthrough">Pseudocode Walkthrough</h2>
+<h3 id="pseudocode-walkthrough">Pseudocode Walkthrough</h3>
 <p><strong>Step 1: Assemble the optimization problem.</strong> Before the solver can run, you need to gather all inputs and translate them into a structured problem definition. This means pulling the staff roster (who's available, what are their certifications, what's their FTE commitment), the demand forecast (how many nurses per unit per shift), and the constraint set (labor rules, preferences, fairness targets). The output is a JSON problem definition that the solver can consume. Skip this step or get the data wrong, and the solver will produce schedules that violate rules you forgot to encode, which is worse than no optimization at all because people trust the output.</p>
 <pre class="code code-plain"><code>FUNCTION assemble_scheduling_problem(schedule_period):
     // Pull staff data: who is available for this scheduling period?
@@ -771,7 +772,7 @@
 <blockquote>
 <p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and Google OR-Tools, check out the <a href="chapter14.04-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
 </blockquote>
-<h2 id="expected-results">Expected Results</h2>
+<h3 id="expected-results">Expected Results</h3>
 <p><strong>Sample output for a 2-week schedule (36-bed med-surg unit, 42 nurses):</strong></p>
 <div class="code"><pre><span></span><span class="p">{</span>
   <span class="nt">&quot;schedule_id&quot;</span><span class="p">:</span> <span class="s2">&quot;sched-2026-w23-medsurg-4n&quot;</span><span class="p">,</span>

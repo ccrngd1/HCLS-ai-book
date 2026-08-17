@@ -123,7 +123,13 @@ recipe to be worth carrying.
 
 ## Architecture Companion File (Part 2: AWS-Specific)
 
-`chapter{NN}.{RR}-architecture.md`. Opens with a backlink header to the main recipe, then:
+`chapter{NN}.{RR}-architecture.md`. Opens with a backlink header to the main recipe.
+
+The AWS-specific sections live under a single `## The AWS Implementation` heading, as `###` subsections in this order: Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (Pseudocode Walkthrough), and Expected Results. The sections after it (Why This Isn't Production-Ready, Variations and Extensions, Additional Resources, Estimated Implementation Time, and the Navigation footer) are top-level `##` headings.
+
+Acronyms do not need to be expanded on first use in a companion. A companion is Part 2 of a recipe whose Part 1 already defines its terms, so the R-1 first-use rule applies to the main recipe, not the companion (author ruling, 2026-08-17).
+
+The sections, in order:
 
 **Why These Services.** Introduce each AWS service and connect it back to the concept it implements from the main recipe's Part 1.
 

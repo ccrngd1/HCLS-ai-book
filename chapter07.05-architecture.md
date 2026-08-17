@@ -7,7 +7,9 @@
 
 ---
 
-## Why These Services
+## The AWS Implementation
+
+### Why These Services
 
 **Amazon SageMaker for model training and real-time inference.** Readmission scoring needs to happen within hours of discharge, which means you need a model endpoint that can score individual patients on demand. SageMaker gives you managed real-time endpoints that auto-scale, plus the training infrastructure for periodic retraining. The built-in XGBoost container is well-suited for the gradient boosted tree approach that dominates this problem space.
 
@@ -27,7 +29,7 @@
 
 **Amazon DynamoDB as a pre-computed feature store.** For sites processing more than 100 discharges per day, querying HealthLake for all historical utilization features at scoring time introduces unacceptable latency. The hybrid approach: run a nightly Glue job that pre-computes historical features (prior admissions in 6/12 months, ED visit counts, prior 30-day readmission flags, medication history summaries) and writes them to a DynamoDB table keyed by patient_id. At scoring time, the workflow queries HealthLake only for current-encounter features (this admission's diagnoses, labs, medications) and pulls pre-computed historical features from DynamoDB in a single GetItem call. This hybrid keeps end-to-end feature assembly latency under 500ms even for patients with complex histories spanning years of encounters.
 
-## Architecture Diagram
+### Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -78,7 +80,7 @@ flowchart TD
 ```
 **Model versioning and rollback.** Before promoting a retrained model to the production endpoint, run shadow scoring for one to two weeks: score each discharge with both the current and candidate models, compare predictions, and validate that the candidate's calibration and discrimination meet minimum thresholds (AUC >= current model AUC - 0.02, calibration slope between 0.85 and 1.15). SageMaker Model Registry tracks model versions and approval status. Use SageMaker endpoint production variants for canary deployments. Always maintain the ability to roll back to the previous model version within minutes. A bad model deployment here has direct patient impact: under-prediction means high-risk patients miss interventions; over-prediction causes alert fatigue that erodes clinical trust.
 
-## Prerequisites
+### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -91,7 +93,7 @@ flowchart TD
 | **Sample Data** | MIMIC-III or MIMIC-IV (publicly available ICU dataset with readmission outcomes). CMS Synthetic Public Use Files for claims-based features. Never use real PHI in development. Model validation on real patient data requires a HIPAA-compliant environment with the same security controls as production. |
 | **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large): ~$0.115/hour (~$83/month). Scoring latency: <200ms per patient. At 100 discharges/day, the per-discharge cost is ~$0.003. HealthLake: $0.60/GB stored + $0.09 per 1000 read operations. Glue: $0.44/DPU-hour for batch feature engineering. DynamoDB feature store: on-demand pricing at ~$1.25/million writes (nightly batch) + ~$0.25/million reads (at scoring time). SQS DLQ: effectively free at this volume ($0.40/million requests). Feature assembly involves 5-7 FHIR queries per patient for current-encounter features plus one DynamoDB GetItem for historical features; parallelize the FHIR queries to keep assembly latency under 500ms. |
 
-## Ingredients
+### Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -108,14 +110,14 @@ flowchart TD
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
 | **Amazon CloudWatch** | Monitoring, alerting on scoring failures and DLQ depth, model performance metrics |
 
-## Pseudocode Walkthrough
+### Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-healthlake-server-cdk`](https://github.com/aws-samples/amazon-healthlake-server-cdk): CDK constructs for deploying HealthLake with proper security configuration
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker training and deployment patterns including XGBoost for healthcare use cases
 
-### Step 1: Discharge Event Detection and Filtering
+#### Step 1: Discharge Event Detection and Filtering
 
 **What this does:** Listens for ADT discharge events and filters to only qualified inpatient discharges that should be scored. Observation stays, planned readmissions, and transfers to other acute facilities are excluded.
 
@@ -153,7 +155,7 @@ FUNCTION handle_discharge_event(event):
         discharge_disposition: discharge_disposition
     }
 ```
-### Step 2: Feature Assembly from Clinical Data
+#### Step 2: Feature Assembly from Clinical Data
 
 **What this does:** Queries multiple data sources to assemble the complete feature vector for the discharged patient. Current-encounter features come from HealthLake in real time. Historical utilization features come from the pre-computed DynamoDB feature store (populated nightly by Glue). This hybrid approach keeps assembly latency under 500ms even for patients with complex multi-year histories.
 
@@ -255,7 +257,7 @@ FUNCTION assemble_features(discharge_info):
     RETURN merge(current_features, history_features,
                  comorbidity_features, demographic_features)
 ```
-### Step 3: Model Scoring
+#### Step 3: Model Scoring
 
 **What this does:** Passes the assembled feature vector to the trained XGBoost model and returns a readmission probability between 0 and 1.
 
@@ -299,7 +301,7 @@ FUNCTION score_patient(feature_vector):
         scored_at: NOW()
     }
 ```
-### Step 4: Risk Stratification and Intervention Routing
+#### Step 4: Risk Stratification and Intervention Routing
 
 **What this does:** Converts the raw probability into an actionable risk tier and determines which intervention pathway the patient should receive based on their risk level and contributing factors.
 
@@ -394,7 +396,7 @@ FUNCTION stratify_and_route(score_result, feature_vector, discharge_info):
 
     RETURN risk_assessment
 ```
-### Step 5: Outcome Tracking and Model Monitoring
+#### Step 5: Outcome Tracking and Model Monitoring
 
 **What this does:** Monitors actual 30-day readmission outcomes against predictions, detects model drift, and triggers retraining when performance degrades.
 
@@ -453,9 +455,9 @@ FUNCTION track_outcomes_and_monitor():
 
 ---
 
-## Expected Results
+### Expected Results
 
-### Sample Output
+#### Sample Output
 
 ```json
 {
@@ -486,7 +488,7 @@ FUNCTION track_outcomes_and_monitor():
 }
 ```
 
-### Performance Benchmarks
+#### Performance Benchmarks
 
 | Metric | Expected Value | Notes |
 |--------|---------------|-------|
@@ -499,7 +501,7 @@ FUNCTION track_outcomes_and_monitor():
 | Time from discharge to score | <2 hours | Includes ADT event propagation delay |
 | Model retraining frequency | Monthly | Or when AUC drops below 0.65 |
 
-### Where It Struggles
+#### Where It Struggles
 
 - **Patients with no prior history at your facility.** New patients or transfers from other systems have sparse feature vectors. The model defaults to population-level risk, which is less useful.
 - **Social determinant-driven readmissions.** A patient readmitted because they couldn't afford their medications or had no transportation to follow-up won't be well-predicted by clinical features alone.
