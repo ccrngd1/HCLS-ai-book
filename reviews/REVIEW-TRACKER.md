@@ -17,7 +17,7 @@ Single place to track feedback from all reviewers. One row per finding.
 
 <!-- Editing a status? Edit the row in the numbered sections BELOW, not here. This table is regenerated, and every row appears twice in this file with different column orders, so a search for the row id finds this copy first and any edit to it is silently discarded on the next run. -->
 
-Generated index of the 15 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
+Generated index of the 17 rows that are not DONE or WONTFIX, worst first. Full detail, including why each one matters, stays in the numbered sections below, where the closed rows on the same theme are still visible for context.
 
 Regenerate with `python3 tracker_digest.py` after changing any status.
 
@@ -29,6 +29,8 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | A-7 | Minor | OPEN | Roll out "As Seen In Production" sections to the remaining digital recipes | Author-owned work |
 | AN-5 | Minor | OPEN | Roll the `User:` persona line out to all digital recipes (full ~152-recipe... | Anna: business-reader review |
 | AN-7 | Minor | DEFERRED | Quantify each recipe (clinician note-time, revenue-cycle/fraud spend, waste... | Anna: business-reader review |
+| AR-5 | Minor | OPEN | Corpus-wide dead-link sweep: the same dead Additional Resources URLs recur... | Author architecture review |
+| AR-6 | Minor | OPEN | FDA Additional Resources links cannot be verified programmatically | Author architecture review |
 | R-9 | Minor | OPEN | `categories/` is tracked in git but is not published and is superseded | Radwin: accessibility, register, s |
 | V-1.7h | Minor | OPEN | Ch12: LOS math — bed count is algebraically irrelevant; 8% implies LOS 3.75d | Factual and coding errors |
 | V-11.3 | Minor | OPEN | Body chapter titles use recipe names, Appendix A uses capability areas | Positioning, front/back matter, st |
@@ -39,7 +41,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | VH-3 | Minor | OPEN | "use case" should be one word (print p39, p41) | Veronica: print copy-edit review |
 | VH-4 | Minor | OPEN | Abbreviation placed later in the paragraph than the first mention: "skilled... | Veronica: print copy-edit review |
 
-**15 open** (Significant 3 · Minor 12) · 115 closed · 130 total
+**17 open** (Significant 3 · Minor 14) · 119 closed · 136 total
 
 <!-- DIGEST:END -->
 
@@ -55,6 +57,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | AN | Anna (external reviewer) | External reviewer | print `book.pdf` (business-reader lens) | 2026-08-14 | Non-technical/business reader; noted parts were beyond her technical depth, which is the 'technical leaders / product managers' slice of the audience. Concrete findings (C-CDA, AVS, readability formulas) verified and fixed; larger editorial ideas dispositioned in section 16. Loved the Honest Take sections. Prefix `AN-` (A- was taken by author items). |
 | T | Tory (external reviewer) | External reviewer | the book, business/operations lens (through Chapter 3 so far) | 2026-08-17 | Business/operations reader; praised the Honest Take sections and the organization. First-pass notes span the preface and Chapters 1-3. Front-matter orientation adopted (section 17); remaining per-recipe notes batched pending completion of her review. Prefix `T-`. |
 | VH | Veronica (external reviewer) | External reviewer | print copy (in progress) | 2026-08-17 | Copy-editor lens (acronyms, word forms, front matter). First notes cover the About page and Chapters 1-3; one fix applied (VH-1), the rest documented and held pending completion. Prefix `VH-` (V is Vince). |
+| AR | Nick Lawson (author) | Author | 15 flagship architecture companions | 2026-08-17 | Author self-review of the flagship architecture companions (structure, navigation, prerequisites, link liveness). Prefix `AR-` distinguishes it from the `A-` general author tasks. |
 
 ---
 
@@ -291,6 +294,19 @@ Veronica is reading the print copy with a copy-editor's eye (acronyms, word form
 | VH-2 | EHR used (print p24) before it is expanded (p26) | Minor | OPEN | Current print source expands EHR at first use (recipe 1.1 Problem, "electronic health record (EHR)"); no earlier bare EHR in any front-matter page. Likely a stale build or a pagination read. Confirm against the reviewed PDF build before acting; current source looks correct. |
 | VH-3 | "use case" should be one word (print p39, p41) | Minor | OPEN | Recommend decline. "Use case" is the standard two-word noun and the book is already consistent (18 uses, zero "use-case" or "usecase"). Held pending author confirmation. |
 | VH-4 | Abbreviation placed later in the paragraph than the first mention: "skilled nursing facility" opens the paragraph, "(SNF)" appears later (print p43, recipe 3.1) | Minor | OPEN | Valid and reproducible. Fix: attach "(SNF)" to the first mention and drop it from the later one. Held for batch. Root of the gate blind spot noted above. |
+
+## 19. Author architecture review (flagship companions)
+
+Phase-1 automated audit of the 15 flagship architecture companions: structure, navigation footers, prerequisites completeness, acronym first-use (dispositioned by the A-6 ruling), and Additional Resources link liveness. Structure and flagship link fixes are done; the corpus-wide link sweep and the FDA links (unverifiable programmatically) remain open. The per-companion technical and AWS-accuracy pass (Phase 2) is not yet started.
+
+| ID | Item | Sev | Status | Note |
+|----|------|-----|--------|------|
+| AR-1 | Structure inconsistency: 2 of 15 companions (7.5, 14.4) used the granular layout instead of the collapsed "## The AWS Implementation" convention | Minor | DONE | Collapsed both to match the other 13; content unchanged (headings only). RECIPE-GUIDE updated to codify the collapsed convention and the companions-need-not-expand-acronyms ruling; A-6 closed WONTFIX. 8677e19e |
+| AR-2 | Navigation footer missing in all 15 companions (guide expects links to main recipe, Python example, chapter preface) | Minor | DONE | Added a consistent Navigation footer to all 15, reusing each file's existing main-recipe backlink for the correct slug and title. 20538e93 |
+| AR-3 | 15.4 Prerequisites table missing the Sample Data row | Minor | DONE | Added a Sample Data row (MIMIC-III/IV for research, institutional EHR for production, never real PHI in dev). 20538e93 |
+| AR-4 | Dead Additional Resources links in the flagship companions | Minor | DONE | 19 dead links across 8 flagship companions replaced with verified-200 targets: dead aws-samples repos to live repos or service pages; reorganized gov/org pages (CMS EDI, ONC AI, Illinois BIPA, Child Welfare, AGS Beers, AMA, Pew report); ESI re-pointed to ENA as the current steward. 3a09377a |
+| AR-5 | Corpus-wide dead-link sweep: the same dead Additional Resources URLs recur across the ~135 non-flagship companions | Minor | OPEN | Mechanical sweep using the verified replacement map from 3a09377a (exclude FDA). Well-suited to an automated ralph-loop: per-file, fixed old-to-new URL map, verify 200, rebuild site. |
+| AR-6 | FDA Additional Resources links cannot be verified programmatically | Minor | OPEN | fda.gov returns 404 to all automated fetchers (curl and browser-mode), including its live hub pages, so FDA link status is unverifiable by tooling. 5 FDA links in flagship (04.09, 09.06, 11.06) plus more corpus-wide need manual browser verification before any edit. |
 
 ## Retracted by the reviewer
 
