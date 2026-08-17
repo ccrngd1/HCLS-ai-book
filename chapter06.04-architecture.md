@@ -469,3 +469,11 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, tier_rank
 | With variations (multi-disease, trajectory, explainable boundaries) | 16-20 weeks |
 
 ---
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 6.4: Disease Severity Stratification](chapter06.04-disease-severity-stratification)
+- Python example: [Recipe 6.4 in Python](chapter06.04-python-example)
+- Chapter preface: [Chapter 6 preface](chapter06-preface)

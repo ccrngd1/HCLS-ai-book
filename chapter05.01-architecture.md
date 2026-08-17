@@ -995,3 +995,11 @@ Before surfacing stored demographic data to the patient in a self-service portal
 | With variations | Add active-learning-driven gold-set construction, per-cohort m/u models, embedding-augmented similarity, graph-based ambiguous-chain clustering, streaming continuous matching, identity-fraud detection, patient-facing self-service correction | 6-12 months beyond production-ready |
 
 ---
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 5.1: Internal Duplicate Patient Detection](chapter05.01-internal-duplicate-patient-detection)
+- Python example: [Recipe 5.1 in Python](chapter05.01-python-example)
+- Chapter preface: [Chapter 5 preface](chapter05-preface)

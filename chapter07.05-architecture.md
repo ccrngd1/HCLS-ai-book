@@ -579,3 +579,11 @@ For high-risk patients with connected devices (weight scales for CHF, pulse oxim
 ---
 
 **Tags:** `predictive-analytics`, `readmission`, `risk-scoring`, `care-transitions`, `quality-measures`, `HRRP`, `XGBoost`, `SageMaker`, `HealthLake`, `HIPAA`
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 7.5: 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk)
+- Python example: [Recipe 7.5 in Python](chapter07.05-python-example)
+- Chapter preface: [Chapter 7 preface](chapter07-preface)

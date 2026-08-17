@@ -572,3 +572,11 @@ The per-patient discharge probability is an intermediate computation, not a surf
 - **With variations (multi-hospital shared models, OR throughput coupling, surge automation, real-time discharge prioritization):** 36-52 weeks
 
 ---
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 12.5: Hospital Census Forecasting](chapter12.05-hospital-census-forecasting)
+- Python example: [Recipe 12.5 in Python](chapter12.05-python-example)
+- Chapter preface: [Chapter 12 preface](chapter12-preface)

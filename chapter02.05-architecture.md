@@ -656,3 +656,11 @@ The architecture above gives you a working pipeline. Deploying it at a health sy
 | **With variations** | 28-40 weeks | Five or more languages with per-language QA process. Caregiver routing. Teach-back follow-up workflow. Audio summary delivery. Chronic disease protocol integration. Health system-wide rollout with change management. |
 
 ---
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 2.5: After-Visit Summary Generation](chapter02.05-after-visit-summary-generation)
+- Python example: [Recipe 2.5 in Python](chapter02.05-python-example)
+- Chapter preface: [Chapter 2 preface](chapter02-preface)

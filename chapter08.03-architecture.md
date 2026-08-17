@@ -560,3 +560,11 @@ This architecture gets you working suggestions. It does not get you production-g
 | **With variations** | 10-14 weeks | Hierarchical UI, quality audit automation, specialty model training, A/B testing framework for confidence thresholds |
 
 ---
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion)
+- Python example: [Recipe 8.3 in Python](chapter08.03-python-example)
+- Chapter preface: [Chapter 8 preface](chapter08-preface)

@@ -1629,3 +1629,11 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add multi-language patient narratives, caregiver-facing narrative, condition-specific deep-dives, goals-of-care conversation prompts, outcomes-based effectiveness reporting, federated benchmarking, patient-driven plan editing, real-time RPM-driven adjustments, preventive-health variants, care-transition variants | 12-24 months beyond production-ready |
 
 ---
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 4.9: Personalized Care Plan Generation](chapter04.09-personalized-care-plan-generation)
+- Python example: [Recipe 4.9 in Python](chapter04.09-python-example)
+- Chapter preface: [Chapter 4 preface](chapter04-preface)

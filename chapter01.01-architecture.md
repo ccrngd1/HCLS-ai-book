@@ -313,3 +313,11 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 | **Basic (proof of concept)** | 1-2 days | S3 bucket, Lambda function, Textract FORMS call, basic field parsing, DynamoDB storage. Enough to scan a single card and see structured output. |
 | **Production-ready** | 2-3 weeks | Dead letter queue, idempotency guards, VPC with endpoints, CloudWatch alarms, confidence gating, human review queue integration (Recipe 1.6), expanded FIELD_MAP covering major payers. |
 | **With variations** | 4-6 weeks | Add front/back merge, mobile API Gateway endpoint with image quality checks, auto-eligibility verification (Recipe 8.1), and integration testing against live EHR intake workflows. |
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 1.1: Insurance Card Scanning](chapter01.01-insurance-card-scanning)
+- Python example: [Recipe 1.1 in Python](chapter01.01-python-example)
+- Chapter preface: [Chapter 1 preface](chapter01-preface)

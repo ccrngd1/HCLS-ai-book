@@ -578,3 +578,11 @@ Integrate your institution's formulary to provide alternative drug suggestions w
 | **Basic** | 4-6 weeks | RxNorm + DrugBank loaded into Neptune. Direct pairwise interaction lookup via API. No mechanism inference, no patient contextualization. Equivalent to a flat lookup table in a graph database. |
 | **Production-ready** | 10-14 weeks | Multi-source ingestion (RxNorm, DrugBank, FDA SPL, MED-RT). Mechanism-based inference. Patient context scoring. Caching layer. Clinical integration API with structured recommendations. Alert suppression logic. |
 | **With variations** | 16-22 weeks | Pharmacogenomic awareness. Drug-food/supplement interactions. Formulary-aware alternative suggestions. Custom institutional override rules. Analytics dashboard for alert metrics. |
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 13.4: Drug-Drug Interaction Knowledge Base](chapter13.04-drug-drug-interaction-knowledge-base)
+- Python example: [Recipe 13.4 in Python](chapter13.04-python-example)
+- Chapter preface: [Chapter 13 preface](chapter13-preface)

@@ -66,6 +66,7 @@ flowchart TD
 | **CloudTrail** | Enabled: log all SageMaker, S3, and Glue API calls for audit trail |
 | **Data Requirements** | Minimum 10,000-20,000 sepsis episodes with complete trajectory data (vitals q4h, labs, medication administration records). MIMIC-III/IV for research; institutional EHR data for production. |
 | **IRB Approval** | Required before accessing patient data for model development. This is research, not routine operations. |
+| **Sample Data** | MIMIC-III / MIMIC-IV (publicly available ICU datasets with sepsis cohorts) for research and model development; institutional EHR trajectories for production (see Data Requirements above). Never use real PHI in development. |
 | **Cost Estimate** | Training: $50-200 per training run (ml.p3.2xlarge, 2-8 hours). Inference endpoint: $0.10/hour (ml.m5.large). Storage: ~$5/month per 100GB of trajectory data. Total monthly: $2,000-8,000 depending on experimentation intensity. |
 
 ### Ingredients
@@ -594,3 +595,11 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this as
 | **With regulatory pathway** (FDA submission, prospective validation, clinical deployment) | 2-4 years |
 
 ---
+
+---
+
+## Navigation
+
+- Main recipe: [Recipe 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization)
+- Python example: [Recipe 15.4 in Python](chapter15.04-python-example)
+- Chapter preface: [Chapter 15 preface](chapter15-preface)
