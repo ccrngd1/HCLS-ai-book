@@ -41,7 +41,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | VH-3 | Minor | OPEN | "use case" should be one word (print p39, p41) | Veronica: print copy-edit review |
 | VH-4 | Minor | OPEN | Abbreviation placed later in the paragraph than the first mention: "skilled... | Veronica: print copy-edit review |
 
-**17 open** (Significant 3 · Minor 14) · 119 closed · 136 total
+**17 open** (Significant 3 · Minor 14) · 120 closed · 137 total
 
 <!-- DIGEST:END -->
 
@@ -307,6 +307,7 @@ Phase-1 automated audit of the 15 flagship architecture companions: structure, n
 | AR-4 | Dead Additional Resources links in the flagship companions | Minor | DONE | 19 dead links across 8 flagship companions replaced with verified-200 targets: dead aws-samples repos to live repos or service pages; reorganized gov/org pages (CMS EDI, ONC AI, Illinois BIPA, Child Welfare, AGS Beers, AMA, Pew report); ESI re-pointed to ENA as the current steward. 3a09377a |
 | AR-5 | Corpus-wide dead-link sweep: the same dead Additional Resources URLs recur across the ~135 non-flagship companions | Minor | OPEN | Mechanical sweep using the verified replacement map from 3a09377a (exclude FDA). Well-suited to an automated ralph-loop: per-file, fixed old-to-new URL map, verify 200, rebuild site. |
 | AR-6 | FDA Additional Resources links cannot be verified programmatically | Minor | OPEN | fda.gov returns 404 to all automated fetchers (curl and browser-mode), including its live hub pages, so FDA link status is unverifiable by tooling. 5 FDA links in flagship (04.09, 09.06, 11.06) plus more corpus-wide need manual browser verification before any edit. |
+| AR-7 | Recipe 1.1 companion (Phase 2 technical/AWS-accuracy review) | Minor | DONE | Corrected the throughput claim (bottleneck is the Textract AnalyzeDocument transactions-per-second quota, not Lambda concurrency); fixed the async-retry count (twice, three attempts total, not three retries); reframed Sample Data (Medicare cards lack the commercial fields the recipe extracts); removed stale per-page/per-card pricing (kept qualitative guidance plus the pricing-page link). Verified accurate and unchanged: service selection (no deprecated services), IAM scoping, PHI handling, and the Textract key-value pseudocode. fd638ff6 |
 
 ## Retracted by the reviewer
 
