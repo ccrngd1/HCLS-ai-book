@@ -52,6 +52,7 @@ Regenerate with `python3 tracker_digest.py` after changing any status.
 | G | Raghav (external reviewer) | External reviewer | print sampler `book.pdf` + annotated `book_tech_reviewed.pdf` | 2026-08-14 | Formal technical review, 84 findings across 15 chapters + 5 book-level (16 Critical, 19 Major, 29 Minor, 6 suggestions, 14 positives). Triaged with author before logging. Spot-check of the high-severity findings showed most are premised on content already present, or on the print sampler excluding the digital `-architecture`/`-python-example` companions where the depth lives. Bucketed in section 15 rather than logged one row each. |
 | AN | Anna (external reviewer) | External reviewer | print `book.pdf` (business-reader lens) | 2026-08-14 | Non-technical/business reader; noted parts were beyond her technical depth, which is the 'technical leaders / product managers' slice of the audience. Concrete findings (C-CDA, AVS, readability formulas) verified and fixed; larger editorial ideas dispositioned in section 16. Loved the Honest Take sections. Prefix `AN-` (A- was taken by author items). |
 | T | Tory (external reviewer) | External reviewer | the book, business/operations lens (through Chapter 3 so far) | 2026-08-17 | Business/operations reader; praised the Honest Take sections and the organization. First-pass notes span the preface and Chapters 1-3. Front-matter orientation adopted (section 17); remaining per-recipe notes batched pending completion of her review. Prefix `T-`. |
+| VH | Veronica (external reviewer) | External reviewer | print copy (in progress) | 2026-08-17 | Copy-editor lens (acronyms, word forms, front matter). First notes cover the About page and Chapters 1-3; one fix applied (VH-1), the rest documented and held pending completion. Prefix `VH-` (V is Vince). |
 
 ---
 
@@ -277,6 +278,17 @@ Tory is reading as a business and operations leader and likes the Honest Take se
 | ID | Item | Sev | Status | Note |
 |----|------|-----|--------|------|
 | T-1 | Front-matter orientation: state why the book exists and the void it fills, name the business/operations audience, and explain the Effort/Maturity/Oversight ratings | Minor | DONE | Added "Why This Book Exists" and a business and operations audience note (with a no-code-needed reassurance) to the digital Introduction (README) and the print Preface, and a "How to Read a Recipe" legend defining Effort, Maturity, and Oversight (sourced from RECIPE-GUIDE) to both editions. The Oversight definition also makes the recurring human-in-the-loop question self-answering, since Oversight is that dimension. Fixed pre-existing em dashes in README and the Preface. c1734df1 |
+
+## 18. Veronica: print copy-edit review (in progress)
+
+Veronica is reading the print copy with a copy-editor's eye (acronyms, word forms, front matter) and will send more. She liked the cited paper on page 27. The name-on-the-About-page fix is done (VH-1); the rest are documented and held pending completion of her review and author decisions. VH-4 also surfaced a gate blind spot: acronym_sweep.py checks that an acronym is expanded somewhere in a section, not that the expansion attaches to the first occurrence, which is why the SNF instance passed the gate yet reads wrong. Enhancing the gate to require the parenthetical at or before first use would catch this class automatically; held as a candidate tooling improvement (promote to an A- item if pursued).
+
+| ID | Item | Sev | Status | Note |
+|----|------|-----|--------|------|
+| VH-1 | About the Author page never states the author's name | Minor | DONE | Set the opening to "I am Nick Lawson, a Solution Architect at Amazon Web Services..." per author. 98758e92 |
+| VH-2 | EHR used (print p24) before it is expanded (p26) | Minor | OPEN | Current print source expands EHR at first use (recipe 1.1 Problem, "electronic health record (EHR)"); no earlier bare EHR in any front-matter page. Likely a stale build or a pagination read. Confirm against the reviewed PDF build before acting; current source looks correct. |
+| VH-3 | "use case" should be one word (print p39, p41) | Minor | OPEN | Recommend decline. "Use case" is the standard two-word noun and the book is already consistent (18 uses, zero "use-case" or "usecase"). Held pending author confirmation. |
+| VH-4 | Abbreviation placed later in the paragraph than the first mention: "skilled nursing facility" opens the paragraph, "(SNF)" appears later (print p43, recipe 3.1) | Minor | OPEN | Valid and reproducible. Fix: attach "(SNF)" to the first mention and drop it from the later one. Held for batch. Root of the gate blind spot noted above. |
 
 ## Retracted by the reviewer
 
