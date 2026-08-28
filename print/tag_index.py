@@ -223,7 +223,7 @@ def build(built: list[dict], url: str) -> tuple[str, str] | None:
         g = "0-9" if first.isdigit() else first
         if g != group:
             group = g
-            out += [f"### {g}", ""]
+            out += [f"## {g}", ""]
 
         here = sorted(entries[tag]["here"])
         online = sorted(entries[tag]["online"], key=rnum)

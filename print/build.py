@@ -748,6 +748,38 @@ def build_sections(man: dict, built: list, include_pgm: bool = True) -> list:
     return sections
 
 
+def _epub_add_package_lang(epub_path: str, lang: str = "en-US") -> None:
+    """Add xml:lang to the OPF <package> element (EbookLib omits it).
+
+    Rewrites the EPUB zip in place, keeping mimetype first and stored so the
+    OCF container stays valid.
+    """
+    import zipfile
+    zin = zipfile.ZipFile(epub_path, "r")
+    names = zin.namelist()
+    data = {n: zin.read(n) for n in names}
+    zin.close()
+    opf = next((n for n in names if n.endswith("content.opf")), None)
+    if opf:
+        text = data[opf].decode("utf-8")
+        head = text.split(">", 1)[0]
+        if "xml:lang=" not in head:
+            text = re.sub(r"(<package\b)", r'\1 xml:lang="%s"' % lang, text, count=1)
+            data[opf] = text.encode("utf-8")
+    tmp = epub_path + ".tmp"
+    zout = zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED)
+    if "mimetype" in data:
+        info = zipfile.ZipInfo("mimetype")
+        info.compress_type = zipfile.ZIP_STORED
+        zout.writestr(info, data["mimetype"])
+    for n in names:
+        if n == "mimetype":
+            continue
+        zout.writestr(n, data[n])
+    zout.close()
+    os.replace(tmp, epub_path)
+
+
 def render_epub(sections: list, man: dict, epub_path: str) -> bool:
     """Build an accessible EPUB 3 from the assembled sections."""
     import uuid
@@ -838,6 +870,7 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
     book.add_item(epub.EpubNav())
     book.spine = ["nav"] + chapters
     epub.write_epub(epub_path, book)
+    _epub_add_package_lang(epub_path, "en-US")
     return True
 
 
