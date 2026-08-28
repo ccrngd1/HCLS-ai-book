@@ -379,7 +379,7 @@ def back_matter(man: dict, built: list[dict]) -> list[tuple[str, str]]:
     more = (
         "# There Are More Recipes Online\n\n"
         f"This volume is 15 of {n} recipes. The full digital cookbook covers "
-        "every chapter in depth \u2014 additional recipes per capability, the "
+        "every chapter in depth: additional recipes per capability, the "
         "complete AWS architectures, diagrams, and runnable examples, kept "
         "current as services and best practices evolve.\n\n"
         f"**Read the complete cookbook:** {url}\n"
