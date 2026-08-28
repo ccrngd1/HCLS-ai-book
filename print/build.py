@@ -822,9 +822,7 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
     for prop, val in a11y:
         book.add_metadata(None, "meta", val, {"property": prop})
 
-    css = epub.EpubItem(uid="style", file_name="style/epub.css",
-                        media_type="text/css", content=EPUB_CSS)
-    book.add_item(css)
+    # CSS is inlined in each chapter head (avoids EbookLib external-link path issues).
 
     cover_page = None
     cover_rel = man.get("cover")
@@ -865,6 +863,16 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
         md_text = re.sub(r"<!--.*?-->", "", md_text, flags=re.S)
         title = _section_title(md_text) or f"Section {i + 1}"
         body = mdit.render(md_text)
+        # Hoist any <style> blocks out of the body (illegal in EPUB body) into the
+        # head, preserving recipe-specific styling (e.g., the .vflow diagrams).
+        _hoisted = re.findall(r"<style\b[^>]*>.*?</style>", body, flags=re.S)
+        if _hoisted:
+            body = re.sub(r"<style\b[^>]*>.*?</style>", "", body, flags=re.S)
+        _props = []
+        if "<svg" in body:
+            _props.append("svg")
+        if "<math" in body:
+            _props.append("mathml")
         # Normalize lenient HTML to well-formed XHTML (raw-HTML passthrough,
         # stray "<" in prose, void elements) so every chapter parses as XML.
         try:
@@ -875,13 +883,15 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
         except Exception as _exc:
             print(f"  [epub] XHTML normalize skipped for a section ({_exc})", file=sys.stderr)
         item = epub.EpubHtml(title=title, file_name=f"text/ch{i + 1:03d}.xhtml", lang="en-US")
-        item.add_item(css)
+        if _props:
+            item.properties = _props
+        _head_css = EPUB_CSS + (("\n" + "\n".join(re.sub(r"</?style\b[^>]*>", "", _s) for _s in _hoisted)) if _hoisted else "")
         item.content = (
             "<html xmlns=\"http://www.w3.org/1999/xhtml\" "
             "xmlns:epub=\"http://www.idpf.org/2007/ops\" xml:lang=\"en-US\" lang=\"en-US\">"
-            f"<head><title>{_html.escape(title)}</title>"
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\"../style/epub.css\"/></head>"
-            f"<body epub:type=\"{etype}\">\n{body}\n</body></html>"
+            "<head><title>" + _html.escape(title) + "</title>"
+            "<style type=\"text/css\">\n" + _head_css + "\n</style></head>"
+            "<body epub:type=\"" + etype + "\">\n" + body + "\n</body></html>"
         )
         book.add_item(item)
         chapters.append(item)
