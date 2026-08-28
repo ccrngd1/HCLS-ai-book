@@ -826,6 +826,27 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
                         media_type="text/css", content=EPUB_CSS)
     book.add_item(css)
 
+    cover_page = None
+    cover_rel = man.get("cover")
+    if cover_rel:
+        cover_fp = os.path.join(BOOK_ROOT, cover_rel)
+        if os.path.exists(cover_fp):
+            with open(cover_fp, "rb") as _cf:
+                book.set_cover("images/cover.png", _cf.read(), create_page=False)
+            cover_page = epub.EpubHtml(title="Cover", file_name="text/cover.xhtml", lang="en-US")
+            cover_page.content = (
+                "<html xmlns=\"http://www.w3.org/1999/xhtml\" "
+                "xmlns:epub=\"http://www.idpf.org/2007/ops\" xml:lang=\"en-US\" lang=\"en-US\">"
+                "<head><title>Cover</title></head>"
+                "<body epub:type=\"cover\"><section epub:type=\"cover\">"
+                f"<img src=\"../images/cover.png\" alt=\"Cover of {_html.escape(man['title'])}\"/>"
+                "</section></body></html>"
+            )
+            book.add_item(cover_page)
+            book.add_metadata(None, "meta", "visual", {"property": "schema:accessMode"})
+        else:
+            print(f"  [epub] cover not found at {cover_fp}; skipping cover", file=sys.stderr)
+
     recipe_idx = [i for i, (cls, _) in enumerate(sections) if cls == "recipe"]
     first_r = recipe_idx[0] if recipe_idx else -1
     last_r = recipe_idx[-1] if recipe_idx else -1
@@ -868,7 +889,7 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
     book.toc = tuple(chapters)
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
-    book.spine = ["nav"] + chapters
+    book.spine = (([cover_page] if cover_page is not None else []) + ["nav"] + chapters)
     epub.write_epub(epub_path, book)
     _epub_add_package_lang(epub_path, "en-US")
     return True
