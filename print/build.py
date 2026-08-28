@@ -537,6 +537,7 @@ def main() -> int:
     ap.add_argument("--all", action="store_true",
                     help="include all 15 recipes (default: approved only)")
     ap.add_argument("--pdf", action="store_true", help="also render 6x9 PDF")
+    ap.add_argument("--epub", action="store_true", help="also build an accessible EPUB 3")
     ap.add_argument("--engine", default="markdown-it-py",
                     choices=["markdown-it-py", "python-markdown", "mistune", "auto"],
                     help="Markdown engine (default: markdown-it-py, matching the "
@@ -626,6 +627,11 @@ def main() -> int:
         return True
 
     html_ok = _assemble()
+    if args.epub:
+        epub_sections = build_sections(man, built, include_pgm=False)
+        epub_path = os.path.join(out, "book.epub")
+        if render_epub(epub_sections, man, epub_path):
+            print(f"    book.epub: {len(epub_sections)} sections, {os.path.getsize(epub_path)//1024} KB")
 
     # warnings report
     warn_path = os.path.join(out, "print-warnings.txt")
@@ -677,6 +683,163 @@ def main() -> int:
                 print(f"  book.pdf: {sz/1024:.0f} KB")
 
     return 0
+
+
+# --------------------------------------------------------------------------- #
+# EPUB (accessible EPUB 3)
+# --------------------------------------------------------------------------- #
+EPUB_CSS = """\
+html, body { margin: 0; padding: 0; }
+body { font-family: serif; line-height: 1.5; }
+h1, h2, h3, h4, h5 { font-family: sans-serif; line-height: 1.2; }
+h1 { page-break-before: always; break-before: page; }
+p { orphans: 2; widows: 2; }
+code, pre { font-family: monospace; }
+pre { white-space: pre-wrap; overflow-wrap: break-word; background: #f4f4f4;
+      padding: 0.6em; border-radius: 4px; }
+code { background: #f4f4f4; padding: 0 0.2em; }
+pre code { background: transparent; padding: 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #999; padding: 0.3em 0.5em; text-align: left;
+         vertical-align: top; }
+blockquote { border-left: 3px solid #999; margin: 1em 0; padding: 0.2em 1em; }
+img { max-width: 100%; height: auto; }
+"""
+
+
+def _section_title(md_text: str) -> str | None:
+    """Derive a navigation title from a section's first H1."""
+    m = re.search(r"(?m)^#\s+(.+?)\s*$", md_text)
+    if not m:
+        return None
+    t = m.group(1)
+    t = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", t)   # strip markdown links
+    t = re.sub(r"[*`_]", "", t)                       # strip emphasis marks
+    return t.strip() or None
+
+
+def build_sections(man: dict, built: list, include_pgm: bool = True) -> list:
+    """Assemble the ordered (css_class, markdown) sections for the book.
+
+    Mirrors main()._assemble so the EPUB and the PDF/HTML share the exact same
+    adapted content. EPUB callers pass include_pgm=False: the page anchors are
+    print-only and must not ship in the EPUB text layer.
+    """
+    sections: list = []
+    sections += front_matter(man, built)
+    for b in built:
+        _md = re.sub(r"[\u2b50\U0001F536\U0001F537\U0001F3E5\uFE0F]", "", b["md"])
+        _anchor = (f'<span class="pgm">PGMK{b["print_chapter"]}ENDPGMK</span>\n\n'
+                   if include_pgm else "")
+        sections.append(("recipe", _anchor + _md))
+    sections += back_matter(man, built)
+    _ap = appendix_catalog(man)
+    if _ap:
+        sections.append(_ap)
+    try:
+        import tag_index as _ti
+        _ix = _ti.build(built, man.get("digital_edition_url", ""))
+    except Exception as exc:
+        print(f"  [appendix-b] tag index unavailable ({exc}); "
+              f"using curated index-terms.json", file=sys.stderr)
+        _ix = appendix_index(man)
+    if _ix:
+        sections.append(_ix)
+    return sections
+
+
+def render_epub(sections: list, man: dict, epub_path: str) -> bool:
+    """Build an accessible EPUB 3 from the assembled sections."""
+    import uuid
+    try:
+        from ebooklib import epub
+        from markdown_it import MarkdownIt
+    except Exception as exc:
+        print(f"  [epub] EbookLib/markdown-it not available ({exc}); "
+              f"pip install --user EbookLib markdown-it-py", file=sys.stderr)
+        return False
+
+    mdit = MarkdownIt("commonmark", {"html": True, "xhtmlOut": True}).enable("table")
+
+    book = epub.EpubBook()
+    book.set_identifier("urn:uuid:" + str(uuid.uuid4()))
+    book.set_title(man["title"])
+    book.set_language("en-US")
+    if man.get("author"):
+        book.add_author(man["author"])
+    if man.get("subtitle"):
+        book.add_metadata("DC", "description", man["subtitle"])
+    if man.get("copyright_year"):
+        book.add_metadata("DC", "rights",
+                          f"Copyright {man['copyright_year']} {man.get('author', '')}".strip())
+
+    # EPUB Accessibility 1.1 / schema.org metadata (the A-3 gate).
+    a11y = [
+        ("schema:accessMode", "textual"),
+        ("schema:accessModeSufficient", "textual"),
+        ("schema:accessibilityFeature", "tableOfContents"),
+        ("schema:accessibilityFeature", "structuralNavigation"),
+        ("schema:accessibilityFeature", "readingOrder"),
+        ("schema:accessibilityFeature", "displayTransformability"),
+        ("schema:accessibilityHazard", "none"),
+        ("schema:accessibilitySummary",
+         "This reflowable publication is fully textual with a complete table of "
+         "contents and semantic structural navigation. It contains no images "
+         "essential to understanding and declares no known accessibility hazards."),
+    ]
+    for prop, val in a11y:
+        book.add_metadata(None, "meta", val, {"property": prop})
+
+    css = epub.EpubItem(uid="style", file_name="style/epub.css",
+                        media_type="text/css", content=EPUB_CSS)
+    book.add_item(css)
+
+    recipe_idx = [i for i, (cls, _) in enumerate(sections) if cls == "recipe"]
+    first_r = recipe_idx[0] if recipe_idx else -1
+    last_r = recipe_idx[-1] if recipe_idx else -1
+
+    chapters = []
+    for i, (cls, md_text) in enumerate(sections):
+        if first_r != -1 and i < first_r:
+            etype = "frontmatter"
+        elif first_r != -1 and i > last_r:
+            etype = "backmatter"
+        else:
+            etype = "bodymatter"
+        # Strip HTML comments: build-time PRINT-TODO notes embed markdown that
+        # contains "--", which is illegal inside an XML/XHTML comment, and readers
+        # never see comments anyway.
+        md_text = re.sub(r"<!--.*?-->", "", md_text, flags=re.S)
+        title = _section_title(md_text) or f"Section {i + 1}"
+        body = mdit.render(md_text)
+        # Normalize lenient HTML to well-formed XHTML (raw-HTML passthrough,
+        # stray "<" in prose, void elements) so every chapter parses as XML.
+        try:
+            import lxml.html as _lh
+            from lxml import etree as _et
+            _frag = _lh.fragment_fromstring(body, create_parent="div")
+            body = _et.tostring(_frag, encoding="unicode", method="xml")
+        except Exception as _exc:
+            print(f"  [epub] XHTML normalize skipped for a section ({_exc})", file=sys.stderr)
+        item = epub.EpubHtml(title=title, file_name=f"text/ch{i + 1:03d}.xhtml", lang="en-US")
+        item.add_item(css)
+        item.content = (
+            "<html xmlns=\"http://www.w3.org/1999/xhtml\" "
+            "xmlns:epub=\"http://www.idpf.org/2007/ops\" xml:lang=\"en-US\" lang=\"en-US\">"
+            f"<head><title>{_html.escape(title)}</title>"
+            "<link rel=\"stylesheet\" type=\"text/css\" href=\"../style/epub.css\"/></head>"
+            f"<body epub:type=\"{etype}\">\n{body}\n</body></html>"
+        )
+        book.add_item(item)
+        chapters.append(item)
+
+    book.toc = tuple(chapters)
+    book.add_item(epub.EpubNcx())
+    book.add_item(epub.EpubNav())
+    book.spine = ["nav"] + chapters
+    epub.write_epub(epub_path, book)
+    return True
+
 
 
 if __name__ == "__main__":
