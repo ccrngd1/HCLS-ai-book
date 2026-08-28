@@ -201,7 +201,7 @@ index), and TOC page numbers via the two-pass render. Current PDF: 268 pages,
 
 Mermaid pre-render (§2c) was assessed and is **not needed for print**: the 15
 flagship main files carry no Mermaid blocks, and the digital edition renders
-Mermaid client-side. For EPUB it currently renders as a fenced code block (no client-side JS); pre-rendering Mermaid to images with alt text is a remaining quality and accessibility nicety, not a blocker (book.epub passes epubcheck and ACE without it).
+Mermaid client-side. The flagship EPUB carries no Mermaid either (it is built from the same 15 main files), so there is nothing to pre-render for `book.pdf` or `book.epub` today. Pre-rendering Mermaid to images with alt text would only matter if the architecture companions, which do contain the diagrams, are ever folded into the EPUB.
 
 Next: Phase D (KDP publishing) — see `plan_docs/physical-book-plan.md` §6 and
 `print/kdp-metadata.md`.
