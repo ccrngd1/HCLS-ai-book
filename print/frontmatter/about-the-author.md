@@ -23,8 +23,6 @@ I spent most of my career as a software engineer before moving into architecture
 
 My academic background is a BS, an MEng, and doctoral research in artificial intelligence and machine learning. Back then most of my work was in computer vision, using techniques that were new at the time: bagging, which is now a flag you set on an algorithm, and boosting, now better known by names like XGBoost.
 
-Outside of work I spend time woodworking, building projects large and small for my family. I love to build no matter the medium, so that is where a lot of my spare time goes. I also enjoy video games, and can be found on Steam in the wee hours of the morning.
-
-I want to thank the people who made this book a reality. First my wife and our puppies, who endured long hours of me absorbed in a computer, pulling this material together. And my colleagues and friends, who gave their time to review these recipes and told me what would make them genuinely valuable to the people in healthcare tackling these problems every day.
+Outside of work I spend time woodworking, building projects large and small for my family. I love to build no matter the medium, so that is where a lot of my spare time goes. I also enjoy video games, and can be found on Steam in the wee hours of the morning. 
 
 This volume is a fifteen-recipe sampler. All {recipe_count} recipes, each with an architecture companion, are in the digital edition at {digital_url}
