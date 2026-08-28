@@ -143,7 +143,7 @@ def build_related_pointer(original: str, recipe_url: str, base_url: str) -> str:
     commented = "\n".join("     " + ln for ln in original.splitlines())
     return (
         "In the full digital cookbook, this recipe connects to related "
-        "patterns across the library \u2014 upstream inputs, downstream "
+        "patterns across the library: upstream inputs, downstream "
         "consumers, and adjacent techniques in other chapters. "
         f"Read this recipe with its full set of cross-links in the digital "
         f"edition at <{recipe_url}>, or browse the complete library at "
