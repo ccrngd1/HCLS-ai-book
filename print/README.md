@@ -4,7 +4,7 @@ Builds the curated **flagship-15** print edition as a derived artifact from the
 canonical recipe sources. It **never edits the canonical `.md` files** — all
 transforms run on a copy written to `print/build/` (gitignored).
 
-Pipeline: `canonical Markdown → print-adapted Markdown → combined HTML → 6×9 PDF`
+Pipeline: `canonical Markdown → print-adapted Markdown → combined HTML → 6×9 PDF`, plus an accessible EPUB 3 (`--epub`) built from the same adapted sections.
 
 ## Files
 - `manifest.json` — the single source of truth: the 15 recipes, their print
@@ -16,7 +16,7 @@ Pipeline: `canonical Markdown → print-adapted Markdown → combined HTML → 6
 - `print.css` — 6×9 trade-paperback stylesheet (honored by headless-Chrome
   print via `preferCSSPageSize`).
 - `build/` — output (gitignored): adapted `.md` per recipe, `book.md`,
-  `book.html`, `book.pdf`, and `print-warnings.txt`.
+  `book.html`, `book.pdf`, `book.epub`, and `print-warnings.txt`.
 
 ## Usage
 
@@ -33,6 +33,7 @@ venv is currently broken anyway (its `bin/python` symlinks were flattened to
 # Pin <4 because 4.x requires Python 3.10+ and the system python here is 3.9.
 python3 -m pip install --user "markdown-it-py<4" "mdit-py-plugins<0.5" pygments
 python3 -m pip install --user markdown          # optional alternate engine
+python3 -m pip install --user EbookLib          # required for --epub (EPUB 3)
 
 # Chrome for Puppeteer (~150 MB, once). Puppeteer lives in print/build/node_modules.
 export PATH="$HOME/.local/share/kiro-cli:$PATH"   # bundled node v22
@@ -53,6 +54,7 @@ export PUPPETEER_EXECUTABLE_PATH=$(ls -d ~/.cache/puppeteer/chrome/linux-*/chrom
 python3 print/build.py                    # approved recipes, HTML only
 python3 print/build.py --all              # include unapproved/missing
 python3 print/build.py --pdf              # also render book.pdf (two-pass TOC)
+python3 print/build.py --epub             # also build book.epub (accessible EPUB 3)
 python3 print/build.py --engine auto      # first-available engine (old behaviour)
 ```
 
@@ -68,6 +70,35 @@ page count and therefore the cover spine width. Keep it pinned rather than relyi
 on whatever happens to be installed. (Measured: python-markdown and markdown-it-py
 both produce 229 pages here, so the engine is not the cause of the discrepancy
 described next.)
+
+## Validate the EPUB (epubcheck + ACE)
+
+`book.epub` passes both validators (green as of 2026-08-28):
+
+- **epubcheck** (EPUB 3 spec conformance) needs a Java runtime. A portable
+  Temurin 17 JRE and epubcheck 5.1.0 live under `~/.local`:
+
+  ```bash
+  ~/.local/jre17/bin/java -jar ~/.local/epubcheck-5.1.0/epubcheck.jar print/build/book.epub
+  # expect: 0 fatals / 0 errors / 0 warnings
+  ```
+
+- **DAISY ACE** (accessibility: WCAG / EPUB Accessibility 1.1) is installed via
+  the bundled `bun` into `print/build/node_modules` and runs on the same Chrome
+  as the PDF build:
+
+  ```bash
+  export PATH="$HOME/.local/share/kiro-cli:$PATH"
+  export PUPPETEER_EXECUTABLE_PATH=$(ls -d ~/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome | head -1)
+  cd print/build && node node_modules/@daisy/ace/bin/ace-puppeteer.js -f -o /tmp/ace-report book.epub
+  # expect: overall outcome: pass. Human-readable report at /tmp/ace-report/report.html
+  ```
+
+The EPUB carries EPUB Accessibility 1.1 / schema.org metadata (accessMode,
+accessModeSufficient, accessibilityFeature, accessibilityHazard,
+accessibilitySummary), semantic navigation, `xml:lang` on the package and every
+document, and a cover image with alt text (set via the `cover` key in
+`manifest.json`).
 
 ## Fonts are embedded (resolved 2026-08-05)
 
@@ -170,7 +201,7 @@ index), and TOC page numbers via the two-pass render. Current PDF: 268 pages,
 
 Mermaid pre-render (§2c) was assessed and is **not needed for print**: the 15
 flagship main files carry no Mermaid blocks, and the digital edition renders
-Mermaid client-side. It remains a prerequisite for EPUB.
+Mermaid client-side. For EPUB it currently renders as a fenced code block (no client-side JS); pre-rendering Mermaid to images with alt text is a remaining quality and accessibility nicety, not a blocker (book.epub passes epubcheck and ACE without it).
 
 Next: Phase D (KDP publishing) — see `plan_docs/physical-book-plan.md` §6 and
 `print/kdp-metadata.md`.
