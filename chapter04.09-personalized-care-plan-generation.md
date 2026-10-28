@@ -100,32 +100,31 @@ A few developments shape what is achievable today:
 
 The pipeline has seven logical components, governed by an eighth: a **clinical-content** component (the structured guideline, goal, and action templates); an **inputs-aggregation** component that pulls upstream signals and source data into a frozen plan-input record; a **goal-derivation** component; an **action-assembly-and-reconciliation** component; a **plan-finalization** component; a **narrative-and-rendering** component; and a **feedback-and-adaptation** component.
 
-```text
-CLINICAL CONTENT (governance-controlled: versioned goal + action templates)
-      │
-      ▼
-INPUTS AGGREGATION ─ freeze a plan-input record (clinical data, upstream
-      │              signals, preferences, SDOH, goals-of-care)
-      ▼
-GOAL DERIVATION ─── match templates to conditions; cohort overrides;
-      │              re-weight by goals-of-care + quality programs
-      ▼
-ACTION ASSEMBLY & RECONCILIATION ─ candidate actions; interaction +
-      │              contraindication filters; burden / capacity / schedule
-      ▼
-PLAN FINALIZATION ─ sequence into time horizons; assign owners + fallbacks;
-      │              emit structured plan_record (system of record)
-      ▼
-NARRATIVE GENERATION & VALIDATION ─ clinician / patient / care-team
-      │              narratives; LLM behind a strict validator
-      ▼
-REVIEW, DELIVERY & ACTIVATION ─ care-team review; patient review;
-      │              activate approved actions into live tasks
-      ▼
-FEEDBACK, ADAPTATION & EVALUATION ─ completion / outcome / PRO / adverse
-                     events; adherence metrics; cohort equity monitoring;
-                     trigger revision
-```
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Clinical Content</strong><div class="flow-detail">Governance-controlled, versioned goal and action templates.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Inputs Aggregation</strong><div class="flow-detail">Freeze a plan-input record: clinical data, upstream signals, preferences, social determinants of health, and goals of care.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Goal Derivation</strong><div class="flow-detail">Match templates to conditions<br/>Apply cohort overrides<br/>Re-weight by goals of care and quality programs</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Action Assembly &amp; Reconciliation</strong><div class="flow-detail">Assemble candidate actions<br/>Filter for interactions and contraindications<br/>Check burden, capacity, and schedule</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Plan Finalization</strong><div class="flow-detail">Sequence into time horizons<br/>Assign owners and fallbacks<br/>Emit the structured plan_record (the system of record)</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Narrative Generation &amp; Validation</strong><div class="flow-detail">Clinician, patient, and care-team narratives<br/>LLM behind a strict validator</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>7. Review, Delivery &amp; Activation</strong><div class="flow-detail">Care-team review<br/>Patient review<br/>Activate approved actions into live tasks</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>8. Feedback, Adaptation &amp; Evaluation</strong><div class="flow-detail">Completion, outcome, patient-reported outcome, and adverse events<br/>Adherence metrics and cohort equity monitoring<br/>Trigger revision</div></div></li>
+</ol>
+</div>
 
 **The clinical content layer is governance, not engineering.** Goal and action templates are clinical artifacts owned by the clinical-content team (informatics, pharmacy and therapeutics, care management, quality, patient education), versioned with effective dates, cohort overrides, and provenance to the source guideline. They move through clinical change management, not engineering feature work. When engineering owns them, the content drifts from current practice and the system ships advice clinicians no longer endorse.
 
@@ -149,9 +148,9 @@ FEEDBACK, ADAPTATION & EVALUATION ─ completion / outcome / PRO / adverse
 
 The 2026 revision is generally more permissive than what it replaced, notably in treating a single specific recommendation as less automatically device-triggering than the earlier guidance did, which matters for a system whose whole output is one specific plan. It also puts more emphasis on automation bias. None of that changes the shape of the decision: most deployments should err toward care-team review, and teams pursuing more direct-to-patient delivery should buy regulatory analysis early rather than discovering the boundary after launch. Confirm current guidance with counsel; this area has moved twice in recent years and will move again.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter04.09-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

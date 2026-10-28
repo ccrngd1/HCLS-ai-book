@@ -6,7 +6,6 @@
 
 ---
 
-
 <!-- phi-callout -->
 > **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
@@ -123,52 +122,38 @@ Most payers end up running batch for prevention and retrospective for recovery, 
 
 At a conceptual level, the pipeline has three stages plus a feedback loop. The key architectural insight is that none of the stages are particularly complex on their own. The design work is in making them compose cleanly and in making the feedback loop fast enough that the system gets smarter over time.
 
-```text
-┌────────────────── DETECTION PIPELINE ──────────────────┐
-│                                                        │
-│  [Incoming Claim Stream]                               │
-│           │                                            │
-│           ▼                                            │
-│  [Ingestion + Normalization]                           │
-│   (parse 837, canonicalize IDs, hash key fields)       │
-│           │                                            │
-│           ▼                                            │
-│  [Layer 1: Blocking]                                   │
-│   (lookup: patient + provider + date-window +          │
-│    claim-type. Returns candidates in historical        │
-│    store.)                                             │
-│           │                                            │
-│           ▼                                            │
-│  [Layer 2: Similarity Scoring]                         │
-│   (field-level fuzzy match → weighted combination →    │
-│    score in [0, 1] per candidate pair)                 │
-│           │                                            │
-│           ▼                                            │
-│  [Layer 3: Decision + Routing]                         │
-│   score ≥ high_threshold  → auto-suspend (duplicate)   │
-│   score ≤ low_threshold   → auto-accept (unique)       │
-│   between thresholds      → human review queue         │
-│           │                                            │
-└───────────┼────────────────────────────────────────────┘
-            │
-┌───────────┼────────────────────────────────────────────┐
-│           ▼                                            │
-│  [Examiner Workstation]                                │
-│   (adjudicates queue items; labels: duplicate,         │
-│    adjustment, unique; records reasoning)              │
-│           │                                            │
-│           ▼                                            │
-│  [Label Store]                                         │
-│           │                                            │
-│           ▼                                            │
-│  [Periodic Retraining]                                 │
-│   (update weights / model; monitor drift; refresh      │
-│    thresholds)                                         │
-│                                                        │
-└──────────────────── FEEDBACK LOOP ─────────────────────┘
-```
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
 
-**Ingestion and normalization.** 837 EDI transactions get parsed into a canonical claim record. IDs get normalized (leading-zero padding on patient IDs, NPI format validation, date format standardization). A stable hash is computed over the subset of fields that define a "claim identity" for exact-duplicate detection (patient ID + provider NPI + DOS + CPT + modifiers + billed amount). Exact hash collisions get flagged immediately; this is effectively free duplicate detection for the easy cases.
+<div class="flow">
+<p class="flow-group">Detection pipeline</p>
+<ol>
+<li><div class="flow-step"><strong>1. Incoming Claim Stream</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Ingestion + Normalization</strong><div class="flow-detail">Parse the 837, canonicalize IDs, hash the key fields.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Layer 1: Blocking</strong><div class="flow-detail">Look up patient + provider + date window + claim type to pull candidate claims from the historical store.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Layer 2: Similarity Scoring</strong><div class="flow-detail">Fuzzy-match each field and weight the results into a score from 0 to 1 for each candidate pair.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Layer 3: Decision + Routing</strong><div class="flow-detail">Score at or above the high threshold → auto-suspend (duplicate)<br/>Score at or below the low threshold → auto-accept (unique)<br/>In between → human review queue</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+</ol>
+<p class="flow-group">Feedback loop</p>
+<ol>
+<li><div class="flow-step"><strong>6. Examiner Workstation</strong><div class="flow-detail">Adjudicate each queue item as duplicate, adjustment, or unique, and record the reasoning.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>7. Label Store</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>8. Periodic Retraining</strong><div class="flow-detail">Update the weights or model, monitor drift, refresh the thresholds.</div></div></li>
+</ol>
+<div class="flow-loop"><strong>Loops back:</strong> retrained weights return to step 4, and refreshed thresholds to step 5.</div>
+</div>
+
+**Ingestion and normalization.** 837 electronic data interchange (EDI) transactions get parsed into a canonical claim record. IDs get normalized (leading-zero padding on patient IDs, NPI format validation, date format standardization). A stable hash is computed over the subset of fields that define a "claim identity" for exact-duplicate detection (patient ID + provider NPI + DOS + CPT + modifiers + billed amount). Exact hash collisions get flagged immediately; this is effectively free duplicate detection for the easy cases.
 
 **Blocking.** The incoming claim's blocking keys are used to query the historical claim store for candidate matches. A common blocking strategy: patient ID + provider organization + date window (for example, plus-or-minus 14 days) + claim type. This narrows the candidate set from "all history" to typically 0 to a few dozen candidates. If you have a claim type for which this isn't selective enough (for example, frequent high-volume lab claims for the same patient), you add more blocking dimensions for that type.
 
@@ -180,9 +165,9 @@ At a conceptual level, the pipeline has three stages plus a feedback loop. The k
 
 **Historical claim store.** Somewhere in the middle of all this is a store of historical claims. The access pattern is point lookups on blocking keys, which you want to be fast. The data volume grows forever (you don't delete claim history). Retention policies apply (CMS typically requires 10 years for Medicare). The store needs to support both the detection path (blocking queries) and the retraining path (bulk scans for training data). These are different access patterns and the design should anticipate both.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter03.01-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 
@@ -204,7 +189,7 @@ What I recommend to any team looking to embark on this project, start with a det
 
 *Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the [digital edition](https://health-ai.lawson.engineer/).*
 
-- **Cotiviti**, a payment-integrity company that works across many US health plans, applies machine learning and pattern recognition to flag duplicate, wasteful, and abusive claims before and after payment. It is a direct commercial instance of this recipe's problem. See its [claim pattern review](https://www.cotiviti.com/solutions/payment-accuracy/claim-pattern-review).
+- **Cotiviti**, a payment-integrity company that works across many US health plans, applies machine learning and pattern recognition to flag duplicate, wasteful, and abusive claims before and after payment through its Claim Pattern Review offering. It is a direct commercial instance of this recipe's problem. See its [product page](https://www.cotiviti.com/solutions/payment-accuracy/claim-pattern-review).
 - **AWS fraud-detection guidance** documents building self-improving detection models with Amazon SageMaker, the supervised-plus-anomaly approach this recipe uses. See the [guidance](https://aws.amazon.com/solutions/guidance/fraud-detection-using-machine-learning-on-aws/).
 - **Duplicate-record resolution on AWS** is a documented reference that blocks, matches, and resolves duplicate records with AWS Glue, the entity-resolution machinery underneath duplicate-claim detection. See the [solution](https://docs.aws.amazon.com/solutions/identifying-and-resolving-duplicate-customer-records-on-aws/).
 

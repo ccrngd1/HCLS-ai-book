@@ -426,31 +426,30 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <hr />
 <h2 id="general-architecture-pattern">General Architecture Pattern</h2>
 <p>The pipeline has seven logical components, governed by an eighth: a <strong>clinical-content</strong> component (the structured guideline, goal, and action templates); an <strong>inputs-aggregation</strong> component that pulls upstream signals and source data into a frozen plan-input record; a <strong>goal-derivation</strong> component; an <strong>action-assembly-and-reconciliation</strong> component; a <strong>plan-finalization</strong> component; a <strong>narrative-and-rendering</strong> component; and a <strong>feedback-and-adaptation</strong> component.</p>
-<pre class="code code-plain"><code>CLINICAL CONTENT (governance-controlled: versioned goal + action templates)
-      │
-      ▼
-INPUTS AGGREGATION ─ freeze a plan-input record (clinical data, upstream
-      │              signals, preferences, SDOH, goals-of-care)
-      ▼
-GOAL DERIVATION ─── match templates to conditions; cohort overrides;
-      │              re-weight by goals-of-care + quality programs
-      ▼
-ACTION ASSEMBLY &amp; RECONCILIATION ─ candidate actions; interaction +
-      │              contraindication filters; burden / capacity / schedule
-      ▼
-PLAN FINALIZATION ─ sequence into time horizons; assign owners + fallbacks;
-      │              emit structured plan_record (system of record)
-      ▼
-NARRATIVE GENERATION &amp; VALIDATION ─ clinician / patient / care-team
-      │              narratives; LLM behind a strict validator
-      ▼
-REVIEW, DELIVERY &amp; ACTIVATION ─ care-team review; patient review;
-      │              activate approved actions into live tasks
-      ▼
-FEEDBACK, ADAPTATION &amp; EVALUATION ─ completion / outcome / PRO / adverse
-                     events; adherence metrics; cohort equity monitoring;
-                     trigger revision
-</code></pre>
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Clinical Content</strong><div class="flow-detail">Governance-controlled, versioned goal and action templates.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Inputs Aggregation</strong><div class="flow-detail">Freeze a plan-input record: clinical data, upstream signals, preferences, social determinants of health, and goals of care.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Goal Derivation</strong><div class="flow-detail">Match templates to conditions<br/>Apply cohort overrides<br/>Re-weight by goals of care and quality programs</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Action Assembly &amp; Reconciliation</strong><div class="flow-detail">Assemble candidate actions<br/>Filter for interactions and contraindications<br/>Check burden, capacity, and schedule</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Plan Finalization</strong><div class="flow-detail">Sequence into time horizons<br/>Assign owners and fallbacks<br/>Emit the structured plan_record (the system of record)</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Narrative Generation &amp; Validation</strong><div class="flow-detail">Clinician, patient, and care-team narratives<br/>LLM behind a strict validator</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>7. Review, Delivery &amp; Activation</strong><div class="flow-detail">Care-team review<br/>Patient review<br/>Activate approved actions into live tasks</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>8. Feedback, Adaptation &amp; Evaluation</strong><div class="flow-detail">Completion, outcome, patient-reported outcome, and adverse events<br/>Adherence metrics and cohort equity monitoring<br/>Trigger revision</div></div></li>
+</ol>
+</div>
 <p><strong>The clinical content layer is governance, not engineering.</strong> Goal and action templates are clinical artifacts owned by the clinical-content team (informatics, pharmacy and therapeutics, care management, quality, patient education), versioned with effective dates, cohort overrides, and provenance to the source guideline. They move through clinical change management, not engineering feature work. When engineering owns them, the content drifts from current practice and the system ships advice clinicians no longer endorse.</p>
 <p><strong>The inputs aggregation layer is where the upstream signals compound.</strong> Each input is produced upstream, whether by dedicated recommendation and personalization systems or by equivalent capabilities your organization already runs: channel preferences, educational-content matches, provider relationships, wellness candidates, adherence interventions, the care-gap inventory, enrollment status, and treatment-response predictions, plus source clinical data, goals-of-care preferences, social determinants of health (SDOH), and functional and cognitive status. The layer freezes them into a plan-input record so the plan is reproducible for audit and adverse-event investigation.</p>
 <p><strong>The goal derivation layer is where guidelines meet the patient's goals of care.</strong> Goal templates match the patient's active conditions, with cohort overrides for geriatric, palliative, pregnancy, and similar populations. Baseline priority weights come from clinical urgency and quality-program weighting; goals-of-care alignment then re-weights them against the patient's stated preferences (comfort-focused care weights goals differently than aggressive disease management). The output is a goal set with per-goal provenance.</p>
@@ -462,10 +461,10 @@ FEEDBACK, ADAPTATION &amp; EVALUATION ─ completion / outcome / PRO / adverse
 <p><strong>Equity instrumentation is non-negotiable.</strong> Monitor parity across cohorts on four axes: plan ambition (the plan does not systematically aim lower for some cohorts), plan complexity (not systematically more burdensome for some), action assignment (some cohorts are not pushed toward self-management while others get clinician-led actions), and outcome trajectory. The Obermeyer trap applies in a specific form: a system that aims plans at &quot;what the patient can do,&quot; where that is conflated with what the patient has historically had <em>access to</em>, will produce systematically less ambitious plans for under-resourced cohorts, reinforcing the disparity it should be working against. Thresholds on each axis trigger committee review.</p>
 <p><strong>Regulatory posture is set early.</strong> In the United States the relevant machinery is the 21st Century Cures Act carve-out for non-device clinical decision support, which FDA interprets through its Clinical Decision Support Software guidance (revised and reissued in January 2026, superseding the 2022 version). The carve-out has four criteria and software must satisfy all of them to sit outside the device definition. The one that usually decides a care-plan generator is the requirement that the recommendation be directed to a <em>health care professional</em> who can independently review the basis for it, rather than relying primarily on it. That is why the review posture is a regulatory decision and not just a workflow preference: where the care team reviews and modifies the plan before activation, the support is clinician-mediated and the framing resembles other care-management workflows, and where the plan reaches the patient with minimal review, the HCP-directed criterion is no longer met and the analysis tightens toward FDA SaMD regulation depending on the clinical claims in the patient-facing narrative.</p>
 <p>The 2026 revision is generally more permissive than what it replaced, notably in treating a single specific recommendation as less automatically device-triggering than the earlier guidance did, which matters for a system whose whole output is one specific plan. It also puts more emphasis on automation bias. None of that changes the shape of the decision: most deployments should err toward care-team review, and teams pursuing more direct-to-patient delivery should buy regulatory analysis early rather than discovering the boundary after launch. Confirm current guidance with counsel; this area has moved twice in recent years and will move again.</p>
-<hr />
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter04.09-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
+<hr />
 <h2 id="the-honest-take">The Honest Take</h2>
 <p><strong>Buy versus build: buy the care-management platform, build the generation layer inside it.</strong> There is no mature market for AI-generated personalized care plans, so if you want this, you will be building the generation. What you should not build is the surrounding platform. Care-management modules in the major EHRs and the standalone population-health vendors already handle plan storage, task routing, outreach, and documentation, and rebuilding that is a multi-year detour from the part you actually care about. Two constraints shape the build. First, as the regulatory discussion above sets out, keeping the care team between the generator and the patient is what keeps you inside the non-device carve-out, so design for clinician mediation from the start rather than retrofitting it later. Second, the structured-then-narrative separation described below is what makes a generated plan auditable, and auditability is what makes it defensible. Buy the plumbing, build the reasoning, and keep a clinician in the loop.</p>
 <p>Personalized care plan generation is a use case where the gap between &quot;the system produces a plan&quot; and &quot;the system produces a plan that meaningfully changes care&quot; is especially wide. Every health system, every payer, and every care management vendor has, at some point, shipped a care plan generator. Most of those generators produce a document. The document goes into the electronic health record (EHR). The document is opened occasionally. The document is updated rarely. The document does not, in any honest accounting, change what happens to the patient. The architecture in this recipe is largely about the operational, content, and engagement discipline that distinguishes a plan that changes care from a plan that occupies disk space. Most of that discipline is not AWS-specific. Most of it is clinical content choices made well, governance applied seriously, multi-actor orchestration designed deliberately, and LLM constraints enforced strictly. The cloud infrastructure is comparatively easy.</p>

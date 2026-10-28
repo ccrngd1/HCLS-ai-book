@@ -389,13 +389,20 @@
 <p>The features that matter for the survival model are service line, primary diagnosis or diagnosis-related group (DRG), once the working DRG is assigned, age, length of stay so far, day of week, hour of day, attending hospitalist, planned disposition (home, SNF, rehab, hospice), CMS Hospital Acquired Condition flags, recent vital sign trajectory, recent lab abnormalities, pending consults, and whether a discharge order has been written. The last feature is the strongest single predictor by a wide margin: once a discharge order has been entered, the probability that the patient leaves within the next several hours rises sharply, because the order is what sets medication reconciliation, transport, and bed cleanup in motion.</p>
 <p>That power is also a trap. Because the order only appears in the last few hours before discharge, the feature is only fair to use if you record it as of the moment you are forecasting from, not as of the outcome you are trying to predict. If the training pipeline reads the discharge-order flag from inside the window it is supposed to predict, the model learns to &quot;predict&quot; a departure from an order that was really part of that departure. It scores beautifully in testing and then falls apart at 06:30, when almost no one has an order in yet and the bed huddle still needs a number. Build the feature strictly point-in-time, and grade the model per horizon rather than in aggregate: one that leans on the discharge-order signal looks strong a few hours out and weak a day out, which is the horizon you most need.</p>
 <p><strong>Layer 3: Census composition and unit assignment.</strong> Compose the inflows, outflows, and current state into a unit-level census forecast. This is conceptually simple bookkeeping.</p>
-<pre class="code code-plain"><code>projected_census(unit, t+h) = current_census(unit, t)
-                              + projected_admissions_to_unit(unit, t, t+h)
-                              + projected_internal_transfers_in(unit, t, t+h)
-                              - projected_discharges_from_unit(unit, t, t+h)
-                              - projected_internal_transfers_out(unit, t, t+h)
-                              ± uncertainty
-</code></pre>
+<style>
+.formula { border: 1px solid #999; border-radius: 4px; padding: 0.5em 0.8em; margin: 1em 0; page-break-inside: avoid; break-inside: avoid; }
+.formula .formula-lhs { font-weight: bold; margin-bottom: 0.2em; }
+.formula .formula-term { padding-left: 1em; }
+</style>
+<div class="formula">
+<div class="formula-lhs">Projected census of a unit at time <em>t</em> + <em>h</em></div>
+<div class="formula-term">= current census of the unit at time <em>t</em></div>
+<div class="formula-term">+ projected admissions to the unit, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">+ projected internal transfers in, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">− projected discharges from the unit, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">− projected internal transfers out, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">± uncertainty</div>
+</div>
 <p>The hard part is unit assignment. A patient admitted from the ED with a chest pain rule-out goes to telemetry, not med-surg. A post-op total knee goes to ortho, not general surgery. A patient who was on CCU but is being downgraded goes to step-down, not back to cath lab. The unit-assignment logic depends on diagnosis, surgical type, attending preference, current unit availability, and the hospital's bed-management protocols. Most pipelines model this as a multinomial classifier per admission source. Given the admission's features (diagnosis, surgery type, ED disposition), predict the probability distribution over candidate units.</p>
 <p>The output of Layer 3 is the unit-level census forecast. For each unit, for each hour over the forecast horizon, the expected occupancy and a prediction interval. The aggregate hospital census is the sum across units, but the unit-level breakdown is what operations actually consume.</p>
 <h3 id="what-makes-census-different-from-other-forecasts">What Makes Census Different From Other Forecasts</h3>
@@ -426,33 +433,38 @@
 <p><strong>Judge the range, not just the middle.</strong> The forecast gives you a range, not a single number, so judge the range. Look back over the last few months: when you said census had a 90% chance of landing under some ceiling, did it actually land under that ceiling about nine times out of ten? If your ceiling gets blown through half the time, the range is lying, no matter how good the middle number looks. And a range only helps if it's tight enough to act on. &quot;Somewhere between 40 and 200 patients&quot; can be perfectly honest and completely useless.</p>
 <p><strong>Check it at the horizon you actually use.</strong> A model can be sharp four hours out and hopeless three days out. The huddle uses those horizons for different decisions, so measure them separately. Don't let a good same-shift number hide a useless day-ahead one.</p>
 <p><strong>Retrain on the numbers, not the calendar.</strong> The pipeline already refreshes on a schedule, but treat that as a backstop. The real trigger is the forecast starting to slip: the range stops holding up, or the edge over that same-week-last-week guess quietly erodes. That's when you retrain, whatever day it is.</p>
-<h3 id="the-general-architecture-pattern">The General Architecture Pattern</h3>
+<hr />
+<h2 id="the-general-architecture-pattern">The General Architecture Pattern</h2>
 <p>At a conceptual level, the pipeline looks like this:</p>
-<pre class="code code-plain"><code>[ADT Stream]
-[OR Schedule]                    +---------------------+    +--------------------+    +---------------------+
-[Transfer Center Queue]   ----&gt;  | Inflow Forecasting  |    | Outflow / LOS      |    | Census Composition  |
-[ED Tracking Board]              | (per source, per    |    | Modeling           |    | (Monte Carlo on     |
-[EHR Patient State]              |  service, per unit) |    | (per-patient       |    |  inflows + outflows |
-                                 |                     |    |  survival model)   |    |  + current state)   |
-                                 +---------------------+    +--------------------+    +---------------------+
-                                          |                          |                          |
-                                          +---------+----------------+--------------------------+
-                                                    |
-                                                    v
-                                          +---------------------+
-                                          | Forecast Repository |
-                                          | (per-unit, per-hour |
-                                          |  occupancy + intervals)
-                                          +---------------------+
-                                                    |
-                                                    v
-                                          +---------------------+
-                                          | Operational         |
-                                          | Consumers           |
-                                          | (Bed Huddle, Transfer
-                                          |  Center, OR, ED)    |
-                                          +---------------------+
-</code></pre>
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+<div class="flow">
+<p class="flow-group">Inputs</p>
+<ol>
+<li><div class="flow-step"><strong>1. Data Feeds</strong><div class="flow-detail"><ul><li>ADT stream</li><li>OR schedule</li><li>Transfer center queue</li><li>ED tracking board</li><li>EHR patient state</li></ul></div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+</ol>
+<p class="flow-group">Forecasting layers</p>
+<ol>
+<li><div class="flow-step"><strong>2. Inflow Forecasting</strong><div class="flow-detail">Per source, per service, per unit.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Outflow / LOS Modeling</strong><div class="flow-detail">Per-patient survival model.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Census Composition</strong><div class="flow-detail">Monte Carlo on inflows, outflows, and the current state.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+</ol>
+<p class="flow-group">Outputs</p>
+<ol>
+<li><div class="flow-step"><strong>5. Forecast Repository</strong><div class="flow-detail">Per-unit, per-hour occupancy with prediction intervals.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Operational Consumers</strong><div class="flow-detail">Bed huddle, transfer center, OR, ED.</div></div></li>
+</ol>
+</div>
 <p><strong>ADT Stream.</strong> Every hospital state change (admission, discharge, transfer, room change, status change) emits an HL7 ADT message or its FHIR Encounter equivalent. The pipeline ingests these in near real time and maintains a current-state view of every occupied bed.</p>
 <p><strong>OR Schedule, Transfer Center Queue, ED Tracking Board.</strong> Three known-quantity feeds. The OR schedule for the next 48 hours is a deterministic input. The transfer center queue is a near-term-known input (1 to 6 hours of lead time). The ED tracking board provides current ED census, holds, and admitted-but-not-yet-placed patients.</p>
 <p><strong>EHR Patient State.</strong> Per-patient features needed by the survival model: service, attending, working DRG (if available), discharge order status, planned disposition, length of stay so far, age, comorbidities. This is typically pulled from the EHR via Fast Healthcare Interoperability Resources (FHIR) API or a clinical data warehouse mirror, refreshed on the same cadence as the forecast.</p>
@@ -462,10 +474,10 @@
 <p><strong>Forecast Repository.</strong> The output table: (unit, forecast_for_timestamp, expected_occupancy, lower_bound, upper_bound, generated_at_timestamp). Every consumer reads from this.</p>
 <p><strong>Operational Consumers.</strong> The bed huddle dashboard, the transfer center decision support, the OR scheduler, the ED diversion-decision tool, and the staffing scheduler all consume the same forecast. The integration is structured (REST API or query against the forecast store) and the latency budget is single-digit seconds.</p>
 <p>That's the whole concept. Three flows, composed into a unit-level census, refreshed continuously, surfaced everywhere. The hard parts are in the data plumbing (ADT cleanup, unit-assignment logic, length-of-stay feature engineering) and in the operational integration, not in the forecasting math.</p>
-<hr />
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter12.05-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
+<hr />
 <h2 id="the-honest-take">The Honest Take</h2>
 <p><strong>Buy versus build: build the forecast, and check whether you have already bought one.</strong> Census forecasting from your own ADT feed is genuinely tractable with open-source tooling, and the model is, as noted below, the smallest line item in the project. But capacity-management platforms are widely deployed and most of them include forecasting, so the first question is whether your institution already owns a forecast that nobody has turned on, validated, or trusted. If so, evaluate it against a naive baseline before building a competitor, and if it is adequate, put your effort into the operational integration instead. Where you do build, you are building against your own ADT quirks, your own unit definitions, and your own discharge patterns, none of which a vendor can model better than you can. The thing worth buying, if anything, is the nurse-facing workflow surface. The thing worth building is the forecast and the narrative layer that makes it actionable.</p>
 <p>The forecasting math is the easy part of this. The hard parts are upstream (ADT cleanup, length-of-stay feature engineering, unit-assignment ground truth) and downstream (operational integration, feedback capture, narrative explanation). Teams routinely walk in expecting the modeling to be the bulk of the work; in practice it is closer to the smallest line item, and the budget goes mostly to the data plumbing upstream and the operational integration downstream.</p>

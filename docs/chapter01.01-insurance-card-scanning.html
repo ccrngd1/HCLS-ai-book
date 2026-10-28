@@ -397,6 +397,7 @@
 <p><strong>Handwriting.</strong> Most insurance cards are printed, but the &quot;copay&quot; field is sometimes handwritten by a benefits coordinator. Handwriting recognition is dramatically harder than printed text recognition. The error rates are measurably worse. Plan for it.</p>
 <p><strong>Fields that span multiple lines or sections.</strong> &quot;Blue Cross Blue Shield of North Carolina&quot; might wrap. Copay tiers might be in a table. Front vs. back matters: member information typically lives on the front, pharmacy benefit fields (RX BIN, PCN, Group) on the back. If you only process one side, you're missing half the data.</p>
 <p>The good news: for standard, well-photographed printed cards, modern systems achieve 95-99% field accuracy. That's good enough for most healthcare workflows when paired with a confidence score and a human review queue for the uncertain cases.</p>
+<hr />
 <h2 id="the-general-architecture-pattern">The General Architecture Pattern</h2>
 <p>At a conceptual level, the pipeline looks like this:</p>
 <pre class="code code-plain"><code>[Capture] → [OCR / KVP Extraction] → [Normalize Fields] → [Store] → [Expose via API]
@@ -407,10 +408,10 @@
 <p><strong>Store:</strong> Structured extraction results need to live somewhere durable and queryable. A document store, relational database, or key-value store all work here. The right choice depends on your access patterns: are you looking up by member ID? By scan date? By payer? In healthcare, you also need to think about encryption at rest and audit logging, because insurance cards contain protected health information (PHI).</p>
 <p><strong>Expose via API:</strong> Downstream systems (EHRs, eligibility verification services, patient portals) need to consume the structured data. A REST or GraphQL API is the standard interface. Design it around the consuming system's needs: a point-of-care app needs a synchronous response in under 3 seconds; a batch eligibility verification job can tolerate asynchronous processing.</p>
 <p>That's the whole concept. Capture, extract, normalize, store, serve. The rest is implementation detail.</p>
-<hr />
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter01.01-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
+<hr />
 <h2 id="the-honest-take">The Honest Take</h2>
 <p><strong>Buy versus build: buy the OCR, build the normalization.</strong> Nobody should be training a text-detection model for this. Document OCR is thoroughly commoditized, and the managed services read a clean insurance card about as well as anything you could build. Check one thing before you build anything at all: your EHR or revenue-cycle vendor may already ship card capture, and if it does and it works, use it. What no vendor will do for you is the payer-specific field normalization map, the confidence gating, and the correction workflow, which is where this recipe spends its time and where essentially all of the long-tail accuracy lives. The OCR is a line item. The normalization map is the product.</p>
 <p>This recipe is genuinely easy to get to 90% accuracy on. The first few hundred cards will look great. Then you'll start seeing the long tail: the Medicaid card with a layout you've never encountered, the card where the member ID is split across two lines, the card photographed in a car with the window casting a glare stripe directly across the group number.</p>

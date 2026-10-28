@@ -120,19 +120,34 @@ The model is a writer, not a decision maker. Everything it says has to come from
 
 At the conceptual level, the pipeline looks like this:
 
-```text
-[Visit Ends / Note Signed]
-    → [Pull Encounter Data]
-    → [Extract Structured Summary Object]
-    → [Apply Patient Context (language, literacy, prefs)]
-    → [Generate Draft by Section]
-    → [Validate Against Source]
-    → [Apply Readability Check]
-    → [Optional Clinician Review]
-    → [Render for Delivery Channel]
-    → [Deliver to Patient]
-    → [Log for Audit]
-```
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Visit Ends / Note Signed</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Pull Encounter Data</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Extract Structured Summary Object</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Apply Patient Context</strong><div class="flow-detail">Language, literacy, and preferences.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Generate Draft by Section</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Validate Against Source</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>7. Apply Readability Check</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>8. Optional Clinician Review</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>9. Render for Delivery Channel</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>10. Deliver to Patient</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>11. Log for Audit</strong></div></li>
+</ol>
+</div>
 
 Let's walk through each stage conceptually.
 
@@ -171,9 +186,9 @@ This extraction is where the hardest work happens. Some of these fields come fro
 
 One note on the pipeline: the structured extraction step is doing a lot of work. If the encounter is well-documented with structured orders and clear note text, extraction is straightforward. If the clinician dictated a messy free-text note with no structured orders, extraction becomes the bottleneck. This is a case where better upstream documentation hygiene pays off downstream for everyone, patient included.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter02.05-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 
@@ -195,9 +210,9 @@ Finally: measure outcomes, not just outputs. Internal metrics like "summaries ge
 
 There's a bigger opportunity hiding in this use case, too. The AVS is the visible output, but the structured extraction step produces something valuable on its own: a clean, fielded record of what happened at the visit. That structured record can feed downstream systems (population health dashboards, care gap closure workflows, quality measure reporting) that today rely on brittle parsing of note text. Building the AVS pipeline well gives you that asset for free. Some teams realize this late. If you start with it in mind, you can design the extraction step to serve both masters.
 
----
-
 **A regulatory note, and its limits.** If you operate in California, AB 3030 took effect in January 2025 and applies to generative AI used to produce patient communications about clinical information, requiring a disclaimer and instructions for reaching a human clinician. It broadly exempts communications that a licensed provider reads and reviews, which is worth knowing here because it means the clinician review step described above is not only a safety control, it is the pivot the rule turns on. Other states are legislating in the same direction. Treat that as awareness and nothing more: whether and how any of it applies to your deployment is a question for your legal and compliance teams, not for a cookbook.
+
+---
 
 ## As Seen In Production
 

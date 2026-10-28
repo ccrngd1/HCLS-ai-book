@@ -6,7 +6,6 @@
 
 ---
 
-
 <!-- phi-callout -->
 > **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
@@ -108,8 +107,6 @@ The readmission risk pipeline has five logical stages:
 
 The feedback loop: track 30-day outcomes for all scored patients. Compare predicted vs. actual readmission rates by risk tier. Monitor for model drift (changing patient populations, new care patterns, coding changes). Retrain when performance degrades below acceptable thresholds.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.05-architecture). The Python example is linked from there.
 
 ---
@@ -132,11 +129,11 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 
 **The HRRP penalty structure creates perverse incentives.** The penalty is calculated at the hospital level, not the patient level. This means hospitals are incentivized to reduce readmissions for the penalty conditions (CHF, AMI, pneumonia, COPD, hip/knee, CABG) but may underinvest in readmission prevention for other conditions. Your model should serve patient care, not just penalty avoidance. Score all discharges, not just the penalty-eligible ones.
 
----
-
 **A regulatory note, and its limits.** A risk model that surfaces in clinical workflow is what regulators call a decision support intervention. The Office of the National Coordinator for Health Information Technology (ONC) HTI-1 rule, whose requirements took effect in January 2025, sets transparency expectations for predictive decision support delivered through certified health IT, requiring a defined set of source attributes covering things like the training data, the validation performed, and the model's ongoing maintenance. It binds developers of certified health IT rather than provider organizations directly, but it reaches you through your EHR vendor, and the attributes it asks for overlap heavily with what a model card already contains. Whether it applies to what you are building, and what you would owe if it does, is a question for your legal and compliance teams. Nothing here is a compliance plan.
 
 **Two frameworks you will be asked about, neither of which is law.** Keep the distinction clear, because it changes who you argue with. The National Institute of Standards and Technology (NIST) AI Risk Management Framework, published in 2023 and extended since with companion profiles including one for generative AI, is voluntary, and it has become the vocabulary that governance committees, auditors and enterprise customers use when they ask how you manage model risk. Separately, the Joint Commission and the Coalition for Health AI have produced guidance on responsible AI use in healthcare, and the Joint Commission now offers a voluntary certification against it; the first health system earned that certification in 2026. Nothing compels you to adopt either one. What they do is set the shape of the question you will be asked, so a model card, a documented validation, and a monitoring plan are worth having in a form you can hand over, whichever framework the person asking happens to favour.
+
+---
 
 ## As Seen In Production
 
@@ -155,8 +152,6 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 - **Recipe 3.8: Readmission Risk Anomaly Detection** - Complementary approach using anomaly detection to identify unusual readmission patterns at the population level rather than individual patient scoring.
 - **Recipe 4.7: Care Management Program Enrollment** - Uses risk scores (including readmission risk) to determine which patients should be enrolled in intensive care management programs.
 - **Recipe 12.8: Disease Progression Trajectory Modeling** - Longer-term trajectory modeling that provides context for why a patient's readmission risk is elevated.
-
----
 
 ---
 

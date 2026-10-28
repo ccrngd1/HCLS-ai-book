@@ -434,18 +434,33 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <hr />
 <h2 id="the-general-architecture-pattern">The General Architecture Pattern</h2>
 <p>At the conceptual level, the pipeline looks like this:</p>
-<pre class="code code-plain"><code>[Visit Ends / Note Signed]
-    → [Pull Encounter Data]
-    → [Extract Structured Summary Object]
-    → [Apply Patient Context (language, literacy, prefs)]
-    → [Generate Draft by Section]
-    → [Validate Against Source]
-    → [Apply Readability Check]
-    → [Optional Clinician Review]
-    → [Render for Delivery Channel]
-    → [Deliver to Patient]
-    → [Log for Audit]
-</code></pre>
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Visit Ends / Note Signed</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Pull Encounter Data</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Extract Structured Summary Object</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Apply Patient Context</strong><div class="flow-detail">Language, literacy, and preferences.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Generate Draft by Section</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Validate Against Source</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>7. Apply Readability Check</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>8. Optional Clinician Review</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>9. Render for Delivery Channel</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>10. Deliver to Patient</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>11. Log for Audit</strong></div></li>
+</ol>
+</div>
 <p>Let's walk through each stage conceptually.</p>
 <p><strong>Visit ends / note signed.</strong> The trigger. The AVS generation shouldn't run while the clinician is still editing the note; it should fire when the note is finalized. Triggering on note signature guarantees that the source of truth is stable. For discharge summaries, the trigger is different: discharge order placed plus discharge summary completed.</p>
 <p><strong>Pull encounter data.</strong> Retrieve everything relevant from the EHR for this specific visit: the signed note, the list of medication changes (added, discontinued, dose-adjusted), orders placed (labs, imaging, procedures), referrals created, follow-up appointments scheduled, and any patient education materials selected during the visit. In Fast Healthcare Interoperability Resources (FHIR) terms: Encounter, DocumentReference, MedicationStatement, MedicationRequest, ServiceRequest, Appointment, Condition. The scope is intentionally narrow; you don't need the patient's full chart, only what happened today.</p>
@@ -470,10 +485,10 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <p><strong>Deliver to patient.</strong> Push to the portal, send via secure email, print and hand to the patient, send via SMS. Track delivery confirmation where possible.</p>
 <p><strong>Log for audit.</strong> Every summary generated, every version, every clinician edit, every delivery. HIPAA audit requirements apply, and this is protected health information (PHI). Patients sometimes call later and ask &quot;what did my doctor tell me to do?&quot; and the AVS is the answer; you need to be able to retrieve the exact document they received.</p>
 <p>One note on the pipeline: the structured extraction step is doing a lot of work. If the encounter is well-documented with structured orders and clear note text, extraction is straightforward. If the clinician dictated a messy free-text note with no structured orders, extraction becomes the bottleneck. This is a case where better upstream documentation hygiene pays off downstream for everyone, patient included.</p>
-<hr />
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter02.05-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
+<hr />
 <h2 id="the-honest-take">The Honest Take</h2>
 <p><strong>Buy versus build: buy the model, build the guardrails, and check your EHR first.</strong> The generation itself is a commodity; any current frontier model will write a readable sixth-grade-level summary from a clinical note. Before you build, look hard at what your EHR already offers, because the major vendors now ship patient-friendly summary features, and an adequate native feature beats an excellent bolt-on that you have to integrate and maintain forever. What you cannot buy, and what the failure pattern described below is entirely about, is the grounding constraint, the medication-state reconciliation, the reading-level enforcement, and the clinician review step. Those are the system. The LLM is one component inside it.</p>
 <p>After-visit summaries are one of the highest-leverage applications of healthcare LLMs that I've seen in practice. The source data exists. The template is stable. The task is well-bounded. The grounding constraint (say only what the note says) is architecturally enforceable. And the patient impact is real and measurable: adherence goes up, confusion goes down, readmissions drop, portal engagement rises. If you're picking a second or third healthcare LLM project after the obligatory message-drafting pilot, this is a strong candidate.</p>
@@ -484,8 +499,8 @@ ownership and review by your own clinical, legal, and compliance teams.</p>
 <p>Fourth: multilingual generation is powerful when it works and embarrassing when it doesn't. Direct generation in strong languages is often better than English-then-translate. But &quot;strong&quot; is language-specific. Verify by having native speakers (ideally patients) review samples. Don't assume. The failure mode here isn't that the translation is wrong; it's that it's technically correct but culturally awkward, and the patient's trust in the communication erodes without them being able to articulate why.</p>
 <p>Finally: measure outcomes, not just outputs. Internal metrics like &quot;summaries generated&quot; and &quot;average reading level&quot; feel good but miss the point. Track portal open rates for AVSs. Track medication adherence at two-week follow-up. Track no-show rates for scheduled follow-ups. Track readmission rates (for discharge summaries). Track patient satisfaction scores for the understanding-of-plan questions. The measurement is slow and unglamorous but it's the only way to know whether the system is actually doing what you built it to do. Evaluating generative systems in general (golden datasets, LLM-as-judge with human anchoring, red-teaming, and the MedHELM and HealthBench benchmarks) is treated more fully in the digital edition's Chapter 2 introduction.</p>
 <p>There's a bigger opportunity hiding in this use case, too. The AVS is the visible output, but the structured extraction step produces something valuable on its own: a clean, fielded record of what happened at the visit. That structured record can feed downstream systems (population health dashboards, care gap closure workflows, quality measure reporting) that today rely on brittle parsing of note text. Building the AVS pipeline well gives you that asset for free. Some teams realize this late. If you start with it in mind, you can design the extraction step to serve both masters.</p>
-<hr />
 <p><strong>A regulatory note, and its limits.</strong> If you operate in California, AB 3030 took effect in January 2025 and applies to generative AI used to produce patient communications about clinical information, requiring a disclaimer and instructions for reaching a human clinician. It broadly exempts communications that a licensed provider reads and reviews, which is worth knowing here because it means the clinician review step described above is not only a safety control, it is the pivot the rule turns on. Other states are legislating in the same direction. Treat that as awareness and nothing more: whether and how any of it applies to your deployment is a question for your legal and compliance teams, not for a cookbook.</p>
+<hr />
 <h2 id="as-seen-in-production">As Seen In Production</h2>
 <p><em>Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the <a href="https://health-ai.lawson.engineer/">digital edition</a>.</em></p>
 <ul>

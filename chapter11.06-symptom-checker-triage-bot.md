@@ -207,9 +207,9 @@ A few cross-cutting design points specific to the triage bot.
 
 **Outcome-correlation pipeline as long-term commitment.** The bot's clinical performance is measured against actual care utilization, with per-protocol over-triage and under-triage rates calculated and fed back to the protocol-revision process. The outcome-correlation pipeline is operationally significant work, requires data integration across the institution's encounter records, and is rarely fully implemented at launch but is a core post-launch commitment.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter11.06-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

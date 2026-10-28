@@ -409,21 +409,34 @@
 <p><strong>Code version drift.</strong> ICD-10-CM updates annually. Codes are added, deleted, and revised. Training data from 2020 may include codes that no longer exist or miss codes that were introduced in 2023.</p>
 <p><strong>Documentation quality variation.</strong> A note that says &quot;Type 2 diabetes with peripheral neuropathy&quot; is easy to code. A note that buries the same information across three paragraphs, refers to neuropathy as &quot;tingling in feet,&quot; and mentions the diabetes diagnosis only in the medication list is much harder. Your model needs exposure to both documentation styles.</p>
 <p>The practical approach is to use your coded encounter data as the training foundation, but apply several corrections: filter to encounters coded by your most experienced coders (or coded consistently by multiple coders), restrict to the most recent 2-3 fiscal years to avoid code version drift, and augment with synthetic examples for rare codes using the code descriptions themselves as pseudo-clinical text.</p>
-<h3 id="general-architecture-pattern">General Architecture Pattern</h3>
-<pre class="code code-plain"><code>[Clinical Note] → [Text Preprocessing] → [Section Segmentation] → [Concept Extraction]
-                                                                          ↓
-                                                                   [Assertion Detection]
-                                                                          ↓
-                                                              [Filter: Present Only]
-                                                                          ↓
-                                                              [Code Candidate Generation]
-                                                                          ↓
-                                                              [Hierarchical Ranking]
-                                                                          ↓
-                                                              [Confidence Scoring]
-                                                                          ↓
-                                                         [Suggestion List for Coder]
-</code></pre>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Clinical Note</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Text Preprocessing</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Section Segmentation</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Concept Extraction</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Assertion Detection</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Filter: Present Only</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>7. Code Candidate Generation</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>8. Hierarchical Ranking</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>9. Confidence Scoring</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>10. Suggestion List for Coder</strong></div></li>
+</ol>
+</div>
 <p><strong>Text Preprocessing:</strong> Clean the input. Expand abbreviations. Handle section headers (HPI, Assessment, Plan each have different relevance for coding). Remove boilerplate template text that adds noise.</p>
 <p><strong>Section Segmentation:</strong> Clinical notes have structure. The Assessment and Plan section is the richest source of codable diagnoses. The Problem List section often lists active conditions explicitly. The HPI provides context. Segment the note and weight sections appropriately.</p>
 <p><strong>Concept Extraction:</strong> Identify clinical concepts (diagnoses, conditions, symptoms) in the text. This is named entity recognition specialized for clinical content.</p>
@@ -431,10 +444,10 @@
 <p><strong>Code Candidate Generation:</strong> Map each present clinical concept to candidate ICD-10-CM codes. Generate multiple candidates at different specificity levels.</p>
 <p><strong>Hierarchical Ranking:</strong> Rank candidates by confidence, preferring the most specific code that's well-supported by the documentation. Use the ICD-10 tree structure to group related codes.</p>
 <p><strong>Confidence Scoring:</strong> Assign a composite confidence score reflecting both extraction confidence and code mapping confidence.</p>
-<hr />
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter08.03-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
+<hr />
 <h2 id="the-honest-take">The Honest Take</h2>
 <p><strong>Buy versus build: buy, and be honest that you are unlikely to beat the incumbents.</strong> Computer-assisted coding is one of the oldest and most consolidated commercial markets in health IT. The established computer-assisted coding (CAC) vendors have spent decades accumulating coding rules, payer-specific edits, specialty content, and, most importantly, coder-facing workflow that coding professionals already know how to use. A from-scratch effort competes with all of that using a model and a confidence score. The realistic build case is not a CAC replacement but a narrow supplement: a specialty your vendor covers badly, a documentation-improvement nudge at the point of authoring, or a pre-bill audit pass over what the vendor already produced. Scoped that way, this recipe is useful. Scoped as &quot;replace our CAC,&quot; it is two years spent rediscovering why coding is hard.</p>
 <p>ICD-10 code suggestion is one of those problems that's deceptively easy to demo and genuinely hard to deploy well.</p>

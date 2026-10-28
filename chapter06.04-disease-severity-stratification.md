@@ -110,9 +110,9 @@ The pipeline for disease severity stratification has five logical stages:
 
 **Operationalization:** Push tier assignments to downstream systems (care management platforms, electronic health record (EHR) registries, population health dashboards). Set up refresh cadence (monthly or quarterly re-stratification). Build monitoring for tier migration (patients moving between tiers over time).
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter06.04-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

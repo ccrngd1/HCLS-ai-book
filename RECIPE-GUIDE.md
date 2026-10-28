@@ -113,7 +113,18 @@ produces. Tags are stripped from the print edition, so they serve digital
 discovery only, which is exactly why every tag needs to appear on more than one
 recipe to be worth carrying.
 
-**Navigation.** Footer links to previous recipe, chapter preface, and next recipe.
+**Navigation.** Do not write one. The previous/next footer is generated at render time from `_Sidebar.md` (R-3), so a main recipe ends with its Tags line, with no footer and no `## Navigation` heading.
+
+### Section dividers (`---`)
+
+A `---` line is a section divider, drawn as a thin rule in print, the EPUB, and the site. It is never a page break: page breaks come only from CSS, at the start of each chapter. Within a chapter, extra page breaks would leave dozens of half-empty pages in a 6x9 book. Rules:
+
+1. Exactly one `---` after the header block (title, Effort line, User line), before any callout and before The Problem.
+2. Exactly one `---` directly above every `##` section except The Problem, which rule 1 already separates.
+3. No `---` anywhere else: not above `###` or deeper headings, not inside a section (for example before a bold-lead "A regulatory note" paragraph), not before or after a callout, never two in a row, never at the end of the file.
+4. General Architecture Pattern is always a `##` section, so it always gets its rule. Its closing architecture callout stays inside it with no rule; the next rule sits above The Honest Take.
+
+`python3 check_rules.py` reports violations in the 15 print recipes (`--all` for all 152), and `--fix` repairs them, moving only rule lines and the blank lines around them.
 
 ### The architecture callout (end of General Architecture Pattern)
 

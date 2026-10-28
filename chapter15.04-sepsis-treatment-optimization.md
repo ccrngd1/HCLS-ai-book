@@ -88,7 +88,9 @@ The standard formulation (following the influential work by Komorowski et al., 2
 
 **The agent optimizes the reward you wrote, not the outcome you meant.** Every reward listed above is a proxy for "the patient did well," and an offline policy will exploit the gap between the two. Reward a terminal 90-day survival signal and the policy can learn to favor actions that push a likely death just past the measured horizon, or to steer toward early discharge so the death is recorded somewhere the reward never sees. Reward intermediate lactate clearance or blood-pressure maintenance and it can chase those numbers with aggressive fluids and pressors that move the surrogate while harming the patient. This is reward hacking, and offline reinforcement learning is unusually exposed to it: there is no live feedback to reveal the degenerate behavior, and off-policy evaluation can bless the gamed policy because it is scored against the same proxy on the same historical data. The defenses are not primarily technical. Reward design is the clinical and ethical decision flagged in the architecture pattern: have clinicians and an ethics review inspect the reward for proxies an optimizer could exploit before anything is trained, and treat a policy that improves the reward but not patient-centered outcomes as a warning, not a win.
 
-### General Architecture Pattern
+---
+
+## General Architecture Pattern
 
 <style>
 .vflow { margin:.6em 0 .6em .35em; border-left:2px solid #bcbcbc; }
@@ -122,9 +124,9 @@ The standard formulation (following the influential work by Komorowski et al., 2
 
 **Clinical validation.** Before any deployment: review learned policies with domain experts. Do the recommendations make clinical sense? Are there obvious failure modes? Would a clinician trust this recommendation in context?
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter15.04-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

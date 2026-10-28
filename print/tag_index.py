@@ -76,6 +76,7 @@ DISPLAY = {
     "elasticache": "Amazon ElastiCache",
     "eventbridge": "Amazon EventBridge",
     "fda-pathway": "FDA regulatory pathway",
+    "fellegi-sunter": "Fellegi & Sunter",
     "fhir": "FHIR",
     "gnn": "Graph neural networks",
     "glue": "AWS Glue",
@@ -166,12 +167,17 @@ def load_pagemap() -> dict[str, int]:
         return {}
 
 
-def build(built: list[dict], url: str) -> tuple[str, str] | None:
-    """Return ("backmatter index", markdown) for Appendix B."""
+def build(built: list[dict], url: str, epub: bool = False) -> tuple[str, str] | None:
+    """Return ("backmatter index", markdown) for Appendix B.
+
+    With epub=True the index carries no page numbers, which mean nothing in a
+    reflowable book; each chapter reference is a link to that chapter instead
+    (Kindle Publishing Guidelines 11.3.10).
+    """
     tags_by_recipe = recipe_tags()
     if not tags_by_recipe:
         return None
-    pagemap = load_pagemap()
+    pagemap = {} if epub else load_pagemap()
 
     # recipe number -> (print chapter, page) for the recipes actually in this book
     in_book: dict[str, tuple[int, str]] = {}
@@ -191,13 +197,22 @@ def build(built: list[dict], url: str) -> tuple[str, str] | None:
         a, b = s.split("."); return (int(a), int(b))
 
     out = ["# Appendix B: Topic and Service Index", ""]
-    out.append(
-        "Every topic, technique, and service tagged across the cookbook. **Bold page "
-        "numbers** locate the chapters printed in this book. Entries also list the "
-        "recipes that cover the same topic in the digital edition, by recipe number; "
-        f"find those at {url}. Generated from the recipe tags on every build, so it "
-        "cannot drift from the text."
-    )
+    if epub:
+        out.append(
+            "Every topic, technique, and service tagged across the cookbook. Chapter "
+            "links go to the chapters in this book. Entries also list the recipes that "
+            "cover the same topic in the digital edition, by recipe number; each one is "
+            f"linked from Appendix A, or browse them at {url}. Generated from the recipe "
+            "tags on every build, so it cannot drift from the text."
+        )
+    else:
+        out.append(
+            "Every topic, technique, and service tagged across the cookbook. **Bold page "
+            "numbers** locate the chapters printed in this book. Entries also list the "
+            "recipes that cover the same topic in the digital edition, by recipe number; "
+            f"find those at {url}. Generated from the recipe tags on every build, so it "
+            "cannot drift from the text."
+        )
     out.append("")
 
     # Split off the pervasive tags before rendering entries.
@@ -229,7 +244,12 @@ def build(built: list[dict], url: str) -> tuple[str, str] | None:
         online = sorted(entries[tag]["online"], key=rnum)
         parts = []
         for chap, page, num in here:
-            parts.append(f"**{page}** (Chapter {chap})" if page else f"Chapter {chap}")
+            if epub:
+                # Placeholder href, resolved to the chapter's file by render_epub
+                # (same format as build.epub_chapter_href).
+                parts.append(f"[Chapter {chap}](#print-chapter-{chap})")
+            else:
+                parts.append(f"**{page}** (Chapter {chap})" if page else f"Chapter {chap}")
         line = f"**{name}** "
         line += ", ".join(parts) if parts else ""
         if online:

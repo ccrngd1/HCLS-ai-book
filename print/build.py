@@ -92,6 +92,21 @@ ARCH_CALLOUT_RE = re.compile(
 )
 RECIPE_REF_RE = re.compile(r"Recipe\s+(\d+)\.(\d+)")
 MULTI_RULE_RE = re.compile(r"(?ms)(?:^\s*-{3,}\s*\n\s*){2,}")
+AS_SEEN_RE = re.compile(r"(?ms)^##\s+As Seen In Production\s*\n.*?(?=\n---|\n##\s|\Z)")
+# The closing "See the [case study](url)." sentence of an As Seen In Production
+# bullet, including the two-link "See the [x](url) and the [y](url)." form.
+SEE_LINK_RE = re.compile(
+    r"[ \t]*\bSee\b[^.\[\]\n]*\[[^\]]+\]\(https?://[^)\s]+\)"
+    r"(?:[^.\[\]\n]*\[[^\]]+\]\(https?://[^)\s]+\))*\."
+)
+# The section's italic intro. Once the pointers are gone, "links age" refers to
+# nothing on the page, so print says where the links are instead.
+AS_SEEN_INTRO_RE = re.compile(
+    r"details and links age, and the maintained list lives in the "
+    r"\[digital edition\]\([^)\s]+\)\."
+)
+AS_SEEN_INTRO_PRINT = ("details age, and the maintained list, with links to each "
+                       "source, lives in the digital edition.")
 
 
 REL_LINK_RE = re.compile(r"\]\((chapter[0-9][^)\s]*)\)")
@@ -139,30 +154,61 @@ def split_related(md: str) -> tuple[str, str | None]:
     return md2, original
 
 
-def build_related_pointer(original: str, recipe_url: str, base_url: str) -> str:
+def build_related_pointer(original: str, recipe_url: str, base_url: str,
+                          epub: bool = False) -> str:
     commented = "\n".join("     " + ln for ln in original.splitlines())
+    if epub:
+        # Print shows the URLs so a reader can type them. An ebook link is
+        # tapped, so it gets descriptive text instead (Kindle Publishing
+        # Guidelines 7.2), and the library link is dropped because the As Seen
+        # In Production note in the same recipe already links the home page.
+        where = (f"Read [this recipe with its full set of cross-links]({recipe_url}) "
+                 "in the digital edition.\n\n")
+    else:
+        where = (f"Read this recipe with its full set of cross-links in the digital "
+                 f"edition at <{recipe_url}>, or browse the complete library at "
+                 f"<{base_url}>.\n\n")
     return (
         "In the full digital cookbook, this recipe connects to related "
         "patterns across the library: upstream inputs, downstream "
         "consumers, and adjacent techniques in other chapters. "
-        f"Read this recipe with its full set of cross-links in the digital "
-        f"edition at <{recipe_url}>, or browse the complete library at "
-        f"<{base_url}>.\n\n"
+        + where +
         "<!-- PRINT-TODO: optionally replace the generic pointer above with "
         "a one-sentence concept summary. Original web links preserved below:\n"
         f"{commented}\n-->"
     )
 
 
-def rewrite_arch_callout(md: str, arch_url: str) -> tuple[str, int]:
+def rewrite_arch_callout(md: str, arch_url: str, epub: bool = False) -> tuple[str, int]:
+    where = (f"see the [architecture and implementation companion]({arch_url})."
+             if epub else f"see the companion page at <{arch_url}>.")
     replacement = (
         "> **The implementation lives in the digital edition.** This printed "
         "recipe covers the problem, the underlying technology, and the "
         "cloud-agnostic architecture. For one concrete build of it, on AWS, with the architecture "
-        "diagram, prerequisites, and step-by-step pseudocode, see the companion "
-        f"page at <{arch_url}>."
+        "diagram, prerequisites, and step-by-step pseudocode, " + where
     )
     return ARCH_CALLOUT_RE.subn(replacement, md)
+
+
+def strip_see_links(md: str) -> tuple[str, int]:
+    """Drop the "See the [case study](url)." pointers from As Seen In Production.
+
+    On paper the link text prints as dead words ("See the guidance.") and the
+    URLs are too long to print usefully. Each bullet already names the
+    organisation and what it did, so a reader can search for it; any product
+    name a link carried belongs in the bullet's prose, not the link text. The
+    section intro is reworded to say the links live in the digital edition.
+    """
+    total = 0
+
+    def section(m: re.Match) -> str:
+        nonlocal total
+        body, n = SEE_LINK_RE.subn("", m.group(0))
+        total += n
+        return AS_SEEN_INTRO_RE.sub(AS_SEEN_INTRO_PRINT, body)
+
+    return AS_SEEN_RE.sub(section, md), total
 
 
 def rewrite_recipe_refs(
@@ -191,7 +237,7 @@ def collapse_rules(md: str) -> str:
 
 def transform_recipe(
     md: str, entry: dict, flagship_map: dict[str, int], url: str,
-    template: str | None, src_name: str
+    template: str | None, src_name: str, epub: bool = False
 ) -> tuple[str, list[str], dict[str, int]]:
     counts: dict[str, int] = {}
     # Per-recipe deep links into the digital edition.
@@ -203,7 +249,9 @@ def transform_recipe(
     # 1. Pull the Related section out first (replaced by an inert placeholder),
     #    so the ref-rewriter never touches the list or its preserved comment.
     md, related_orig = split_related(md)
-    md, counts["arch_callout"] = rewrite_arch_callout(md, arch_url)
+    md, counts["arch_callout"] = rewrite_arch_callout(md, arch_url, epub)
+    if not epub:
+        md, counts["see_links"] = strip_see_links(md)
     md, counts["tags"] = strip_tags(md)
     md, counts["nav_footer"] = strip_nav_footer(md)
     # 2. Rewrite inline refs on the body (placeholder is digit-free, so inert).
@@ -211,7 +259,7 @@ def transform_recipe(
     # 3. Reattach the digital-edition pointer (+ commented original) last.
     if related_orig is not None:
         md = md.replace(RELATED_PLACEHOLDER,
-                        build_related_pointer(related_orig, recipe_url, url))
+                        build_related_pointer(related_orig, recipe_url, url, epub))
     counts["related"] = 1 if related_orig is not None else 0
     # 4. Any relative recipe link that survived becomes an absolute https target,
     #    so the PDF cannot carry file:// annotations exposing the build path.
@@ -340,8 +388,21 @@ def appendix_index(man: dict):
     return ("backmatter index", "\n".join(out))
 
 
-def appendix_catalog(man: dict):
-    """Return an ('backmatter catalog', markdown) section for Appendix A, or None."""
+def epub_chapter_href(print_chapter: int) -> str:
+    """Placeholder href for a link to a chapter of this book, in EPUB output.
+
+    The generators that write these do not know which file each chapter lands
+    in; render_epub() resolves them once it has assigned the file names.
+    """
+    return f"#print-chapter-{print_chapter}"
+
+
+def appendix_catalog(man: dict, epub: bool = False):
+    """Return an ('backmatter catalog', markdown) section for Appendix A, or None.
+
+    With epub=True every entry is a link: the flagship recipes to their chapter
+    in this book, the rest to their page in the digital edition.
+    """
     import os, json
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "appendix-catalog.json")
     try:
@@ -350,12 +411,22 @@ def appendix_catalog(man: dict):
         return None
     url = man["digital_edition_url"]
     n = man["total_recipes_in_digital"]
+    template = man.get("recipe_url_template")
+    in_book = {e["recipe"]: e["print_chapter"] for e in man["flagship"]}
     out = ["# Appendix A: The Complete Recipe Catalog", ""]
-    out.append(
-        f"All {n} recipes in the digital cookbook, listed by chapter. The 15 marked "
-        "*(in this volume)* are the flagship recipes you just read; every other recipe "
-        f"is available in full in the digital edition at {url}."
-    )
+    if epub:
+        out.append(
+            f"All {n} recipes in the digital cookbook, listed by chapter. The 15 marked "
+            "*(in this volume)* are the flagship recipes you just read, and each links to "
+            "its chapter in this book. Every other entry links to the full recipe in the "
+            f"digital edition at {url}."
+        )
+    else:
+        out.append(
+            f"All {n} recipes in the digital cookbook, listed by chapter. The 15 marked "
+            "*(in this volume)* are the flagship recipes you just read; every other recipe "
+            f"is available in full in the digital edition at {url}."
+        )
     out.append("")
     cur = None
     for e in cat:
@@ -365,7 +436,16 @@ def appendix_catalog(man: dict):
             out.append("")
         marker = " *(in this volume)*" if e["in_volume"] else ""
         desc = (e.get("desc") or "").strip()
-        line = f"**{e['recipe']} {e['title']}**{marker}."
+        label = f"{e['recipe']} {e['title']}"
+        href = None
+        if epub:
+            if e["recipe"] in in_book:
+                href = epub_chapter_href(in_book[e["recipe"]])
+            elif template:
+                src = resolve_source(e["recipe"])
+                if src:
+                    href = template.format(slug=os.path.basename(src)[:-3])
+        line = f"**[{label}]({href})**{marker}." if href else f"**{label}**{marker}."
         if desc:
             line += f" {desc}"
         out.append(line)
@@ -576,6 +656,9 @@ def main() -> int:
         rec = dict(e)
         rec.update(src=src_name, outfile=os.path.basename(outfile),
                    md=adapted, counts=counts, warns=len(warns))
+        if args.epub:
+            rec["md_epub"] = transform_recipe(md, e, flagship_map, url, template,
+                                              src_name, epub=True)[0]
         built.append(rec)
         c = counts
         print(f"  ch{e['print_chapter']:02d} {e['recipe']:>4} {e['title'][:34]:34} "
@@ -628,9 +711,9 @@ def main() -> int:
 
     html_ok = _assemble()
     if args.epub:
-        epub_sections = build_sections(man, built, include_pgm=False)
+        epub_sections = build_sections(man, built, include_pgm=False, epub=True)
         epub_path = os.path.join(out, "book.epub")
-        if render_epub(epub_sections, man, epub_path):
+        if render_epub(epub_sections, man, epub_path, built):
             print(f"    book.epub: {len(epub_sections)} sections, {os.path.getsize(epub_path)//1024} KB")
 
     # warnings report
@@ -706,6 +789,17 @@ blockquote { border-left: 3px solid #999; margin: 1em 0; padding: 0.2em 1em; }
 img { max-width: 100%; height: auto; }
 """
 
+# Nav titles for sections that have no H1 to derive one from. The copyright
+# page also carries the not-medical-advice, views and trademark notices, so its
+# entry names both, which keeps the disclaimers findable from Contents.
+_EPUB_FIXED_TITLES = {
+    "frontmatter title-page": "Title Page",
+    "frontmatter copyright-page": "Copyright and Disclaimers",
+}
+# Kept out of the reader's navigation list: it is the first page after the
+# cover, so listing it only pushes the useful entries down.
+_EPUB_NAV_SKIP = {"frontmatter title-page"}
+
 
 def _section_title(md_text: str) -> str | None:
     """Derive a navigation title from a section's first H1."""
@@ -718,27 +812,31 @@ def _section_title(md_text: str) -> str | None:
     return t.strip() or None
 
 
-def build_sections(man: dict, built: list, include_pgm: bool = True) -> list:
+def build_sections(man: dict, built: list, include_pgm: bool = True,
+                   epub: bool = False) -> list:
     """Assemble the ordered (css_class, markdown) sections for the book.
 
     Mirrors main()._assemble so the EPUB and the PDF/HTML share the exact same
     adapted content. EPUB callers pass include_pgm=False: the page anchors are
-    print-only and must not ship in the EPUB text layer.
+    print-only and must not ship in the EPUB text layer. They also pass
+    epub=True, which swaps in the link-oriented variants: descriptive link text
+    in the recipes, and chapter links in place of page numbers in the appendices.
     """
     sections: list = []
     sections += front_matter(man, built)
     for b in built:
-        _md = re.sub(r"[\u2b50\U0001F536\U0001F537\U0001F3E5\uFE0F]", "", b["md"])
+        _md = b.get("md_epub", b["md"]) if epub else b["md"]
+        _md = re.sub(r"[\u2b50\U0001F536\U0001F537\U0001F3E5\uFE0F]", "", _md)
         _anchor = (f'<span class="pgm">PGMK{b["print_chapter"]}ENDPGMK</span>\n\n'
                    if include_pgm else "")
         sections.append(("recipe", _anchor + _md))
     sections += back_matter(man, built)
-    _ap = appendix_catalog(man)
+    _ap = appendix_catalog(man, epub=epub)
     if _ap:
         sections.append(_ap)
     try:
         import tag_index as _ti
-        _ix = _ti.build(built, man.get("digital_edition_url", ""))
+        _ix = _ti.build(built, man.get("digital_edition_url", ""), epub=epub)
     except Exception as exc:
         print(f"  [appendix-b] tag index unavailable ({exc}); "
               f"using curated index-terms.json", file=sys.stderr)
@@ -746,6 +844,50 @@ def build_sections(man: dict, built: list, include_pgm: bool = True) -> list:
     if _ix:
         sections.append(_ix)
     return sections
+
+
+_BARE_URL_RE = re.compile(r"https?://[^\s<>\"]+")
+_CHAPTER_LINK_RE = re.compile(r'<a href="#print-chapter-(\d+)">(.*?)</a>', re.S)
+
+
+def _epub_linkify(xhtml: str) -> str:
+    """Turn bare URLs in visible text into links.
+
+    Print shows the digital-edition URL as text for a reader to type; in an
+    ebook that text cannot be tapped. Only text outside <a>, <code> and <pre>
+    is touched, and trailing sentence punctuation stays outside the link.
+    Expects well-formed XHTML (lxml escapes ">" inside attribute values, so
+    splitting on tags is safe).
+    """
+    def link(m: re.Match) -> str:
+        u = m.group(0)
+        trail = ""
+        while u and u[-1] in ".,;:!?)":
+            trail, u = u[-1] + trail, u[:-1]
+        return f'<a href="{u}">{u}</a>{trail}'
+
+    out, depth = [], 0
+    for part in re.split(r"(<[^>]+>)", xhtml):
+        if part.startswith("<"):
+            m = re.match(r"<(/?)(a|code|pre)\b", part)
+            if m and not part.endswith("/>"):
+                depth += -1 if m.group(1) else 1
+            out.append(part)
+        else:
+            out.append(_BARE_URL_RE.sub(link, part) if depth == 0 else part)
+    return "".join(out)
+
+
+def _epub_resolve_chapter_links(xhtml: str, chapter_files: dict[int, str]) -> str:
+    """Point epub_chapter_href() placeholders at the chapter's file.
+
+    A chapter missing from this build (an unapproved recipe left out) keeps its
+    text and loses the link, rather than shipping a dead one.
+    """
+    def resolve(m: re.Match) -> str:
+        f = chapter_files.get(int(m.group(1)))
+        return f'<a href="{f}">{m.group(2)}</a>' if f else m.group(2)
+    return _CHAPTER_LINK_RE.sub(resolve, xhtml)
 
 
 def _epub_add_package_lang(epub_path: str, lang: str = "en-US") -> None:
@@ -780,7 +922,7 @@ def _epub_add_package_lang(epub_path: str, lang: str = "en-US") -> None:
     os.replace(tmp, epub_path)
 
 
-def render_epub(sections: list, man: dict, epub_path: str) -> bool:
+def render_epub(sections: list, man: dict, epub_path: str, built: list) -> bool:
     """Build an accessible EPUB 3 from the assembled sections."""
     import uuid
     try:
@@ -822,7 +964,12 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
     for prop, val in a11y:
         book.add_metadata(None, "meta", val, {"property": prop})
 
-    # CSS is inlined in each chapter head (avoids EbookLib external-link path issues).
+    # CSS ships as one shared stylesheet linked from every chapter. It cannot be
+    # inlined: EbookLib rebuilds each document's <head> from item.links and
+    # discards whatever <head> the content carried, so an inline <style> never
+    # reaches the EPUB. Links are relative to the chapter, which lives in text/.
+    css_href = "../style/book.css"
+    extra_css: list[str] = []
 
     cover_page = None
     cover_rel = man.get("cover")
@@ -845,9 +992,21 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
         else:
             print(f"  [epub] cover not found at {cover_fp}; skipping cover", file=sys.stderr)
 
+    # The print Contents page (dot leaders, page numbers from the two-pass map)
+    # is not carried into the EPUB. The nav document takes its slot in the
+    # reading order instead, so the in-book Contents and the reader's own
+    # navigation are one list that cannot disagree. Kindle renders a nav document
+    # in the spine as the book's HTML TOC (Kindle Publishing Guidelines 5.2.1).
+    toc_slot = next((i for i, (cls, _) in enumerate(sections) if cls == "frontmatter toc"), 0)
+    sections = [s for s in sections if s[0] != "frontmatter toc"]
+
     recipe_idx = [i for i, (cls, _) in enumerate(sections) if cls == "recipe"]
     first_r = recipe_idx[0] if recipe_idx else -1
     last_r = recipe_idx[-1] if recipe_idx else -1
+    # Recipe sections follow `built` order, so this maps each print chapter to
+    # the file it is written to (all chapters share the text/ directory).
+    chapter_files = {b["print_chapter"]: f"ch{i + 1:03d}.xhtml"
+                     for i, b in zip(recipe_idx, built)}
 
     chapters = []
     for i, (cls, md_text) in enumerate(sections):
@@ -861,13 +1020,15 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
         # contains "--", which is illegal inside an XML/XHTML comment, and readers
         # never see comments anyway.
         md_text = re.sub(r"<!--.*?-->", "", md_text, flags=re.S)
-        title = _section_title(md_text) or f"Section {i + 1}"
+        title = _EPUB_FIXED_TITLES.get(cls) or _section_title(md_text) or f"Section {i + 1}"
         body = mdit.render(md_text)
         # Hoist any <style> blocks out of the body (illegal in EPUB body) into the
-        # head, preserving recipe-specific styling (e.g., the .vflow diagrams).
-        _hoisted = re.findall(r"<style\b[^>]*>.*?</style>", body, flags=re.S)
-        if _hoisted:
-            body = re.sub(r"<style\b[^>]*>.*?</style>", "", body, flags=re.S)
+        # shared stylesheet, preserving recipe-specific styling (e.g., the .vflow
+        # diagrams, which several recipes repeat verbatim, hence the dedupe).
+        for _s in re.findall(r"<style\b[^>]*>(.*?)</style>", body, flags=re.S):
+            if _s.strip() not in extra_css:
+                extra_css.append(_s.strip())
+        body = re.sub(r"<style\b[^>]*>.*?</style>", "", body, flags=re.S)
         _props = []
         if "<svg" in body:
             _props.append("svg")
@@ -882,24 +1043,38 @@ def render_epub(sections: list, man: dict, epub_path: str) -> bool:
             body = _et.tostring(_frag, encoding="unicode", method="xml")
         except Exception as _exc:
             print(f"  [epub] XHTML normalize skipped for a section ({_exc})", file=sys.stderr)
+        body = _epub_resolve_chapter_links(_epub_linkify(body), chapter_files)
         item = epub.EpubHtml(title=title, file_name=f"text/ch{i + 1:03d}.xhtml", lang="en-US")
         if _props:
             item.properties = _props
-        _head_css = EPUB_CSS + (("\n" + "\n".join(re.sub(r"</?style\b[^>]*>", "", _s) for _s in _hoisted)) if _hoisted else "")
+        item.add_link(href=css_href, rel="stylesheet", type="text/css")
         item.content = (
             "<html xmlns=\"http://www.w3.org/1999/xhtml\" "
             "xmlns:epub=\"http://www.idpf.org/2007/ops\" xml:lang=\"en-US\" lang=\"en-US\">"
-            "<head><title>" + _html.escape(title) + "</title>"
-            "<style type=\"text/css\">\n" + _head_css + "\n</style></head>"
+            "<head><title>" + _html.escape(title) + "</title></head>"
             "<body epub:type=\"" + etype + "\">\n" + body + "\n</body></html>"
         )
         book.add_item(item)
         chapters.append(item)
 
-    book.toc = tuple(chapters)
+    book.add_item(epub.EpubItem(
+        uid="book-css", file_name="style/book.css", media_type="text/css",
+        content="\n".join([EPUB_CSS] + extra_css).encode("utf-8"),
+    ))
+
+    book.toc = tuple(c for c, (cls, _) in zip(chapters, sections) if cls not in _EPUB_NAV_SKIP)
     book.add_item(epub.EpubNcx())
-    book.add_item(epub.EpubNav())
-    book.spine = (([cover_page] if cover_page is not None else []) + ["nav"] + chapters)
+    nav = epub.EpubNav(title="Contents")
+    book.add_item(nav)
+    # Landmarks (EPUB 3) and guide (EPUB 2) let a reader's "Go to" menu find the
+    # cover and the Contents page. No start-reading landmark: Amazon defines that
+    # location itself (Kindle Publishing Guidelines 5.3).
+    book.guide = []
+    if cover_page is not None:
+        book.guide.append({"type": "cover", "href": cover_page.file_name, "title": "Cover"})
+    book.guide.append({"type": "toc", "href": nav.file_name, "title": "Contents"})
+    book.spine = (([cover_page] if cover_page is not None else [])
+                  + chapters[:toc_slot] + [nav] + chapters[toc_slot:])
     epub.write_epub(epub_path, book)
     _epub_add_package_lang(epub_path, "en-US")
     return True

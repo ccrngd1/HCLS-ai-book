@@ -502,7 +502,16 @@ vocabulary was dead weight. That is what per-recipe tagging without a shared lis
 produces. Tags are stripped from the print edition, so they serve digital
 discovery only, which is exactly why every tag needs to appear on more than one
 recipe to be worth carrying.</p>
-<p><strong>Navigation.</strong> Footer links to previous recipe, chapter preface, and next recipe.</p>
+<p><strong>Navigation.</strong> Do not write one. The previous/next footer is generated at render time from <code>_Sidebar.md</code> (R-3), so a main recipe ends with its Tags line, with no footer and no <code>## Navigation</code> heading.</p>
+<h3 id="section-dividers----">Section dividers (<code>---</code>)</h3>
+<p>A <code>---</code> line is a section divider, drawn as a thin rule in print, the EPUB, and the site. It is never a page break: page breaks come only from CSS, at the start of each chapter. Within a chapter, extra page breaks would leave dozens of half-empty pages in a 6x9 book. Rules:</p>
+<ol>
+<li>Exactly one <code>---</code> after the header block (title, Effort line, User line), before any callout and before The Problem.</li>
+<li>Exactly one <code>---</code> directly above every <code>##</code> section except The Problem, which rule 1 already separates.</li>
+<li>No <code>---</code> anywhere else: not above <code>###</code> or deeper headings, not inside a section (for example before a bold-lead &quot;A regulatory note&quot; paragraph), not before or after a callout, never two in a row, never at the end of the file.</li>
+<li>General Architecture Pattern is always a <code>##</code> section, so it always gets its rule. Its closing architecture callout stays inside it with no rule; the next rule sits above The Honest Take.</li>
+</ol>
+<p><code>python3 check_rules.py</code> reports violations in the 15 print recipes (<code>--all</code> for all 152), and <code>--fix</code> repairs them, moving only rule lines and the blank lines around them.</p>
 <h3 id="the-architecture-callout-end-of-general-architecture-pattern">The architecture callout (end of General Architecture Pattern)</h3>
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the Architecture and Implementation companion (<code>chapter{NN}.{RR}-architecture</code>). The Python example is linked from there.</p>

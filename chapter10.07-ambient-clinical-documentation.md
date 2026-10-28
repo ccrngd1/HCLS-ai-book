@@ -219,9 +219,9 @@ Per-room remediation playbook: when a room's cohort metrics consistently underpe
 
 **Failure modes degrade to manual documentation.** When the ambient feature fails (ASR vendor outage, audio capture broken, LLM service unavailable, network problems), the system falls back to clinician manual documentation using the EHR's standard tools. The institution does not lose the encounter because the AI feature is broken. The audit log records the failure for operational follow-up.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter10.07-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 
@@ -241,9 +241,9 @@ The fifth trap is assuming the EHR integration is the easy part. The EHR write-b
 
 Ambient clinical documentation, done well, gives clinicians their evenings back. It improves encounter quality because clinicians can look at patients more and screens less. It produces notes that often read better than the ones clinicians write under time pressure. It is, when it works, one of the highest-value applications of AI in healthcare today. The difference between "when it works" and "when it does not" is mostly not the AI. It is the audio path, the consent design, the workflow integration, the faithfulness program, the per-cohort monitoring, and the clinician support program. Invest in those, and the AI part takes care of itself.
 
----
-
 **A regulatory note, and its limits.** The per-cohort accuracy monitoring described above has a legal backdrop as well as an ethical one. The Section 1557 final rule issued in 2024, with its patient-care decision support provisions phasing in during 2025, prohibits discrimination in health programs and reaches tools that perform unevenly across protected characteristics. Systematically worse transcription for some patient populations is the kind of disparity that sits inside that scope. Read this as a reason to keep the monitoring and to involve your legal and compliance teams early, not as a compliance recipe. It is not one.
+
+---
 
 ## As Seen In Production
 

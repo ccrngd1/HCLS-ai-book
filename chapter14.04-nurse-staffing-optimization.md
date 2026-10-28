@@ -6,7 +6,6 @@
 
 ---
 
-
 <!-- phi-callout -->
 > **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
@@ -125,9 +124,9 @@ The conceptual pipeline for nurse staffing optimization:
 
 **Real-Time Adjustment.** When disruptions occur (call-offs, census spikes, patient transfers), re-run the solver with the current state as a starting point. Minimize changes to the existing schedule. Produce ranked recommendations for coverage (who to call, in what order). Use concurrency control (optimistic locking or transactions) to prevent race conditions when multiple disruptions arrive simultaneously.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter14.04-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

@@ -6,7 +6,6 @@
 
 ---
 
-
 <!-- phi-callout -->
 > **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
@@ -86,23 +85,37 @@ Except there are problems with this obvious approach.
 
 The practical approach is to use your coded encounter data as the training foundation, but apply several corrections: filter to encounters coded by your most experienced coders (or coded consistently by multiple coders), restrict to the most recent 2-3 fiscal years to avoid code version drift, and augment with synthetic examples for rare codes using the code descriptions themselves as pseudo-clinical text.
 
-### General Architecture Pattern
+---
 
-```text
-[Clinical Note] → [Text Preprocessing] → [Section Segmentation] → [Concept Extraction]
-                                                                          ↓
-                                                                   [Assertion Detection]
-                                                                          ↓
-                                                              [Filter: Present Only]
-                                                                          ↓
-                                                              [Code Candidate Generation]
-                                                                          ↓
-                                                              [Hierarchical Ranking]
-                                                                          ↓
-                                                              [Confidence Scoring]
-                                                                          ↓
-                                                         [Suggestion List for Coder]
-```
+## General Architecture Pattern
+
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Clinical Note</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Text Preprocessing</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Section Segmentation</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Concept Extraction</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Assertion Detection</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Filter: Present Only</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>7. Code Candidate Generation</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>8. Hierarchical Ranking</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>9. Confidence Scoring</strong></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>10. Suggestion List for Coder</strong></div></li>
+</ol>
+</div>
 
 **Text Preprocessing:** Clean the input. Expand abbreviations. Handle section headers (HPI, Assessment, Plan each have different relevance for coding). Remove boilerplate template text that adds noise.
 
@@ -118,9 +131,9 @@ The practical approach is to use your coded encounter data as the training found
 
 **Confidence Scoring:** Assign a composite confidence score reflecting both extraction confidence and code mapping confidence.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter08.03-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

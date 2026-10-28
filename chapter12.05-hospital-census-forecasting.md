@@ -6,7 +6,6 @@
 
 ---
 
-
 <!-- phi-callout -->
 > **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
@@ -63,14 +62,21 @@ That power is also a trap. Because the order only appears in the last few hours 
 
 **Layer 3: Census composition and unit assignment.** Compose the inflows, outflows, and current state into a unit-level census forecast. This is conceptually simple bookkeeping.
 
-```text
-projected_census(unit, t+h) = current_census(unit, t)
-                              + projected_admissions_to_unit(unit, t, t+h)
-                              + projected_internal_transfers_in(unit, t, t+h)
-                              - projected_discharges_from_unit(unit, t, t+h)
-                              - projected_internal_transfers_out(unit, t, t+h)
-                              ± uncertainty
-```
+<style>
+.formula { border: 1px solid #999; border-radius: 4px; padding: 0.5em 0.8em; margin: 1em 0; page-break-inside: avoid; break-inside: avoid; }
+.formula .formula-lhs { font-weight: bold; margin-bottom: 0.2em; }
+.formula .formula-term { padding-left: 1em; }
+</style>
+
+<div class="formula">
+<div class="formula-lhs">Projected census of a unit at time <em>t</em> + <em>h</em></div>
+<div class="formula-term">= current census of the unit at time <em>t</em></div>
+<div class="formula-term">+ projected admissions to the unit, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">+ projected internal transfers in, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">− projected discharges from the unit, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">− projected internal transfers out, <em>t</em> to <em>t</em> + <em>h</em></div>
+<div class="formula-term">± uncertainty</div>
+</div>
 
 The hard part is unit assignment. A patient admitted from the ED with a chest pain rule-out goes to telemetry, not med-surg. A post-op total knee goes to ortho, not general surgery. A patient who was on CCU but is being downgraded goes to step-down, not back to cath lab. The unit-assignment logic depends on diagnosis, surgical type, attending preference, current unit availability, and the hospital's bed-management protocols. Most pipelines model this as a multinomial classifier per admission source. Given the admission's features (diagnosis, surgery type, ED disposition), predict the probability distribution over candidate units.
 
@@ -123,36 +129,42 @@ A census forecast is easy to demo and hard to trust. Before you put one in front
 
 **Retrain on the numbers, not the calendar.** The pipeline already refreshes on a schedule, but treat that as a backstop. The real trigger is the forecast starting to slip: the range stops holding up, or the edge over that same-week-last-week guess quietly erodes. That's when you retrain, whatever day it is.
 
-### The General Architecture Pattern
+---
+
+## The General Architecture Pattern
 
 At a conceptual level, the pipeline looks like this:
 
-```text
-[ADT Stream]
-[OR Schedule]                    +---------------------+    +--------------------+    +---------------------+
-[Transfer Center Queue]   ---->  | Inflow Forecasting  |    | Outflow / LOS      |    | Census Composition  |
-[ED Tracking Board]              | (per source, per    |    | Modeling           |    | (Monte Carlo on     |
-[EHR Patient State]              |  service, per unit) |    | (per-patient       |    |  inflows + outflows |
-                                 |                     |    |  survival model)   |    |  + current state)   |
-                                 +---------------------+    +--------------------+    +---------------------+
-                                          |                          |                          |
-                                          +---------+----------------+--------------------------+
-                                                    |
-                                                    v
-                                          +---------------------+
-                                          | Forecast Repository |
-                                          | (per-unit, per-hour |
-                                          |  occupancy + intervals)
-                                          +---------------------+
-                                                    |
-                                                    v
-                                          +---------------------+
-                                          | Operational         |
-                                          | Consumers           |
-                                          | (Bed Huddle, Transfer
-                                          |  Center, OR, ED)    |
-                                          +---------------------+
-```
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+
+<div class="flow">
+<p class="flow-group">Inputs</p>
+<ol>
+<li><div class="flow-step"><strong>1. Data Feeds</strong><div class="flow-detail"><ul><li>ADT stream</li><li>OR schedule</li><li>Transfer center queue</li><li>ED tracking board</li><li>EHR patient state</li></ul></div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+</ol>
+<p class="flow-group">Forecasting layers</p>
+<ol>
+<li><div class="flow-step"><strong>2. Inflow Forecasting</strong><div class="flow-detail">Per source, per service, per unit.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Outflow / LOS Modeling</strong><div class="flow-detail">Per-patient survival model.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Census Composition</strong><div class="flow-detail">Monte Carlo on inflows, outflows, and the current state.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+</ol>
+<p class="flow-group">Outputs</p>
+<ol>
+<li><div class="flow-step"><strong>5. Forecast Repository</strong><div class="flow-detail">Per-unit, per-hour occupancy with prediction intervals.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>6. Operational Consumers</strong><div class="flow-detail">Bed huddle, transfer center, OR, ED.</div></div></li>
+</ol>
+</div>
 
 **ADT Stream.** Every hospital state change (admission, discharge, transfer, room change, status change) emits an HL7 ADT message or its FHIR Encounter equivalent. The pipeline ingests these in near real time and maintains a current-state view of every occupied bed.
 
@@ -172,9 +184,9 @@ At a conceptual level, the pipeline looks like this:
 
 That's the whole concept. Three flows, composed into a unit-level census, refreshed continuously, surfaced everywhere. The hard parts are in the data plumbing (ADT cleanup, unit-assignment logic, length-of-stay feature engineering) and in the operational integration, not in the forecasting math.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter12.05-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

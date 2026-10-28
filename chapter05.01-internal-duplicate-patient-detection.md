@@ -6,7 +6,6 @@
 
 ---
 
-
 <!-- phi-callout -->
 > **Before you build this, settle the data-governance questions.** This recipe moves protected health information (PHI) through a hosted model or trains on historical patient data, or both. See "Before You Send Protected Health Information Anywhere" at the front of this book for the vendor and secondary-use questions to put to your own privacy, security, and legal or compliance teams before any of this reaches a patient.
 ## The Problem
@@ -139,121 +138,29 @@ A few practical updates worth knowing:
 
 The pipeline has five logical stages: ingest and normalize the source records, generate candidate pairs through blocking, score the pairs with similarity functions and the probabilistic combiner, route the scored pairs to auto-action or human review, and persist the resolved identity decisions with full audit and reversibility.
 
-```text
-┌────────────── INGEST AND NORMALIZE ───────────────┐
-│                                                    │
-│  [Source Patient Records (registration system)]    │
-│           │                                        │
-│           ▼                                        │
-│  [Field-level normalization:                       │
-│   - Names: case-fold, trim, strip diacritics,      │
-│     handle suffixes, expand nicknames]             │
-│   - Dates: parse to canonical form, validate]      │
-│   - Addresses: USPS-standardize where possible]    │
-│   - Phones: strip formatting to E.164]             │
-│   - SSNs: strip formatting, validate length]       │
-│           │                                        │
-│           ▼                                        │
-│  [Phonetic encoding (double metaphone) for         │
-│   names; precompute for use as blocking keys]      │
-│           │                                        │
-│           ▼                                        │
-│  [Persist normalized records with provenance]      │
-│                                                    │
-└────────────────────────────────────────────────────┘
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
 
-┌────────────── BLOCKING / CANDIDATE GENERATION ─────┐
-│                                                    │
-│  [Normalized Records]                              │
-│           │                                        │
-│           ▼                                        │
-│  [Multiple blocking passes:                        │
-│   pass 1: (last_name_metaphone, dob_year)         │
-│   pass 2: (first_name_metaphone, last_initial,    │
-│            dob_year)                               │
-│   pass 3: (last_name_initial, dob_full)           │
-│   pass 4: (zip_code, last_name_initial)           │
-│   pass 5: (phone_last_4, dob_year)                │
-│   ...add passes as needed for recall]             │
-│           │                                        │
-│           ▼                                        │
-│  [Candidate pair set = union across passes]       │
-│           │                                        │
-│           ▼                                        │
-│  [Deduplicate candidate pairs (a pair matched     │
-│   in multiple passes is still one pair)]          │
-│                                                    │
-└────────────────────────────────────────────────────┘
-
-┌────────────── SCORE CANDIDATE PAIRS ──────────────┐
-│                                                    │
-│  [Candidate pairs]                                 │
-│           │                                        │
-│           ▼                                        │
-│  [Per-field comparison:                            │
-│   - first_name: Jaro-Winkler                       │
-│   - last_name: Damerau-Levenshtein + metaphone    │
-│   - dob: exact / one-digit / month-day-swap       │
-│   - sex: exact / null-aware                       │
-│   - address: token-based + USPS-standardized      │
-│   - phone: exact on last-7 / last-4               │
-│   - ssn: exact / one-digit                        │
-│   - email: exact / case-insensitive               │
-│           │                                        │
-│           ▼                                        │
-│  [Probabilistic combiner (Fellegi-Sunter):         │
-│   - Per-field m and u probabilities (estimated     │
-│     from data via EM)                              │
-│   - Sum per-field log-likelihood ratios            │
-│   - Output: composite match score]                │
-│                                                    │
-└────────────────────────────────────────────────────┘
-
-┌────────────── ROUTE BY THRESHOLD ─────────────────┐
-│                                                    │
-│  [Composite match score]                           │
-│           │                                        │
-│           ▼                                        │
-│  [Score >= HIGH_THRESHOLD?]                        │
-│      ├── Yes → AUTO-MATCH path                     │
-│      └── No                                        │
-│            │                                       │
-│            ▼                                       │
-│      [Score <= LOW_THRESHOLD?]                     │
-│          ├── Yes → AUTO-NON-MATCH (no action)     │
-│          └── No → REVIEW QUEUE                    │
-│                     │                              │
-│                     ▼                              │
-│             [HIM specialist review:                │
-│              match / not-match / not-sure]        │
-│                                                    │
-└────────────────────────────────────────────────────┘
-
-┌────────────── PERSIST WITH AUDIT ─────────────────┐
-│                                                    │
-│  [Match decision (auto or human)]                  │
-│           │                                        │
-│           ▼                                        │
-│  [Apply survivorship rules per field]             │
-│           │                                        │
-│           ▼                                        │
-│  [Write to MPI:                                    │
-│   - Master patient identity (golden record)       │
-│   - Cross-references to source records            │
-│   - Merge provenance: source IDs, timestamps,     │
-│     operator, score, field-level survivorship     │
-│     decisions]                                    │
-│           │                                        │
-│           ▼                                        │
-│  [Emit merge event to downstream consumers]       │
-│           │                                        │
-│           ▼                                        │
-│  [Update similarity-feedback labels for           │
-│   model retraining (m and u probability           │
-│   refinement)]                                    │
-│                                                    │
-└────────────────────────────────────────────────────┘
-```
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Ingest and Normalize</strong><div class="flow-detail">Take source patient records from the registration system and normalize each field:<ul><li>Names: case-fold, trim, strip diacritics, handle suffixes, expand nicknames</li><li>Dates: parse to a canonical form and validate</li><li>Addresses: standardize to United States Postal Service (USPS) format</li><li>Phones: strip formatting to E.164</li><li>SSNs: strip formatting, validate length</li></ul>Add double-metaphone codes for names to use as blocking keys, and persist with provenance.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Blocking / Candidate Generation</strong><div class="flow-detail">Run several blocking passes, adding passes as recall requires:<ul><li>Last-name metaphone + birth year</li><li>First-name metaphone + last initial + birth year</li><li>Last initial + full DOB</li><li>ZIP code + last initial</li><li>Last four phone digits + birth year</li></ul>Take the union of candidate pairs and count each pair once.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Score Candidate Pairs</strong><div class="flow-detail">Compare field by field:<ul><li>First name: Jaro-Winkler</li><li>Last name: Damerau-Levenshtein plus metaphone</li><li>DOB: exact, one digit off, or month and day swapped</li><li>Sex: exact, null-aware</li><li>Address: token-based on the standardized form</li><li>Phone: exact on the last seven or last four digits</li><li>SSN: exact or one digit off</li><li>Email: exact, case-insensitive</li></ul>Combine with Fellegi-Sunter: sum the per-field log-likelihood ratios, from m and u probabilities estimated by EM, into one composite match score.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Route by Threshold</strong><div class="flow-detail">Score at or above the high threshold → auto-match<br/>Score at or below the low threshold → no action<br/>In between → review queue, where an HIM specialist decides match, not a match, or not sure</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Persist with Audit</strong><div class="flow-detail"><ul><li>Apply survivorship rules per field</li><li>Write the golden record, cross-references to source records, and merge provenance (source IDs, timestamps, operator, score, survivorship decisions) to the master patient index</li><li>Emit a merge event to downstream consumers</li><li>Record each decision as a label for retraining</li></ul></div></div></li>
+</ol>
+<div class="flow-loop"><strong>Loops back:</strong> review and merge decisions refine the m and u probabilities used in step 3.</div>
+</div>
 
 **Ingest and normalize is where most of the recall comes from.** The single most underrated technique in patient matching is aggressive normalization before any comparison happens. A name field stored as "  María  E.  García-López " becomes the canonical form "maria garcia-lopez" (or with the diacritics preserved, depending on locale strategy). A DOB stored as "3/14/72" becomes "1972-03-14" after parsing and century-windowing. A phone stored as "(555) 123-4567 ext 89" becomes "+15551234567x89" or just "5551234567" depending on how you treat extensions. A nickname-to-legal-name dictionary expands "Bob" to also match "Robert." Addresses go through USPS-standardization (CASS-certified products like SmartyStreets, Melissa, or the USPS API), which produces a canonical form that handles abbreviations, ZIP+4, apartment numbering, and the dozen ways "Saint" can appear in a street name. None of this is glamorous. All of it dramatically improves matching accuracy. Every hour spent on normalization saves multiple hours of debugging false negatives downstream.
 
@@ -273,9 +180,9 @@ When emitting cohort-dimension metrics to the operational dashboard, use buckete
 
 **Family-aware blocking prevents twin and parent-infant false merges.** Twins share birthday, last name, address, and sometimes first-name initial. The standard blocking passes will produce candidate pairs for twins in almost every pass; the standard comparators will score them high on the shared fields. Without a family-aware guard, these pairs regularly auto-merge. The mitigation: consult the `no_link_flags` table for `family_relationship_explicit` entries and skip comparison of explicitly-flagged family pairs. For pairs that enter scoring through other paths, down-weight comparator scores on shared-family fields (address, phone, insurance) when other fields suggest different individuals.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter05.01-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

@@ -60,6 +60,9 @@ def prose_of(text: str) -> str:
     text = re.sub(r"```.*?```", blank, text, flags=re.S)
     text = re.sub(r"~~~.*?~~~", blank, text, flags=re.S)
     text = re.sub(r"`[^`\n]*`", blank, text)
+    # HTML inline code, for the diagram blocks written as raw HTML, where
+    # markdown backticks are not processed.
+    text = re.sub(r"<code>.*?</code>", blank, text, flags=re.S)
     text = re.sub(r"<!--.*?-->", blank, text, flags=re.S)
     # Blank the whole markdown link (label AND target) in one pass. Doing the target
     # first, as an earlier version did, consumed the closing bracket and left the label

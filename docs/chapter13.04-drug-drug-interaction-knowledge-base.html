@@ -386,14 +386,23 @@ licensed, versioned drug knowledge base owned by your pharmacy team.</p>
 <h3 id="knowledge-graphs-for-drug-interactions">Knowledge Graphs for Drug Interactions</h3>
 <p>A knowledge graph represents drug interactions not as pairs in a table, but as a network of relationships between drugs, enzymes, transporters, receptors, metabolites, and clinical effects. The interaction isn't a single edge between two drug nodes. It's a <em>path</em> through the graph that explains the mechanism.</p>
 <p>Here's what the warfarin + fluconazole interaction looks like as a graph:</p>
-<pre class="code code-plain"><code>[Warfarin] --METABOLIZED_BY--&gt; [CYP2C9]
-[Fluconazole] --INHIBITS--&gt; [CYP2C9]
-[CYP2C9 Inhibition] --CAUSES--&gt; [Increased Warfarin Concentration]
-[Increased Warfarin Concentration] --LEADS_TO--&gt; [Increased Bleeding Risk]
-[Increased Bleeding Risk] --SEVERITY--&gt; [Major]
-[Increased Bleeding Risk] --EVIDENCE--&gt; [RCT: PMID &lt;study id&gt;, level 1]
-[Increased Bleeding Risk] --EVIDENCE--&gt; [Product label: &lt;drug&gt;, Drug Interactions]
-</code></pre>
+<style>
+.graph { border: 1px solid #999; border-radius: 4px; padding: 0.5em 0.8em; margin: 1em 0; page-break-inside: avoid; break-inside: avoid; }
+.graph ul { list-style: none; margin: 0; padding: 0; }
+.graph li { margin: 0 0 0.35em 0; }
+.graph code { font-size: 0.85em; }
+</style>
+<div class="graph">
+<ul>
+<li><strong>Warfarin</strong> → <code>METABOLIZED_BY</code> → <strong>CYP2C9</strong></li>
+<li><strong>Fluconazole</strong> → <code>INHIBITS</code> → <strong>CYP2C9</strong></li>
+<li><strong>CYP2C9 Inhibition</strong> → <code>CAUSES</code> → <strong>Increased Warfarin Concentration</strong></li>
+<li><strong>Increased Warfarin Concentration</strong> → <code>LEADS_TO</code> → <strong>Increased Bleeding Risk</strong></li>
+<li><strong>Increased Bleeding Risk</strong> → <code>SEVERITY</code> → <strong>Major</strong></li>
+<li><strong>Increased Bleeding Risk</strong> → <code>EVIDENCE</code> → <code>RCT: PMID &lt;study id&gt;, level 1</code></li>
+<li><strong>Increased Bleeding Risk</strong> → <code>EVIDENCE</code> → <code>Product label: &lt;drug&gt;, Drug Interactions</code></li>
+</ul>
+</div>
 <p>This representation enables several things that flat tables cannot:</p>
 <p><strong>Mechanism-based inference.</strong> If you know that Drug X inhibits CYP2C9 (because the FDA label says so, or because in vitro studies demonstrate it), you can infer that it will interact with warfarin <em>even if nobody has explicitly curated that pair</em>. The graph lets you discover interactions through traversal rather than requiring exhaustive enumeration.</p>
 <p><strong>Severity contextualization.</strong> The severity of a CYP2C9 inhibition interaction depends on several factors and these become properties on the graph edges. A system can compute a context-specific severity rather than returning a static label.</p>
@@ -438,20 +447,38 @@ licensed, versioned drug knowledge base owned by your pharmacy team.</p>
 <li>Dose (many interactions are dose-dependent)</li>
 <li>Duration (some interactions only matter with chronic co-administration)</li>
 </ul>
-<h3 id="general-architecture-pattern">General Architecture Pattern</h3>
-<pre class="code code-plain"><code>[Data Sources]     → [Ingestion/NLP]  → [Graph Database]  → [Interaction Engine] → [Clinical Systems]
-(RxNorm, DrugBank,   (Parse, extract,    (Drugs, enzymes,    (Traversal, scoring,   (EHR alerts,
- FDA SPL, Literature)  normalize, link)    mechanisms, evidence) contextualization)     CPOE, pharmacy)
-</code></pre>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<style>
+.flow { margin: 1em 0; }
+.flow .flow-group { font-size: 0.8em; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; margin: 1.1em 0 0.45em 0; page-break-after: avoid; break-after: avoid; }
+.flow ol { list-style: none; margin: 0; padding: 0; }
+.flow li { margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid; }
+.flow .flow-step { border: 1px solid #999; border-radius: 4px; padding: 0.45em 0.75em; }
+.flow .flow-detail { font-size: 0.9em; margin-top: 0.2em; }
+.flow .flow-detail ul { list-style: disc; margin: 0.25em 0 0.25em 1.2em; padding: 0; }
+.flow .flow-detail ul li { margin: 0 0 0.1em 0; }
+.flow .flow-arrow { text-align: center; font-size: 1.2em; line-height: 1.4; margin: 0.05em 0; }
+.flow .flow-loop { border: 1px dashed #999; border-radius: 4px; padding: 0.45em 0.75em; margin-top: 0.7em; font-size: 0.9em; }
+</style>
+<div class="flow">
+<ol>
+<li><div class="flow-step"><strong>1. Data Sources</strong><div class="flow-detail">RxNorm, DrugBank, FDA SPL, literature.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>2. Ingestion / NLP</strong><div class="flow-detail">Parse, extract, normalize, link.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>3. Graph Database</strong><div class="flow-detail">Drugs, enzymes, mechanisms, evidence.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>4. Interaction Engine</strong><div class="flow-detail">Traversal, scoring, contextualization.</div></div><div class="flow-arrow" aria-hidden="true">↓</div></li>
+<li><div class="flow-step"><strong>5. Clinical Systems</strong><div class="flow-detail">EHR alerts, computerized provider order entry (CPOE), pharmacy.</div></div></li>
+</ol>
+</div>
 <p><strong>Ingestion layer.</strong> Each source has a different format and update cadence. RxNorm updates monthly. DrugBank updates quarterly. FDA labels update irregularly. Literature is continuous. Your ingestion pipeline needs source-specific parsers that produce a common intermediate format (nodes and edges with typed properties).</p>
 <p><strong>Normalization layer.</strong> Drug names must be normalized to a canonical identifier (RxNorm concept unique identifier (CUI) is the standard choice). &quot;Coumadin,&quot; &quot;warfarin sodium,&quot; &quot;warfarin,&quot; and RxNorm CUI 11289 all need to resolve to the same node. Without this, you'll have duplicate nodes and miss interactions.</p>
 <p><strong>Graph storage.</strong> The knowledge graph stores drugs, enzymes, transporters, receptors, metabolites, clinical effects, and evidence as nodes. Relationships (METABOLIZED_BY, INHIBITS, INDUCES, SUBSTRATE_OF, CAUSES, SUPPORTED_BY) are typed edges with properties (strength, Ki value, evidence level, source, date).</p>
 <p><strong>Interaction engine.</strong> Given a patient's medication list, the engine traverses the graph to find interaction paths. It scores each path based on mechanism strength, evidence quality, and patient context. It returns a ranked list of clinically significant interactions with explanations.</p>
 <p><strong>Clinical integration.</strong> The interaction engine exposes an API that clinical systems call at the point of prescribing. The response includes not just &quot;these drugs interact&quot; but &quot;here's why, here's how severe it is for this patient, and here's what to do about it.&quot; The standard for delivering this inside the prescriber's workflow is CDS Hooks, a Health Level Seven (HL7) specification that lets the EHR call your service as the clinician selects or signs a medication order (the <code>order-select</code> and <code>order-sign</code> hooks) and render the result as a card carrying an urgency level, the explanation, and a suggested action the prescriber can accept. That standard is also where the alert-fatigue fight is won or lost: CDS Hooks defines a feedback channel that reports whether each card was accepted, overridden, or ignored, so you can measure which warnings actually change prescribing and retire the ones that only teach clinicians to click past them.</p>
-<hr />
 <blockquote>
 <p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter13.04-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
 </blockquote>
+<hr />
 <h2 id="the-honest-take">The Honest Take</h2>
 <p><strong>Buy versus build: license the interaction content, and do not attempt to build it.</strong> This is the clearest buy in the book. Drug interaction knowledge is a licensed commercial product, maintained by dedicated clinical-pharmacology teams who curate it continuously against new literature, new approvals, and new label changes. Recreating that is not an engineering project, it is a permanent clinical-content operation with direct patient-safety liability attached, and no health system should take it on. The free public vocabularies will give you normalized drug identifiers, which is necessary and nowhere near sufficient; they will not give you curated pairwise interactions with severity and evidence grading. What you build, and what this recipe is actually about, is the layer above the licensed content: the patient-specific significance scoring, the dose and route context, the alert suppression, and the override analytics. Your vendor sells you interactions. Nobody sells you a system that alerts only when the interaction matters for this patient at this dose. That part is yours.</p>
 <p><strong>Alert fatigue is the real enemy, not missing interactions.</strong> Any alerting platform I've seen starts with the goal of &quot;catch everything&quot; and ends up being ignored because it catches too much, a prescription warning system is no different. The hard engineering problem isn't finding interactions. It's <em>not</em> alerting on the ones that don't matter for this specific patient at this specific dose. Your significance scoring algorithm will get more engineering attention than your graph traversal logic.</p>
@@ -460,8 +487,8 @@ licensed, versioned drug knowledge base owned by your pharmacy team.</p>
 <p><strong>Mechanism-based inference is powerful but imperfect.</strong> Inferring that &quot;Drug X inhibits CYP3A4, Drug Y is a CYP3A4 substrate, therefore they interact&quot; is pharmacologically sound but clinically oversimplified. The clinical significance depends on how much of Drug Y's metabolism goes through CYP3A4 (if it's only 10%, the interaction is negligible), the therapeutic index of Drug Y, and the strength of inhibition. Your inference engine needs these nuances or it will generate too many false positives.</p>
 <p><strong>Graph maintenance is a continuous commitment.</strong> New drugs get approved. New interactions get discovered. Existing severity ratings get revised based on new evidence. If you build this and then don't maintain it, you'll have a system that confidently tells clinicians there's no interaction between a new drug and warfarin because the new drug simply isn't in the graph yet. That's worse than not having the system. Budget for ongoing curation as an operational cost, not a one-time project cost.</p>
 <p><strong>The &quot;last mile&quot; to the clinician is harder than the graph.</strong> You can build a beautiful knowledge graph with perfect mechanism encoding and evidence grading. If the alert shows up as a generic modal dialog that says &quot;Interaction detected. Severity: Major. Click OK to continue,&quot; you've wasted the graph's richness. The clinical interface needs to surface the <em>why</em> (mechanism), the <em>so what</em> (clinical effect for this patient), and the <em>now what</em> (specific management recommendation). That's a UX problem as much as a data problem.</p>
-<hr />
 <p><strong>A regulatory note, and its limits.</strong> An interaction alert that fires inside prescribing workflow is what regulators call a decision support intervention, and the significance scoring described above is precisely the part that makes it predictive rather than a lookup. The Office of the National Coordinator for Health Information Technology (ONC) HTI-1 rule, whose requirements took effect in January 2025, sets transparency expectations for predictive decision support delivered through certified health IT, requiring a defined set of source attributes covering things like the training data, the validation performed, and the model's ongoing maintenance. It binds developers of certified health IT rather than provider organizations directly, but it reaches you through your EHR vendor, and the attributes it asks for overlap heavily with what a model card already contains. That is the whole of what this book will say about it. Whether it applies to what you are building, and what you would owe if it does, is a question for your legal and compliance teams. Nothing here is a compliance plan.</p>
+<hr />
 <h2 id="as-seen-in-production">As Seen In Production</h2>
 <p><em>Public examples of this pattern in the field. These are illustrative references, not endorsements; details and links age, and the maintained list lives in the <a href="https://health-ai.lawson.engineer/">digital edition</a>.</em></p>
 <ul>
